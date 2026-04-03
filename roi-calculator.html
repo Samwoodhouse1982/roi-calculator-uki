@@ -1433,9 +1433,9 @@ function ROICalculator() {
         <div>
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
             {[
-              {tier:"enterprise",label:"Enterprise systems",color:C.accent,bg:C.accentPale,br:C.border,hint:"e.g. legacy EPR, PAS, large clinical suites",max:10,tip:"Large clinical platforms, e.g. legacy EPR/PAS, major departmental suites. High per-system cost."},
-              {tier:"departmental",label:"Departmental systems",color:"#1a7a7a",bg:"#eef9f7",br:"#c0e8e2",hint:"e.g. theatres, lab, ED, maternity, radiology",max:30,tip:"Mid-tier clinical systems serving one department or specialty. Moderate running costs."},
-              {tier:"niche",label:"Standalone systems",color:"#3d8a8a",bg:C.tealPale,br:`${C.teal}22`,hint:"e.g. document stores, scanned notes, specialty databases",max:100,tip:"Small self-contained tools, e.g. single-function databases, document stores, scanned notes. Low individual cost but they add up."},
+              {tier:"enterprise",label:"Enterprise systems",color:C.accent,bg:C.accentPale,br:C.border,hint:"e.g. legacy EPR, PAS, large clinical suites",max:Math.max(10, inputs.tiers.enterprise + 2),tip:"Large clinical platforms, e.g. legacy EPR/PAS, major departmental suites. High per-system cost."},
+              {tier:"departmental",label:"Departmental systems",color:"#1a7a7a",bg:"#eef9f7",br:"#c0e8e2",hint:"e.g. theatres, lab, ED, maternity, radiology",max:Math.max(30, inputs.tiers.departmental + 5),tip:"Mid-tier clinical systems serving one department or specialty. Moderate running costs."},
+              {tier:"niche",label:"Standalone systems",color:"#3d8a8a",bg:C.tealPale,br:`${C.teal}22`,hint:"e.g. document stores, scanned notes, specialty databases",max:Math.max(100, inputs.tiers.niche + 10),tip:"Small self-contained tools, e.g. single-function databases, document stores, scanned notes. Low individual cost but they add up."},
             ].map(t=>{
               const computedCost = tierCost(t.tier,inputs.bed_count,CX[inputs.complexity_level]);
               const editKey = t.tier;
@@ -1478,9 +1478,9 @@ function ROICalculator() {
                 <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>Org {oi+1}{orgBedsList[oi] != null ? ` (${fmtNum(orgBedsList[oi])} beds)` : ""}</div>
                 <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                   {[
-                    {tier:"enterprise",label:"Enterprise",color:C.accent,max:5},
-                    {tier:"departmental",label:"Departmental",color:"#1a7a7a",max:15},
-                    {tier:"niche",label:"Standalone",color:"#3d8a8a",max:50},
+                    {tier:"enterprise",label:"Enterprise",color:C.accent,max:Math.max(5, org.enterprise + 2)},
+                    {tier:"departmental",label:"Departmental",color:"#1a7a7a",max:Math.max(15, org.departmental + 3)},
+                    {tier:"niche",label:"Standalone",color:"#3d8a8a",max:Math.max(50, org.niche + 5)},
                   ].map(t=>(
                     <div key={t.tier} style={{flex:"1 1 100px",minWidth:90}}>
                       <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:4,display:"flex",alignItems:"center",gap:4}}>
