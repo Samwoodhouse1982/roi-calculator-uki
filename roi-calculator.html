@@ -1363,7 +1363,7 @@ function ROICalculator() {
         )}
         {!perOrgBeds ? (
           <div>
-            <AnimatedSlider label={inputs.org_count <= 1 ? <span>Total acute beds<InfoTip text="Total beds across all organisations in scope. Scales clinical staff (2.8 per bed), system costs, and clinical safety baseline. Set to 0 for community providers."/></span> : null} value={inputs.bed_count} min={0} max={8000} step={10} onChange={v=>{update("bed_count",v);touch(1);}}/>
+            <AnimatedSlider label={inputs.org_count <= 1 ? <span>Total acute beds<InfoTip text="Total beds across all organisations in scope. Scales clinical staff (2.8 per bed), system costs, and clinical safety baseline. Set to 0 for community providers."/></span> : null} value={inputs.bed_count} min={0} max={Math.max(8000, inputs.bed_count + 500)} step={10} onChange={v=>{update("bed_count",v);touch(1);}}/>
           </div>
         ) : (
           <div>
@@ -1371,7 +1371,7 @@ function ROICalculator() {
               {orgBedsList.map((beds, i) => (
                 <div key={i} className="roi-org" style={{display:"flex",alignItems:"center",gap:12,padding:"8px 14px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
                   <span style={{fontSize:13,fontWeight:600,color:C.textMid,minWidth:48}}>Org {i+1}</span>
-                  <input type="range" min={0} max={4000} step={10} value={beds}
+                  <input type="range" min={0} max={Math.max(4000, beds + 500)} step={10} value={beds}
                     onChange={e => setOrgBeds(i, +e.target.value)}
                     style={{flex:1,cursor:"pointer",accentColor:C.accent}} />
                   <span style={{fontSize:16,fontWeight:800,color:C.accent,minWidth:55,textAlign:"right"}}>{fmtNum(beds)}</span>
