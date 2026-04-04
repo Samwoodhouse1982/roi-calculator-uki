@@ -528,46 +528,38 @@ const REIMBURSE_MULTIPLIERS = {
 
 // ── Known EPR/PAS systems (UK & Ireland) ──
 const KNOWN_SYSTEMS = [
-  // ── Enterprise EHR/EMR (legacy systems being replaced) ──
-  // Annual costs are ONGOING (licensing, hosting, support) not implementation
-  // Sources: KLAS 2025, Becker's, EMR Guides, Definitive Healthcare
-  { label: "Epic", cost: 6000000, type: "EHR", cat: "enterprise", note: "42.3% hospital market share (KLAS 2025)" },
-  { label: "Oracle Health (Cerner) Millennium", cost: 4000000, type: "EHR", cat: "enterprise", note: "22.9% market share; $1-2M/yr typical maintenance" },
-  { label: "MEDITECH Expanse", cost: 1500000, type: "EHR", cat: "enterprise", note: "14.8% market share; MaaS cloud option available" },
-  { label: "MEDITECH Magic / Client-Server", cost: 800000, type: "Legacy EHR", cat: "enterprise", note: "400+ hospitals still on legacy MEDITECH platforms" },
-  { label: "Altera (Allscripts) Sunrise", cost: 2000000, type: "EHR", cat: "enterprise", note: "3.0% market share; Paragon upgrade path to Denali" },
-  { label: "Altera Paragon / Denali", cost: 1200000, type: "EHR", cat: "enterprise", note: "Better retention than Sunrise in 2024 (KLAS)" },
-  { label: "TruBridge (CPSI/Evident)", cost: 600000, type: "EHR", cat: "enterprise", note: "7.6% market share; serves small/rural hospitals" },
-  { label: "MEDHOST", cost: 400000, type: "EHR", cat: "enterprise", note: "2.3% market share; acquired by Harris Healthcare 2024" },
-  { label: "Azalea Health", cost: 250000, type: "EHR", cat: "enterprise", note: "0.4% market share; small/rural focus" },
-  { label: "Siemens Soarian", cost: 1800000, type: "Legacy EHR", cat: "enterprise", note: "End-of-life; many migrating to Cerner or Epic" },
-  { label: "GE Centricity", cost: 1200000, type: "Legacy EHR", cat: "enterprise", note: "No longer sold; legacy installations remain" },
-  { label: "McKesson Paragon", cost: 1000000, type: "Legacy EHR", cat: "enterprise", note: "Now part of Altera; legacy installs being migrated" },
-
-  // ── Ambulatory/Outpatient EHR ──
-  { label: "eClinicalWorks", cost: 350000, type: "Ambulatory EHR", cat: "departmental", note: "$449-599/mo base; widely used in outpatient" },
-  { label: "athenahealth", cost: 500000, type: "Ambulatory EHR/RCM", cat: "departmental", note: "$150-300/provider/mo; strong RCM integration" },
-  { label: "NextGen Healthcare", cost: 300000, type: "Ambulatory EHR", cat: "departmental", note: "$299-379/provider/mo; specialty workflow focus" },
-  { label: "Greenway Health", cost: 250000, type: "Ambulatory EHR", cat: "departmental", note: "Intergy platform; small/mid practice focus" },
-  { label: "Veradigm (Allscripts Practice)", cost: 200000, type: "Ambulatory EHR", cat: "departmental", note: "3.6% ambulatory market share" },
-
-  // ── Specialty/Departmental Systems ──
-  { label: "Varian ARIA", cost: 3000000, type: "Oncology", cat: "departmental", note: "Radiation oncology information system" },
-  { label: "Netsmart", cost: 400000, type: "Behavioral Health", cat: "departmental", note: "2.1% acute market; behavioral/post-acute focus" },
-  { label: "WellSky", cost: 350000, type: "Post-Acute/Rehab", cat: "departmental", note: "0.74% acute market; rehab and home health" },
-  { label: "Philips ICCA / Capsule", cost: 500000, type: "ICU/Critical Care", cat: "departmental", note: "ICU clinical information system" },
-  { label: "Cerner Soarian Financials", cost: 800000, type: "Revenue Cycle", cat: "departmental", note: "Legacy revenue cycle; often retained post-migration" },
-  { label: "GE Centricity Perinatal", cost: 300000, type: "OB/Perinatal", cat: "departmental", note: "Legacy obstetric system" },
-
-  // ── Infrastructure/Support Systems ──
-  { label: "Nuance PowerScribe / DAX", cost: 600000, type: "Clinical Documentation", cat: "standalone", note: "Radiology reporting and ambient documentation" },
-  { label: "3M / Solventum CDI", cost: 400000, type: "CDI/Coding", cat: "standalone", note: "Clinical documentation improvement and coding" },
-  { label: "Omnicell / Pyxis", cost: 800000, type: "Pharmacy/Dispensing", cat: "standalone", note: "Automated medication dispensing" },
-  { label: "Hyland OnBase", cost: 350000, type: "Document Management", cat: "standalone", note: "Enterprise content and document management" },
-  { label: "InterSystems TrakCare", cost: 1500000, type: "EHR/Integration", cat: "enterprise", note: "Integration engine and EHR platform" },
-  { label: "Rhapsody / Corepoint", cost: 200000, type: "Integration Engine", cat: "standalone", note: "HL7/FHIR interface engine" },
+  // Cost = baseCost + (perBed * bed_count). Sources: KLAS 2025, Becker's, EMR Guides
+  { label: "Epic", baseCost: 1500000, perBed: 7500, type: "EHR", cat: "enterprise" },
+  { label: "Oracle Health (Cerner) Millennium", baseCost: 1000000, perBed: 5000, type: "EHR", cat: "enterprise" },
+  { label: "MEDITECH Expanse", baseCost: 400000, perBed: 1800, type: "EHR", cat: "enterprise" },
+  { label: "MEDITECH Magic / Client-Server", baseCost: 250000, perBed: 900, type: "Legacy EHR", cat: "enterprise" },
+  { label: "Altera (Allscripts) Sunrise", baseCost: 600000, perBed: 2300, type: "EHR", cat: "enterprise" },
+  { label: "Altera Paragon / Denali", baseCost: 400000, perBed: 1300, type: "EHR", cat: "enterprise" },
+  { label: "TruBridge (CPSI/Evident)", baseCost: 200000, perBed: 650, type: "EHR", cat: "enterprise" },
+  { label: "MEDHOST", baseCost: 150000, perBed: 400, type: "EHR", cat: "enterprise" },
+  { label: "Azalea Health", baseCost: 100000, perBed: 250, type: "EHR", cat: "enterprise" },
+  { label: "Siemens Soarian", baseCost: 500000, perBed: 2100, type: "Legacy EHR", cat: "enterprise" },
+  { label: "GE Centricity", baseCost: 350000, perBed: 1400, type: "Legacy EHR", cat: "enterprise" },
+  { label: "McKesson Paragon", baseCost: 300000, perBed: 1100, type: "Legacy EHR", cat: "enterprise" },
+  { label: "eClinicalWorks", baseCost: 150000, perBed: 320, type: "Ambulatory EHR", cat: "departmental" },
+  { label: "athenahealth", baseCost: 200000, perBed: 480, type: "Ambulatory EHR/RCM", cat: "departmental" },
+  { label: "NextGen Healthcare", baseCost: 120000, perBed: 280, type: "Ambulatory EHR", cat: "departmental" },
+  { label: "Greenway Health", baseCost: 100000, perBed: 240, type: "Ambulatory EHR", cat: "departmental" },
+  { label: "Veradigm (Allscripts Practice)", baseCost: 80000, perBed: 190, type: "Ambulatory EHR", cat: "departmental" },
+  { label: "Varian ARIA", baseCost: 1200000, perBed: 2800, type: "Oncology", cat: "departmental" },
+  { label: "Netsmart", baseCost: 150000, perBed: 400, type: "Behavioral Health", cat: "departmental" },
+  { label: "WellSky", baseCost: 120000, perBed: 360, type: "Post-Acute/Rehab", cat: "departmental" },
+  { label: "Philips ICCA / Capsule", baseCost: 200000, perBed: 480, type: "ICU/Critical Care", cat: "departmental" },
+  { label: "Cerner Soarian Financials", baseCost: 300000, perBed: 800, type: "Revenue Cycle", cat: "departmental" },
+  { label: "GE Centricity Perinatal", baseCost: 120000, perBed: 280, type: "OB/Perinatal", cat: "departmental" },
+  { label: "Nuance PowerScribe / DAX", baseCost: 200000, perBed: 620, type: "Clinical Documentation", cat: "standalone" },
+  { label: "3M / Solventum CDI", baseCost: 150000, perBed: 400, type: "CDI/Coding", cat: "standalone" },
+  { label: "Omnicell / Pyxis", baseCost: 300000, perBed: 800, type: "Pharmacy/Dispensing", cat: "standalone" },
+  { label: "Hyland OnBase", baseCost: 120000, perBed: 360, type: "Document Management", cat: "standalone" },
+  { label: "InterSystems TrakCare", baseCost: 500000, perBed: 1600, type: "EHR/Integration", cat: "enterprise" },
+  { label: "Rhapsody / Corepoint", baseCost: 80000, perBed: 190, type: "Integration Engine", cat: "standalone" },
 ]
-
+function systemCost(sys, beds) { return Math.round(((sys.baseCost || 250000) + (sys.perBed || 0) * beds) / 1000) * 1000; }
 const fmt = n => "$" + Math.round(n).toLocaleString("en-US");
 const fmtK = n => n >= 1e6 ? `$${(n/1e6).toFixed(1)}m` : n >= 1000 ? `$${Math.round(n/1000).toLocaleString("en-US")}k` : fmt(n);
 const fmtNum = n => Math.round(n).toLocaleString("en-US");
@@ -750,7 +742,7 @@ function ROICalculator() {
 
   // Flagship systems (named high-cost outliers outside the tiers)
   const [flagships, setFlagships] = useState([]);
-  const addFlagship = useCallback((sys) => { const s = sys || {}; setFlagships(p => [...p, {name:s.label||"", cost:s.cost||250000, retire:true, known:s.label||""}]); }, []);
+  const addFlagship = useCallback((sys) => { const s = sys || {}; const sc = s.baseCost ? systemCost(s, inputs.bed_count) : (s.cost || 250000); setFlagships(p => [...p, {name:s.label||"", cost:sc, retire:true, known:s.label||""}]); }, [inputs.bed_count]);
   const removeFlagship = useCallback(i => setFlagships(p => p.filter((_,j)=>j!==i)), []);
   const updateFlagship = useCallback((i, k, v) => { setFlagships(p => p.map((f,j)=>j===i?{...f,[k]:v}:f)); setActivePreset(null); }, []);
 
@@ -1758,7 +1750,7 @@ function ROICalculator() {
           {KNOWN_SYSTEMS.slice(0, 10).map(sys => (
             <button type="button" key={sys.label} onClick={()=>{addFlagship(sys);touch(3);}} className="roi-preset" style={{width:"100%",padding:"10px 12px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:14,background:"#fff",cursor:"pointer"}}>
               <div style={{fontSize:13,fontWeight:700,color:C.text}}>{sys.label}</div>
-              <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>{sys.type} - typical ~{fmtK(sys.cost)}/yr</div>
+              <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>{sys.type} - ~{fmtK(systemCost(sys, inputs.bed_count))}/yr</div>
             </button>
           ))}
         </div>
@@ -1768,12 +1760,12 @@ function ROICalculator() {
             {KNOWN_SYSTEMS.slice(10).map(sys => (
               <button type="button" key={sys.label} onClick={()=>{addFlagship(sys);touch(3);}} className="roi-preset" style={{width:"100%",padding:"10px 12px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:14,background:"#fff",cursor:"pointer"}}>
                 <div style={{fontSize:13,fontWeight:700,color:C.text}}>{sys.label}</div>
-                <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>{sys.type} - typical ~{fmtK(sys.cost)}/yr</div>
+                <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>{sys.type} - ~{fmtK(systemCost(sys, inputs.bed_count))}/yr</div>
               </button>
             ))}
           </div>
         </details>
-        <button type="button" onClick={()=>{addFlagship({label:"",cost:250000});touch(3);}} className="roi-link" style={{marginTop:10,border:"none",background:"none",color:C.accent,fontSize:13,fontWeight:700,cursor:"pointer",padding:"8px 0",display:"flex",alignItems:"center",gap:6}}>
+        <button type="button" onClick={()=>{addFlagship({cost:Math.round((150000 + inputs.bed_count * 400) / 1000) * 1000});touch(3);}} className="roi-link" style={{marginTop:10,border:"none",background:"none",color:C.accent,fontSize:13,fontWeight:700,cursor:"pointer",padding:"8px 0",display:"flex",alignItems:"center",gap:6}}>
           + Add a custom / unlisted system
         </button>
       </div>
