@@ -1316,32 +1316,6 @@ function ROICalculator() {
     doc.text(fmtK(rCon.total3) + " (conservative)  to  " + fmtK(rStr.total3) + " (stretch).  All figures are user-overridable. Clinical safety metrics are not included in financial totals.", ml + 4, y + 10);
     y += 22;
 
-    // Provider profile
-    provider_type: providerType,
-    reimbursement_model: reimbursementModel,
-
-    // Reimbursement & compliance
-    medicare_drg_revenue: r.medicareDrg,
-    hrrp_exposure: r.hrrpExposure,
-    hrrp_reduction: r.hrrpReduction,
-    hac_exposure: r.hacExposure,
-    hac_reduction: r.hacReduction,
-    vbp_pool: r.vbpPool,
-    vbp_improvement: r.vbpImprovement,
-    denial_baseline: r.denialBaseline,
-    denial_recovery: r.denialRecovery,
-    malpractice_premium: r.malpracticePremium,
-    malpractice_reduction: r.malpracticeReduction,
-    preventable_ades: r.preventableADEs,
-    excess_days_avoided: r.excessDaysAvoided,
-    excess_day_cost_avoided: r.excessDayCostAvoided,
-    duplicate_waste: r.duplicateWaste,
-    duplicate_reduction: r.duplicateReduction,
-    reimbursement_impact: r.reimbursementImpact,
-    quality_savings: r.qualitySavings,
-    annual_with_reimbursement: r.annualWithReimbursement,
-    three_year_with_reimbursement: r.total3WithReimbursement,
-
     // Scenario comparison mini-table
     if (y < 240) {
       doc.setFontSize(10); doc.setFont("helvetica","bold"); setC(TEAL);
