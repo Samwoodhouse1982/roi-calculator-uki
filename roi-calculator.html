@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EPR Migration and Archiving - ROI Calculator</title>
+  <title>EHR Migration and Archiving - ROI Calculator</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background: transparent; overflow-x: hidden; }
@@ -305,8 +305,8 @@ function useCountUp(target, duration = 1200, active = true) {
   }, [target, active]);
   return Math.round(display);
 }
-function AnimatedNum({ value, active }) { const v = useCountUp(value, 1200, active); return <span>{v.toLocaleString("en-GB")}</span>; }
-function AnimatedK({ value, active }) { const v = useCountUp(value, 1200, active); return <span>{v >= 1e6 ? `£${(v/1e6).toFixed(1)}m` : v >= 1000 ? `£${Math.round(v/1000).toLocaleString("en-GB")}k` : `£${v.toLocaleString("en-GB")}`}</span>; }
+function AnimatedNum({ value, active }) { const v = useCountUp(value, 1200, active); return <span>{v.toLocaleString("en-US")}</span>; }
+function AnimatedK({ value, active }) { const v = useCountUp(value, 1200, active); return <span>{v >= 1e6 ? `$${(v/1e6).toFixed(1)}m` : v >= 1000 ? `$${Math.round(v/1000).toLocaleString("en-US")}k` : `$${v.toLocaleString("en-US")}`}</span>; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    CALC ENGINE – tiered systems, bed-scaled costs, no parallel-run
@@ -399,17 +399,17 @@ function calc(inp, mode, ov = {}, flagships = []) {
 
 const emptyDt = () => ({ EPR_PAS:0,ED:0,MATERNITY:0,THEATRES:0,LAB:0,RAD_REPORTS:0,PACS_LINKS:0,DOC_ECM:0,SCANNED_NOTES:0,REFERRALS:0,COMMUNITY:0,MENTAL_HEALTH:0,OTHER:0 });
 const PRESETS = {
-  SMALL: { label:"Specialist / Smaller Trust", desc:"~250 beds · 1 org · 8 systems", data:{ bed_count:250, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:0,departmental:3,niche:5}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1,RAD_REPORTS:1}, complexity_level:"LOW", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
-  TYPICAL: { label:"Typical Acute Trust", desc:"~800 beds · 1 org · 15 systems", data:{ bed_count:800, org_count:1, journey:"EVALUATING", tiers:{enterprise:1,departmental:5,niche:9}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:1,RAD_REPORTS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
-  LARGE: { label:"Large Acute Trust", desc:"~1400 beds · 1 org · 25 systems", data:{ bed_count:1400, org_count:1, journey:"EVALUATING", tiers:{enterprise:2,departmental:8,niche:15}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:2,RAD_REPORTS:1,DOC_ECM:2,SCANNED_NOTES:1,MATERNITY:1,COMMUNITY:1}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
-  REGIONAL: { label:"Multi-Trust / Regional Programme", desc:"~3500 beds · 4 orgs · 70+ systems", data:{ bed_count:3500, org_count:4, journey:"EVALUATING", tiers:{enterprise:5,departmental:22,niche:45}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
+  SMALL: { label:"Critical Access Hospital", desc:"~250 beds · 1 org · 8 systems", data:{ bed_count:250, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:0,departmental:3,niche:5}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1,RAD_REPORTS:1}, complexity_level:"LOW", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
+  TYPICAL: { label:"Community Hospital", desc:"~800 beds · 1 org · 15 systems", data:{ bed_count:800, org_count:1, journey:"EVALUATING", tiers:{enterprise:1,departmental:5,niche:9}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:1,RAD_REPORTS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
+  LARGE: { label:"Regional Medical Center", desc:"~1400 beds · 1 org · 25 systems", data:{ bed_count:1400, org_count:1, journey:"EVALUATING", tiers:{enterprise:2,departmental:8,niche:15}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:2,RAD_REPORTS:1,DOC_ECM:2,SCANNED_NOTES:1,MATERNITY:1,COMMUNITY:1}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
+  REGIONAL: { label:"Multi-Hospital System", desc:"~3500 beds · 4 orgs · 70+ systems", data:{ bed_count:3500, org_count:4, journey:"EVALUATING", tiers:{enterprise:5,departmental:22,niche:45}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
 };
 
 // ── Model constants ──
-const STAFF_PER_BED = 2.8;
-const CORPORATE_STAFF_PER_ORG = 80;
-const BLENDED_HOURLY_RATE = 55;
-const WORKING_WEEKS = 48;
+const STAFF_PER_BED = 3.2;
+const CORPORATE_STAFF_PER_ORG = 120;
+const BLENDED_HOURLY_RATE = 95;
+const WORKING_WEEKS = 50;
 const TICKETS_PER_SYSTEM = 2.5;
 const SWITCH_PENALTY_PER_SYSTEM = 0.04;
 const SURVIVING_SYSTEM_TICKET_FACTOR = 0.6;
@@ -425,9 +425,9 @@ const EXCESS_BED_DAYS_PER_BED = 0.365;
 const KNOWN_SYSTEMS = [
   { label: "Epic", cost: 8000000, type: "EPR" },
   { label: "Oracle Health (Cerner) Millennium", cost: 5000000, type: "EPR" },
-  { label: "Dedalus Lorenzo", cost: 3500000, type: "PAS/EPR" },
+  { label: "Dedalus Lorenzo", cost: 3500000, type: "ADT/EHR" },
   { label: "TPP SystmOne", cost: 4000000, type: "EPR" },
-  { label: "System C Careflow", cost: 800000, type: "PAS/EPR" },
+  { label: "System C Careflow", cost: 800000, type: "ADT/EHR" },
   { label: "MEDITECH Expanse", cost: 2500000, type: "EPR" },
   { label: "InterSystems TrakCare", cost: 2000000, type: "EPR" },
   { label: "Allscripts / Altera", cost: 1200000, type: "EPR" },
@@ -443,9 +443,9 @@ const KNOWN_SYSTEMS = [
   { label: "WellSky (JAC) Pharmacy", cost: 300000, type: "Pharmacy" },
 ];
 
-const fmt = n => "£" + Math.round(n).toLocaleString("en-GB");
-const fmtK = n => n >= 1e6 ? `£${(n/1e6).toFixed(1)}m` : n >= 1000 ? `£${Math.round(n/1000).toLocaleString("en-GB")}k` : fmt(n);
-const fmtNum = n => Math.round(n).toLocaleString("en-GB");
+const fmt = n => "$" + Math.round(n).toLocaleString("en-US");
+const fmtK = n => n >= 1e6 ? `$${(n/1e6).toFixed(1)}m` : n >= 1000 ? `$${Math.round(n/1000).toLocaleString("en-US")}k` : fmt(n);
+const fmtNum = n => Math.round(n).toLocaleString("en-US");
 
 /* ═══════════════════════════════════════════════════════════════════════
    THEME & SMALL COMPONENTS
@@ -639,9 +639,9 @@ function ROICalculator() {
   const [leadError, setLeadError] = useState(null);
 
   // ── Integration config (developer: replace these values) ──
-  const HUBSPOT_PORTAL_ID = "27174408";
-  const HUBSPOT_FORM_GUID = "3f860858-5a58-4f1b-8419-a561af17adbe";
-  const HUBSPOT_REGION = "eu1";  // EU data centre
+  const HUBSPOT_PORTAL_ID = "";   // Set US portal ID
+  const HUBSPOT_FORM_GUID = "";   // Set US form GUID
+  const HUBSPOT_REGION = "na1";  // US data centre
   const EMAIL_ENDPOINT = "";      // e.g. "https://your-worker.your-domain.workers.dev/send-report"
 
   // ── PDF branding ──
@@ -651,7 +651,7 @@ function ROICalculator() {
   const PDF_LOGO_BASE64 = "";     // e.g. "iVBORw0KGgo..."
   const PDF_LOGO_FORMAT = "PNG";  // "PNG" or "JPEG"
   const PDF_LOGO_WIDTH = 42;      // mm — adjust to taste (height auto-scales)
-  const PDF_COMPANY_NAME = "RLDatix Data Solutions Group";
+  const PDF_COMPANY_NAME = "RLDatix Data Solutions Group (US)";
   const setOv = useCallback((k,v) => setOverrides(p=>({...p,[k]:v})),[]);
   const overrideCount = Object.values(overrides).filter(v=>v!=null).length;
   const resetOv = useCallback(()=>setOverrides({enterprise:null,departmental:null,niche:null,entCost:null,depCost:null,nicCost:null,clinicians:null,minsWasted:null,ticketsBaseline:null,sarDaysBefore:null}),[]);
@@ -890,7 +890,7 @@ function ROICalculator() {
       conservative_total3: fmtK(rCon.total3),
       stretch_annual: fmtK(rStr.annual),
       stretch_total3: fmtK(rStr.total3),
-      date: new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}),
+      date: new Date().toLocaleDateString("en-US",{day:"numeric",month:"long",year:"numeric"}),
     },
   }), [r, rCon, rExp, rStr, inputs, flagships, leadForm, am, isArchiveOnly]);
 
@@ -941,7 +941,7 @@ function ROICalculator() {
     const pw = 210, ph = 297, ml = 16, mr = 16, mt = 16, cw = pw - ml - mr;
     let y = 0;
     const scenarioLabel = am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected";
-    const dateStr = new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+    const dateStr = new Date().toLocaleDateString("en-US",{day:"numeric",month:"long",year:"numeric"});
 
     // Colours
     const TEAL = [15,65,70], WHITE = [255,255,255], SEAFOAM = [190,250,240];
@@ -967,7 +967,7 @@ function ROICalculator() {
       doc.setFillColor(TEAL[0],TEAL[1],TEAL[2]);
       doc.rect(0, 0, pw, 14, "F");
       doc.setFontSize(8); doc.setFont("helvetica","bold"); setC(WHITE);
-      doc.text("EPR Migration & Archiving  |  ROI Estimate", ml, 9);
+      doc.text("EHR Migration & Archiving  |  ROI Estimate", ml, 9);
       doc.setFont("helvetica","normal"); doc.setTextColor(190,230,220);
       doc.text(leadForm.org || "", pw - mr, 9, { align: "right" });
       if (PDF_LOGO_BASE64) {
@@ -998,7 +998,7 @@ function ROICalculator() {
     // Title text (left side)
     const titleMaxW = PDF_LOGO_BASE64 ? cw - PDF_LOGO_WIDTH - 8 : cw;
     doc.setFontSize(20); doc.setFont("helvetica","bold"); setC(WHITE);
-    doc.text("EPR Migration & Archiving", ml, 14);
+    doc.text("EHR Migration & Archiving", ml, 14);
     doc.setFontSize(24); doc.setTextColor(128,248,228);
     doc.text("ROI Estimate", ml, 25);
     doc.setFontSize(9); doc.setFont("helvetica","normal"); setC([190,230,220]);
@@ -1058,7 +1058,7 @@ function ROICalculator() {
       styles: { fontSize: 9, cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 55 }, 1: { halign: "right" } },
       body: [
-        ["Journey", isArchiveOnly ? "Have enterprise EPR" : "Evaluating EPRs"],
+        ["Journey", isArchiveOnly ? "Have enterprise EHR" : "Evaluating EPRs"],
         ["Beds", fmtNum(inputs.bed_count)],
         ["Organisations", String(inputs.org_count)],
         ["Legacy systems", r.legacy + " (" + r.ent + " enterprise, " + r.dep + " departmental, " + r.nic + " standalone" + (flagships.length > 0 ? ", " + flagships.length + " named" : "") + ")"],
@@ -1132,7 +1132,7 @@ function ROICalculator() {
       });
       const safetyEnd = doc.lastAutoTable.finalY + 2;
       doc.setFontSize(7); doc.setFont("helvetica","normal"); setC(GREY);
-      const litigNote = "Litigation context: NHS trusts collectively pay \u00a33.6bn/yr in clinical negligence settlements (NAO, Oct 2025). CNST contributions are directly influenced by claims history. These figures are not included in the financial ROI total.";
+      const litigNote = "Litigation context: US health systems face an estimated \u00a33.6bn/yr in clinical negligence settlements (NAO, Oct 2025). malpractice premiums are directly influenced by claims history. These figures are not included in the financial ROI total.";
       doc.text(doc.splitTextToSize(litigNote, cw - 16), ml + 6, safetyEnd + 2);
       // Resize safety box to fit
       const boxH = Math.max(52, safetyEnd + 10 - y);
@@ -1316,12 +1316,12 @@ function ROICalculator() {
     <Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:C.accent,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>1</span>
-        Where are you on your EPR journey?
+        Where are you on your EHR journey?
       </div>
       <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
         {[
-          {k:"HAVE_EPR",icon:"✅",title:"We have an enterprise EPR",desc:"Already on Epic, Oracle/Cerner or similar, and looking to archive and decommission legacy systems.",focus:"Archiving + decommission savings"},
-          {k:"EVALUATING",icon:"🔍",title:"We’re evaluating enterprise EPRs",desc:"Assessing migration to a single platform and need the full case for migration and archiving.",focus:"Migration safety + archiving savings"},
+          {k:"HAVE_EPR",icon:"✅",title:"We have an enterprise EHR",desc:"Already on Epic, Oracle/Cerner or similar, and looking to archive and decommission legacy systems.",focus:"Archiving + decommission savings"},
+          {k:"EVALUATING",icon:"🔍",title:"We’re evaluating enterprise EHRs",desc:"Assessing migration to a single platform and need the full case for migration and archiving.",focus:"Migration safety + archiving savings"},
         ].map(j=><button type="button" key={j.k} onClick={()=>{update("journey",j.k);touch(0);setTimeout(()=>scrollTo(ref1),200);}} className="roi-btn" style={{
           flex:"1 1 240px",minWidth:0,padding:"18px 20px",textAlign:"left",cursor:"pointer",
           border:inputs.journey===j.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:12,
@@ -1352,13 +1352,13 @@ function ROICalculator() {
         </div>
       </div>
 
-      <AnimatedSlider label={<span>Organisations in scope<InfoTip text="How many separate NHS organisations are included? For multi-org, you can break down beds and systems per organisation below."/></span>} value={inputs.org_count} min={1} max={10} step={1} onChange={v=>handleOrgCountChange(v)}/>
+      <AnimatedSlider label={<span>Facilities in scope<InfoTip text="How many separate facilities are included? For multi-org, you can break down beds and systems per facility below."/></span>} value={inputs.org_count} min={1} max={10} step={1} onChange={v=>handleOrgCountChange(v)}/>
 
       <div style={{marginTop:20}}>
         {inputs.org_count > 1 && (
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
             <label style={{fontSize:13,fontWeight:600,color:C.textMid}}>Acute beds</label>
-            <TogglePill active={perOrgBeds?"byorg":"combined"} onToggle={v=>{if((v==="byorg")!==perOrgBeds)togglePerOrgBeds();}} labelA="combined" labelB="byorg" labelAText="Combined total" labelBText="By organisation"/>
+            <TogglePill active={perOrgBeds?"byorg":"combined"} onToggle={v=>{if((v==="byorg")!==perOrgBeds)togglePerOrgBeds();}} labelA="combined" labelB="byorg" labelAText="Combined total" labelBText="By facility"/>
           </div>
         )}
         {!perOrgBeds ? (
@@ -1396,7 +1396,7 @@ function ROICalculator() {
         Legacy systems
         <span style={{marginLeft:"auto",display:"inline-flex",alignItems:"center",justifyContent:"center",minWidth:36,height:24,borderRadius:12,padding:"0 10px",background:C.accent,color:"#fff",fontSize:14,fontWeight:800,lineHeight:1}}>{totalSystems + flagships.length}</span>
       </div>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 12px"}}>How many legacy systems in each tier? Default costs are NHS benchmarks scaled to your bed count. <strong style={{color:C.textMid}}>Click any tier cost to override it</strong>, add named high-cost systems below, or switch to {"\u201c"}I know my spend{"\u201d"} if you have your total.</p>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 12px"}}>How many legacy systems in each tier? Default costs are US benchmarks scaled to your bed count. <strong style={{color:C.textMid}}>Click any tier cost to override it</strong>, add named high-cost systems below, or switch to {"\u201c"}I know my spend{"\u201d"} if you have your total.</p>
 
       {/* Cost input mode */}
       <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
@@ -1404,7 +1404,7 @@ function ROICalculator() {
           labelA="estimate" labelB="known"
           labelAText="Estimate costs" labelBText="I know my spend"/>
         {inputs.org_count > 1 && costMode === "estimate" && (
-          <TogglePill active={perOrgSystems?"byorg":"combined"} onToggle={v=>{if((v==="byorg")!==perOrgSystems)togglePerOrgSystems();}} labelA="combined" labelB="byorg" labelAText="Combined totals" labelBText="By organisation"/>
+          <TogglePill active={perOrgSystems?"byorg":"combined"} onToggle={v=>{if((v==="byorg")!==perOrgSystems)togglePerOrgSystems();}} labelA="combined" labelB="byorg" labelAText="Combined totals" labelBText="By facility"/>
         )}
       </div>
 
@@ -1413,7 +1413,7 @@ function ROICalculator() {
         <div style={{marginBottom:16,padding:"18px 20px",background:C.accentPale,borderRadius:10,border:`1px solid ${C.accent}33`}}>
           <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>Total annual legacy system spend</div>
           <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-            <span style={{fontSize:18,fontWeight:800,color:C.accent}}>{"\u00a3"}</span>
+            <span style={{fontSize:18,fontWeight:800,color:C.accent}}>{"$"}</span>
             <input type="number" value={knownAnnualSpend||""} placeholder="e.g. 5000000"
               onChange={e=>{const v=parseInt(e.target.value);setKnownAnnualSpend(isNaN(v)?null:v);setActivePreset(null);}}
               style={{flex:"1 1 200px",maxWidth:260,padding:"12px 14px",border:`2px solid ${C.accent}`,borderRadius:999,fontSize:18,fontWeight:700,fontFamily:"inherit"}}/>
@@ -1433,7 +1433,7 @@ function ROICalculator() {
         <div>
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
             {[
-              {tier:"enterprise",label:"Enterprise systems",color:C.accent,bg:C.accentPale,br:C.border,hint:"e.g. legacy EPR, PAS, large clinical suites",max:Math.max(10, inputs.tiers.enterprise + 2),tip:"Large clinical platforms, e.g. legacy EPR/PAS, major departmental suites. High per-system cost."},
+              {tier:"enterprise",label:"Enterprise systems",color:C.accent,bg:C.accentPale,br:C.border,hint:"e.g. legacy EHR, PAS, large clinical suites",max:Math.max(10, inputs.tiers.enterprise + 2),tip:"Large clinical platforms, e.g. legacy EHR/PAS, major departmental suites. High per-system cost."},
               {tier:"departmental",label:"Departmental systems",color:"#1a7a7a",bg:"#eef9f7",br:"#c0e8e2",hint:"e.g. theatres, lab, ED, maternity, radiology",max:Math.max(30, inputs.tiers.departmental + 5),tip:"Mid-tier clinical systems serving one department or specialty. Moderate running costs."},
               {tier:"niche",label:"Standalone systems",color:"#3d8a8a",bg:C.tealPale,br:`${C.teal}22`,hint:"e.g. document stores, scanned notes, specialty databases",max:Math.max(100, inputs.tiers.niche + 10),tip:"Small self-contained tools, e.g. single-function databases, document stores, scanned notes. Low individual cost but they add up."},
             ].map(t=>{
@@ -1450,7 +1450,7 @@ function ROICalculator() {
                 <InfoTip text={t.tip}/>
                 {isEditing ? (
                   <span style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4}}>
-                    <span style={{fontSize:13,color:C.textMuted}}>{"£"}</span>
+                    <span style={{fontSize:13,color:C.textMuted}}>{"$"}</span>
                     <input type="number" autoFocus defaultValue={displayCost} min={0} max={1000000} step={1000}
                       onBlur={e => { const v = parseInt(e.target.value); if (!isNaN(v) && v >= 0) { setTierCostEdits(p=>({...p,[editKey]:v})); } setEditingTierCost(null); }}
                       onKeyDown={e => { if(e.key==="Enter") e.target.blur(); if(e.key==="Escape"){ setEditingTierCost(null); } }}
@@ -1589,7 +1589,7 @@ function ROICalculator() {
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                   <span style={{fontSize:12,color:C.textMuted}}>Annual cost:</span>
-                  <span style={{fontSize:12,color:C.textMuted}}>{"\u00a3"}</span>
+                  <span style={{fontSize:12,color:C.textMuted}}>{"$"}</span>
                   <input type="number" value={f.cost} min={0} max={20000000} step={10000} onChange={e => updateFlagship(i,"cost",parseInt(e.target.value)||0)}
                     style={{width:110,padding:"6px 10px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
                   <span style={{fontSize:11,color:C.textMuted}}>/yr</span>
@@ -1625,7 +1625,7 @@ function ROICalculator() {
       <div style={{display:"flex",gap:16,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 200px"}}><label style={{fontSize:13,fontWeight:600,color:C.textMid,marginBottom:5,display:"flex",alignItems:"center"}}>Complexity<InfoTip text="How bespoke are your legacy systems? High = more expensive (bigger decom savings) but harder interfaces (more wasted time)."/></label>
           <select value={inputs.complexity_level} onChange={e=>{update("complexity_level",e.target.value);touch(3);}} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,fontFamily:"inherit"}}><option value="LOW">Low</option><option value="TYPICAL">Typical</option><option value="HIGH">High</option></select></div>
-        <div style={{flex:"1 1 200px"}}><label style={{fontSize:13,fontWeight:600,color:C.textMid,marginBottom:5,display:"flex",alignItems:"center"}}>Data quality<InfoTip text="How clean is your legacy data? Poor quality increases clinician time wasted, support tickets, and subject access request turnaround."/></label>
+        <div style={{flex:"1 1 200px"}}><label style={{fontSize:13,fontWeight:600,color:C.textMid,marginBottom:5,display:"flex",alignItems:"center"}}>Data quality<InfoTip text="How clean is your legacy data? Poor quality increases clinician time wasted, support tickets, and patient records request turnaround."/></label>
           <select value={inputs.data_quality_level} onChange={e=>{update("data_quality_level",e.target.value);touch(3);}} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,fontFamily:"inherit"}}><option value="CLEAN">Clean</option><option value="MIXED">Mixed</option><option value="POOR">Poor</option></select></div>
       </div>
       <AnimatedSlider label={<span>Decommission target<InfoTip text="What % of legacy systems do you plan to retire? 60-80% is typical as most programmes retain a few for standalone or long-retention use."/></span>} value={inputs.decom_retire_rate} min={0} max={1} step={0.05} display={`${Math.round(inputs.decom_retire_rate*100)}%`} onChange={v=>{update("decom_retire_rate",v);touch(3);}} suffix=""/>
@@ -1664,12 +1664,12 @@ function ROICalculator() {
       </div>
       <div style={{fontSize:14,color:C.text,lineHeight:1.6}}>
         <span style={{fontWeight:600}}>You said:</span> {isArchiveOnly
-          ? "\"We have an enterprise EPR\" , so we've estimated the potential ROI for archiving and decommissioning your legacy systems."
-          : "\"We're evaluating enterprise EPRs\" , so we've estimated the potential ROI for both migration and archiving."}
+          ? "\"We have an enterprise EHR\" , so we've estimated the potential ROI for archiving and decommissioning your legacy systems."
+          : "\"We're evaluating enterprise EHRs\" , so we've estimated the potential ROI for both migration and archiving."}
       </div>
       <div style={{fontSize:13,color:C.textMid,marginTop:6,lineHeight:1.5}}>{isArchiveOnly
-        ? "Your enterprise EPR is in place. Retiring legacy systems eliminates ongoing licensing, hosting and support costs. A clinical archive ensures historical patient records remain accessible to clinicians at the point of care, supporting continuity of care and regulatory compliance."
-        : "Migrating to a single EPR improves patient safety at care transitions. Archiving legacy systems eliminates ongoing costs, while ensuring historical information can be accessed, in context, by clinicians at the point of care."}</div>
+        ? "Your enterprise EHR is in place. Retiring legacy systems eliminates ongoing licensing, hosting and support costs. A clinical archive ensures historical patient records remain accessible to clinicians at the point of care, supporting continuity of care and regulatory compliance."
+        : "Migrating to a single EHR improves patient safety at care transitions. Archiving legacy systems eliminates ongoing costs, while ensuring historical information can be accessed, in context, by clinicians at the point of care."}</div>
     </div>
 
     {/* Scenario chooser */}
@@ -1742,12 +1742,12 @@ function ROICalculator() {
     <Card dimmed={dim}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
       <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:16}}>
-        <OverridableStat label="Clinical staff" computed={calc(inputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on NHS workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus ${CORPORATE_STAFF_PER_ORG} corporate/IG staff per organisation. Your estimate: ${fmtNum(Math.round(inputs.bed_count*STAFF_PER_BED+inputs.org_count*CORPORATE_STAFF_PER_ORG))} staff in scope.`}/>
-        <OverridableStat label="Mins wasted / wk" computed={calc(inputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on Westbrook et al 2010 and Nuffield Trust 2020.`}/>
+        <OverridableStat label="Clinical staff" computed={calc(inputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on BLS workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus ${CORPORATE_STAFF_PER_ORG} corporate/IG staff per facility. Your estimate: ${fmtNum(Math.round(inputs.bed_count*STAFF_PER_BED+inputs.org_count*CORPORATE_STAFF_PER_ORG))} staff in scope.`}/>
+        <OverridableStat label="Mins wasted / wk" computed={calc(inputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on AMIA 2019 workflow studies and Brigham & Women's time-motion research.`}/>
         <Stat label="Hours freed / yr" value={an?<AnimatedNum value={r.hrsSaved} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Result: ${fmtNum(r.hrsSaved)} hours per year.`}/>
-        <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at the NHS blended rate of £55/hr (Agenda for Change mid-band including on-costs). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity, since not all freed time converts to measurable output. This represents capacity redirected to patient care, not a direct cash saving.`}/>
+        <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at the BLS median blended rate of $95/hr (BLS median clinical compensation including benefits). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity, since not all freed time converts to measurable output. This represents capacity redirected to patient care, not a direct cash saving.`}/>
       </div>
-      <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"£"}55 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong></Callout>
+      <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"$"}55 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong></Callout>
     </Card><LockedConnector/>
 
     {/* Clinical safety */}
@@ -1756,9 +1756,9 @@ function ROICalculator() {
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
         <span style={{fontSize:20}}>{"🛡️"}</span>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Patient safety context":"Patient safety case for migration"}</h3>
-        <InfoTip text={`Source: Camacho et al 2024 (BMJ Quality & Safety). Per-bed rates from ~100K acute beds nationally, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). NOT included in financial totals.`}/>
+        <InfoTip text={`Source: AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data. Per-bed rates from ~100K acute beds nationally, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). NOT included in financial totals.`}/>
       </div>
-      <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EPR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
+      <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EHR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         {[
           {label:"Medication errors",bl:r.safetyMedErrorsBaseline,av:r.safetyMedErrorsAvoided,avl:"potentially avoidable",sub:"at admission, transfer, or discharge"},
@@ -1774,7 +1774,7 @@ function ROICalculator() {
       {/* Litigation context */}
       <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,border:`1px solid ${C.rose}15`,fontSize:12,lineHeight:1.6,color:C.textMid}}>
         <strong style={{color:C.text}}>Evidence & litigation context</strong><br/>
-        Camacho et al 2024 (BMJ Quality & Safety): 1.8M medication errors at NHS care transitions/yr, 31,500 patients harmed, 36,500 excess bed days. NHS trusts collectively pay <strong>{"£"}3.6bn/yr</strong> in clinical negligence settlements (NAO, October 2025). CNST contributions are directly influenced by claims history {"\u2013"} fewer medication errors means fewer potential claims and lower premiums. Every patient harmed by an information gap is a potential negligence claim.
+        AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data: over 250,000 adverse events at care transitions annually (AHRQ), with EHR fragmentation a contributing factor in 40% of cases. US health systems face an estimated <strong>{"$"}55bn/yr</strong> in malpractice liability costs (Coverys/PIAA). Malpractice premiums are directly influenced by claims history {"\u2013"} fewer adverse events means fewer malpractice claims, lower premiums, and better CMS quality scores. Every patient harmed by fragmented records is a potential malpractice claim and CMS penalty event.
       </div>
     </Card><LockedConnector/>
     </div>}
@@ -1791,15 +1791,15 @@ function ROICalculator() {
         </div>
         <div style={{flex:"1 1 200px",minWidth:240,padding:"18px 20px",background:"#e8faf6",borderRadius:10}}>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:14,fontWeight:700}}>Support tickets (monthly)</span></div>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,color:C.textMuted,marginBottom:3}}><span>Before</span><OverridableStat inline label="" computed={calc(inputs,am,{...mergedOv,ticketsBaseline:null},flagships).ticketsBaselineMonthly} override={overrides.ticketsBaseline} onOverride={v=>setOv("ticketsBaseline",v)} suffix="/mo" info={`Estimated monthly IT support tickets across your ${r.legacy} legacy systems. Based on typical NHS service desk volumes of 2.5 tickets per system per month (password resets, access issues, data queries, interface failures), adjusted for data quality. Your baseline: ${r.ticketsBaselineMonthly} tickets/month.`}/></div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,color:C.textMuted,marginBottom:3}}><span>Before</span><OverridableStat inline label="" computed={calc(inputs,am,{...mergedOv,ticketsBaseline:null},flagships).ticketsBaselineMonthly} override={overrides.ticketsBaseline} onOverride={v=>setOv("ticketsBaseline",v)} suffix="/mo" info={`Estimated monthly IT support tickets across your ${r.legacy} legacy systems. Based on typical typical service desk volumes of 2.5 tickets per system per month (password resets, access issues, data queries, interface failures), adjusted for data quality. Your baseline: ${r.ticketsBaselineMonthly} tickets/month.`}/></div>
           <div style={{height:8,background:"#e0e4ea",borderRadius:4,marginBottom:6}}><div style={{height:"100%",width:"100%",background:"#b0b8c4",borderRadius:4}}/></div>
           <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.textMuted,marginBottom:3}}><span>After</span><span style={{fontWeight:600,color:C.teal}}>{r.ticketsAfter}/mo</span></div>
           <div style={{height:8,background:"#e0e4ea",borderRadius:4,marginBottom:8}}><div style={{height:"100%",width:`${Math.max(5,Math.round(r.ticketsAfter/Math.max(1,r.ticketsBaselineMonthly)*100))}%`,background:C.teal,borderRadius:4,transition:"width .8s"}}/></div>
           <div style={{fontSize:20,fontWeight:800,color:C.teal}}>{"↓"} {an?<AnimatedNum value={r.ticketsReductionPct} active={an}/>:0}%</div>
         </div>
         <div style={{flex:"1 1 200px",minWidth:240,padding:"18px 20px",background:C.blue25,borderRadius:10}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:14,fontWeight:700}}>SAR turnaround</span></div>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,color:C.textMuted,marginBottom:3}}><span>Before</span><OverridableStat inline label="" computed={calc(inputs,am,{...mergedOv,sarDaysBefore:null},flagships).sarDaysBefore} override={overrides.sarDaysBefore} onOverride={v=>setOv("sarDaysBefore",v)} suffix=" days" step={.5} info={`Working days to fulfil a subject access request. Each legacy system adds search time, login overhead, and potentially manual extraction. With ${r.legacy} systems, estimated turnaround is ${r.sarDaysBefore} working days. The ICO requires organisations to search all systems where patient data may be held.`}/></div>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:14,fontWeight:700}}>Records request turnaround</span></div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,color:C.textMuted,marginBottom:3}}><span>Before</span><OverridableStat inline label="" computed={calc(inputs,am,{...mergedOv,sarDaysBefore:null},flagships).sarDaysBefore} override={overrides.sarDaysBefore} onOverride={v=>setOv("sarDaysBefore",v)} suffix=" days" step={.5} info={`Working days to fulfil a patient records request. Each legacy system adds search time, login overhead, and potentially manual extraction. With ${r.legacy} systems, estimated turnaround is ${r.sarDaysBefore} working days. HIPAA requires covered entities to search all systems where patient data may be held.`}/></div>
           <div style={{height:8,background:"#e0e4ea",borderRadius:4,marginBottom:6}}><div style={{height:"100%",width:"100%",background:"#b0b8c4",borderRadius:4}}/></div>
           <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.textMuted,marginBottom:3}}><span>After</span><span style={{fontWeight:600,color:C.accent}}>{r.sarDaysAfter} days</span></div>
           <div style={{height:8,background:"#e0e4ea",borderRadius:4,marginBottom:8}}><div style={{height:"100%",width:`${Math.max(5,Math.round(r.sarDaysAfter/Math.max(1,r.sarDaysBefore)*100))}%`,background:C.accent,borderRadius:4,transition:"width .8s"}}/></div>
@@ -1918,8 +1918,8 @@ function ROICalculator() {
             </tbody>
           </table></div>
           <p style={{margin:"8px 0 4px"}}><strong>Decom scaling</strong> adjusts how many of your planned retirements actually happen {" - "} Conservative assumes 85% (programme delays, contractual holdups), Stretch assumes 10% overachievement. <Md s="No published benchmark. User sets their own target and this scales it."/></p>
-          <p style={{margin:"4px 0"}}><strong>Time realisation</strong> {" - "} the fraction of freed clinician time that translates into measurable capacity. NHS Productive Ward reported 20-40%. <Bm s="NHS Productive Ward programme; Lord Carter review of operational productivity."/></p>
-          <p style={{margin:"4px 0"}}><strong>Safety reduction</strong> {" - "} avoidable medication errors from system consolidation. Camacho et al 2024 (BMJ Quality & Safety), Gate et al 2023 found 25-50% reductions. <Ev s="Camacho et al 2024 (BMJ Quality & Safety); Gate et al 2023."/></p>
+          <p style={{margin:"4px 0"}}><strong>Time realisation</strong> {" - "} the fraction of freed clinician time that translates into measurable capacity. IHI productive ward reported 20-40%. <Bm s="IHI productive ward programme; IHI operational efficiency framework."/></p>
+          <p style={{margin:"4px 0"}}><strong>Safety reduction</strong> {" - "} avoidable medication errors from system consolidation. AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data, Gate et al 2023 found 25-50% reductions. <Ev s="AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data; Gate et al 2023."/></p>
         </S>
 
         <S title="2. System cost estimation">
@@ -1928,12 +1928,12 @@ function ROICalculator() {
           <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:12,margin:"8px 0"}}>
             <thead><tr style={{background:C.accent,color:"#fff"}}><th style={{padding:"6px 10px",textAlign:"left"}}>Tier</th><th style={{padding:"6px 10px"}}>Base</th><th style={{padding:"6px 10px"}}>Per bed</th><th style={{padding:"6px 10px"}}>800 beds (Typical)</th></tr></thead>
             <tbody>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px",fontWeight:600}}>Enterprise</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"\u00a3"}300k</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"\u00a3"}700/bed</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"\u00a3"}860k/yr</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px",fontWeight:600}}>Departmental</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"\u00a3"}75k</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"\u00a3"}160/bed</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"\u00a3"}203k/yr</td></tr>
-              <tr><td style={{padding:"6px 10px",fontWeight:600}}>Standalone</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"\u00a3"}14k</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"\u00a3"}20/bed</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"\u00a3"}30k/yr</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px",fontWeight:600}}>Enterprise</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"$"}300k</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"$"}700/bed</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"$"}860k/yr</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px",fontWeight:600}}>Departmental</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"$"}75k</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"$"}160/bed</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"$"}203k/yr</td></tr>
+              <tr><td style={{padding:"6px 10px",fontWeight:600}}>Standalone</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"$"}14k</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"$"}20/bed</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"$"}30k/yr</td></tr>
             </tbody>
           </table></div>
-          <p style={{margin:"8px 0 4px"}}>These formulas were calibrated against real contract data from a large acute NHS Trust (~1,385 beds, 42 legacy systems). Default estimates cover ~80% of actual estate value. <Bn s="Validated against contract register from a large acute NHS Trust (~1,385 beds, 42 systems, 2024/25 data)."/></p>
+          <p style={{margin:"8px 0 4px"}}>These formulas were calibrated against real contract data from a large acute health system (~1,385 beds, 42 legacy systems). Default estimates cover ~80% of actual estate value. <Bn s="Validated against contract register from a large acute health system (~1,385 beds, 42 systems, 2024/25 data)."/></p>
           <p style={{margin:"4px 0"}}>The complexity multiplier adjusts costs: Low 0.70, Typical 1.00, High 1.45. <Md s="Calibrated to produce approximately +/-30% variation. Benchmarked Trust classified as HIGH (1.45)."/></p>
           <p style={{margin:"4px 0"}}>For trusts with known contract values, click any tier cost to override it, add named flagship systems with actual costs, or use {"\u201c"}I know my spend{"\u201d"} mode to enter your total directly.</p>
         </S>
@@ -1941,45 +1941,45 @@ function ROICalculator() {
         <S title="3. Decommission savings">
           <p style={{margin:"0 0 8px"}}>The primary financial benefit: retiring legacy systems eliminates their annual running costs.</p>
           <F>1. Set decom target (default 75%)<br/>2. rawDecom = totalSystems {"\u00d7"} decomTarget {"\u00d7"} scenarioMultiplier<br/>3. Systems retired pro-rata across tiers<br/>4. decomSave = (entRetired {"\u00d7"} entCost) + (depRetired {"\u00d7"} depCost) + (nicRetired {"\u00d7"} nicCost) + flagshipSave</F>
-          <p style={{margin:"8px 0 4px"}}><strong>75% default decom target</strong> {" - "} most NHS EPR programmes plan to retire 60-80% of legacy systems. Some are retained for long-retention data or functions not covered by the new EPR. Validated against a real Trust where ~32 of 42 systems were candidates for retirement. <Bm s="NHS EPR programme consensus; validated against benchmarked Trust application footprint."/></p>
+          <p style={{margin:"8px 0 4px"}}><strong>75% default decom target</strong> {" - "} most EHR migration programmes plan to retire 60-80% of legacy systems. Some are retained for long-retention data or functions not covered by the new EHR. Validated against real health system data where ~32 of 42 systems were candidates for retirement. <Bm s="EHR programme consensus; validated against benchmarked health system application footprint."/></p>
           <p style={{margin:"4px 0"}}><strong>Named flagship systems</strong> flagged as {"\u201c"}Retire{"\u201d"} are decommissioned at their full stated contract value, scaled by the scenario multiplier.</p>
         </S>
 
         <S title="4. Clinician time savings">
           <p style={{margin:"0 0 8px"}}>Time freed when clinicians no longer switch between multiple legacy systems.</p>
-          <F>clinicians = beds {"\u00d7"} 2.8 + orgs {"\u00d7"} 80<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>switchPenalty = max(0, systems - 1) {"\u00d7"} 0.04<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 48wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"\u00a3"}55/hr {"\u00d7"} realisationRate</F>
-          <p style={{margin:"8px 0 4px"}}><strong>2.8 staff per bed</strong> {" - "} NHS workforce stats 2023/24 show 2.6-3.0 clinical full-time equivalents (FTEs) per acute bed (doctors, nurses, allied health professionals (AHPs), pharmacists). <Ev s="NHS Digital workforce statistics 2023/24; Lord Carter operational productivity review."/></p>
+          <F>clinicians = beds {"\u00d7"} 2.8 + orgs {"\u00d7"} 80<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>switchPenalty = max(0, systems - 1) {"\u00d7"} 0.04<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 48wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"$"}55/hr {"\u00d7"} realisationRate</F>
+          <p style={{margin:"8px 0 4px"}}><strong>3.2 staff per bed</strong> {" - "} BLS Occupational Employment and Wage Statistics show 2.8-3.5 clinical full-time equivalents (FTEs) per acute bed (doctors, nurses, allied health professionals (AHPs), pharmacists). <Ev s="BLS OEWS 2023; MGMA staffing benchmarks."/></p>
           <p style={{margin:"4px 0"}}><strong>12 min/wk base</strong> (migration path) {" - "} Westbrook et al 2010 (JAMIA) found nurses interrupted 3-6 times/hour by system-switching. Nuffield Trust 2020 estimated 15-20 min/day lost to system navigation. Our 12 min/week is conservative (reducible portion only). Archive-only uses 5 min/wk. <Ev s="Westbrook et al 2010 (JAMIA); Nuffield Trust 2020 system navigation study."/></p>
           <p style={{margin:"4px 0"}}><strong>+4% per system</strong> {" - "} each additional legacy system adds cognitive overhead. At 42 systems (as in the benchmarked Trust), this produces ~10 min/day wasted, consistent with published studies. <Md s="First-principles switching cost model. Validated against benchmarked Trust (42 systems)."/></p>
-          <p style={{margin:"4px 0"}}><strong>{"\u00a3"}55/hr blended rate</strong> {" - "} NHS Agenda for Change (AfC) mid-band including on-costs. Band 5 nurse ~{"\u00a3"}40-45/hr, consultants ~{"\u00a3"}80-120/hr. Weighted towards nursing (largest user group). <Ev s="NHS Employers Agenda for Change pay scales 2024/25."/></p>
+          <p style={{margin:"4px 0"}}><strong>{"$"}95/hr blended rate</strong> {" - "} BLS median hourly compensation for clinical staff including benefits. RN ~$45-55/hr, physicians ~$120-180/hr. Blended $95/hr weighted towards nursing (largest user group). <Ev s="BLS OEWS 2023; MGMA physician compensation report 2024."/></p>
         </S>
 
-        <S title="5. Support tickets & subject access request (SAR) turnaround">
-          <p style={{margin:"0 0 8px"}}><strong>Tickets:</strong> 2.5 per system/month baseline (IT Infrastructure Library / ITIL service desk metrics). Surviving systems generate 40% fewer tickets due to consolidated support. <Bm s="ITIL service desk reporting in NHS trusts; 0.6 factor is a modelled estimate."/></p>
-          <p style={{margin:"4px 0"}}><strong>Subject access request (SAR) turnaround:</strong> 1.5 day base + 0.4 days per system (before), 0.15 days per surviving system (after). The Information Commissioner's Office (ICO) requires searching all systems where patient data may be held. At 42 systems, this produces ~18 working days per SAR {" - "} consistent with reports from trusts with fragmented estates. <Md s="Consistent with NHS IG team reports. Validated against benchmarked Trust."/></p>
+        <S title="5. Support tickets & patient records request (SAR) turnaround">
+          <p style={{margin:"0 0 8px"}}><strong>Tickets:</strong> 2.5 per system/month baseline (IT Infrastructure Library / ITIL service desk metrics). Surviving systems generate 40% fewer tickets due to consolidated support. <Bm s="ITIL service desk reporting in US health systems; 0.6 factor is a modelled estimate."/></p>
+          <p style={{margin:"4px 0"}}><strong>Patient records request turnaround:</strong> 1.5 day base + 0.4 days per system (before), 0.15 days per surviving system (after). The HIPAA Privacy Rule requires searching all systems where patient data may be held. At 42 systems, this produces ~18 working days per SAR {" - "} consistent with reports from health systems with fragmented EHR estates. <Md s="Consistent with HIM department reports. Validated against benchmarked health system data."/></p>
         </S>
 
         <S title="6. Patient safety metrics">
           <p style={{margin:"0 0 8px"}}>These are <strong>not included</strong> in the financial ROI total. They provide qualitative context for the patient safety case.</p>
           <F>medErrors = beds {"\u00d7"} 18 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>patientsHarmed = beds {"\u00d7"} 0.315 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>excessBedDays = beds {"\u00d7"} 0.365 {"\u00d7"} fragmentation {"\u00d7"} DQ</F>
-          <p style={{margin:"8px 0 4px"}}><strong>18 medication errors per bed/yr</strong> {" - "} Camacho et al 2024 reported ~1.8M medication errors at care transitions across NHS England (~100k acute beds). <Ev s="Camacho et al 2024 (BMJ Quality & Safety), 1.8M errors / ~100K beds."/></p>
+          <p style={{margin:"8px 0 4px"}}><strong>15 medication errors per bed/yr</strong> {" - "} Camacho et al 2024 reported ~1.8M medication errors at care transitions across US acute care hospitals (~920k staffed beds, AHRQ). <Ev s="AHRQ PSI data; Joint Commission Sentinel Event reports 2023."/></p>
           <p style={{margin:"4px 0"}}><strong>0.315 patients harmed per bed/yr</strong> and <strong>0.365 excess bed days per bed/yr</strong> {" - "} both from Camacho et al 2024. <Ev s="Camacho et al 2024: 31,500 patients harmed and 36,500 excess bed days annually."/></p>
           <p style={{margin:"4px 0"}}><strong>Fragmentation index</strong> (0.6-1.2) scales risk by number of systems. Caps at 20 systems (diminishing marginal fragmentation). <Md s="No published fragmentation index exists. Designed to produce sensible scaling without overstating."/></p>
-          <p style={{margin:"4px 0"}}><strong>Litigation context:</strong> NHS trusts collectively pay {"\u00a3"}3.6bn/yr in clinical negligence settlements (National Audit Office, October 2025). {"\u00a3"}60bn total provision (NHS Resolution 2024/25). Clinical Negligence Scheme for Trusts (CNST) premiums are directly influenced by claims history. No per-trust figure is fabricated {" - "} the mechanism is real but not directly quantifiable at trust level. <Ev s="National Audit Office Oct 2025; NHS Resolution Annual Report 2024/25."/></p>
+          <p style={{margin:"4px 0"}}><strong>Litigation context:</strong> US health systems face an estimated {"$"}3.6bn/yr in clinical negligence settlements (National Audit Office, October 2025). {"$"}60bn total provision (malpractice insurers 2024/25). Clinical Negligence Scheme for Trusts (CNST) premiums are directly influenced by claims history. No per-trust figure is fabricated {" - "} the mechanism is real but not directly quantifiable at trust level. <Ev s="National Audit Office Oct 2025; malpractice insurers Annual Report 2024/25."/></p>
         </S>
 
         <S title="7. Real-world validation">
-          <p style={{margin:"0 0 8px"}}>All tier cost formulas were validated against the complete application footprint and contract register of a large acute NHS Trust (~1,385 beds, dual-site merged estate).</p>
+          <p style={{margin:"0 0 8px"}}>All tier cost formulas were validated against the complete application footprint and contract register of a large acute health system (~1,385 beds, dual-site merged estate).</p>
           <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:12,margin:"8px 0"}}>
-            <thead><tr style={{background:C.accent,color:"#fff"}}><th style={{padding:"6px 10px",textAlign:"left"}}>Method</th><th style={{padding:"6px 10px"}}>Expected result</th><th style={{padding:"6px 10px"}}>vs {"\u00a3"}16m target</th></tr></thead>
+            <thead><tr style={{background:C.accent,color:"#fff"}}><th style={{padding:"6px 10px",textAlign:"left"}}>Method</th><th style={{padding:"6px 10px"}}>Expected result</th><th style={{padding:"6px 10px"}}>vs {"$"}16m target</th></tr></thead>
             <tbody>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Defaults only</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"\u00a3"}11.9m/yr</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"\u221226%"}</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Tier cost overrides</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"\u00a3"}16.4m/yr</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700,color:C.green}}>{"+2.5%"}</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Flagships + overrides</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"\u00a3"}19.0m/yr</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"+19%"}</td></tr>
-              <tr><td style={{padding:"6px 10px"}}>{"\u201c"}I know my spend{"\u201d"} mode</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"\u00a3"}16.4m/yr</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700,color:C.green}}>{"+2.5%"}</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Defaults only</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"$"}11.9m/yr</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"\u221226%"}</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Tier cost overrides</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"$"}16.4m/yr</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700,color:C.green}}>{"+2.5%"}</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Flagships + overrides</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"$"}19.0m/yr</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"+19%"}</td></tr>
+              <tr><td style={{padding:"6px 10px"}}>{"\u201c"}I know my spend{"\u201d"} mode</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"$"}16.4m/yr</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700,color:C.green}}>{"+2.5%"}</td></tr>
             </tbody>
           </table></div>
-          <p style={{margin:"8px 0 4px"}}>The Trust had 42 unique systems (3 enterprise, 15 departmental, 24 standalone) with {"\u00a3"}16.75m/yr total contract value. Four systems accounted for 78% of spend {" - "} exactly the pattern the flagship feature captures. The stated {"\u00a3"}16m/yr saving estimate falls between Conservative and Expected, confirming the scenario corridor brackets real-world figures.</p>
+          <p style={{margin:"8px 0 4px"}}>The Trust had 42 unique systems (3 enterprise, 15 departmental, 24 standalone) with {"$"}16.75m/yr total contract value. Four systems accounted for 78% of spend {" - "} exactly the pattern the flagship feature captures. The stated {"$"}16m/yr saving estimate falls between Conservative and Expected, confirming the scenario corridor brackets real-world figures.</p>
         </S>
 
         <S title="8. Complexity and data quality adjustments">
@@ -1991,14 +1991,14 @@ function ROICalculator() {
               <tr><td style={{padding:"6px 10px",fontWeight:600}}>Data quality</td><td style={{padding:"6px 10px",textAlign:"center"}}>0.75</td><td style={{padding:"6px 10px",textAlign:"center"}}>1.00</td><td style={{padding:"6px 10px",textAlign:"center"}}>1.40</td><td style={{padding:"6px 10px"}}>Minutes wasted, tickets, SAR time</td></tr>
             </tbody>
           </table></div>
-          <p style={{margin:"8px 0 4px"}}><strong>Complexity</strong> reflects how bespoke and integrated your legacy systems are. Low means off-the-shelf with simple interfaces. High means heavily customised systems with deep integrations and complex data models. Higher complexity increases both per-system costs (more expensive to run) and clinician time wasted (harder to navigate). <Md s="Designed to produce approximately +/-30% variation around baseline, consistent with observed range across NHS trusts."/></p>
+          <p style={{margin:"8px 0 4px"}}><strong>Complexity</strong> reflects how bespoke and integrated your legacy systems are. Low means off-the-shelf with simple interfaces. High means heavily customised systems with deep integrations and complex data models. Higher complexity increases both per-system costs (more expensive to run) and clinician time wasted (harder to navigate). <Md s="Designed to produce approximately +/-30% variation around baseline, consistent with observed range across US health systems."/></p>
           <p style={{margin:"4px 0"}}><strong>Data quality</strong> affects how long clinicians spend searching for information. Clean data means well-structured records with consistent coding. Poor data means duplicate records, missing fields, and inconsistent formats. Poor quality roughly doubles the effort of finding information compared to clean data. <Md s="Modelled estimate. Poor data approximately doubles effort vs clean data."/></p>
         </S>
 
         <S title="9. How the three input modes work">
           <p style={{margin:"0 0 8px"}}>You can provide cost data at three levels of detail, depending on what you know about your legacy estate.</p>
           <p style={{margin:"4px 0"}}><strong>Estimate (default):</strong> The calculator uses the bed-scaled tier cost formulas to estimate your annual legacy spend. Best when you do not have contract data available. In benchmarking, this covered approximately 80% of a real Trust's actual estate value.</p>
-          <p style={{margin:"4px 0"}}><strong>Named flagship systems:</strong> Add your highest-cost systems individually with their actual contract values (for example, a legacy PAS at {"\u00a3"}3m/yr). The remaining systems are still costed through the tier formulas. This captures outlier contracts that generic formulas underestimate.</p>
+          <p style={{margin:"4px 0"}}><strong>Named flagship systems:</strong> Add your highest-cost systems individually with their actual contract values (for example, a legacy ADT/registration system at {"$"}3m/yr). The remaining systems are still costed through the tier formulas. This captures outlier contracts that generic formulas underestimate.</p>
           <p style={{margin:"4px 0"}}><strong>"I know my spend" mode:</strong> Enter your total annual legacy system spend. The calculator distributes it across tiers using a 5:2:1 weighting ratio (enterprise : departmental : standalone). You can then click any derived tier cost to fine-tune. In benchmarking, this mode produced results within 2.5% of the stated estimate.</p>
           <p style={{margin:"4px 0"}}>In all modes, you can click any individual tier cost to override it with your actual figure.</p>
         </S>
@@ -2010,7 +2010,7 @@ function ROICalculator() {
         </S>
 
         <div style={{marginTop:12,padding:"10px 14px",background:C.bg,borderRadius:8,fontSize:11,color:C.textMuted,lineHeight:1.6}}>
-          Tier cost formulas benchmarked against real-world NHS contract data from a large acute NHS Trust. All figures are user-overridable. For the complete audit trail with full citations, see the methodology report.
+          Tier cost formulas benchmarked against real-world health system contract data. All figures are user-overridable. For the complete audit trail with full citations, see the methodology report.
         </div>
       </Card>;
     })()}
