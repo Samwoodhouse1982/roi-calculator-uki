@@ -528,25 +528,45 @@ const REIMBURSE_MULTIPLIERS = {
 
 // ── Known EPR/PAS systems (UK & Ireland) ──
 const KNOWN_SYSTEMS = [
-  { label: "Epic", cost: 8000000, type: "EPR" },
-  { label: "Oracle Health (Cerner) Millennium", cost: 5000000, type: "EPR" },
-  { label: "Dedalus Lorenzo", cost: 3500000, type: "ADT/EHR" },
-  { label: "TPP SystmOne", cost: 4000000, type: "EPR" },
-  { label: "System C Careflow", cost: 800000, type: "ADT/EHR" },
-  { label: "MEDITECH Expanse", cost: 2500000, type: "EPR" },
-  { label: "InterSystems TrakCare", cost: 2000000, type: "EPR" },
-  { label: "Allscripts / Altera", cost: 1200000, type: "EPR" },
-  { label: "IMS MAXIMS", cost: 800000, type: "PAS" },
-  { label: "Civica Paris", cost: 500000, type: "PAS" },
-  { label: "Cambio COSMIC", cost: 1000000, type: "EPR" },
-  { label: "Nervecentre", cost: 1000000, type: "e-Obs" },
-  { label: "CliniSys Winpath LIMS", cost: 400000, type: "LIMS" },
-  { label: "Varian ARIA", cost: 2500000, type: "Oncology" },
-  { label: "EMIS Health", cost: 350000, type: "Clinical" },
-  { label: "System C Badgernet", cost: 200000, type: "Maternity/Neonatal" },
-  { label: "BigHand", cost: 250000, type: "Dictation" },
-  { label: "WellSky (JAC) Pharmacy", cost: 300000, type: "Pharmacy" },
-];
+  // ── Enterprise EHR/EMR (legacy systems being replaced) ──
+  // Annual costs are ONGOING (licensing, hosting, support) not implementation
+  // Sources: KLAS 2025, Becker's, EMR Guides, Definitive Healthcare
+  { label: "Epic", cost: 6000000, type: "EHR", cat: "enterprise", note: "42.3% hospital market share (KLAS 2025)" },
+  { label: "Oracle Health (Cerner) Millennium", cost: 4000000, type: "EHR", cat: "enterprise", note: "22.9% market share; $1-2M/yr typical maintenance" },
+  { label: "MEDITECH Expanse", cost: 1500000, type: "EHR", cat: "enterprise", note: "14.8% market share; MaaS cloud option available" },
+  { label: "MEDITECH Magic / Client-Server", cost: 800000, type: "Legacy EHR", cat: "enterprise", note: "400+ hospitals still on legacy MEDITECH platforms" },
+  { label: "Altera (Allscripts) Sunrise", cost: 2000000, type: "EHR", cat: "enterprise", note: "3.0% market share; Paragon upgrade path to Denali" },
+  { label: "Altera Paragon / Denali", cost: 1200000, type: "EHR", cat: "enterprise", note: "Better retention than Sunrise in 2024 (KLAS)" },
+  { label: "TruBridge (CPSI/Evident)", cost: 600000, type: "EHR", cat: "enterprise", note: "7.6% market share; serves small/rural hospitals" },
+  { label: "MEDHOST", cost: 400000, type: "EHR", cat: "enterprise", note: "2.3% market share; acquired by Harris Healthcare 2024" },
+  { label: "Azalea Health", cost: 250000, type: "EHR", cat: "enterprise", note: "0.4% market share; small/rural focus" },
+  { label: "Siemens Soarian", cost: 1800000, type: "Legacy EHR", cat: "enterprise", note: "End-of-life; many migrating to Cerner or Epic" },
+  { label: "GE Centricity", cost: 1200000, type: "Legacy EHR", cat: "enterprise", note: "No longer sold; legacy installations remain" },
+  { label: "McKesson Paragon", cost: 1000000, type: "Legacy EHR", cat: "enterprise", note: "Now part of Altera; legacy installs being migrated" },
+
+  // ── Ambulatory/Outpatient EHR ──
+  { label: "eClinicalWorks", cost: 350000, type: "Ambulatory EHR", cat: "departmental", note: "$449-599/mo base; widely used in outpatient" },
+  { label: "athenahealth", cost: 500000, type: "Ambulatory EHR/RCM", cat: "departmental", note: "$150-300/provider/mo; strong RCM integration" },
+  { label: "NextGen Healthcare", cost: 300000, type: "Ambulatory EHR", cat: "departmental", note: "$299-379/provider/mo; specialty workflow focus" },
+  { label: "Greenway Health", cost: 250000, type: "Ambulatory EHR", cat: "departmental", note: "Intergy platform; small/mid practice focus" },
+  { label: "Veradigm (Allscripts Practice)", cost: 200000, type: "Ambulatory EHR", cat: "departmental", note: "3.6% ambulatory market share" },
+
+  // ── Specialty/Departmental Systems ──
+  { label: "Varian ARIA", cost: 3000000, type: "Oncology", cat: "departmental", note: "Radiation oncology information system" },
+  { label: "Netsmart", cost: 400000, type: "Behavioral Health", cat: "departmental", note: "2.1% acute market; behavioral/post-acute focus" },
+  { label: "WellSky", cost: 350000, type: "Post-Acute/Rehab", cat: "departmental", note: "0.74% acute market; rehab and home health" },
+  { label: "Philips ICCA / Capsule", cost: 500000, type: "ICU/Critical Care", cat: "departmental", note: "ICU clinical information system" },
+  { label: "Cerner Soarian Financials", cost: 800000, type: "Revenue Cycle", cat: "departmental", note: "Legacy revenue cycle; often retained post-migration" },
+  { label: "GE Centricity Perinatal", cost: 300000, type: "OB/Perinatal", cat: "departmental", note: "Legacy obstetric system" },
+
+  // ── Infrastructure/Support Systems ──
+  { label: "Nuance PowerScribe / DAX", cost: 600000, type: "Clinical Documentation", cat: "standalone", note: "Radiology reporting and ambient documentation" },
+  { label: "3M / Solventum CDI", cost: 400000, type: "CDI/Coding", cat: "standalone", note: "Clinical documentation improvement and coding" },
+  { label: "Omnicell / Pyxis", cost: 800000, type: "Pharmacy/Dispensing", cat: "standalone", note: "Automated medication dispensing" },
+  { label: "Hyland OnBase", cost: 350000, type: "Document Management", cat: "standalone", note: "Enterprise content and document management" },
+  { label: "InterSystems TrakCare", cost: 1500000, type: "EHR/Integration", cat: "enterprise", note: "Integration engine and EHR platform" },
+  { label: "Rhapsody / Corepoint", cost: 200000, type: "Integration Engine", cat: "standalone", note: "HL7/FHIR interface engine" },
+]
 
 const fmt = n => "$" + Math.round(n).toLocaleString("en-US");
 const fmtK = n => n >= 1e6 ? `$${(n/1e6).toFixed(1)}m` : n >= 1000 ? `$${Math.round(n/1000).toLocaleString("en-US")}k` : fmt(n);
