@@ -353,8 +353,9 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const depDecom = Math.min(Math.round(dep * decomFrac), dep);
   const nicDecom = clamp(Math.min(Math.round(rawDecom), tieredLegacy) - entDecom - depDecom, 0, nic);
   const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * sc.decom_pct);
-  const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * CORPORATE_STAFF_PER_ORG);
-  const switchPenalty = Math.max(0, legacy - 1) * SWITCH_PENALTY_PER_SYSTEM;
+  const corpPerOrg = Math.min(80, Math.round(CORPORATE_STAFF_BASE + (inp.bed_count / Math.max(1, inp.org_count)) * CORPORATE_STAFF_PER_BED));
+  const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * corpPerOrg);
+  const switchPenalty = Math.min(Math.max(0, legacy - 1) * SWITCH_PENALTY_PER_SYSTEM, 4.0); // Cap: max ~60 min/wk
   const baseMin = isArchiveOnly ? 5 : 12;
   const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * (1 + switchPenalty));
   const residual = isArchiveOnly ? 1 : 2;
@@ -378,7 +379,12 @@ function calc(inp, mode, ov = {}, flagships = []) {
     safetyBedDaysAvoided = Math.round(bedDaysBl * sc.safety);
   }
   const annual = decomSave + timeSave;
-  const total3 = annual * 3;
+  // Phased ramp: Year 1 = 40%, Year 2 = 80%, Year 3 = 100% of steady-state
+  const y1Pct = 0.40, y2Pct = 0.80, y3Pct = 1.00;
+  const yr1 = Math.round(annual * y1Pct);
+  const yr2 = Math.round(annual * y2Pct);
+  const yr3 = Math.round(annual * y3Pct);
+  const total3 = yr1 + yr2 + yr3;
   return {
     legacy, ent, dep, nic, entCost, depCost, nicCost, blendedCost, totalEstate,
     decom, entDecom, depDecom, nicDecom, decomSave,
@@ -387,7 +393,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
-    annual, total3, realisation: sc.realisation, isArchiveOnly,
+    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realisation: sc.realisation, isArchiveOnly,
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
     flagshipCount, flagshipRetireCount,
   };
@@ -407,7 +413,8 @@ const PRESETS = {
 
 // ── Model constants ──
 const STAFF_PER_BED = 2.8;
-const CORPORATE_STAFF_PER_ORG = 80;
+const CORPORATE_STAFF_BASE = 20;       // Base admin/corporate staff per organisation
+const CORPORATE_STAFF_PER_BED = 0.12;  // Scales with size, caps at ~80 for large Trusts
 const BLENDED_HOURLY_RATE = 55;
 const WORKING_WEEKS = 48;
 const TICKETS_PER_SYSTEM = 2.5;
@@ -423,25 +430,47 @@ const EXCESS_BED_DAYS_PER_BED = 0.365;
 
 // ── Known EPR/PAS systems (UK & Ireland) ──
 const KNOWN_SYSTEMS = [
-  { label: "Epic", cost: 8000000, type: "EPR" },
-  { label: "Oracle Health (Cerner) Millennium", cost: 5000000, type: "EPR" },
-  { label: "Dedalus Lorenzo", cost: 3500000, type: "PAS/EPR" },
-  { label: "TPP SystmOne", cost: 4000000, type: "EPR" },
-  { label: "System C Careflow", cost: 800000, type: "PAS/EPR" },
-  { label: "MEDITECH Expanse", cost: 2500000, type: "EPR" },
-  { label: "InterSystems TrakCare", cost: 2000000, type: "EPR" },
-  { label: "Allscripts / Altera", cost: 1200000, type: "EPR" },
-  { label: "IMS MAXIMS", cost: 800000, type: "PAS" },
-  { label: "Civica Paris", cost: 500000, type: "PAS" },
-  { label: "Cambio COSMIC", cost: 1000000, type: "EPR" },
-  { label: "Nervecentre", cost: 1000000, type: "e-Obs" },
-  { label: "CliniSys Winpath LIMS", cost: 400000, type: "LIMS" },
-  { label: "Varian ARIA", cost: 2500000, type: "Oncology" },
-  { label: "EMIS Health", cost: 350000, type: "Clinical" },
-  { label: "System C Badgernet", cost: 200000, type: "Maternity/Neonatal" },
-  { label: "BigHand", cost: 250000, type: "Dictation" },
-  { label: "WellSky (JAC) Pharmacy", cost: 300000, type: "Pharmacy" },
+  // Cost = baseCost + (perBed * bed_count). Calibrated to UK NHS contract benchmarks.
+  { label: "Epic", baseCost: 2000000, perBed: 5000, type: "EPR" },
+  { label: "Oracle Health (Cerner) Millennium", baseCost: 1200000, perBed: 3200, type: "EPR" },
+  { label: "Dedalus Lorenzo", baseCost: 800000, perBed: 2200, type: "PAS/EPR" },
+  { label: "TPP SystmOne", baseCost: 1000000, perBed: 2500, type: "EPR" },
+  { label: "System C Careflow", baseCost: 250000, perBed: 450, type: "PAS/EPR" },
+  { label: "MEDITECH Expanse", baseCost: 600000, perBed: 1500, type: "EPR" },
+  { label: "InterSystems TrakCare", baseCost: 500000, perBed: 1200, type: "EPR" },
+  { label: "Allscripts / Altera", baseCost: 350000, perBed: 700, type: "EPR" },
+  { label: "IMS MAXIMS", baseCost: 250000, perBed: 450, type: "PAS" },
+  { label: "Civica Paris", baseCost: 180000, perBed: 260, type: "PAS" },
+  { label: "Cambio COSMIC", baseCost: 300000, perBed: 550, type: "EPR" },
+  { label: "Nervecentre", baseCost: 250000, perBed: 600, type: "e-Obs" },
+  { label: "CliniSys Winpath LIMS", baseCost: 150000, perBed: 200, type: "LIMS" },
+  { label: "Varian ARIA", baseCost: 800000, perBed: 1400, type: "Oncology" },
+  { label: "EMIS Health", baseCost: 120000, perBed: 180, type: "Clinical" },
+  { label: "System C Badgernet", baseCost: 80000, perBed: 100, type: "Maternity/Neonatal" },
+  { label: "BigHand", baseCost: 100000, perBed: 120, type: "Dictation" },
+  { label: "WellSky (JAC) Pharmacy", baseCost: 120000, perBed: 150, type: "Pharmacy" },
 ];
+function systemCost(sys, beds) { return Math.round(((sys.baseCost || 250000) + (sys.perBed || 0) * beds) / 1000) * 1000; }
+
+// ── Cost line item helpers ──
+const COST_CATEGORIES = [
+  { key: "licensing", label: "Licensing / subscription", pct: 0.35 },
+  { key: "hosting", label: "Hosting / infrastructure", pct: 0.20 },
+  { key: "support", label: "Support & maintenance", pct: 0.20 },
+  { key: "interfaces", label: "Interfaces / integrations", pct: 0.15 },
+  { key: "other", label: "Other (training, admin)", pct: 0.10 },
+];
+function defaultLineItems(total) {
+  const items = {};
+  COST_CATEGORIES.forEach(c => { items[c.key] = Math.round(total * c.pct / 1000) * 1000; });
+  const sum = Object.values(items).reduce((a,b) => a+b, 0);
+  items.licensing += (total - sum);
+  return items;
+}
+function lineItemTotal(items) {
+  if (!items) return 0;
+  return Object.values(items).reduce((a,b) => a + (b || 0), 0);
+}
 
 const fmt = n => "£" + Math.round(n).toLocaleString("en-GB");
 const fmtK = n => n >= 1e6 ? `£${(n/1e6).toFixed(1)}m` : n >= 1000 ? `£${Math.round(n/1000).toLocaleString("en-GB")}k` : fmt(n);
@@ -620,9 +649,20 @@ function ROICalculator() {
 
   // Flagship systems (named high-cost outliers outside the tiers)
   const [flagships, setFlagships] = useState([]);
-  const addFlagship = useCallback((sys) => { const s = sys || {}; setFlagships(p => [...p, {name:s.label||"", cost:s.cost||250000, retire:true, known:s.label||""}]); }, []);
+  const addFlagship = useCallback((sys) => { const s = sys || {}; const sc = s.baseCost ? systemCost(s, inputs.bed_count) : (s.cost || 250000); setFlagships(p => [...p, {name:s.label||"", cost:sc, retire:true, known:s.label||"", items:defaultLineItems(sc), showItems:false}]); }, [inputs.bed_count]);
   const removeFlagship = useCallback(i => setFlagships(p => p.filter((_,j)=>j!==i)), []);
   const updateFlagship = useCallback((i, k, v) => { setFlagships(p => p.map((f,j)=>j===i?{...f,[k]:v}:f)); setActivePreset(null); }, []);
+  const updateLineItem = useCallback((i, key, val) => {
+    setFlagships(p => p.map((f,j) => {
+      if (j !== i) return f;
+      const newItems = {...(f.items || {}), [key]: val};
+      return {...f, items: newItems, cost: lineItemTotal(newItems)};
+    }));
+    setActivePreset(null);
+  }, []);
+  const toggleLineItems = useCallback((i) => {
+    setFlagships(p => p.map((f,j) => j===i ? {...f, showItems: !f.showItems} : f));
+  }, []);
 
   // Editable tier costs (inline override on input page)
   const [tierCostEdits, setTierCostEdits] = useState({enterprise:null,departmental:null,niche:null});
@@ -828,7 +868,7 @@ function ROICalculator() {
     cost_flagship_total: r.flagshipTotal,
 
     // Flagships detail
-    flagships: flagships.map(f => ({ name: f.name, cost: f.cost, retire: f.retire })),
+    flagships: flagships.map(f => ({ name: f.name || f.known, cost: f.cost, retire: f.retire, items: f.items || {} })),
 
     // Decommission
     decom_total: r.decom,
@@ -850,6 +890,7 @@ function ROICalculator() {
     // Totals
     annual_savings: r.annual,
     three_year_total: r.total3,
+    yr1: r.yr1, yr2: r.yr2, yr3: r.yr3,
 
     // Scenario comparison
     scenarios: {
@@ -1150,9 +1191,9 @@ function ROICalculator() {
       margin: { left: ml, right: mr },
       head: [["Benefit", "Year 1", "Year 2", "Year 3", "Total"]],
       body: [
-        ["Decom savings", fmt(r.decomSave), fmt(r.decomSave), fmt(r.decomSave), { content: fmt(r.decomSave * 3), styles: { fontStyle: "bold" } }],
-        ["Clinician time", fmt(r.timeSave), fmt(r.timeSave), fmt(r.timeSave), { content: fmt(r.timeSave * 3), styles: { fontStyle: "bold" } }],
-        [{ content: "Total", styles: { fontStyle: "bold", fillColor: LTBG } }, { content: fmt(r.annual), styles: { fontStyle: "bold", fillColor: LTBG } }, { content: fmt(r.annual), styles: { fontStyle: "bold", fillColor: LTBG } }, { content: fmt(r.annual), styles: { fontStyle: "bold", fillColor: LTBG } }, { content: fmt(r.total3), styles: { fontStyle: "bold", textColor: TEAL, fillColor: LTBG, fontSize: 11 } }],
+        ["Decom savings", fmt(Math.round(r.decomSave*r.y1Pct)), fmt(Math.round(r.decomSave*r.y2Pct)), fmt(r.decomSave), { content: fmt(Math.round(r.decomSave*(r.y1Pct+r.y2Pct+r.y3Pct))), styles: { fontStyle: "bold" } }],
+        ["Clinician time", fmt(Math.round(r.timeSave*r.y1Pct)), fmt(Math.round(r.timeSave*r.y2Pct)), fmt(r.timeSave), { content: fmt(Math.round(r.timeSave*(r.y1Pct+r.y2Pct+r.y3Pct))), styles: { fontStyle: "bold" } }],
+        [{ content: "Total", styles: { fontStyle: "bold", fillColor: LTBG } }, { content: fmt(r.yr1), styles: { fontStyle: "bold", fillColor: LTBG } }, { content: fmt(r.yr2), styles: { fontStyle: "bold", fillColor: LTBG } }, { content: fmt(r.annual), styles: { fontStyle: "bold", fillColor: LTBG } }, { content: fmt(r.total3), styles: { fontStyle: "bold", textColor: TEAL, fillColor: LTBG, fontSize: 11 } }],
       ],
       headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
       styles: { fontSize: 9, cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
@@ -1166,7 +1207,7 @@ function ROICalculator() {
     doc.setFontSize(8); doc.setFont("helvetica","bold"); setC(TEAL);
     doc.text("Range across scenarios:", ml + 4, y + 5);
     doc.setFont("helvetica","normal"); setC(GREY);
-    doc.text(fmtK(rCon.total3) + " (conservative)  to  " + fmtK(rStr.total3) + " (stretch).  All figures are user-overridable. Clinical safety metrics are not included in financial totals.", ml + 4, y + 10);
+    doc.text(fmtK(rCon.total3) + " (conservative)  to  " + fmtK(rStr.total3) + " (stretch). Phased: 40% Year 1, 80% Year 2, 100% Year 3. All figures are user-overridable.", ml + 4, y + 10);
     y += 22;
 
     // Scenario comparison mini-table
@@ -1195,6 +1236,18 @@ function ROICalculator() {
       doc.setPage(i);
       addFooter(i, totalPages);
     }
+
+    // Disclaimer
+    if (y > 240) { doc.addPage(); addPageHeader(); y = 22; }
+    doc.setFillColor(245,244,240);
+    doc.roundedRect(ml, y, cw, 28, 2, 2, "F");
+    doc.setFontSize(7); doc.setFont("helvetica","bold"); setC(MID);
+    doc.text("Important disclaimer", ml + 4, y + 5);
+    doc.setFont("helvetica","normal"); setC(GREY);
+    const disclaimerText = "This report presents indicative estimates only, generated from generalised assumptions and industry-level benchmarks. It does not constitute a guaranteed ROI, a binding savings target, or professional financial, legal, or clinical advice. Actual outcomes will vary based on your organisation\u2019s specific circumstances, contract terms, implementation approach, and operational factors not captured by this model. All projected figures should be independently validated before being used to support investment decisions. No liability is accepted for decisions made in reliance on these estimates.";
+    const disclaimerLines = doc.splitTextToSize(disclaimerText, cw - 8);
+    doc.text(disclaimerLines, ml + 4, y + 9);
+    y += Math.max(28, 12 + disclaimerLines.length * 3) + 4;
 
     // CTA bar on last page
     doc.setPage(totalPages);
@@ -1549,7 +1602,7 @@ function ROICalculator() {
           {KNOWN_SYSTEMS.slice(0, 10).map(sys => (
             <button type="button" key={sys.label} onClick={()=>{addFlagship(sys);touch(3);}} className="roi-preset" style={{width:"100%",padding:"10px 12px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:14,background:"#fff",cursor:"pointer"}}>
               <div style={{fontSize:13,fontWeight:700,color:C.text}}>{sys.label}</div>
-              <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>{sys.type} - typical ~{fmtK(sys.cost)}/yr</div>
+              <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>{sys.type} - ~{fmtK(systemCost(sys, inputs.bed_count))}/yr</div>
             </button>
           ))}
         </div>
@@ -1559,12 +1612,12 @@ function ROICalculator() {
             {KNOWN_SYSTEMS.slice(10).map(sys => (
               <button type="button" key={sys.label} onClick={()=>{addFlagship(sys);touch(3);}} className="roi-preset" style={{width:"100%",padding:"10px 12px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:14,background:"#fff",cursor:"pointer"}}>
                 <div style={{fontSize:13,fontWeight:700,color:C.text}}>{sys.label}</div>
-                <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>{sys.type} - typical ~{fmtK(sys.cost)}/yr</div>
+                <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>{sys.type} - ~{fmtK(systemCost(sys, inputs.bed_count))}/yr</div>
               </button>
             ))}
           </div>
         </details>
-        <button type="button" onClick={()=>{addFlagship({label:"",cost:250000});touch(3);}} className="roi-link" style={{marginTop:10,border:"none",background:"none",color:C.accent,fontSize:13,fontWeight:700,cursor:"pointer",padding:"8px 0",display:"flex",alignItems:"center",gap:6}}>
+        <button type="button" onClick={()=>{addFlagship({cost:Math.round((100000 + inputs.bed_count * 300) / 1000) * 1000});touch(3);}} className="roi-link" style={{marginTop:10,border:"none",background:"none",color:C.accent,fontSize:13,fontWeight:700,cursor:"pointer",padding:"8px 0",display:"flex",alignItems:"center",gap:6}}>
           + Add a custom / unlisted system
         </button>
       </div>
@@ -1585,19 +1638,38 @@ function ROICalculator() {
                     <input type="text" placeholder="System name" value={f.name} onChange={e => updateFlagship(i,"name",e.target.value)}
                       style={{flex:1,padding:"8px 10px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,fontFamily:"inherit"}}/>
                   )}
+                  <label style={{display:"flex",alignItems:"center",gap:4,fontSize:12,color:C.textMid,cursor:"pointer"}}>
+                    <input type="checkbox" checked={f.retire} onChange={e => updateFlagship(i,"retire",e.target.checked)} style={{accentColor:C.accent}}/>
+                    Retire
+                  </label>
                   <button type="button" onClick={() => removeFlagship(i)} style={{border:"none",background:"none",color:C.textMuted,fontSize:18,cursor:"pointer",padding:"8px",lineHeight:1}} title="Remove">{"\u2715"}</button>
                 </div>
-                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                  <span style={{fontSize:12,color:C.textMuted}}>Annual cost:</span>
-                  <span style={{fontSize:12,color:C.textMuted}}>{"\u00a3"}</span>
-                  <input type="number" value={f.cost} min={0} max={20000000} step={10000} onChange={e => updateFlagship(i,"cost",parseInt(e.target.value)||0)}
-                    style={{width:110,padding:"6px 10px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
-                  <span style={{fontSize:11,color:C.textMuted}}>/yr</span>
-                  <label style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4,fontSize:12,color:C.textMid,cursor:"pointer"}}>
-                    <input type="checkbox" checked={f.retire} onChange={e => updateFlagship(i,"retire",e.target.checked)} style={{accentColor:C.accent}}/>
-                    Retire this system
-                  </label>
+                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:f.showItems?8:0}}>
+                  <span style={{fontSize:14,fontWeight:700,color:C.accent}}>{fmtK(f.cost)}/yr</span>
+                  <button type="button" onClick={()=>toggleLineItems(i)} className="roi-link" style={{border:"none",background:"none",color:C.accent,fontSize:12,fontWeight:600,cursor:"pointer",padding:"4px 8px",borderRadius:999,border:`1px solid ${C.borderLight}`}}>
+                    {f.showItems ? "Hide breakdown" : "Edit cost breakdown"}
+                  </button>
                 </div>
+                {f.showItems && (
+                  <div style={{background:C.surface,borderRadius:8,border:`1px solid ${C.borderLight}`,padding:"12px 14px",marginTop:4}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                      {COST_CATEGORIES.map(cat => (
+                        <div key={cat.key} style={{display:"flex",alignItems:"center",gap:8}}>
+                          <span style={{fontSize:12,color:C.textMid,flex:"1 1 160px",minWidth:120}}>{cat.label}</span>
+                          <span style={{fontSize:12,color:C.textMuted}}>{"\u00a3"}</span>
+                          <input type="number" value={(f.items && f.items[cat.key]) || 0} min={0} max={20000000} step={1000}
+                            onChange={e => updateLineItem(i, cat.key, parseInt(e.target.value)||0)}
+                            style={{width:100,padding:"5px 8px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:12,fontFamily:"inherit",textAlign:"right"}}/>
+                          <span style={{fontSize:11,color:C.textMuted,minWidth:20}}>/yr</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${C.borderLight}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                      <span style={{fontSize:12,fontWeight:700,color:C.text}}>Total annual cost</span>
+                      <span style={{fontSize:14,fontWeight:800,color:C.accent}}>{fmtK(f.cost)}/yr</span>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -1742,7 +1814,7 @@ function ROICalculator() {
     <Card dimmed={dim}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
       <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:16}}>
-        <OverridableStat label="Clinical staff" computed={calc(inputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on NHS workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus ${CORPORATE_STAFF_PER_ORG} corporate/IG staff per organisation. Your estimate: ${fmtNum(Math.round(inputs.bed_count*STAFF_PER_BED+inputs.org_count*CORPORATE_STAFF_PER_ORG))} staff in scope.`}/>
+        <OverridableStat label="Clinical staff" computed={calc(inputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on NHS workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/IG staff per organisation (20 base + 0.12/bed, capped at 80).`}/>
         <OverridableStat label="Mins wasted / wk" computed={calc(inputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on Westbrook et al 2010 and Nuffield Trust 2020.`}/>
         <Stat label="Hours freed / yr" value={an?<AnimatedNum value={r.hrsSaved} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Result: ${fmtNum(r.hrsSaved)} hours per year.`}/>
         <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at the NHS blended rate of £55/hr (Agenda for Change mid-band including on-costs). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity, since not all freed time converts to measurable output. This represents capacity redirected to patient care, not a direct cash saving.`}/>
@@ -1947,7 +2019,7 @@ function ROICalculator() {
 
         <S title="4. Clinician time savings">
           <p style={{margin:"0 0 8px"}}>Time freed when clinicians no longer switch between multiple legacy systems.</p>
-          <F>clinicians = beds {"\u00d7"} 2.8 + orgs {"\u00d7"} 80<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>switchPenalty = max(0, systems - 1) {"\u00d7"} 0.04<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 48wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"\u00a3"}55/hr {"\u00d7"} realisationRate</F>
+          <F>corpPerOrg = min(80, 20 + bedsPerOrg {"\u00d7"} 0.12)<br/>clinicians = beds {"\u00d7"} 2.8 + orgs {"\u00d7"} corpPerOrg<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>switchPenalty = min(max(0, systems - 1) {"\u00d7"} 0.04, 4.0)<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 48wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"\u00a3"}55/hr {"\u00d7"} realisationRate</F>
           <p style={{margin:"8px 0 4px"}}><strong>2.8 staff per bed</strong> {" - "} NHS workforce stats 2023/24 show 2.6-3.0 clinical full-time equivalents (FTEs) per acute bed (doctors, nurses, allied health professionals (AHPs), pharmacists). <Ev s="NHS Digital workforce statistics 2023/24; Lord Carter operational productivity review."/></p>
           <p style={{margin:"4px 0"}}><strong>12 min/wk base</strong> (migration path) {" - "} Westbrook et al 2010 (JAMIA) found nurses interrupted 3-6 times/hour by system-switching. Nuffield Trust 2020 estimated 15-20 min/day lost to system navigation. Our 12 min/week is conservative (reducible portion only). Archive-only uses 5 min/wk. <Ev s="Westbrook et al 2010 (JAMIA); Nuffield Trust 2020 system navigation study."/></p>
           <p style={{margin:"4px 0"}}><strong>+4% per system</strong> {" - "} each additional legacy system adds cognitive overhead. At 42 systems (as in the benchmarked Trust), this produces ~10 min/day wasted, consistent with published studies. <Md s="First-principles switching cost model. Validated against benchmarked Trust (42 systems)."/></p>
@@ -2014,6 +2086,12 @@ function ROICalculator() {
         </div>
       </Card>;
     })()}
+
+    {/* Disclaimer */}
+    <div style={{marginTop:24,padding:"16px 20px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`,fontSize:11,color:C.textMuted,lineHeight:1.7}}>
+      <div style={{fontWeight:700,fontSize:12,marginBottom:4,color:C.textMid}}>Important disclaimer</div>
+      This report presents indicative estimates only, generated from generalised assumptions and industry-level benchmarks. It does not constitute a guaranteed ROI, a binding savings target, or professional financial, legal, or clinical advice. Actual outcomes will vary based on your organisation{"'"}s specific circumstances, contract terms, implementation approach, and operational factors not captured by this model. All projected figures, including decommission savings and quality metrics, are scenario-modelled approximations and should be independently validated before being used to support investment decisions. No liability is accepted for decisions made in reliance on these estimates. Consult qualified advisors for guidance specific to your organisation.
+    </div>
 
     <button type="button" onClick={()=>{setPage("inputs");scrollToTop();}} className="roi-btn" style={{marginTop:20,padding:"12px 28px",background:"#fff",color:C.textMid,border:`1px solid ${C.border}`,borderRadius:999,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"←"} Edit inputs</button>
   </div>;
