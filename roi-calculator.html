@@ -378,8 +378,12 @@ function calc(inp, mode, ov = {}, flagships = []) {
     safetyBedDaysAvoided = Math.round(bedDaysBl * sc.safety);
   }
   // ── Reimbursement & Compliance Impact ──
+  // Admissions and revenue (evidence-based derivation)
+  const occupancy = inp._occupancy || DEFAULT_OCCUPANCY;
+  const admissionsPerYear = Math.round(inp.bed_count * (365 / US_AVG_ALOS) * occupancy);
+  const estAnnualRevenueCalc = admissionsPerYear * US_AVG_REVENUE_PER_ADMISSION;
   // Medicare DRG revenue estimate (if not provided by user)
-  const estMedicareDrgRevenue = inp.bed_count * 42000 * 0.65 * (inp._medicarePct || 0.42);
+  const estMedicareDrgRevenue = Math.round(estAnnualRevenueCalc * (inp._medicarePct || 0.42));
   const medicareDrg = inp._medicareDrgRevenue > 0 ? inp._medicareDrgRevenue : estMedicareDrgRevenue;
 
   // HRRP penalty exposure
@@ -395,17 +399,18 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const vbpImprovement = Math.round(vbpPool * 0.15 * sc.safety * (inp._qualityBonus || 0.5));
 
   // Denial rate reduction (FFS pathway)
-  const estAnnualRevenue = inp.bed_count * 42000 * 0.65; // avg revenue per bed * occupancy
+  const estAnnualRevenue = estAnnualRevenueCalc; // from admissions-based model above
   const denialBaseline = estAnnualRevenue * DENIAL_NET_REVENUE_LOSS;
   const denialRecovery = Math.round(denialBaseline * 0.20 * sc.decom_pct * (inp._denialWeight || 1.0));
 
   // Malpractice premium reduction (modelled assumption)
   const malpracticePremium = inp.bed_count * MALPRACTICE_AVG_PREMIUM_PER_BED;
-  const malpracticeReduction = Math.round(malpracticePremium * 0.08 * sc.safety);
+  const malpracticeReduction = Math.round(malpracticePremium * 0.05 * sc.safety); // 5% reduction — conservative (CRICO: 30% of claims involve comms failure)
 
-  // Excess bed days avoided (from reduced ADEs)
-  const preventableADEs = Math.round(inp.bed_count * 42 * 0.65 / 100 * PREVENTABLE_ADE_PER_100_ADMITS); // admissions * rate
-  const excessDaysAvoided = Math.round(preventableADEs * EXCESS_DAYS_PER_ADE * sc.safety);
+  // Excess bed days avoided (unified with safety section)
+  const preventableADEs = Math.round(admissionsPerYear / 100 * PREVENTABLE_ADE_PER_100_ADMITS);
+  // Use safety section's bed day estimate when available for consistency
+  const excessDaysAvoided = hasClinicalScope ? safetyBedDaysAvoided : Math.round(preventableADEs * EXCESS_DAYS_PER_ADE * sc.safety);
   const excessDayCostAvoided = Math.round(excessDaysAvoided * COST_PER_EXCESS_BED_DAY);
 
   // Duplicate testing reduction
@@ -441,8 +446,16 @@ function calc(inp, mode, ov = {}, flagships = []) {
 
   const annual = decomSave + timeSave;
   const annualWithReimbursement = annual + reimbursementImpact + qualitySavings + academicSavings + mergeSavings;
-  const total3 = annual * 3;
-  const total3WithReimbursement = annualWithReimbursement * 3;
+  // Phased ramp: Year 1 = 40%, Year 2 = 80%, Year 3 = 100% of steady-state
+  const y1Pct = 0.40, y2Pct = 0.80, y3Pct = 1.00;
+  const yr1 = Math.round(annual * y1Pct);
+  const yr2 = Math.round(annual * y2Pct);
+  const yr3 = Math.round(annual * y3Pct);
+  const total3 = yr1 + yr2 + yr3;
+  const yr1R = Math.round(annualWithReimbursement * y1Pct);
+  const yr2R = Math.round(annualWithReimbursement * y2Pct);
+  const yr3R = Math.round(annualWithReimbursement * y3Pct);
+  const total3WithReimbursement = yr1R + yr2R + yr3R;
   return {
     legacy, ent, dep, nic, entCost, depCost, nicCost, blendedCost, totalEstate,
     decom, entDecom, depDecom, nicDecom, decomSave,
@@ -451,11 +464,11 @@ function calc(inp, mode, ov = {}, flagships = []) {
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
-    annual, total3, realisation: sc.realisation, isArchiveOnly,
+    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realisation: sc.realisation, isArchiveOnly,
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
     flagshipCount, flagshipRetireCount,
     // Reimbursement & compliance
-    medicareDrg, hrrpExposure, hrrpReduction, hacExposure, hacReduction,
+    admissionsPerYear, estAnnualRevenueCalc, occupancy, medicareDrg, hrrpExposure, hrrpReduction, hacExposure, hacReduction,
     vbpPool, vbpImprovement, denialBaseline, denialRecovery,
     malpracticePremium, malpracticeReduction,
     preventableADEs, excessDaysAvoided, excessDayCostAvoided,
@@ -467,7 +480,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     // M&A module
     isMultiHospital, duplicateSystems, duplicateSystemCost, duplicateElimination,
     duplicateInfraCost, infraConsolidation, standardisationSave, mergeSavings,
-    annualWithReimbursement, total3WithReimbursement,
+    annualWithReimbursement, total3WithReimbursement, yr1R, yr2R, yr3R,
   };
 }
 
@@ -515,7 +528,7 @@ const DENIAL_RECOVERY_PER_BN = 10000000;     // $10m recoverable per $1bn revenu
 
 // Malpractice (Mello et al 2010, Health Affairs; AMA MLM 2024)
 const MALPRACTICE_SYSTEM_COST = 55600000000; // $55.6bn total system cost (2008 dollars)
-const MALPRACTICE_AVG_PREMIUM_PER_BED = 2200; // Assumption: institutional premium allocated per bed
+const MALPRACTICE_AVG_PREMIUM_PER_BED = 8500; // ~$10,870 premium-only per bed (Mello 2010 adjusted); conservative at $8,500
 
 // Readmission benchmarks (AHRQ HCUP 2023; Vest et al JAMIA 2019; Pattar et al JAMA 2025)
 const READMISSION_RATE_NATIONAL = 0.139;     // 13.9% 30-day all-cause (AHRQ HCUP 2023)
@@ -524,7 +537,10 @@ const READMIT_REDUCTION_EHR = 0.008;         // 0.8pp absolute reduction, single
 const READMIT_REDUCTION_META = 0.17;         // 17% relative reduction, EHR interventions (Pattar JAMA 2025, 116 RCTs)
 
 // Excess bed day costs (KFF/AHA 2023; Bates et al; Zhan & Miller JAMA 2003)
-const COST_PER_EXCESS_BED_DAY = 3132;        // $3,132 national average (KFF/AHA 2023)
+const COST_PER_EXCESS_BED_DAY = 3132;
+const US_AVG_ALOS = 4.7;                      // Average length of stay, days (AHA 2023)
+const US_AVG_REVENUE_PER_ADMISSION = 15200;    // Average inpatient revenue per admission (AHA/HCUP 2023)
+const DEFAULT_OCCUPANCY = 0.65;                // 65% national average (AHA 2023)        // $3,132 national average (KFF/AHA 2023)
 const EXCESS_DAYS_PER_ADE = 2.2;             // 1.74-3.15 range, midpoint (Bates/Classen/Hug)
 const PREVENTABLE_ADE_PER_100_ADMITS = 1.8;  // Bates et al ADE Prevention Study
 
@@ -793,7 +809,9 @@ function ROICalculator() {
   // Provider profile
   const [providerType, setProviderType] = useState("community");
   const [reimbursementModel, setReimbursementModel] = useState("mixed");
-  const [medicareDrgRevenue, setMedicareDrgRevenue] = useState(0); // User can enter or we estimate
+  const [medicareDrgRevenue, setMedicareDrgRevenue] = useState(0);
+  const [occupancyRate, setOccupancyRate] = useState(0.65);
+  const [implementationCost, setImplementationCost] = useState(0); // User can enter or we estimate
 
   const [inputs, setInputs] = useState({...PRESETS.TYPICAL.data, data_types:{...PRESETS.TYPICAL.data.data_types}, tiers:{...PRESETS.TYPICAL.data.tiers}});
   const [activePreset, setActivePreset] = useState(null);
@@ -996,6 +1014,7 @@ function ROICalculator() {
       _penaltyWeight: pm.penalty_exposure * rm.penalty_weight,
       _qualityBonus: rm.quality_bonus,
       _medicareDrgRevenue: medicareDrgRevenue,
+      _occupancy: occupancyRate,
       _providerType: providerType,
     };
   }, [inputs, providerType, reimbursementModel, medicareDrgRevenue]);
@@ -1104,6 +1123,13 @@ function ROICalculator() {
     standardisation_save: r.standardisationSave,
     merge_savings: r.mergeSavings,
     three_year_with_reimbursement: r.total3WithReimbursement,
+    implementation_cost: implementationCost,
+    net_3yr_roi: implementationCost > 0 ? r.total3WithReimbursement - implementationCost : null,
+    yr1: r.yr1, yr2: r.yr2, yr3: r.yr3,
+    yr1_pct: r.y1Pct, yr2_pct: r.y2Pct, yr3_pct: r.y3Pct,
+    admissions_per_year: r.admissionsPerYear,
+    est_annual_revenue: r.estAnnualRevenueCalc,
+    occupancy_rate: r.occupancy,
 
     // Scenario comparison
     scenarios: {
@@ -2044,6 +2070,8 @@ function ROICalculator() {
           <select value={inputs.data_quality_level} onChange={e=>{update("data_quality_level",e.target.value);touch(3);}} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,fontFamily:"inherit"}}><option value="CLEAN">Clean</option><option value="MIXED">Mixed</option><option value="POOR">Poor</option></select></div>
       </div>
       <AnimatedSlider label={<span>Decommission target<InfoTip text="What % of legacy systems do you plan to retire? 60-80% is typical as most programmes retain a few for standalone or long-retention use."/></span>} value={inputs.decom_retire_rate} min={0} max={1} step={0.05} display={`${Math.round(inputs.decom_retire_rate*100)}%`} onChange={v=>{update("decom_retire_rate",v);touch(3);}} suffix=""/>
+      <AnimatedSlider label={<span>Bed occupancy rate<InfoTip text="Average bed occupancy. National average is 65% (AHA 2023). Critical access hospitals may be 40-50%; urban academic centres 75-85%. This drives admission volume, revenue estimates, and ADE calculations."/></span>} value={occupancyRate} min={0.30} max={0.95} step={0.01} display={`${Math.round(occupancyRate*100)}%`} onChange={v=>{setOccupancyRate(v);touch(3);}} suffix=""/>
+
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
           <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>Medicare DRG revenue (optional)</span>
@@ -2051,13 +2079,28 @@ function ROICalculator() {
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:13,color:C.textMuted}}>{"$"}</span>
-          <input type="number" value={medicareDrgRevenue || ""} placeholder={fmtNum(Math.round(inputs.bed_count * 42000 * 0.65 * (PROVIDER_MULTIPLIERS[providerType]?.medicare_pct || 0.42)))} min={0} step={100000}
+          <input type="number" value={medicareDrgRevenue || ""} placeholder={fmtNum(Math.round(inputs.bed_count * (365/US_AVG_ALOS) * occupancyRate * US_AVG_REVENUE_PER_ADMISSION * (PROVIDER_MULTIPLIERS[providerType]?.medicare_pct || 0.42)))} min={0} step={100000}
             onChange={e => setMedicareDrgRevenue(parseInt(e.target.value) || 0)}
             style={{flex:1,maxWidth:200,padding:"8px 12px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
           <span style={{fontSize:12,color:C.textMuted}}>/yr</span>
           {medicareDrgRevenue > 0 && <button type="button" onClick={()=>setMedicareDrgRevenue(0)} style={{border:"none",background:"none",color:C.textMuted,fontSize:12,cursor:"pointer",textDecoration:"underline"}}>Use estimate</button>}
         </div>
-        {!medicareDrgRevenue && <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Estimated: {fmtK(Math.round(inputs.bed_count * 42000 * 0.65 * (PROVIDER_MULTIPLIERS[providerType]?.medicare_pct || 0.42)))}/yr based on {fmtNum(inputs.bed_count)} beds</div>}
+        {!medicareDrgRevenue && <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Estimated: {fmtK(Math.round(inputs.bed_count * (365/US_AVG_ALOS) * occupancyRate * US_AVG_REVENUE_PER_ADMISSION * (PROVIDER_MULTIPLIERS[providerType]?.medicare_pct || 0.42)))}/yr ({fmtNum(Math.round(inputs.bed_count * (365/US_AVG_ALOS) * occupancyRate))} admissions at {Math.round(occupancyRate*100)}% occupancy)</div>}
+      </div>
+      <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+          <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>Implementation cost (optional)</span>
+          <InfoTip text="Total expected implementation cost (EHR migration, data migration, training, parallel-run). If provided, the results page will show net ROI alongside gross savings."/>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:13,color:C.textMuted}}>{"$"}</span>
+          <input type="number" value={implementationCost || ""} placeholder="e.g. 5000000" min={0} step={100000}
+            onChange={e => setImplementationCost(parseInt(e.target.value) || 0)}
+            style={{flex:1,maxWidth:200,padding:"8px 12px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
+          <span style={{fontSize:12,color:C.textMuted}}>total</span>
+          {implementationCost > 0 && <button type="button" onClick={()=>setImplementationCost(0)} style={{border:"none",background:"none",color:C.textMuted,fontSize:12,cursor:"pointer",textDecoration:"underline"}}>Clear</button>}
+        </div>
+        {implementationCost > 0 && <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Net 3-year ROI will be shown on the results page</div>}
       </div>
     </Card></div>
     <LockedConnector/>
@@ -2213,7 +2256,7 @@ function ROICalculator() {
     {/* Reimbursement & compliance impact */}
     <Card dimmed={dim}>
       <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Reimbursement & compliance impact</h3>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Estimated annual impact from CMS penalty avoidance, denial reduction, and quality improvements. These are modelled estimates based on your provider profile.</p>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Estimated annual impact from CMS penalty avoidance, denial reduction, and quality improvements. These are modelled estimates with improvement rates attributed to EHR consolidation as a contributing factor, not sole cause. Actual attribution will depend on your implementation scope and existing infrastructure.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
@@ -2241,7 +2284,7 @@ function ROICalculator() {
       </Callout>
 
       <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
-        <strong>Methodology:</strong> CMS penalty rates are verified (HRRP 3% cap, HAC 1%, VBP 2%). Improvement attribution uses Vest et al (JAMIA 2019) and Pattar et al (JAMA 2025, 116 RCTs). Denial benchmarks from HFMA/MDaudit 2024. All figures are scenario-adjusted and labelled as modelled estimates.
+        <strong>Methodology:</strong> CMS penalty rates are verified (HRRP 3% cap, HAC 1%, VBP 2%). Improvement attribution is modelled: Pattar et al (JAMA 2025, 116 RCTs) found 17% readmission reduction from EHR-based interventions broadly; Vest et al (JAMIA 2019) found 0.8pp from single-vendor EHR specifically. This model uses scenario-adjusted fractions (15-35%) as an upper bound for the combined effect of consolidation, archiving, and workflow simplification. Denial recovery assumes partial attribution only (20% of 4.8% revenue loss).
       </div>
     </Card><LockedConnector/>
 
@@ -2566,6 +2609,29 @@ function ROICalculator() {
         </div>
       </Card>;
     })()}
+
+    {/* Net ROI (if implementation cost provided) */}
+    {implementationCost > 0 && <Card dimmed={dim}>
+      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Net ROI analysis</h3>
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:12}}>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:C.greenPale,borderRadius:10,textAlign:"center"}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>3-year gross savings</div>
+          <div style={{fontSize:24,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement):"–"}</div>
+          <div style={{fontSize:11,color:C.textMuted}}>Phased: 40% / 80% / 100%</div>
+        </div>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#fef0f0",borderRadius:10,textAlign:"center"}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Implementation cost</div>
+          <div style={{fontSize:24,fontWeight:800,color:"#993535",margin:"6px 0"}}>{fmtK(implementationCost)}</div>
+          <div style={{fontSize:11,color:C.textMuted}}>One-time investment</div>
+        </div>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:r.total3WithReimbursement > implementationCost ? C.greenPale : "#fef0f0",borderRadius:10,textAlign:"center"}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>3-year net ROI</div>
+          <div style={{fontSize:24,fontWeight:800,color:r.total3WithReimbursement > implementationCost ? C.green : "#993535",margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement - implementationCost):"–"}</div>
+          <div style={{fontSize:11,color:C.textMuted}}>Payback: ~{an && r.annualWithReimbursement > 0 ? (implementationCost / r.annualWithReimbursement).toFixed(1) : "–"} years</div>
+        </div>
+      </div>
+    </Card>}
+    {implementationCost > 0 && <LockedConnector/>}
 
     {/* Disclaimer */}
     <div style={{marginTop:24,padding:"16px 20px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`,fontSize:11,color:C.textMuted,lineHeight:1.7}}>
