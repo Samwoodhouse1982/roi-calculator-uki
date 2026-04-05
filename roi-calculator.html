@@ -811,7 +811,9 @@ function ROICalculator() {
   const [reimbursementModel, setReimbursementModel] = useState("mixed");
   const [medicareDrgRevenue, setMedicareDrgRevenue] = useState(0);
   const [occupancyRate, setOccupancyRate] = useState(0.65);
-  const [implementationCost, setImplementationCost] = useState(0); // User can enter or we estimate
+  const [implementationCost, setImplementationCost] = useState(0);
+  const [mergerMode, setMergerMode] = useState(false);
+  const [mergerOrgs, setMergerOrgs] = useState([]); // User can enter or we estimate
 
   const [inputs, setInputs] = useState({...PRESETS.TYPICAL.data, data_types:{...PRESETS.TYPICAL.data.data_types}, tiers:{...PRESETS.TYPICAL.data.tiers}});
   const [activePreset, setActivePreset] = useState(null);
@@ -964,6 +966,61 @@ function ROICalculator() {
     setActivePreset(null); touch(2);
   }, [touch]);
 
+  const MERGER_ORG_OPTIONS = [
+    { key: "cah", label: "Critical Access Hospital", beds: 25, orgs: 1, tiers: { enterprise: 1, departmental: 1, niche: 3 } },
+    { key: "small_community", label: "Small Community Hospital", beds: 100, orgs: 1, tiers: { enterprise: 1, departmental: 3, niche: 5 } },
+    { key: "community", label: "Community Hospital", beds: 250, orgs: 1, tiers: { enterprise: 1, departmental: 5, niche: 9 } },
+    { key: "regional", label: "Regional Medical Center", beds: 600, orgs: 1, tiers: { enterprise: 2, departmental: 8, niche: 15 } },
+    { key: "academic", label: "Academic Medical Center", beds: 800, orgs: 1, tiers: { enterprise: 3, departmental: 12, niche: 20 } },
+    { key: "large_system", label: "Large Health System", beds: 1500, orgs: 3, tiers: { enterprise: 4, departmental: 18, niche: 35 } },
+  ];
+  const addMergerOrg = useCallback((opt) => {
+    setMergerOrgs(p => [...p, { ...opt, id: Date.now() + Math.random() }]);
+  }, []);
+  const removeMergerOrg = useCallback((id) => {
+    setMergerOrgs(p => p.filter(o => o.id !== id));
+  }, []);
+  const mergerSummary = useMemo(() => {
+    if (mergerOrgs.length === 0) return null;
+    const totalBeds = mergerOrgs.reduce((s, o) => s + o.beds, 0);
+    const totalFacilities = mergerOrgs.reduce((s, o) => s + o.orgs, 0);
+    const totalEnt = mergerOrgs.reduce((s, o) => s + o.tiers.enterprise, 0);
+    const totalDep = mergerOrgs.reduce((s, o) => s + o.tiers.departmental, 0);
+    const totalNic = mergerOrgs.reduce((s, o) => s + o.tiers.niche, 0);
+    const totalSys = totalEnt + totalDep + totalNic;
+    // Duplicate detection: enterprise systems across orgs likely overlap
+    const dupEnt = Math.max(0, totalEnt - mergerOrgs.length); // keep 1 per org post-merger, rest are dupes
+    const dupDep = Math.round(totalDep * 0.25); // ~25% departmental overlap
+    const dupTotal = dupEnt + dupDep;
+    return { totalBeds, totalFacilities, totalEnt, totalDep, totalNic, totalSys, dupEnt, dupDep, dupTotal };
+  }, [mergerOrgs]);
+  const applyMerger = useCallback(() => {
+    if (!mergerSummary) return;
+    const s = mergerSummary;
+    setInputs(p => ({
+      ...p,
+      bed_count: s.totalBeds,
+      org_count: s.totalFacilities,
+      tiers: { enterprise: s.totalEnt, departmental: s.totalDep, niche: s.totalNic },
+      complexity_level: "HIGH",
+      data_quality_level: s.totalFacilities > 3 ? "POOR" : "MIXED",
+      decom_retire_rate: 0.75,
+      journey: "EVALUATING",
+    }));
+    setProviderType("multi_hospital");
+    setActivePreset(null); resetOv(); setFlagships([]);
+    setTierCostEdits({enterprise:null,departmental:null,niche:null});
+    setCostMode("estimate"); setKnownAnnualSpend(null);
+    setPerOrgBeds(true);
+    const n = s.totalFacilities;
+    const bedEach = Math.round(s.totalBeds / n / 10) * 10;
+    const bedRem = s.totalBeds - bedEach * (n - 1);
+    setOrgBedsList(Array.from({length:n}, (_,i) => i===0 ? bedRem : bedEach));
+    const splitT = (total) => { const each = Math.floor(total / n); return Array.from({length:n}, (_,i) => i===0 ? total - each*(n-1) : each); };
+    setOrgTiersList(Array.from({length:n}, (_,i) => ({enterprise:splitT(s.totalEnt)[i], departmental:splitT(s.totalDep)[i], niche:splitT(s.totalNic)[i]})));
+    setMergerMode(false);
+    touch(1);
+  }, [mergerSummary, resetOv, touch]);
   const applyPreset=useCallback(key=>{
     const d = PRESETS[key].data;
     setInputs({...d,data_types:{...d.data_types},tiers:{...d.tiers}});
@@ -1124,6 +1181,8 @@ function ROICalculator() {
     merge_savings: r.mergeSavings,
     three_year_with_reimbursement: r.total3WithReimbursement,
     implementation_cost: implementationCost,
+    merger_mode: mergerMode,
+    merger_orgs: mergerOrgs.map(o => ({ label: o.label, beds: o.beds, facilities: o.orgs })),
     net_3yr_roi: implementationCost > 0 ? r.total3WithReimbursement - implementationCost : null,
     yr1: r.yr1, yr2: r.yr2, yr3: r.yr3,
     yr1_pct: r.y1Pct, yr2_pct: r.y2Pct, yr3_pct: r.y3Pct,
@@ -1764,14 +1823,72 @@ function ROICalculator() {
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:step>=0?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>3</span>        Organization scale
       </div>
+      {/* Merger builder */}
       <div style={{marginBottom:20,padding:"16px 18px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
-        <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Quick start {"\u2013"} load a template</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-          {Object.entries(PRESETS).map(([k,p])=><button type="button" key={k} onClick={()=>applyPreset(k)} disabled={thinking} className="roi-preset" style={{width:"100%",padding:"10px 12px",textAlign:"left",border:activePreset===k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:activePreset===k?C.accentPale:"#fff",cursor:thinking?"wait":"pointer",opacity:thinking?0.6:1}}>
-            <div style={{fontSize:13,fontWeight:700,color:activePreset===k?C.accent:C.text}}>{p.label}</div>
-            <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>{p.desc}</div>
-          </button>)}
-        </div>
+        <button type="button" onClick={()=>setMergerMode(!mergerMode)} className="roi-link" style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",border:"none",background:"none",cursor:"pointer",padding:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:18}}>{"\ud83c\udfd7\ufe0f"}</span>
+            <div style={{textAlign:"left"}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.accent}}>Planning a merger or acquisition?</div>
+              <div style={{fontSize:11,color:C.textMuted}}>Build your future health system by combining organizations</div>
+            </div>
+          </div>
+          <span style={{fontSize:14,color:C.textMuted,transform:mergerMode?"rotate(180deg)":"none",transition:"transform .2s"}}>{"\u25be"}</span>
+        </button>
+
+        {mergerMode && (
+          <div style={{marginTop:14}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Add organizations to your future system</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:12}}>
+              {MERGER_ORG_OPTIONS.map(opt => (
+                <button type="button" key={opt.key} onClick={()=>addMergerOrg(opt)} className="roi-preset" style={{width:"100%",padding:"8px 10px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:10,background:"#fff",cursor:"pointer"}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.text}}>+ {opt.label}</div>
+                  <div style={{fontSize:10,color:C.textMuted}}>{fmtNum(opt.beds)} beds {"\u00b7"} {opt.orgs} facility {"\u00b7"} {opt.tiers.enterprise + opt.tiers.departmental + opt.tiers.niche} systems</div>
+                </button>
+              ))}
+            </div>
+
+            {mergerOrgs.length > 0 && (
+              <div style={{marginBottom:12}}>
+                <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginBottom:6}}>Your future health system</div>
+                <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                  {mergerOrgs.map((org) => (
+                    <div key={org.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:C.surface,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+                      <div style={{flex:1}}>
+                        <span style={{fontSize:12,fontWeight:700,color:C.text}}>{org.label}</span>
+                        <span style={{fontSize:11,color:C.textMuted,marginLeft:8}}>{fmtNum(org.beds)} beds {"\u00b7"} {org.tiers.enterprise + org.tiers.departmental + org.tiers.niche} systems</span>
+                      </div>
+                      <button type="button" onClick={()=>removeMergerOrg(org.id)} style={{border:"none",background:"none",color:C.textMuted,fontSize:16,cursor:"pointer",padding:"4px",lineHeight:1}}>{"\u2715"}</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {mergerSummary && (
+              <div style={{padding:"14px 16px",background:C.accentPale,borderRadius:10,marginBottom:12}}>
+                <div style={{display:"flex",gap:16,flexWrap:"wrap",marginBottom:10}}>
+                  <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>TOTAL BEDS</div><div style={{fontSize:20,fontWeight:800,color:C.accent}}>{fmtNum(mergerSummary.totalBeds)}</div></div>
+                  <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>FACILITIES</div><div style={{fontSize:20,fontWeight:800,color:C.accent}}>{mergerSummary.totalFacilities}</div></div>
+                  <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>TOTAL SYSTEMS</div><div style={{fontSize:20,fontWeight:800,color:C.accent}}>{mergerSummary.totalSys}</div></div>
+                  <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>LIKELY DUPLICATES</div><div style={{fontSize:20,fontWeight:800,color:"#993535"}}>{mergerSummary.dupTotal}</div></div>
+                </div>
+                <div style={{fontSize:11,color:C.textMid,lineHeight:1.6,marginBottom:10}}>
+                  Combining {mergerOrgs.length} organizations creates an estimated <strong>{mergerSummary.dupTotal} duplicate systems</strong> ({mergerSummary.dupEnt} enterprise, {mergerSummary.dupDep} departmental) that are candidates for immediate decommission post-merger.
+                </div>
+                <button type="button" onClick={applyMerger} className="roi-cta" style={{width:"100%",padding:"12px",background:C.accent,color:"#fff",border:"none",borderRadius:999,fontSize:14,fontWeight:700,cursor:"pointer"}}>
+                  Apply to calculator {"\u2192"}
+                </button>
+              </div>
+            )}
+
+            {mergerOrgs.length === 0 && (
+              <div style={{padding:"12px",textAlign:"center",color:C.textMuted,fontSize:12}}>
+                Select organizations above to build your future merged system
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <AnimatedSlider label={<span>Facilities in scope<InfoTip text="How many separate facilities are included? For multi-org, you can break down beds and systems per facility below."/></span>} value={inputs.org_count} min={1} max={10} step={1} onChange={v=>handleOrgCountChange(v)}/>
