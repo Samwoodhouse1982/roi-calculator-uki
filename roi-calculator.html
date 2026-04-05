@@ -1937,25 +1937,27 @@ function ROICalculator() {
         )}
       </div>
 
-      <AnimatedSlider label={<span>Facilities in scope<InfoTip text="How many separate facilities are included? For multi-org, you can break down beds and systems per facility below."/></span>} value={inputs.org_count} min={1} max={10} step={1} onChange={v=>handleOrgCountChange(v)}/>
+      {/* ── Hospitals ── */}
+      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:4}}>Hospitals</div>
+      <AnimatedSlider label={<span>Acute care hospitals<InfoTip text="Number of hospitals (inpatient facilities). Drives bed count, clinical staff, enterprise system costs, and safety metrics."/></span>} value={inputs.org_count} min={1} max={20} step={1} onChange={v=>handleOrgCountChange(v)}/>
 
-      <div style={{marginTop:20}}>
+      <div style={{marginTop:12}}>
         {inputs.org_count > 1 && (
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
             <label style={{fontSize:13,fontWeight:600,color:C.textMid}}>Acute beds</label>
-            <TogglePill active={perOrgBeds?"byorg":"combined"} onToggle={v=>{if((v==="byorg")!==perOrgBeds)togglePerOrgBeds();}} labelA="combined" labelB="byorg" labelAText="Combined total" labelBText="By facility"/>
+            <TogglePill active={perOrgBeds?"byorg":"combined"} onToggle={v=>{if((v==="byorg")!==perOrgBeds)togglePerOrgBeds();}} labelA="combined" labelB="byorg" labelAText="Combined total" labelBText="By hospital"/>
           </div>
         )}
         {!perOrgBeds ? (
           <div>
-            <AnimatedSlider label={inputs.org_count <= 1 ? <span>Total acute beds<InfoTip text="Total beds across all organisations in scope. Scales clinical staff (2.8 per bed), system costs, and clinical safety baseline. Set to 0 for community providers."/></span> : null} value={inputs.bed_count} min={0} max={Math.max(8000, inputs.bed_count + 500)} step={10} onChange={v=>{update("bed_count",v);touch(1);}}/>
+            <AnimatedSlider label={inputs.org_count <= 1 ? <span>Total acute beds<InfoTip text="Total staffed beds across all hospitals. Scales clinical staff (3.2 per bed), system costs, revenue estimates, and safety metrics."/></span> : null} value={inputs.bed_count} min={0} max={Math.max(8000, inputs.bed_count + 500)} step={10} onChange={v=>{update("bed_count",v);touch(1);}}/>
           </div>
         ) : (
           <div>
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
               {orgBedsList.map((beds, i) => (
                 <div key={i} className="roi-org" style={{display:"flex",alignItems:"center",gap:12,padding:"8px 14px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
-                  <span style={{fontSize:13,fontWeight:600,color:C.textMid,minWidth:48}}>Org {i+1}</span>
+                  <span style={{fontSize:13,fontWeight:600,color:C.textMid,minWidth:72}}>Hospital {i+1}</span>
                   <input type="range" min={0} max={Math.max(4000, beds + 500)} step={10} value={beds}
                     onChange={e => setOrgBeds(i, +e.target.value)}
                     style={{flex:1,cursor:"pointer",accentColor:C.accent}} />
@@ -1972,49 +1974,71 @@ function ROICalculator() {
       </div>
       {inputs.bed_count===0&&<div style={{marginTop:10,padding:"8px 14px",background:C.accentPale,borderRadius:6,fontSize:13,color:C.accent}}>Community provider {"\u2013"} model still works.</div>}
 
-      {/* Non-acute facility portfolio */}
-      <div style={{marginTop:20,padding:"14px 18px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-          <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Do you operate non-acute facilities?</span>
-          <div style={{display:"flex",gap:6}}>
-            <button type="button" onClick={()=>setShowFacilityPortfolio(true)} style={{padding:"6px 16px",borderRadius:999,fontSize:12,fontWeight:700,cursor:"pointer",border:showFacilityPortfolio===true?`2px solid ${C.accent}`:`1px solid ${C.border}`,background:showFacilityPortfolio===true?C.accentPale:"#fff",color:showFacilityPortfolio===true?C.accent:C.textMid}}>Yes</button>
-            <button type="button" onClick={()=>{setShowFacilityPortfolio(false);setFacilityPortfolio({});}} style={{padding:"6px 16px",borderRadius:999,fontSize:12,fontWeight:700,cursor:"pointer",border:showFacilityPortfolio===false?`2px solid ${C.accent}`:`1px solid ${C.border}`,background:showFacilityPortfolio===false?C.accentPale:"#fff",color:showFacilityPortfolio===false?C.accent:C.textMid}}>No</button>
+      {/* ── Ambulatory sites ── */}
+      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:24}}>Ambulatory</div>
+      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+        {FACILITY_TYPES.filter(ft => ["asc","practices","urgent_care","freestanding_ed"].includes(ft.key)).map(ft => (
+          <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
+              <div style={{fontSize:10,color:C.textMuted}}>{ft.systems.ent + ft.systems.dep + ft.systems.nic} systems per site</div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,(p[ft.key]||0)-1)}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>-</button>
+              <span style={{fontSize:16,fontWeight:800,color:C.accent,minWidth:28,textAlign:"center"}}>{facilityPortfolio[ft.key] || 0}</span>
+              <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:(p[ft.key]||0)+1}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Post-acute ── */}
+      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:24}}>Post-acute</div>
+      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+        {FACILITY_TYPES.filter(ft => ["snf","home_health","irf"].includes(ft.key)).map(ft => (
+          <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
+              <div style={{fontSize:10,color:C.textMuted}}>{ft.systems.ent + ft.systems.dep + ft.systems.nic} systems per {ft.unit === "agencies" ? "agency" : "facility"}</div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,(p[ft.key]||0)-1)}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>-</button>
+              <span style={{fontSize:16,fontWeight:800,color:C.accent,minWidth:28,textAlign:"center"}}>{facilityPortfolio[ft.key] || 0}</span>
+              <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:(p[ft.key]||0)+1}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Ancillary ── */}
+      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:24}}>Ancillary</div>
+      <div style={{display:"flex",flexDirection:"column",gap:4}}>
+        {FACILITY_TYPES.filter(ft => ["imaging","dialysis","infusion"].includes(ft.key)).map(ft => (
+          <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
+              <div style={{fontSize:10,color:C.textMuted}}>{ft.systems.ent + ft.systems.dep + ft.systems.nic} systems per site</div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,(p[ft.key]||0)-1)}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>-</button>
+              <span style={{fontSize:16,fontWeight:800,color:C.accent,minWidth:28,textAlign:"center"}}>{facilityPortfolio[ft.key] || 0}</span>
+              <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:(p[ft.key]||0)+1}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Portfolio summary */}
+      {portfolioImpact.addSystems > 0 && (
+        <div style={{marginTop:16,padding:"10px 14px",background:C.accentPale,borderRadius:8}}>
+          <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+            <div><span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>NON-ACUTE SITES</span><div style={{fontSize:16,fontWeight:800,color:C.accent}}>{portfolioImpact.addSites}</div></div>
+            <div><span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>ADDITIONAL SYSTEMS</span><div style={{fontSize:16,fontWeight:800,color:C.accent}}>+{portfolioImpact.addSystems}</div></div>
+            <div><span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>ADDITIONAL STAFF</span><div style={{fontSize:16,fontWeight:800,color:C.accent}}>+{fmtNum(portfolioImpact.addStaff)}</div></div>
+            <div><span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>SYSTEM COST</span><div style={{fontSize:16,fontWeight:800,color:C.accent}}>+{fmtK(portfolioImpact.addCost)}/yr</div></div>
           </div>
         </div>
-
-        {showFacilityPortfolio && (
-          <div style={{marginTop:14}}>
-            <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Ambulatory, post-acute and ancillary sites</div>
-            <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              {FACILITY_TYPES.map(ft => (
-                <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.surface,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
-                    <div style={{fontSize:10,color:C.textMuted}}>{ft.systems.ent + ft.systems.dep + ft.systems.nic} systems per {ft.unit === "sites" || ft.unit === "agencies" ? "site" : "facility"}</div>
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:6}}>
-                    <button type="button" onClick={()=>setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,(p[ft.key]||0)-1)}))} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>-</button>
-                    <span style={{fontSize:16,fontWeight:800,color:C.accent,minWidth:28,textAlign:"center"}}>{facilityPortfolio[ft.key] || 0}</span>
-                    <button type="button" onClick={()=>setFacilityPortfolio(p=>({...p,[ft.key]:(p[ft.key]||0)+1}))} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {portfolioImpact.addSystems > 0 && (
-              <div style={{marginTop:10,padding:"10px 14px",background:C.accentPale,borderRadius:8}}>
-                <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-                  <div><span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>ADDITIONAL SITES</span><div style={{fontSize:16,fontWeight:800,color:C.accent}}>{portfolioImpact.addSites}</div></div>
-                  <div><span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>ADDITIONAL SYSTEMS</span><div style={{fontSize:16,fontWeight:800,color:C.accent}}>+{portfolioImpact.addSystems}</div></div>
-                  <div><span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>ADDITIONAL STAFF</span><div style={{fontSize:16,fontWeight:800,color:C.accent}}>+{fmtNum(portfolioImpact.addStaff)}</div></div>
-                  <div><span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>SYSTEM COST</span><div style={{fontSize:16,fontWeight:800,color:C.accent}}>+{fmtK(portfolioImpact.addCost)}/yr</div></div>
-                </div>
-                <div style={{fontSize:11,color:C.textMid,marginTop:6}}>These systems, staff, and costs are added to your acute care estate in the ROI calculation.</div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      )}
     </Card></div>
     {step<1?<ContinuePrompt onClick={()=>goTo(1,ref2)} label="Next: legacy systems"/>:<LockedConnector/>}
 
