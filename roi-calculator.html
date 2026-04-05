@@ -343,8 +343,9 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const flagshipDecomSave = flagships.filter(f => f.retire).reduce((s,f) => s + (f.cost || 0), 0);
   const flagshipCount = flagships.length;
   const flagshipRetireCount = flagships.filter(f => f.retire).length;
-  const legacy = tieredLegacy + flagshipCount;
-  const totalEstate = tieredEstate + flagshipTotal;
+  const portfolioSystems = inp._portfolioSystems || 0;
+  const legacy = tieredLegacy + flagshipCount + portfolioSystems;
+  const totalEstate = tieredEstate + flagshipTotal + (inp._portfolioCost || 0);
   const blendedCost = legacy > 0 ? Math.round(totalEstate / legacy) : 0;
   const rawDecom = tieredLegacy * inp.decom_retire_rate * sc.decom_pct;
   const decom = Math.min(Math.round(rawDecom), tieredLegacy) + flagshipRetireCount;
@@ -353,7 +354,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const depDecom = Math.min(Math.round(dep * decomFrac), dep);
   const nicDecom = clamp(Math.min(Math.round(rawDecom), tieredLegacy) - entDecom - depDecom, 0, nic);
   const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * sc.decom_pct);
-  const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * CORPORATE_STAFF_PER_ORG);
+  const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * CORPORATE_STAFF_PER_ORG + (inp._portfolioStaff || 0));
   const switchPenalty = Math.max(0, legacy - 1) * SWITCH_PENALTY_PER_SYSTEM;
   const baseMin = isArchiveOnly ? 5 : 12;
   const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * (1 + switchPenalty));
@@ -813,7 +814,9 @@ function ROICalculator() {
   const [occupancyRate, setOccupancyRate] = useState(0.65);
   const [implementationCost, setImplementationCost] = useState(0);
   const [mergerMode, setMergerMode] = useState(false);
-  const [mergerOrgs, setMergerOrgs] = useState([]); // User can enter or we estimate
+  const [mergerOrgs, setMergerOrgs] = useState([]);
+  const [showFacilityPortfolio, setShowFacilityPortfolio] = useState(false);
+  const [facilityPortfolio, setFacilityPortfolio] = useState({}); // User can enter or we estimate
 
   const [inputs, setInputs] = useState({...PRESETS.TYPICAL.data, data_types:{...PRESETS.TYPICAL.data.data_types}, tiers:{...PRESETS.TYPICAL.data.tiers}});
   const [activePreset, setActivePreset] = useState(null);
@@ -966,13 +969,34 @@ function ROICalculator() {
     setActivePreset(null); touch(2);
   }, [touch]);
 
+  // Facility types beyond acute care
+  const FACILITY_TYPES = [
+    { key: "asc", label: "Ambulatory surgery centers", unit: "sites", systems: { ent: 0, dep: 2, nic: 3 }, staffPer: 25, costPer: 180000 },
+    { key: "practices", label: "Physician practices / clinics", unit: "sites", systems: { ent: 0, dep: 1, nic: 2 }, staffPer: 12, costPer: 85000 },
+    { key: "urgent_care", label: "Urgent care centers", unit: "sites", systems: { ent: 0, dep: 1, nic: 2 }, staffPer: 10, costPer: 65000 },
+    { key: "freestanding_ed", label: "Freestanding EDs", unit: "sites", systems: { ent: 0, dep: 2, nic: 2 }, staffPer: 20, costPer: 120000 },
+    { key: "snf", label: "Skilled nursing facilities", unit: "facilities", systems: { ent: 0, dep: 2, nic: 3 }, staffPer: 40, costPer: 150000 },
+    { key: "home_health", label: "Home health / hospice", unit: "agencies", systems: { ent: 0, dep: 1, nic: 2 }, staffPer: 30, costPer: 95000 },
+    { key: "irf", label: "Inpatient rehab facilities", unit: "facilities", systems: { ent: 1, dep: 2, nic: 3 }, staffPer: 50, costPer: 200000 },
+    { key: "imaging", label: "Freestanding imaging centers", unit: "sites", systems: { ent: 0, dep: 1, nic: 2 }, staffPer: 8, costPer: 95000 },
+    { key: "dialysis", label: "Dialysis centers", unit: "sites", systems: { ent: 0, dep: 1, nic: 2 }, staffPer: 12, costPer: 85000 },
+    { key: "infusion", label: "Infusion centers", unit: "sites", systems: { ent: 0, dep: 1, nic: 1 }, staffPer: 6, costPer: 55000 },
+  ];
+
   const MERGER_ORG_OPTIONS = [
-    { key: "cah", label: "Critical Access Hospital", beds: 25, orgs: 1, tiers: { enterprise: 1, departmental: 1, niche: 3 } },
-    { key: "small_community", label: "Small Community Hospital", beds: 100, orgs: 1, tiers: { enterprise: 1, departmental: 3, niche: 5 } },
-    { key: "community", label: "Community Hospital", beds: 250, orgs: 1, tiers: { enterprise: 1, departmental: 5, niche: 9 } },
-    { key: "regional", label: "Regional Medical Center", beds: 600, orgs: 1, tiers: { enterprise: 2, departmental: 8, niche: 15 } },
-    { key: "academic", label: "Academic Medical Center", beds: 800, orgs: 1, tiers: { enterprise: 3, departmental: 12, niche: 20 } },
-    { key: "large_system", label: "Large Health System", beds: 1500, orgs: 3, tiers: { enterprise: 4, departmental: 18, niche: 35 } },
+    // Acute
+    { key: "cah", label: "Critical Access Hospital", cat: "Acute", beds: 25, orgs: 1, tiers: { enterprise: 1, departmental: 1, niche: 3 }, ambSites: 0 },
+    { key: "small_community", label: "Small Community Hospital", cat: "Acute", beds: 100, orgs: 1, tiers: { enterprise: 1, departmental: 3, niche: 5 }, ambSites: 2 },
+    { key: "community", label: "Community Hospital", cat: "Acute", beds: 250, orgs: 1, tiers: { enterprise: 1, departmental: 5, niche: 9 }, ambSites: 5 },
+    { key: "regional", label: "Regional Medical Center", cat: "Acute", beds: 600, orgs: 1, tiers: { enterprise: 2, departmental: 8, niche: 15 }, ambSites: 12 },
+    { key: "academic", label: "Academic Medical Center", cat: "Acute", beds: 800, orgs: 1, tiers: { enterprise: 3, departmental: 12, niche: 20 }, ambSites: 20 },
+    { key: "large_system", label: "Large Health System", cat: "Acute", beds: 1500, orgs: 3, tiers: { enterprise: 4, departmental: 18, niche: 35 }, ambSites: 40 },
+    // Ambulatory / Post-acute
+    { key: "physician_group", label: "Physician group (20 sites)", cat: "Ambulatory", beds: 0, orgs: 0, tiers: { enterprise: 0, departmental: 20, niche: 40 }, ambSites: 20 },
+    { key: "asc_network", label: "ASC network (5 centers)", cat: "Ambulatory", beds: 0, orgs: 0, tiers: { enterprise: 0, departmental: 10, niche: 15 }, ambSites: 5 },
+    { key: "urgent_care_chain", label: "Urgent care chain (10 sites)", cat: "Ambulatory", beds: 0, orgs: 0, tiers: { enterprise: 0, departmental: 10, niche: 20 }, ambSites: 10 },
+    { key: "post_acute", label: "Post-acute network (SNF/IRF/HH)", cat: "Post-acute", beds: 200, orgs: 0, tiers: { enterprise: 1, departmental: 6, niche: 12 }, ambSites: 8 },
+    { key: "home_health_agency", label: "Home health / hospice agency", cat: "Post-acute", beds: 0, orgs: 0, tiers: { enterprise: 0, departmental: 2, niche: 4 }, ambSites: 3 },
   ];
   const addMergerOrg = useCallback((opt) => {
     setMergerOrgs(p => [...p, { ...opt, id: Date.now() + Math.random() }]);
@@ -984,15 +1008,16 @@ function ROICalculator() {
     if (mergerOrgs.length === 0) return null;
     const totalBeds = mergerOrgs.reduce((s, o) => s + o.beds, 0);
     const totalFacilities = mergerOrgs.reduce((s, o) => s + o.orgs, 0);
+    const totalAmbSites = mergerOrgs.reduce((s, o) => s + (o.ambSites || 0), 0);
     const totalEnt = mergerOrgs.reduce((s, o) => s + o.tiers.enterprise, 0);
     const totalDep = mergerOrgs.reduce((s, o) => s + o.tiers.departmental, 0);
     const totalNic = mergerOrgs.reduce((s, o) => s + o.tiers.niche, 0);
     const totalSys = totalEnt + totalDep + totalNic;
-    // Duplicate detection: enterprise systems across orgs likely overlap
-    const dupEnt = Math.max(0, totalEnt - mergerOrgs.length); // keep 1 per org post-merger, rest are dupes
-    const dupDep = Math.round(totalDep * 0.25); // ~25% departmental overlap
+    const acuteOrgs = mergerOrgs.filter(o => o.cat === "Acute");
+    const dupEnt = Math.max(0, totalEnt - Math.max(acuteOrgs.length, 1));
+    const dupDep = Math.round(totalDep * 0.25);
     const dupTotal = dupEnt + dupDep;
-    return { totalBeds, totalFacilities, totalEnt, totalDep, totalNic, totalSys, dupEnt, dupDep, dupTotal };
+    return { totalBeds, totalFacilities, totalAmbSites, totalEnt, totalDep, totalNic, totalSys, dupEnt, dupDep, dupTotal };
   }, [mergerOrgs]);
   const applyMerger = useCallback(() => {
     if (!mergerSummary) return;
@@ -1037,6 +1062,22 @@ function ROICalculator() {
   },[resetOv]);
   const goTo=useCallback((s,ref)=>{setStep(p=>Math.max(p,s));scrollTo(ref);},[]);
 
+  // Facility portfolio: additional systems and staff from non-acute facilities
+  const portfolioImpact = useMemo(() => {
+    let addEnt = 0, addDep = 0, addNic = 0, addStaff = 0, addCost = 0, addSites = 0;
+    FACILITY_TYPES.forEach(ft => {
+      const count = facilityPortfolio[ft.key] || 0;
+      if (count > 0) {
+        addEnt += ft.systems.ent * count;
+        addDep += ft.systems.dep * count;
+        addNic += ft.systems.nic * count;
+        addStaff += ft.staffPer * count;
+        addCost += ft.costPer * count;
+        addSites += count;
+      }
+    });
+    return { addEnt, addDep, addNic, addSystems: addEnt + addDep + addNic, addStaff, addCost, addSites };
+  }, [facilityPortfolio]);
   const totalSystems = inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche;
   const knownCostOv = useMemo(() => {
     if (costMode !== "known" || !knownAnnualSpend || knownAnnualSpend <= 0) return {};
@@ -1073,6 +1114,9 @@ function ROICalculator() {
       _medicareDrgRevenue: medicareDrgRevenue,
       _occupancy: occupancyRate,
       _providerType: providerType,
+      _portfolioSystems: portfolioImpact.addSystems,
+      _portfolioStaff: portfolioImpact.addStaff,
+      _portfolioCost: portfolioImpact.addCost,
     };
   }, [inputs, providerType, reimbursementModel, medicareDrgRevenue]);
   const rCon=useMemo(()=>calc(calcInputs,"CONSERVATIVE",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
@@ -1182,7 +1226,11 @@ function ROICalculator() {
     three_year_with_reimbursement: r.total3WithReimbursement,
     implementation_cost: implementationCost,
     merger_mode: mergerMode,
-    merger_orgs: mergerOrgs.map(o => ({ label: o.label, beds: o.beds, facilities: o.orgs })),
+    merger_orgs: mergerOrgs.map(o => ({ label: o.label, beds: o.beds, facilities: o.orgs, cat: o.cat })),
+    facility_portfolio: facilityPortfolio,
+    portfolio_additional_systems: portfolioImpact.addSystems,
+    portfolio_additional_staff: portfolioImpact.addStaff,
+    portfolio_additional_cost: portfolioImpact.addCost,
     net_3yr_roi: implementationCost > 0 ? r.total3WithReimbursement - implementationCost : null,
     yr1: r.yr1, yr2: r.yr2, yr3: r.yr3,
     yr1_pct: r.y1Pct, yr2_pct: r.y2Pct, yr3_pct: r.y3Pct,
@@ -1866,7 +1914,8 @@ function ROICalculator() {
               <div style={{padding:"14px 16px",background:C.accentPale,borderRadius:10,marginBottom:12}}>
                 <div style={{display:"flex",gap:16,flexWrap:"wrap",marginBottom:10}}>
                   <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>TOTAL BEDS</div><div style={{fontSize:20,fontWeight:800,color:C.accent}}>{fmtNum(mergerSummary.totalBeds)}</div></div>
-                  <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>FACILITIES</div><div style={{fontSize:20,fontWeight:800,color:C.accent}}>{mergerSummary.totalFacilities}</div></div>
+                  <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>HOSPITALS</div><div style={{fontSize:20,fontWeight:800,color:C.accent}}>{mergerSummary.totalFacilities}</div></div>
+                  {mergerSummary.totalAmbSites > 0 && <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>AMB. SITES</div><div style={{fontSize:20,fontWeight:800,color:C.accent}}>{mergerSummary.totalAmbSites}</div></div>}
                   <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>TOTAL SYSTEMS</div><div style={{fontSize:20,fontWeight:800,color:C.accent}}>{mergerSummary.totalSys}</div></div>
                   <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>LIKELY DUPLICATES</div><div style={{fontSize:20,fontWeight:800,color:"#993535"}}>{mergerSummary.dupTotal}</div></div>
                 </div>
@@ -1922,6 +1971,50 @@ function ROICalculator() {
         )}
       </div>
       {inputs.bed_count===0&&<div style={{marginTop:10,padding:"8px 14px",background:C.accentPale,borderRadius:6,fontSize:13,color:C.accent}}>Community provider {"\u2013"} model still works.</div>}
+
+      {/* Non-acute facility portfolio */}
+      <div style={{marginTop:20,padding:"14px 18px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+          <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Do you operate non-acute facilities?</span>
+          <div style={{display:"flex",gap:6}}>
+            <button type="button" onClick={()=>setShowFacilityPortfolio(true)} style={{padding:"6px 16px",borderRadius:999,fontSize:12,fontWeight:700,cursor:"pointer",border:showFacilityPortfolio===true?`2px solid ${C.accent}`:`1px solid ${C.border}`,background:showFacilityPortfolio===true?C.accentPale:"#fff",color:showFacilityPortfolio===true?C.accent:C.textMid}}>Yes</button>
+            <button type="button" onClick={()=>{setShowFacilityPortfolio(false);setFacilityPortfolio({});}} style={{padding:"6px 16px",borderRadius:999,fontSize:12,fontWeight:700,cursor:"pointer",border:showFacilityPortfolio===false?`2px solid ${C.accent}`:`1px solid ${C.border}`,background:showFacilityPortfolio===false?C.accentPale:"#fff",color:showFacilityPortfolio===false?C.accent:C.textMid}}>No</button>
+          </div>
+        </div>
+
+        {showFacilityPortfolio && (
+          <div style={{marginTop:14}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Ambulatory, post-acute and ancillary sites</div>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {FACILITY_TYPES.map(ft => (
+                <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.surface,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
+                    <div style={{fontSize:10,color:C.textMuted}}>{ft.systems.ent + ft.systems.dep + ft.systems.nic} systems per {ft.unit === "sites" || ft.unit === "agencies" ? "site" : "facility"}</div>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <button type="button" onClick={()=>setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,(p[ft.key]||0)-1)}))} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>-</button>
+                    <span style={{fontSize:16,fontWeight:800,color:C.accent,minWidth:28,textAlign:"center"}}>{facilityPortfolio[ft.key] || 0}</span>
+                    <button type="button" onClick={()=>setFacilityPortfolio(p=>({...p,[ft.key]:(p[ft.key]||0)+1}))} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {portfolioImpact.addSystems > 0 && (
+              <div style={{marginTop:10,padding:"10px 14px",background:C.accentPale,borderRadius:8}}>
+                <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+                  <div><span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>ADDITIONAL SITES</span><div style={{fontSize:16,fontWeight:800,color:C.accent}}>{portfolioImpact.addSites}</div></div>
+                  <div><span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>ADDITIONAL SYSTEMS</span><div style={{fontSize:16,fontWeight:800,color:C.accent}}>+{portfolioImpact.addSystems}</div></div>
+                  <div><span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>ADDITIONAL STAFF</span><div style={{fontSize:16,fontWeight:800,color:C.accent}}>+{fmtNum(portfolioImpact.addStaff)}</div></div>
+                  <div><span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>SYSTEM COST</span><div style={{fontSize:16,fontWeight:800,color:C.accent}}>+{fmtK(portfolioImpact.addCost)}/yr</div></div>
+                </div>
+                <div style={{fontSize:11,color:C.textMid,marginTop:6}}>These systems, staff, and costs are added to your acute care estate in the ROI calculation.</div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </Card></div>
     {step<1?<ContinuePrompt onClick={()=>goTo(1,ref2)} label="Next: legacy systems"/>:<LockedConnector/>}
 
@@ -1930,7 +2023,7 @@ function ROICalculator() {
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:step>=1?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>4</span>
         Legacy systems
-        <span style={{marginLeft:"auto",display:"inline-flex",alignItems:"center",justifyContent:"center",minWidth:36,height:24,borderRadius:12,padding:"0 10px",background:C.accent,color:"#fff",fontSize:14,fontWeight:800,lineHeight:1}}>{totalSystems + flagships.length}</span>
+        <span style={{marginLeft:"auto",display:"inline-flex",alignItems:"center",justifyContent:"center",minWidth:36,height:24,borderRadius:12,padding:"0 10px",background:C.accent,color:"#fff",fontSize:14,fontWeight:800,lineHeight:1}}>{totalSystems + flagships.length + portfolioImpact.addSystems}</span>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 12px"}}>How many legacy systems in each tier? Default costs are US benchmarks scaled to your bed count. <strong style={{color:C.textMid}}>Click any tier cost to override it</strong>, add named high-cost systems below, or switch to {"\u201c"}I know my spend{"\u201d"} if you have your total.</p>
 
