@@ -58,8 +58,8 @@ Summary of every functional change made when adapting the NHS EPR Migration ROI 
 | Revenue derived from beds, ALOS (4.7 days), and occupancy | The original formula ($42,000 per bed) understated revenue by ~37x. The corrected model produces realistic estimates (~$192M for a 250-bed hospital) that CFOs will recognise |
 | Added adjustable occupancy rate (30-95%, default 65%) | Occupancy varies from 40% in rural Critical Access hospitals to 85% in urban academic centres. Directly affects admission volume and revenue |
 | Added optional Medicare DRG revenue input | Users who know their actual Medicare revenue can enter it for precise CMS penalty calculations instead of using the estimate |
-| Added optional implementation cost input | US EHR implementations cost $50M-$1.2B (Becker's). Without showing net ROI, the gross savings figure is misleading |
-| Added net ROI section with payback period | When implementation cost is provided, results show 3-year gross savings vs implementation cost, net ROI, and payback in years |
+| Added optional Galen Clinical Archive costs (migration + annual) | Allows users to enter indicative Galen migration and ongoing archive costs. The results page then shows net savings after Galen costs, with payback period. Keeps the ROI in context of the actual product investment |
+| Added net savings section with payback period | When Galen costs are provided, results show 3-year gross savings vs Galen migration + annual archive costs, net savings, and payback in years |
 | Added phased 3-year ramp (40%/80%/100%) | The UK model assumed flat savings from Year 1. In reality, systems are decommissioned progressively. Year 1 captures ~40% of steady-state savings |
 
 ## CMS penalty modelling (new)
