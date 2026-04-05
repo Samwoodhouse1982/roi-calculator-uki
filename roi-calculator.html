@@ -354,10 +354,12 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const depDecom = Math.min(Math.round(dep * decomFrac), dep);
   const nicDecom = clamp(Math.min(Math.round(rawDecom), tieredLegacy) - entDecom - depDecom, 0, nic);
   const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * sc.decom_pct);
-  const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * CORPORATE_STAFF_PER_ORG + (inp._portfolioStaff || 0));
+  const corpPerOrg = Math.min(120, Math.round(CORPORATE_STAFF_BASE + (inp.bed_count / Math.max(1, inp.org_count)) * CORPORATE_STAFF_PER_BED));
+  const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * corpPerOrg + (inp._portfolioStaff || 0));
   const switchPenalty = Math.max(0, legacy - 1) * SWITCH_PENALTY_PER_SYSTEM;
   const baseMin = isArchiveOnly ? 5 : 12;
-  const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * (1 + switchPenalty));
+  const cappedPenalty = Math.min(switchPenalty, 4.0); // Cap: prevents >60 min/wk at extreme system counts
+  const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * (1 + cappedPenalty));
   const residual = isArchiveOnly ? 1 : 2;
   const hrsSaved = Math.round((clinicians * Math.max(0, minsWasted - residual) * WORKING_WEEKS) / 60);
   const timeSave = Math.round(hrsSaved * BLENDED_HOURLY_RATE * sc.realisation);
@@ -499,7 +501,8 @@ const PRESETS = {
 
 // ── Model constants ──
 const STAFF_PER_BED = 3.2;
-const CORPORATE_STAFF_PER_ORG = 120;
+const CORPORATE_STAFF_BASE = 20;       // Base admin/corporate staff per facility
+const CORPORATE_STAFF_PER_BED = 0.15;  // Scales with size, caps at ~120 for large facilities
 const BLENDED_HOURLY_RATE = 95;
 const WORKING_WEEKS = 50;
 const TICKETS_PER_SYSTEM = 2.5;
@@ -577,7 +580,7 @@ const PROVIDER_PRESET_MAP = {
   multi_hospital: "REGIONAL",
 };
 const PROVIDER_MULTIPLIERS = {
-  critical_access:  { medicare_pct: 0.60, denial_factor: 0.7, penalty_exposure: 0.3, complexity_boost: 0.8 },
+  critical_access:  { medicare_pct: 0.60, denial_factor: 0.7, penalty_exposure: 0.0, complexity_boost: 0.8 },  // CAHs exempt from HRRP, HAC, VBP
   community:        { medicare_pct: 0.45, denial_factor: 1.0, penalty_exposure: 0.7, complexity_boost: 1.0 },
   regional:         { medicare_pct: 0.40, denial_factor: 1.1, penalty_exposure: 1.0, complexity_boost: 1.2 },
   academic:         { medicare_pct: 0.35, denial_factor: 1.3, penalty_exposure: 1.2, complexity_boost: 1.5 },
@@ -2469,7 +2472,7 @@ function ROICalculator() {
     <Card dimmed={dim}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
       <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:16}}>
-        <OverridableStat label="Clinical staff" computed={calc(calcInputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on BLS workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus ${CORPORATE_STAFF_PER_ORG} corporate/IG staff per facility. Your estimate: ${fmtNum(Math.round(inputs.bed_count*STAFF_PER_BED+inputs.org_count*CORPORATE_STAFF_PER_ORG))} staff in scope.`}/>
+        <OverridableStat label="Clinical staff" computed={calc(calcInputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on BLS workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/admin staff per facility (20 base + 0.15/bed, capped at 120).`}/>
         <OverridableStat label="Mins wasted / wk" computed={calc(calcInputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on AMIA 2019 workflow studies and Brigham & Women's time-motion research.`}/>
         <Stat label="Hours freed / yr" value={an?<AnimatedNum value={r.hrsSaved} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Result: ${fmtNum(r.hrsSaved)} hours per year.`}/>
         <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at the BLS median blended rate of $95/hr (BLS median clinical compensation including benefits). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity, since not all freed time converts to measurable output. This represents capacity redirected to patient care, not a direct cash saving.`}/>
@@ -2777,7 +2780,7 @@ function ROICalculator() {
 
         <S title="4. Clinician time savings">
           <p style={{margin:"0 0 8px"}}>Time freed when clinicians no longer switch between multiple legacy systems.</p>
-          <F>clinicians = beds {"\u00d7"} 3.2 + facilities {"\u00d7"} 120<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>switchPenalty = max(0, systems - 1) {"\u00d7"} 0.04<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 48wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"$"}95/hr {"\u00d7"} realisationRate</F>
+          <F>corpPerOrg = min(120, 20 + bedsPerFacility {"\u00d7"} 0.15)<br/>clinicians = beds {"\u00d7"} 3.2 + facilities {"\u00d7"} corpPerOrg<br/>switchPenalty = min(max(0, systems - 1) {"\u00d7"} 0.04, 4.0)<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 50wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"$"}95/hr {"\u00d7"} realisationRate</F>
           <p style={{margin:"8px 0 4px"}}><strong>3.2 staff per bed</strong> {" - "} BLS Occupational Employment and Wage Statistics show 2.8-3.5 clinical full-time equivalents (FTEs) per acute bed (doctors, nurses, allied health professionals (AHPs), pharmacists). <Ev s="BLS OEWS 2023; MGMA staffing benchmarks."/></p>
           <p style={{margin:"4px 0"}}><strong>12 min/wk base</strong> (migration path) {" - "} Westbrook et al 2010 (JAMIA) found nurses interrupted 3-6 times/hour by system-switching. Nuffield Trust 2020 estimated 15-20 min/day lost to system navigation. Our 12 min/week is conservative (reducible portion only). Archive-only uses 5 min/wk. <Ev s="Westbrook et al 2010 (JAMIA); Nuffield Trust 2020 system navigation study."/></p>
           <p style={{margin:"4px 0"}}><strong>+4% per system</strong> {" - "} each additional legacy system adds cognitive overhead. At 42 systems (as in the benchmarked Trust), this produces ~10 min/day wasted, consistent with published studies. <Md s="First-principles switching cost model. Validated against benchmarked Trust (42 systems)."/></p>
