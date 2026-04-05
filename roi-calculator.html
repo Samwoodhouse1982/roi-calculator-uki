@@ -970,17 +970,38 @@ function ROICalculator() {
   }, [touch]);
 
   // Facility types beyond acute care
+  // Facility types: shared systems exist once (the platform), perSite scale with locations
   const FACILITY_TYPES = [
-    { key: "asc", label: "Ambulatory surgery centers", unit: "sites", systems: { ent: 0, dep: 2, nic: 3 }, staffPer: 25, costPer: 180000 },
-    { key: "practices", label: "Physician practices / clinics", unit: "sites", systems: { ent: 0, dep: 1, nic: 2 }, staffPer: 12, costPer: 85000 },
-    { key: "urgent_care", label: "Urgent care centers", unit: "sites", systems: { ent: 0, dep: 1, nic: 2 }, staffPer: 10, costPer: 65000 },
-    { key: "freestanding_ed", label: "Freestanding EDs", unit: "sites", systems: { ent: 0, dep: 2, nic: 2 }, staffPer: 20, costPer: 120000 },
-    { key: "snf", label: "Skilled nursing facilities", unit: "facilities", systems: { ent: 0, dep: 2, nic: 3 }, staffPer: 40, costPer: 150000 },
-    { key: "home_health", label: "Home health / hospice", unit: "agencies", systems: { ent: 0, dep: 1, nic: 2 }, staffPer: 30, costPer: 95000 },
-    { key: "irf", label: "Inpatient rehab facilities", unit: "facilities", systems: { ent: 1, dep: 2, nic: 3 }, staffPer: 50, costPer: 200000 },
-    { key: "imaging", label: "Freestanding imaging centers", unit: "sites", systems: { ent: 0, dep: 1, nic: 2 }, staffPer: 8, costPer: 95000 },
-    { key: "dialysis", label: "Dialysis centers", unit: "sites", systems: { ent: 0, dep: 1, nic: 2 }, staffPer: 12, costPer: 85000 },
-    { key: "infusion", label: "Infusion centers", unit: "sites", systems: { ent: 0, dep: 1, nic: 1 }, staffPer: 6, costPer: 55000 },
+    { key: "asc", label: "Ambulatory surgery centers", unit: "sites",
+      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 0, nic: 1 },
+      staffPer: 25, baseCost: 120000, perSiteCost: 35000 },
+    { key: "practices", label: "Physician practices / clinics", unit: "sites",
+      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 0, nic: 1 },
+      staffPer: 12, baseCost: 65000, perSiteCost: 18000 },
+    { key: "urgent_care", label: "Urgent care centers", unit: "sites",
+      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 0, nic: 1 },
+      staffPer: 10, baseCost: 55000, perSiteCost: 15000 },
+    { key: "freestanding_ed", label: "Freestanding EDs", unit: "sites",
+      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 1, nic: 1 },
+      staffPer: 20, baseCost: 80000, perSiteCost: 40000 },
+    { key: "snf", label: "Skilled nursing facilities", unit: "facilities",
+      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 1, nic: 1 },
+      staffPer: 40, baseCost: 95000, perSiteCost: 45000 },
+    { key: "home_health", label: "Home health / hospice", unit: "agencies",
+      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 0, nic: 1 },
+      staffPer: 30, baseCost: 70000, perSiteCost: 22000 },
+    { key: "irf", label: "Inpatient rehab facilities", unit: "facilities",
+      shared: { ent: 1, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 1, nic: 1 },
+      staffPer: 50, baseCost: 140000, perSiteCost: 55000 },
+    { key: "imaging", label: "Freestanding imaging centers", unit: "sites",
+      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 0, nic: 1 },
+      staffPer: 8, baseCost: 75000, perSiteCost: 20000 },
+    { key: "dialysis", label: "Dialysis centers", unit: "sites",
+      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 0, nic: 1 },
+      staffPer: 12, baseCost: 60000, perSiteCost: 22000 },
+    { key: "infusion", label: "Infusion centers", unit: "sites",
+      shared: { ent: 0, dep: 1, nic: 0 }, perSite: { ent: 0, dep: 0, nic: 1 },
+      staffPer: 6, baseCost: 40000, perSiteCost: 12000 },
   ];
 
   const MERGER_ORG_OPTIONS = [
@@ -1068,11 +1089,12 @@ function ROICalculator() {
     FACILITY_TYPES.forEach(ft => {
       const count = facilityPortfolio[ft.key] || 0;
       if (count > 0) {
-        addEnt += ft.systems.ent * count;
-        addDep += ft.systems.dep * count;
-        addNic += ft.systems.nic * count;
+        // Shared systems exist once, perSite systems scale with count
+        addEnt += ft.shared.ent + ft.perSite.ent * count;
+        addDep += ft.shared.dep + ft.perSite.dep * count;
+        addNic += ft.shared.nic + ft.perSite.nic * count;
         addStaff += ft.staffPer * count;
-        addCost += ft.costPer * count;
+        addCost += ft.baseCost + ft.perSiteCost * count;
         addSites += count;
       }
     });
@@ -1981,7 +2003,7 @@ function ROICalculator() {
           <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
-              <div style={{fontSize:10,color:C.textMuted}}>{ft.systems.ent + ft.systems.dep + ft.systems.nic} systems per site</div>
+              <div style={{fontSize:10,color:C.textMuted}}>{ft.shared.ent + ft.shared.dep + ft.shared.nic} shared + {ft.perSite.ent + ft.perSite.dep + ft.perSite.nic}/site</div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,(p[ft.key]||0)-1)}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>-</button>
@@ -1999,7 +2021,7 @@ function ROICalculator() {
           <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
-              <div style={{fontSize:10,color:C.textMuted}}>{ft.systems.ent + ft.systems.dep + ft.systems.nic} systems per {ft.unit === "agencies" ? "agency" : "facility"}</div>
+              <div style={{fontSize:10,color:C.textMuted}}>{ft.shared.ent + ft.shared.dep + ft.shared.nic} shared + {ft.perSite.ent + ft.perSite.dep + ft.perSite.nic}/{ft.unit === "agencies" ? "agency" : "site"}</div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,(p[ft.key]||0)-1)}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>-</button>
@@ -2017,7 +2039,7 @@ function ROICalculator() {
           <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
-              <div style={{fontSize:10,color:C.textMuted}}>{ft.systems.ent + ft.systems.dep + ft.systems.nic} systems per site</div>
+              <div style={{fontSize:10,color:C.textMuted}}>{ft.shared.ent + ft.shared.dep + ft.shared.nic} shared + {ft.perSite.ent + ft.perSite.dep + ft.perSite.nic}/site</div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,(p[ft.key]||0)-1)}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>-</button>
