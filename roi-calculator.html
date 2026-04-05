@@ -1539,6 +1539,19 @@ function ROICalculator() {
       addFooter(i, totalPages);
     }
 
+    // Disclaimer
+    if (y > 240) { doc.addPage(); addPageHeader(); y = 22; }
+    doc.setFillColor(245,244,240);
+    doc.roundedRect(ml, y, cw, 28, 2, 2, "F");
+    doc.setFontSize(7); doc.setFont("helvetica","bold"); setC(MID);
+    doc.text("Important disclaimer", ml + 4, y + 5);
+    doc.setFont("helvetica","normal"); setC(GREY);
+    const disclaimerText = "This report presents indicative estimates only, generated from generalised assumptions and industry-level benchmarks. It does not constitute a guaranteed ROI, a binding savings target, or professional financial, legal, or clinical advice. Actual outcomes will vary based on your organisation\u2019s specific circumstances, contract terms, implementation approach, and operational factors not captured by this model. All projected figures should be independently validated before being used to support investment decisions. No liability is accepted for decisions made in reliance on these estimates.";
+    const disclaimerLines = doc.splitTextToSize(disclaimerText, cw - 8);
+    doc.text(disclaimerLines, ml + 4, y + 9);
+    const disclaimerH = Math.max(28, 12 + disclaimerLines.length * 3);
+    y += disclaimerH + 4;
+
     // CTA bar on last page
     doc.setPage(totalPages);
     const ctaY = ph - 24;
@@ -2553,6 +2566,12 @@ function ROICalculator() {
         </div>
       </Card>;
     })()}
+
+    {/* Disclaimer */}
+    <div style={{marginTop:24,padding:"16px 20px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`,fontSize:11,color:C.textMuted,lineHeight:1.7}}>
+      <div style={{fontWeight:700,fontSize:12,marginBottom:4,color:C.textMid}}>Important disclaimer</div>
+      This report presents indicative estimates only, generated from generalised assumptions and industry-level benchmarks. It does not constitute a guaranteed ROI, a binding savings target, or professional financial, legal, or clinical advice. Actual outcomes will vary based on your organisation{"'"}s specific circumstances, contract terms, implementation approach, and operational factors not captured by this model. All projected figures {"—"} including decommission savings, reimbursement impact, and quality metrics {"—"} are scenario-modelled approximations and should be independently validated before being used to support investment decisions. No liability is accepted for decisions made in reliance on these estimates. Consult qualified advisors for guidance specific to your organisation.
+    </div>
 
     <button type="button" onClick={()=>{setPage("inputs");scrollToTop();}} className="roi-btn" style={{marginTop:20,padding:"12px 28px",background:"#fff",color:C.textMid,border:`1px solid ${C.border}`,borderRadius:999,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"←"} Edit inputs</button>
   </div>;
