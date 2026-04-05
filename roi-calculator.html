@@ -413,12 +413,34 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const duplicateWaste = estLabSpend * DUPLICATE_TEST_RATE;
   const duplicateReduction = Math.round(duplicateWaste * 0.50 * sc.decom_pct); // 50% of duplicates addressable
 
+  // ── Academic Medical Center Module ──
+  const isAcademic = inp._providerType === "academic";
+  const researchSystems = isAcademic ? Math.round(inp.bed_count / 100 * RESEARCH_SYSTEMS_PER_100_BEDS) : 0;
+  const researchSystemCost = researchSystems * RESEARCH_SYSTEM_AVG_COST;
+  const researchDecomSave = Math.round(researchSystemCost * 0.60 * sc.decom_pct); // 60% retirable
+  const gmeComplianceCost = isAcademic ? Math.round(inp.bed_count * GME_COMPLIANCE_COST_PER_BED) : 0;
+  const gmeEfficiency = Math.round(gmeComplianceCost * 0.25 * sc.decom_pct); // 25% efficiency gain
+  const teachingOverhead = isAcademic ? Math.round(totalEstate * TEACHING_OVERHEAD_PCT * 0.30 * sc.decom_pct) : 0; // 30% of 12% extra complexity
+
+  // ── M&A / Multi-Hospital Module ──
+  const isMultiHospital = inp._providerType === "multi_hospital";
+  const duplicateSystems = isMultiHospital ? Math.round(legacy * DUPLICATE_SYSTEM_RATE) : 0;
+  const duplicateSystemCost = isMultiHospital ? Math.round(duplicateSystems * blendedCost) : 0;
+  const duplicateElimination = Math.round(duplicateSystemCost * sc.decom_pct);
+  const duplicateInfraCost = isMultiHospital ? inp.org_count * DUPLICATE_INFRA_COST_PER_FACILITY : 0;
+  const infraConsolidation = Math.round(duplicateInfraCost * 0.60 * sc.decom_pct); // 60% consolidatable
+  const standardisationSave = isMultiHospital ? Math.round(totalEstate * CROSS_FACILITY_STANDARDISATION_PCT * sc.decom_pct) : 0;
+
+  // Module totals
+  const academicSavings = researchDecomSave + gmeEfficiency + teachingOverhead;
+  const mergeSavings = duplicateElimination + infraConsolidation + standardisationSave;
+
   // Total reimbursement impact
   const reimbursementImpact = hrrpReduction + hacReduction + vbpImprovement + denialRecovery;
   const qualitySavings = malpracticeReduction + excessDayCostAvoided + duplicateReduction;
 
   const annual = decomSave + timeSave;
-  const annualWithReimbursement = annual + reimbursementImpact + qualitySavings;
+  const annualWithReimbursement = annual + reimbursementImpact + qualitySavings + academicSavings + mergeSavings;
   const total3 = annual * 3;
   const total3WithReimbursement = annualWithReimbursement * 3;
   return {
@@ -439,6 +461,12 @@ function calc(inp, mode, ov = {}, flagships = []) {
     preventableADEs, excessDaysAvoided, excessDayCostAvoided,
     duplicateWaste, duplicateReduction,
     reimbursementImpact, qualitySavings,
+    // Academic module
+    isAcademic, researchSystems, researchSystemCost, researchDecomSave,
+    gmeComplianceCost, gmeEfficiency, teachingOverhead, academicSavings,
+    // M&A module
+    isMultiHospital, duplicateSystems, duplicateSystemCost, duplicateElimination,
+    duplicateInfraCost, infraConsolidation, standardisationSave, mergeSavings,
     annualWithReimbursement, total3WithReimbursement,
   };
 }
@@ -509,6 +537,18 @@ const DUPLICATE_TESTING_NATIONAL_COST = 43000000000; // $43bn/yr (RAND/ONC estim
 const COMM_FAILURE_PCT_CLAIMS = 0.30;        // 30% of malpractice claims involve communication failure (CRICO)
 const COMM_FAILURE_COST_5YR = 1700000000;    // $1.7bn over 5 years (CRICO, 23,658 claims)
 const COMM_WASTE_PER_HOSPITAL = 1375000;     // $1-1.75m/yr avg (Ponemon Institute)
+
+
+// ── Academic Medical Center Constants ──
+const RESEARCH_SYSTEMS_PER_100_BEDS = 3.5;     // IRB, CTMS, biobank, research repos, registry systems
+const RESEARCH_SYSTEM_AVG_COST = 180000;        // Avg annual cost of a research/academic system
+const GME_COMPLIANCE_COST_PER_BED = 850;        // ACGME reporting, residency tracking, procedure logging
+const TEACHING_OVERHEAD_PCT = 0.12;             // 12% additional system complexity for teaching workflows
+
+// ── M&A / Multi-Hospital Constants ──
+const DUPLICATE_SYSTEM_RATE = 0.35;             // 35% of systems are duplicated across facilities post-M&A
+const DUPLICATE_INFRA_COST_PER_FACILITY = 250000; // Per-facility duplicate infrastructure (data center, network, help desk)
+const CROSS_FACILITY_STANDARDISATION_PCT = 0.15; // 15% of operational costs addressable through standardisation
 
 // Provider type multipliers (modelled assumptions, clearly labelled)
 
@@ -956,6 +996,7 @@ function ROICalculator() {
       _penaltyWeight: pm.penalty_exposure * rm.penalty_weight,
       _qualityBonus: rm.quality_bonus,
       _medicareDrgRevenue: medicareDrgRevenue,
+      _providerType: providerType,
     };
   }, [inputs, providerType, reimbursementModel, medicareDrgRevenue]);
   const rCon=useMemo(()=>calc(calcInputs,"CONSERVATIVE",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
@@ -1048,6 +1089,20 @@ function ROICalculator() {
     reimbursement_impact: r.reimbursementImpact,
     quality_savings: r.qualitySavings,
     annual_with_reimbursement: r.annualWithReimbursement,
+    // Academic module
+    is_academic: r.isAcademic,
+    research_systems: r.researchSystems,
+    research_decom_save: r.researchDecomSave,
+    gme_efficiency: r.gmeEfficiency,
+    teaching_overhead: r.teachingOverhead,
+    academic_savings: r.academicSavings,
+    // M&A module
+    is_multi_hospital: r.isMultiHospital,
+    duplicate_systems: r.duplicateSystems,
+    duplicate_elimination: r.duplicateElimination,
+    infra_consolidation: r.infraConsolidation,
+    standardisation_save: r.standardisationSave,
+    merge_savings: r.mergeSavings,
     three_year_with_reimbursement: r.total3WithReimbursement,
 
     // Scenario comparison
@@ -1379,6 +1434,54 @@ function ROICalculator() {
     doc.setFontSize(7); doc.setFont("helvetica","normal"); setC(MID);
     doc.text(fmtK(r.annual) + " (decom + time) + " + fmtK(r.reimbursementImpact + r.qualitySavings) + " (reimbursement & quality)", ml + 60, y + 8);
     y += 22;
+
+    // Academic module (conditional)
+    if (r.isAcademic && r.academicSavings > 0) {
+      if (y > 200) { doc.addPage(); addPageHeader(); y = 22; }
+      doc.setFontSize(12); doc.setFont("helvetica","bold"); setC([83,74,183]);
+      doc.text("Academic Medical Center Module", ml, y); y += 2;
+      doc.autoTable({
+        startY: y,
+        margin: { left: ml, right: mr },
+        head: [["Category", "Annual savings", "Basis"]],
+        body: [
+          ["Research system decommission", fmtK(r.researchDecomSave) + "/yr", r.researchSystems + " systems at " + fmtK(RESEARCH_SYSTEM_AVG_COST) + " avg"],
+          ["GME compliance efficiency", fmtK(r.gmeEfficiency) + "/yr", "25% reduction in reporting overhead"],
+          ["Teaching workflow savings", fmtK(r.teachingOverhead) + "/yr", "Reduced complexity from consolidation"],
+          [{ content: "Academic module total", styles: { fontStyle: "bold", fillColor: [243,238,250] } },
+           { content: fmtK(r.academicSavings) + "/yr", styles: { fontStyle: "bold", textColor: [83,74,183], fillColor: [243,238,250] } },
+           { content: "", styles: { fillColor: [243,238,250] } }],
+        ],
+        headStyles: { fillColor: [83,74,183], textColor: WHITE, fontStyle: "bold", fontSize: 7.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
+        styles: { fontSize: 8.5, cellPadding: { top: 2.2, bottom: 2.2, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
+        columnStyles: { 1: { halign: "right" }, 2: { fontSize: 7, textColor: MID } },
+      });
+      y = doc.lastAutoTable.finalY + 8;
+    }
+
+    // M&A module (conditional)
+    if (r.isMultiHospital && r.mergeSavings > 0) {
+      if (y > 200) { doc.addPage(); addPageHeader(); y = 22; }
+      doc.setFontSize(12); doc.setFont("helvetica","bold"); setC(TEAL);
+      doc.text("Multi-Hospital / M&A Consolidation Module", ml, y); y += 2;
+      doc.autoTable({
+        startY: y,
+        margin: { left: ml, right: mr },
+        head: [["Category", "Annual savings", "Basis"]],
+        body: [
+          ["Duplicate system elimination", fmtK(r.duplicateElimination) + "/yr", r.duplicateSystems + " duplicates across " + inputs.org_count + " facilities"],
+          ["Infrastructure consolidation", fmtK(r.infraConsolidation) + "/yr", "$250k/facility for DC, network, help desk"],
+          ["Cross-facility standardization", fmtK(r.standardisationSave) + "/yr", "Formulary, order sets, protocols"],
+          [{ content: "M&A module total", styles: { fontStyle: "bold", fillColor: LTBG } },
+           { content: fmtK(r.mergeSavings) + "/yr", styles: { fontStyle: "bold", textColor: TEAL, fillColor: LTBG } },
+           { content: "", styles: { fillColor: LTBG } }],
+        ],
+        headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
+        styles: { fontSize: 8.5, cellPadding: { top: 2.2, bottom: 2.2, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
+        columnStyles: { 1: { halign: "right" }, 2: { fontSize: 7, textColor: MID } },
+      });
+      y = doc.lastAutoTable.finalY + 8;
+    }
 
     // Year-by-year
     if (y > 220) { doc.addPage(); addPageHeader(); y = 22; }
@@ -2128,6 +2231,74 @@ function ROICalculator() {
         <strong>Methodology:</strong> CMS penalty rates are verified (HRRP 3% cap, HAC 1%, VBP 2%). Improvement attribution uses Vest et al (JAMIA 2019) and Pattar et al (JAMA 2025, 116 RCTs). Denial benchmarks from HFMA/MDaudit 2024. All figures are scenario-adjusted and labelled as modelled estimates.
       </div>
     </Card><LockedConnector/>
+
+    {/* Academic module - conditional */}
+    {r.isAcademic && <Card dimmed={dim}>
+      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{"🎓"} Academic medical center module</h3>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and GME compliance obligations.</p>
+
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Research system decommission</div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.researchDecomSave):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>{r.researchSystems} research systems at ~{fmtK(RESEARCH_SYSTEM_AVG_COST)} avg</div>
+        </div>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>GME compliance efficiency</div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.gmeEfficiency):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>ACGME reporting, residency tracking</div>
+        </div>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Teaching workflow savings</div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.teachingOverhead):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>Reduced complexity from consolidation</div>
+        </div>
+      </div>
+
+      <Callout bg="#f3eefa" border="#c8b8e8">
+        <strong style={{color:"#534AB7"}}>Academic module total:</strong> {fmtK(r.academicSavings)}/yr
+        <span style={{fontSize:12,color:C.textMuted,marginLeft:8}}>Included in combined annual total</span>
+      </Callout>
+
+      <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
+        <strong>Note:</strong> Research system count estimated at 3.5 per 100 beds (IRB, CTMS, biobank, research repositories, specialty registries). GME efficiency assumes 25% reduction in compliance overhead from unified reporting. All figures are modelled estimates.
+      </div>
+    </Card>}
+    {r.isAcademic && <LockedConnector/>}
+
+    {/* M&A module - conditional */}
+    {r.isMultiHospital && <Card dimmed={dim}>
+      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{"🏢"} Multi-hospital / M&A consolidation module</h3>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Savings from eliminating duplicate systems and infrastructure across {inputs.org_count} facilities post-merger.</p>
+
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate system elimination</div>
+          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.duplicateElimination):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>{r.duplicateSystems} duplicate systems across {inputs.org_count} facilities</div>
+        </div>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Infrastructure consolidation</div>
+          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.infraConsolidation):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>Data center, network, help desk</div>
+        </div>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Cross-facility standardization</div>
+          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.standardisationSave):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>Formulary, order sets, protocols</div>
+        </div>
+      </div>
+
+      <Callout bg="#e8faf6" border="#a8d8c8">
+        <strong style={{color:C.accent}}>M&A module total:</strong> {fmtK(r.mergeSavings)}/yr
+        <span style={{fontSize:12,color:C.textMuted,marginLeft:8}}>Included in combined annual total</span>
+      </Callout>
+
+      <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
+        <strong>Note:</strong> Assumes 35% of legacy systems are duplicated across facilities (Becker{"'"}s: only 35% of acquired hospitals switch to acquirer{"'"}s EHR). Infrastructure savings at $250k/facility for duplicate data center, network, and support desk costs. Standardization covers formulary, order set, and protocol harmonization.
+      </div>
+    </Card>}
+    {r.isMultiHospital && <LockedConnector/>}
 
     {/* KPIs */}
     <Card dimmed={dim} style={{background:C.surface,border:`1px solid ${C.border}`}}>
