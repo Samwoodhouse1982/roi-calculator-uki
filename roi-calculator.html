@@ -1229,11 +1229,12 @@ function ROICalculator() {
 
     // Summary cards
     const cards = [
-      { label: "3-YEAR TOTAL", value: fmtK(r.total3), sub: "Decom + clinician time", bg: LTBG },
+      { label: "3-YEAR COMBINED", value: fmtK(r.total3WithReimbursement), sub: "All savings + reimbursement", bg: LTBG },
       { label: "ANNUAL RECURRING", value: fmtK(r.annual), sub: fmtK(r.decomSave) + " decom + " + fmtK(r.timeSave) + " time", bg: TEALBG },
+      { label: "REIMBURSEMENT / YR", value: fmtK(r.reimbursementImpact + r.qualitySavings), sub: "Penalties + denials + quality", bg: [254,249,236] },
       { label: "HOURS FREED / YR", value: fmtNum(r.hrsSaved), sub: Math.round(r.realisation*100) + "% realisation", bg: [230,248,252] },
     ];
-    const cardW = (cw - 8) / 3;
+    const cardW = (cw - 12) / 4;
     cards.forEach((cd, i) => {
       const cx = ml + i * (cardW + 4);
       doc.setFillColor(cd.bg[0],cd.bg[1],cd.bg[2]);
@@ -1257,9 +1258,11 @@ function ROICalculator() {
       styles: { fontSize: 9, cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 55 }, 1: { halign: "right" } },
       body: [
-        ["Journey", isArchiveOnly ? "Have enterprise EHR" : "Evaluating EPRs"],
+        ["Provider type", ({"critical_access":"Critical Access","community":"Community Hospital","regional":"Regional Medical Center","academic":"Academic Medical Center","multi_hospital":"Multi-Hospital System"})[providerType] || providerType],
+        ["Reimbursement model", ({"ffs":"Fee-for-Service","vbc":"Value-Based Care / ACO","mixed":"Mixed"})[reimbursementModel] || reimbursementModel],
+        ["Journey", isArchiveOnly ? "Have enterprise EHR" : "Evaluating EHRs"],
         ["Beds", fmtNum(inputs.bed_count)],
-        ["Organisations", String(inputs.org_count)],
+        ["Facilities", String(inputs.org_count)],
         ["Legacy systems", r.legacy + " (" + r.ent + " enterprise, " + r.dep + " departmental, " + r.nic + " standalone" + (flagships.length > 0 ? ", " + flagships.length + " named" : "") + ")"],
         ["Complexity", inputs.complexity_level],
         ["Data quality", inputs.data_quality_level],
@@ -1331,7 +1334,7 @@ function ROICalculator() {
       });
       const safetyEnd = doc.lastAutoTable.finalY + 2;
       doc.setFontSize(7); doc.setFont("helvetica","normal"); setC(GREY);
-      const litigNote = "Litigation context: US health systems face an estimated \u00a33.6bn/yr in clinical negligence settlements (NAO, Oct 2025). malpractice premiums are directly influenced by claims history. These figures are not included in the financial ROI total.";
+      const litigNote = "Context: CRICO analysis of 23,658 malpractice claims found communication failures in 30% of cases, contributing to 1,744 deaths and $1.7bn in costs over 5 years. Mello et al (Health Affairs 2010) estimated total US malpractice system cost at $55.6bn. Safety metrics are not included in the financial ROI total.";
       doc.text(doc.splitTextToSize(litigNote, cw - 16), ml + 6, safetyEnd + 2);
       // Resize safety box to fit
       const boxH = Math.max(52, safetyEnd + 10 - y);
@@ -1339,6 +1342,43 @@ function ROICalculator() {
       // Redraw box at correct size (draw over)
       y = safetyEnd + 14;
     }
+
+    // Reimbursement & compliance
+    if (y > 180) { doc.addPage(); addPageHeader(); y = 22; }
+    doc.setFontSize(12); doc.setFont("helvetica","bold"); setC(TEAL);
+    doc.text("Reimbursement & Compliance Impact", ml, y); y += 2;
+    doc.autoTable({
+      startY: y,
+      margin: { left: ml, right: mr },
+      head: [["Category", "Annual impact", "Source"]],
+      body: [
+        ["HRRP penalty avoidance", fmtK(r.hrrpReduction) + "/yr", "CMS FY2025 (0.33% avg)"],
+        ["HAC penalty avoidance", fmtK(r.hacReduction) + "/yr", "CMS HAC programme (1%)"],
+        ["VBP improvement", fmtK(r.vbpImprovement) + "/yr", "CMS VBP (2% pool)"],
+        ["Denial recovery", fmtK(r.denialRecovery) + "/yr", "HFMA/MDaudit 2024"],
+        ["Malpractice premium reduction", fmtK(r.malpracticeReduction) + "/yr", "Modelled (8% reduction)"],
+        ["Excess bed day cost avoided", fmtK(r.excessDayCostAvoided) + "/yr", "KFF/AHA 2023 ($3,132/day)"],
+        ["Duplicate testing reduction", fmtK(r.duplicateReduction) + "/yr", "ONC (25% duplicate rate)"],
+        [{ content: "Total reimbursement & quality", styles: { fontStyle: "bold", fillColor: LTBG } },
+         { content: fmtK(r.reimbursementImpact + r.qualitySavings) + "/yr", styles: { fontStyle: "bold", textColor: TEAL, fillColor: LTBG } },
+         { content: "", styles: { fillColor: LTBG } }],
+      ],
+      headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
+      styles: { fontSize: 8.5, cellPadding: { top: 2.2, bottom: 2.2, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
+      columnStyles: { 1: { halign: "right" }, 2: { fontSize: 7, textColor: MID } },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    // Combined annual summary box
+    doc.setFillColor(LTBG[0],LTBG[1],LTBG[2]);
+    doc.roundedRect(ml, y, cw, 14, 2, 2, "F");
+    doc.setFontSize(8); doc.setFont("helvetica","bold"); setC(TEAL);
+    doc.text("Combined annual impact:", ml + 4, y + 5);
+    doc.setFontSize(12);
+    doc.text(fmtK(r.annualWithReimbursement) + "/yr", ml + 4, y + 11);
+    doc.setFontSize(7); doc.setFont("helvetica","normal"); setC(MID);
+    doc.text(fmtK(r.annual) + " (decom + time) + " + fmtK(r.reimbursementImpact + r.qualitySavings) + " (reimbursement & quality)", ml + 60, y + 8);
+    y += 22;
 
     // Year-by-year
     if (y > 220) { doc.addPage(); addPageHeader(); y = 22; }
@@ -1365,7 +1405,7 @@ function ROICalculator() {
     doc.setFontSize(8); doc.setFont("helvetica","bold"); setC(TEAL);
     doc.text("Range across scenarios:", ml + 4, y + 5);
     doc.setFont("helvetica","normal"); setC(GREY);
-    doc.text(fmtK(rCon.total3) + " (conservative)  to  " + fmtK(rStr.total3) + " (stretch).  All figures are user-overridable. Clinical safety metrics are not included in financial totals.", ml + 4, y + 10);
+    doc.text(fmtK(rCon.total3WithReimbursement) + " (conservative)  to  " + fmtK(rStr.total3WithReimbursement) + " (stretch) — including reimbursement & quality impact. All figures are user-overridable.", ml + 4, y + 10);
     y += 22;
 
     // Scenario comparison mini-table
@@ -1379,8 +1419,9 @@ function ROICalculator() {
         body: [
           ["Decom savings", fmtK(rCon.decomSave) + "/yr", fmtK(r.decomSave) + "/yr", fmtK(rStr.decomSave) + "/yr"],
           ["Time savings", fmtK(rCon.timeSave) + "/yr", fmtK(r.timeSave) + "/yr", fmtK(rStr.timeSave) + "/yr"],
-          [{ content: "Annual total", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.annual) + "/yr", styles: { fontStyle: "bold" } }, { content: fmtK(r.annual) + "/yr", styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.annual) + "/yr", styles: { fontStyle: "bold" } }],
-          [{ content: "3-year total", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.total3), styles: { fontStyle: "bold" } }, { content: fmtK(r.total3), styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.total3), styles: { fontStyle: "bold" } }],
+          ["Reimbursement & quality", fmtK(rCon.reimbursementImpact + rCon.qualitySavings) + "/yr", fmtK(r.reimbursementImpact + r.qualitySavings) + "/yr", fmtK(rStr.reimbursementImpact + rStr.qualitySavings) + "/yr"],
+          [{ content: "Combined annual", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.annualWithReimbursement) + "/yr", styles: { fontStyle: "bold" } }, { content: fmtK(r.annualWithReimbursement) + "/yr", styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.annualWithReimbursement) + "/yr", styles: { fontStyle: "bold" } }],
+          [{ content: "3-year combined", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.total3WithReimbursement), styles: { fontStyle: "bold" } }, { content: fmtK(r.total3WithReimbursement), styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.total3WithReimbursement), styles: { fontStyle: "bold" } }],
         ],
         headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
         styles: { fontSize: 8.5, cellPadding: { top: 2.2, bottom: 2.2, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
