@@ -246,6 +246,10 @@
 }
 .roi-lead-input::-webkit-input-placeholder { color: rgba(255, 255, 255, 0.5) !important; }
 .roi-lead-input::-moz-placeholder { color: rgba(255, 255, 255, 0.5) !important; }
+  /* Hide number input spinners on facility counters */
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
   </style>
 </head>
 <body>
@@ -1981,7 +1985,7 @@ function ROICalculator() {
             </div>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,(p[ft.key]||0)-1)}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>-</button>
-              <span style={{fontSize:16,fontWeight:800,color:C.accent,minWidth:28,textAlign:"center"}}>{facilityPortfolio[ft.key] || 0}</span>
+              <input type="number" value={facilityPortfolio[ft.key] || 0} min={0} max={999} onChange={e=>{const v=Math.max(0,parseInt(e.target.value)||0);setFacilityPortfolio(p=>({...p,[ft.key]:v}));touch(1);}} style={{width:56,fontSize:14,fontWeight:800,color:C.accent,textAlign:"center",border:`1px solid ${C.borderLight}`,borderRadius:6,padding:"4px 2px",background:"#fff",fontFamily:"inherit",MozAppearance:"textfield",WebkitAppearance:"none"}}/>
               <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:(p[ft.key]||0)+1}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
             </div>
           </div>
@@ -1999,7 +2003,7 @@ function ROICalculator() {
             </div>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,(p[ft.key]||0)-1)}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>-</button>
-              <span style={{fontSize:16,fontWeight:800,color:C.accent,minWidth:28,textAlign:"center"}}>{facilityPortfolio[ft.key] || 0}</span>
+              <input type="number" value={facilityPortfolio[ft.key] || 0} min={0} max={999} onChange={e=>{const v=Math.max(0,parseInt(e.target.value)||0);setFacilityPortfolio(p=>({...p,[ft.key]:v}));touch(1);}} style={{width:56,fontSize:14,fontWeight:800,color:C.accent,textAlign:"center",border:`1px solid ${C.borderLight}`,borderRadius:6,padding:"4px 2px",background:"#fff",fontFamily:"inherit",MozAppearance:"textfield",WebkitAppearance:"none"}}/>
               <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:(p[ft.key]||0)+1}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
             </div>
           </div>
@@ -2017,7 +2021,7 @@ function ROICalculator() {
             </div>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,(p[ft.key]||0)-1)}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>-</button>
-              <span style={{fontSize:16,fontWeight:800,color:C.accent,minWidth:28,textAlign:"center"}}>{facilityPortfolio[ft.key] || 0}</span>
+              <input type="number" value={facilityPortfolio[ft.key] || 0} min={0} max={999} onChange={e=>{const v=Math.max(0,parseInt(e.target.value)||0);setFacilityPortfolio(p=>({...p,[ft.key]:v}));touch(1);}} style={{width:56,fontSize:14,fontWeight:800,color:C.accent,textAlign:"center",border:`1px solid ${C.borderLight}`,borderRadius:6,padding:"4px 2px",background:"#fff",fontFamily:"inherit",MozAppearance:"textfield",WebkitAppearance:"none"}}/>
               <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:(p[ft.key]||0)+1}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
             </div>
           </div>
