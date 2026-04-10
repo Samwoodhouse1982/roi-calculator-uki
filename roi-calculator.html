@@ -1029,7 +1029,7 @@ function ROICalculator() {
     setCostMode("estimate"); setKnownAnnualSpend(null);
     setPerOrgBeds(true);
     const n = s.totalFacilities;
-    const bedEach = Math.round(s.totalBeds / n / 10) * 10;
+    const bedEach = Math.floor(s.totalBeds / n / 10) * 10;
     const bedRem = s.totalBeds - bedEach * (n - 1);
     setOrgBedsList(Array.from({length:n}, (_,i) => i===0 ? bedRem : bedEach));
     const splitT = (total) => { const each = Math.floor(total / n); return Array.from({length:n}, (_,i) => i===0 ? total - each*(n-1) : each); };
@@ -1045,7 +1045,7 @@ function ROICalculator() {
     setPerOrgBeds(false); setPerOrgSystems(false); setFlagships([]); setTierCostEdits({enterprise:null,departmental:null,niche:null}); setEditingTierCost(null); setCostMode("estimate"); setKnownAnnualSpend(null);
     // Size per-org arrays to match org count, split evenly
     const n = d.org_count;
-    const bedEach = Math.round(d.bed_count / n / 10) * 10;
+    const bedEach = Math.floor(d.bed_count / n / 10) * 10;
     const bedRem = d.bed_count - bedEach * (n - 1);
     setOrgBedsList(Array.from({length:n}, (_,i) => i===0 ? bedRem : bedEach));
     const splitT = (total) => { const each = Math.floor(total / n); return Array.from({length:n}, (_,i) => i===0 ? total - each*(n-1) : each); };
