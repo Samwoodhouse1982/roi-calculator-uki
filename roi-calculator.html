@@ -374,8 +374,8 @@ function calc(inp, mode, ov = {}, flagships = []) {
   if (hasClinicalScope) {
     const frag = 0.6 + Math.min(legacy, 20) / 20 * 0.6;
     safetyMedErrorsBaseline = Math.round(inp.bed_count * MED_ERRORS_PER_BED * frag * dq);
-    const harmedBl = Math.round(inp.bed_count * PATIENTS_HARMED_PER_BED * frag * dq);
-    const bedDaysBl = Math.round(inp.bed_count * EXCESS_BED_DAYS_PER_BED * frag * dq);
+    const harmedBl = Math.round(inp.bed_count * PATIENTS_HARMED_PER_BED * FRAGMENTATION_ATTRIBUTION * frag * dq);
+    const bedDaysBl = Math.round(inp.bed_count * EXCESS_BED_DAYS_PER_BED * FRAGMENTATION_ATTRIBUTION * frag * dq);
     safetyMedErrorsAvoided = Math.round(safetyMedErrorsBaseline * sc.safety);
     safetyPatientsProtected = Math.round(harmedBl * sc.safety);
     safetyBedDaysAvoided = Math.round(bedDaysBl * sc.safety);
@@ -431,7 +431,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const teachingOverhead = isAcademic ? Math.round(totalEstate * TEACHING_OVERHEAD_PCT * 0.30 * sc.decom_pct) : 0; // 30% of 12% extra complexity
 
   // ── Network Consolidation Module ──
-  const isMultiHospital = inp._providerType === "state_network";
+  const isMultiHospital = inp._providerType === "state_network" || inp._providerType === "statewide";
   const duplicateSystems = isMultiHospital ? Math.round(legacy * DUPLICATE_SYSTEM_RATE) : 0;
   const duplicateSystemCost = isMultiHospital ? Math.round(duplicateSystems * blendedCost) : 0;
   const duplicateElimination = Math.round(duplicateSystemCost * sc.decom_pct);
@@ -500,7 +500,8 @@ const PRESETS = {
   SMALL: { label:"Rural / Remote Hospital", desc:"~30 beds · 1 facility · 6 systems", data:{ bed_count:30, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:2,niche:3}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1,RAD_REPORTS:1}, complexity_level:"LOW", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   TYPICAL: { label:"Regional Hospital", desc:"~200 beds · 1 facility · 15 systems", data:{ bed_count:250, org_count:1, journey:"EVALUATING", tiers:{enterprise:1,departmental:5,niche:9}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:1,RAD_REPORTS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   LARGE: { label:"Metropolitan / Tertiary", desc:"~500 beds · 1 facility · 25 systems", data:{ bed_count:600, org_count:1, journey:"EVALUATING", tiers:{enterprise:2,departmental:8,niche:15}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:2,RAD_REPORTS:1,DOC_ECM:2,SCANNED_NOTES:1,MATERNITY:1,COMMUNITY:1}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
-  REGIONAL: { label:"State Health Network / LHD", desc:"~3000 beds · 5 facilities · 70+ systems", data:{ bed_count:3000, org_count:8, journey:"EVALUATING", tiers:{enterprise:6,departmental:28,niche:50}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
+  REGIONAL: { label:"Local Health District / HHS", desc:"~3000 beds · 12 hospitals · 80+ systems", data:{ bed_count:3000, org_count:12, journey:"EVALUATING", tiers:{enterprise:4,departmental:28,niche:50}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
+  STATEWIDE: { label:"Statewide Programme", desc:"~25000 beds · 200+ hospitals · 15+ LHDs · 500+ systems", data:{ bed_count:25000, org_count:15, journey:"EVALUATING", tiers:{enterprise:24,departmental:150,niche:400}, data_types:{...emptyDt(),EPR_PAS:8,ED:6,THEATRES:5,LAB:8,RAD_REPORTS:6,DOC_ECM:8,SCANNED_NOTES:6,MATERNITY:5,COMMUNITY:6,MENTAL_HEALTH:4,REFERRALS:3,OTHER:4}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.65 }},
 };
 
 // ── Model constants ──
@@ -517,7 +518,8 @@ const SAR_DAYS_PER_SYSTEM_BEFORE = 0.4;
 const SAR_DAYS_PER_SYSTEM_AFTER = 0.15;
 const MED_ERRORS_PER_BED = 14;  // ACSQHC sentinel event data
 const PATIENTS_HARMED_PER_BED = 5.8;   // AIHW admin data: 5.4-6.6% of separations; ~108 seps/bed * 5.4% (conservative)
-const EXCESS_BED_DAYS_PER_BED = 8.0;   // QAHCS/AIHW: AEs account for ~8% of bed days; ~50% preventable; conservative of ~13/bed/yr
+const EXCESS_BED_DAYS_PER_BED = 8.0;   // QAHCS/AIHW: AEs account for ~8% of bed days; ~50% preventable
+const FRAGMENTATION_ATTRIBUTION = 0.35;  // 35% of preventable AEs attributable to information/communication failure (ACSQHC)
 
 
 // ── Australian ABF & Efficiency Constants ──
@@ -546,7 +548,7 @@ const TEACHING_OVERHEAD_PCT = 0.12;             // 12% additional system complex
 
 // ── Network Consolidation Constants ──
 const DUPLICATE_SYSTEM_RATE = 0.35;             // 35% of systems are duplicated across facilities post-M&A
-const DUPLICATE_INFRA_COST_PER_FACILITY = 250000; // Per-facility duplicate infrastructure (data center, network, help desk)
+const DUPLICATE_INFRA_COST_PER_FACILITY = 350000; // Per-LHD/facility duplicate infrastructure (data centre, network, service desk, training)
 const CROSS_FACILITY_STANDARDISATION_PCT = 0.15; // 15% of operational costs addressable through standardisation
 
 // Provider type multipliers (modelled assumptions, clearly labelled)
@@ -557,6 +559,7 @@ const PROVIDER_PRESET_MAP = {
   metropolitan: "LARGE",
   tertiary: "LARGE",
   state_network: "REGIONAL",
+  statewide: "STATEWIDE",
 };
 const PROVIDER_MULTIPLIERS = {
   rural_remote:     { abf_pct: 0.80, private_pct: 0.05, complexity_boost: 0.7 },
@@ -564,6 +567,7 @@ const PROVIDER_MULTIPLIERS = {
   metropolitan:     { abf_pct: 0.70, private_pct: 0.18, complexity_boost: 1.2 },
   tertiary:         { abf_pct: 0.65, private_pct: 0.25, complexity_boost: 1.5 },
   state_network:    { abf_pct: 0.72, private_pct: 0.15, complexity_boost: 1.3 },
+  statewide:        { abf_pct: 0.70, private_pct: 0.18, complexity_boost: 1.5 },
 };
 
 // ABF model multipliers
@@ -1419,7 +1423,7 @@ function ROICalculator() {
       styles: { fontSize: 9, cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 55 }, 1: { halign: "right" } },
       body: [
-        ["Provider type", ({"rural_remote":"Rural / Remote","regional":"Regional Hospital","metropolitan":"Metropolitan Hospital","tertiary":"Tertiary Referral","state_network":"State Health Network"})[providerType] || providerType],
+        ["Provider type", ({"rural_remote":"Rural / Remote","regional":"Regional Hospital","metropolitan":"Metropolitan Hospital","tertiary":"Tertiary Referral","state_network":"LHD / Health Service","statewide":"Statewide Programme"})[providerType] || providerType],
         ["Funding model", ({"public":"Public (ABF-funded)","mixed":"Public + Private","private":"Predominantly Private"})[reimbursementModel] || reimbursementModel],
         ["Journey", isArchiveOnly ? "Have enterprise EHR" : "Evaluating EHRs"],
         ["Beds", fmtNum(inputs.bed_count)],
@@ -1787,7 +1791,8 @@ function ROICalculator() {
           {k:"regional",l:"Regional Hospital",d:"100-300 beds, district systems",e:"🏥"},
           {k:"metropolitan",l:"Metropolitan Hospital",d:"300-600 beds, complex integrations",e:"🏥"},
           {k:"tertiary",l:"Tertiary Referral / Teaching",d:"Major teaching hospital, research",e:"🎓"},
-          {k:"state_network",l:"State Health Network / LHD",d:"Multiple facilities, whole-of-network",e:"🏢"},
+          {k:"state_network",l:"LHD / Health Service",d:"Single district, multiple facilities",e:"🏢"},
+          {k:"statewide",l:"Statewide Programme",d:"All LHDs, 200+ hospitals, single EMR",e:"🏥"},
         ].map(p=><button type="button" key={p.k} onClick={()=>{setProviderType(p.k);const pk=PROVIDER_PRESET_MAP[p.k];if(pk)applyPreset(pk);}} className="roi-preset" style={{width:"100%",padding:"12px 14px",textAlign:"left",border:providerType===p.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:providerType===p.k?C.accentPale:"#fff",cursor:"pointer"}}>
           <div style={{fontSize:13,fontWeight:700,color:providerType===p.k?C.accent:C.text}}>{p.e} {p.l}</div>
           <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{p.d}</div>
@@ -1811,7 +1816,8 @@ function ROICalculator() {
         {providerType === "community" && "Regional hospitals serve as district hubs. EMR consolidation yields strong ROI through decommission savings and improved data sharing."}
         {providerType === "regional" && "Metropolitan hospitals have complex legacy estates. The consolidation case includes cost reduction and improved clinical data continuity."}
         {providerType === "academic" && "Tertiary referral centres carry the highest system complexity (40-200+ applications). The ROI case includes research system rationalisation alongside operational savings."}
-        {providerType === "multi_hospital" && "State health networks and LHDs typically have 2-3x the legacy system count. Consolidation eliminates duplicate infrastructure across the network."}
+        {providerType === "state_network" && "LHDs and Health Services typically have 2-3x the legacy system count across their facilities. Consolidation eliminates duplicate infrastructure across the district."}
+        {providerType === "statewide" && "Statewide programmes replace the entire state legacy estate with a single EMR. The ROI case is dominated by the sheer scale of duplicate systems, the workforce time freed across tens of thousands of clinicians, and the patient safety gains from a single source of truth across all hospitals and community services."}
       </div>
     </Card>
     <LockedConnector/>
