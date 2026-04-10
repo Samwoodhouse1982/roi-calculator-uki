@@ -321,8 +321,8 @@ const CX = { LOW: 0.7, TYPICAL: 1.0, HIGH: 1.45 };
 const DQ = { CLEAN: 0.75, MIXED: 1.0, POOR: 1.4 };
 
 function tierCost(tier, beds, cx) {
-  const base = tier === "enterprise" ? 300000 : tier === "departmental" ? 75000 : 14000;
-  const perBed = tier === "enterprise" ? 700 : tier === "departmental" ? 160 : 20;
+  const base = tier === "enterprise" ? 250000 : tier === "departmental" ? 65000 : 12000;
+  const perBed = tier === "enterprise" ? 600 : tier === "departmental" ? 140 : 18;
   return Math.round(((base + beds * perBed) * cx) / 1000) * 1000;
 }
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -395,9 +395,10 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const hrrpExposure = 0;
   const hrrpReduction = 0;
 
-  // HAC penalty exposure (bottom quartile = 1% of all Medicare payments)
+  // (HAC/VBP zeroed for AU - no CMS equivalent)
   // Private patient revenue uplift
-  const privateLeakage = Math.round(admissionsPerYear * 0.15 * PRIVATE_PATIENT_LEAKAGE * PRIVATE_EPISODE_AVG_VALUE);
+  const privatePct = inp._privatePct || 0.15;
+  const privateLeakage = Math.round(admissionsPerYear * privatePct * PRIVATE_PATIENT_LEAKAGE * PRIVATE_EPISODE_AVG_VALUE);
   const privateRevRecovery = Math.round(privateLeakage * 0.30 * sc.decom_pct);
   const hacExposure = 0, hacReduction = 0;
 
@@ -407,7 +408,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
 
   // Malpractice premium reduction (modelled assumption)
   const malpracticePremium = inp.bed_count * INDEMNITY_COST_PER_BED;
-  const malpracticeReduction = Math.round(malpracticePremium * INDEMNITY_REDUCTION_PCT * sc.safety); — conservative (CRICO: 30% of claims involve comms failure)
+  const malpracticeReduction = Math.round(malpracticePremium * INDEMNITY_REDUCTION_PCT * sc.safety); // ACSQHC: 35% of incidents involve communication failure
 
   // Excess bed days avoided (unified with safety section)
   const preventableADEs = Math.round(admissionsPerYear / 100 * PREVENTABLE_ADE_PER_100_ADMITS);
@@ -447,17 +448,17 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const qualitySavings = malpracticeReduction + excessDayCostAvoided + duplicateReduction;
 
   const annual = decomSave + timeSave;
-  const annualWithABF & quality = annual + reimbursementImpact + qualitySavings + academicSavings + mergeSavings;
+  const annualWithReimbursement = annual + reimbursementImpact + qualitySavings + academicSavings + mergeSavings;
   // Phased ramp: Year 1 = 40%, Year 2 = 80%, Year 3 = 100% of steady-state
   const y1Pct = 0.40, y2Pct = 0.80, y3Pct = 1.00;
   const yr1 = Math.round(annual * y1Pct);
   const yr2 = Math.round(annual * y2Pct);
   const yr3 = Math.round(annual * y3Pct);
   const total3 = yr1 + yr2 + yr3;
-  const yr1R = Math.round(annualWithABF & quality * y1Pct);
-  const yr2R = Math.round(annualWithABF & quality * y2Pct);
-  const yr3R = Math.round(annualWithABF & quality * y3Pct);
-  const total3WithABF & quality = yr1R + yr2R + yr3R;
+  const yr1R = Math.round(annualWithReimbursement * y1Pct);
+  const yr2R = Math.round(annualWithReimbursement * y2Pct);
+  const yr3R = Math.round(annualWithReimbursement * y3Pct);
+  const total3WithReimbursement = yr1R + yr2R + yr3R;
   return {
     legacy, ent, dep, nic, entCost, depCost, nicCost, blendedCost, totalEstate,
     decom, entDecom, depDecom, nicDecom, decomSave,
@@ -482,7 +483,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     // M&A module
     isMultiHospital, duplicateSystems, duplicateSystemCost, duplicateElimination,
     duplicateInfraCost, infraConsolidation, standardisationSave, mergeSavings,
-    annualWithABF & quality, total3WithABF & quality, yr1R, yr2R, yr3R,
+    annualWithReimbursement, total3WithReimbursement, yr1R, yr2R, yr3R,
   };
 }
 
@@ -1076,6 +1077,7 @@ function ROICalculator() {
       _medicareDrgRevenue: medicareDrgRevenue,
       _occupancy: occupancyRate,
       _providerType: providerType,
+      _privatePct: PROVIDER_MULTIPLIERS[providerType]?.private_pct || 0.15,
       _portfolioSystems: portfolioImpact.addSystems,
       _portfolioStaff: portfolioImpact.addStaff,
       _portfolioCost: portfolioImpact.addCost,
@@ -1170,7 +1172,7 @@ function ROICalculator() {
     duplicate_reduction: r.duplicateReduction,
     reimbursement_impact: r.reimbursementImpact,
     quality_savings: r.qualitySavings,
-    annual_with_reimbursement: r.annualWithABF & quality,
+    annual_with_reimbursement: r.annualWithReimbursement,
     // Academic module
     is_academic: r.isAcademic,
     research_systems: r.researchSystems,
@@ -1185,7 +1187,7 @@ function ROICalculator() {
     infra_consolidation: r.infraConsolidation,
     standardisation_save: r.standardisationSave,
     merge_savings: r.mergeSavings,
-    three_year_with_reimbursement: r.total3WithABF & quality,
+    three_year_with_reimbursement: r.total3WithReimbursement,
     galen_migration_cost: galenMigrationCost,
     galen_annual_cost: galenAnnualCost,
     galen_3yr_total: galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)),
@@ -1195,7 +1197,7 @@ function ROICalculator() {
     portfolio_additional_systems: portfolioImpact.addSystems,
     portfolio_additional_staff: portfolioImpact.addStaff,
     portfolio_additional_cost: portfolioImpact.addCost,
-    net_3yr_savings: (galenMigrationCost > 0 || galenAnnualCost > 0) ? r.total3WithABF & quality - galenMigrationCost - Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)) : null,
+    net_3yr_savings: (galenMigrationCost > 0 || galenAnnualCost > 0) ? r.total3WithReimbursement - galenMigrationCost - Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)) : null,
     yr1: r.yr1, yr2: r.yr2, yr3: r.yr3,
     yr1_pct: r.y1Pct, yr2_pct: r.y2Pct, yr3_pct: r.y3Pct,
     admissions_per_year: r.admissionsPerYear,
@@ -1381,7 +1383,7 @@ function ROICalculator() {
 
     // Summary cards
     const cards = [
-      { label: "3-YEAR COMBINED", value: fmtK(r.total3WithABF & quality), sub: "All savings + reimbursement", bg: LTBG },
+      { label: "3-YEAR COMBINED", value: fmtK(r.total3WithReimbursement), sub: "All savings + reimbursement", bg: LTBG },
       { label: "ANNUAL RECURRING", value: fmtK(r.annual), sub: fmtK(r.decomSave) + " decom + " + fmtK(r.timeSave) + " time", bg: TEALBG },
       { label: "REIMBURSEMENT / YR", value: fmtK(r.reimbursementImpact + r.qualitySavings), sub: "Penalties + denials + quality", bg: [254,249,236] },
       { label: "HOURS FREED / YR", value: fmtNum(r.hrsSaved), sub: Math.round(r.realisation*100) + "% realisation", bg: [230,248,252] },
@@ -1486,7 +1488,7 @@ function ROICalculator() {
       });
       const safetyEnd = doc.lastAutoTable.finalY + 2;
       doc.setFontSize(7); doc.setFont("helvetica","normal"); setC(GREY);
-      const litigNote = "Context: CRICO analysis of 23,658 malpractice claims found communication failures in 30% of cases, contributing to 1,744 deaths and $1.7bn in costs over 5 years. Mello et al (Health Affairs 2010) estimated total US malpractice system cost at $55.6bn. Safety metrics are not included in the financial ROI total.";
+      const litigNote = "Context: ACSQHC reports that communication failure is a contributing factor in approximately 35% of clinical incidents. State-based medical indemnity schemes (icare NSW, VMIA VIC) show that adverse events from fragmented clinical information drive a significant proportion of claims. Safety metrics are not included in the financial ROI total.";
       doc.text(doc.splitTextToSize(litigNote, cw - 16), ml + 6, safetyEnd + 2);
       // Resize safety box to fit
       const boxH = Math.max(52, safetyEnd + 10 - y);
@@ -1527,7 +1529,7 @@ function ROICalculator() {
     doc.setFontSize(8); doc.setFont("helvetica","bold"); setC(TEAL);
     doc.text("Combined annual impact:", ml + 4, y + 5);
     doc.setFontSize(12);
-    doc.text(fmtK(r.annualWithABF & quality) + "/yr", ml + 4, y + 11);
+    doc.text(fmtK(r.annualWithReimbursement) + "/yr", ml + 4, y + 11);
     doc.setFontSize(7); doc.setFont("helvetica","normal"); setC(MID);
     doc.text(fmtK(r.annual) + " (decom + time) + " + fmtK(r.reimbursementImpact + r.qualitySavings) + " (reimbursement & quality)", ml + 60, y + 8);
     y += 22;
@@ -1605,7 +1607,7 @@ function ROICalculator() {
     doc.setFontSize(8); doc.setFont("helvetica","bold"); setC(TEAL);
     doc.text("Range across scenarios:", ml + 4, y + 5);
     doc.setFont("helvetica","normal"); setC(GREY);
-    doc.text(fmtK(rCon.total3WithABF & quality) + " (conservative)  to  " + fmtK(rStr.total3WithABF & quality) + " (stretch) — including reimbursement & quality impact. All figures are user-overridable.", ml + 4, y + 10);
+    doc.text(fmtK(rCon.total3WithReimbursement) + " (conservative)  to  " + fmtK(rStr.total3WithReimbursement) + " (stretch). Including ABF efficiency and quality impact. All figures are user-overridable.", ml + 4, y + 10);
     y += 22;
 
     // Scenario comparison mini-table
@@ -1620,8 +1622,8 @@ function ROICalculator() {
           ["Decom savings", fmtK(rCon.decomSave) + "/yr", fmtK(r.decomSave) + "/yr", fmtK(rStr.decomSave) + "/yr"],
           ["Time savings", fmtK(rCon.timeSave) + "/yr", fmtK(r.timeSave) + "/yr", fmtK(rStr.timeSave) + "/yr"],
           ["ABF & quality & quality", fmtK(rCon.reimbursementImpact + rCon.qualitySavings) + "/yr", fmtK(r.reimbursementImpact + r.qualitySavings) + "/yr", fmtK(rStr.reimbursementImpact + rStr.qualitySavings) + "/yr"],
-          [{ content: "Combined annual", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.annualWithABF & quality) + "/yr", styles: { fontStyle: "bold" } }, { content: fmtK(r.annualWithABF & quality) + "/yr", styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.annualWithABF & quality) + "/yr", styles: { fontStyle: "bold" } }],
-          [{ content: "3-year combined", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.total3WithABF & quality), styles: { fontStyle: "bold" } }, { content: fmtK(r.total3WithABF & quality), styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.total3WithABF & quality), styles: { fontStyle: "bold" } }],
+          [{ content: "Combined annual", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.annualWithReimbursement) + "/yr", styles: { fontStyle: "bold" } }, { content: fmtK(r.annualWithReimbursement) + "/yr", styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.annualWithReimbursement) + "/yr", styles: { fontStyle: "bold" } }],
+          [{ content: "3-year combined", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.total3WithReimbursement), styles: { fontStyle: "bold" } }, { content: fmtK(r.total3WithReimbursement), styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.total3WithReimbursement), styles: { fontStyle: "bold" } }],
         ],
         headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
         styles: { fontSize: 8.5, cellPadding: { top: 2.2, bottom: 2.2, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
@@ -2485,7 +2487,7 @@ function ROICalculator() {
         <strong style={{color:C.green}}>Total reimbursement & quality impact:</strong>{" "}
         {fmtK(r.reimbursementImpact + r.qualitySavings)}/yr
         <span style={{margin:"0 8px",color:C.textMuted}}>|</span>
-        Combined total: <strong style={{color:C.accent}}>{fmtK(r.annualWithABF & quality)}/yr</strong>
+        Combined total: <strong style={{color:C.accent}}>{fmtK(r.annualWithReimbursement)}/yr</strong>
       </Callout>
 
       <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
@@ -2748,7 +2750,7 @@ function ROICalculator() {
           <p style={{margin:"4px 0"}}><strong>0.28 patients harmed per bed/yr</strong> {" - "} HHS OIG (2022) found 25% of hospitalized Medicare patients experienced adverse events, with 12% experiencing serious harm and 43% of all harm events deemed preventable. <Ev s="HHS Office of Inspector General, Adverse Events in Hospitals, 2022."/></p>
           <p style={{margin:"4px 0"}}><strong>0.30 excess bed days per bed/yr</strong> {" - "} ACSQHC data shows 1.5-2.5 excess days per preventable adverse event. At A$3,100/day national average per diem (IHPA 2023). <Ev s="ACSQHC sentinel event data; AIHW hospital statistics; IHPA 2023."/></p>
           <p style={{margin:"4px 0"}}><strong>Fragmentation index</strong> (0.6-1.2) scales risk by number of systems. Vest et al (JAMIA 2015) found 57% higher odds of same-cause readmission with fragmented records. Caps at 20 systems (diminishing marginal fragmentation). <Md s="No published fragmentation index exists. Informed by Vest et al JAMIA 2015 readmission odds."/></p>
-          <p style={{margin:"4px 0"}}><strong>Malpractice context:</strong> CRICO Strategies analysis of 23,658 malpractice claims found communication failures in 30% of all claims, contributing to 1,744 patient deaths and $1.7bn in costs over 5 years. Mello et al (Health Affairs 2010) estimated total US malpractice system cost at $55.6bn. <Ev s="CRICO Strategies 2016; Mello et al Health Affairs 2010; AMA MLM 2024."/></p>
+          <p style={{margin:"4px 0"}}><strong>Medical indemnity context:</strong> ACSQHC reports that communication failure contributes to approximately 35% of clinical incidents in Australian hospitals. State-based indemnity schemes (icare NSW, VMIA VIC, Coverforce QLD) reflect this in claims data. EMR consolidation reduces fragmentation-related communication failures. <Ev s="ACSQHC National Safety Reports; icare NSW annual reports; VMIA clinical risk data."/></p>
         </S>
 
         <S title="7. Evidence base and validation">
@@ -2759,7 +2761,7 @@ function ROICalculator() {
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Readmission reduction (EHR)</td><td style={{padding:"6px 10px",textAlign:"center"}}>17% relative</td><td style={{padding:"6px 10px"}}>Pattar et al, JAMA 2025 (116 RCTs)</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Single-vendor EHR effect</td><td style={{padding:"6px 10px",textAlign:"center"}}>0.8pp absolute</td><td style={{padding:"6px 10px"}}>Vest et al, JAMIA 2019</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Patients harmed (Medicare)</td><td style={{padding:"6px 10px",textAlign:"center"}}>25% of admits</td><td style={{padding:"6px 10px"}}>HHS OIG 2022</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Comm. failure in claims</td><td style={{padding:"6px 10px",textAlign:"center"}}>30%</td><td style={{padding:"6px 10px"}}>CRICO 2016 (23,658 claims)</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Comm. failure in incidents</td><td style={{padding:"6px 10px",textAlign:"center"}}>35%</td><td style={{padding:"6px 10px"}}>ACSQHC root cause analyses</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Excess bed day cost</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$3,100/day</td><td style={{padding:"6px 10px"}}>IHPA 2023</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Denial rate (initial)</td><td style={{padding:"6px 10px",textAlign:"center"}}>11.8%</td><td style={{padding:"6px 10px"}}>Kodiak Solutions 2024</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>ABF IT overhead</td><td style={{padding:"6px 10px",textAlign:"center"}}>8%</td><td style={{padding:"6px 10px"}}>IHPA 2024-25</td></tr>
@@ -2778,7 +2780,7 @@ function ROICalculator() {
           <p style={{margin:"4px 0"}}><strong>HAC 1% bottom quartile</strong> {" - "} Hospital-Acquired Condition Reduction Program. Bottom 25% of hospitals lose 1% of total Medicare payments. <Ev s="CMS HAC Reduction Program; 42 CFR 412.170-172."/></p>
           <p style={{margin:"4px 0"}}><strong>VBP 2% withhold</strong> {" - "} Value-Based Purchasing. Budget neutral: 2% withheld from all, redistributed based on performance. ~$1.7bn redistributed FY2026. <Ev s="CMS VBP programme; AHA fact sheet 2025."/></p>
           <p style={{margin:"4px 0"}}><strong>Private patient revenue leakage</strong> {" - "} Estimated 15% of privately insured episodes in public hospitals go unbilled or under-billed due to incomplete clinical documentation (state audit data). Average private episode value A$4,200 above ABF rate. <Ev s="State health department audit reports; PHIO annual reports."/></p>
-          <p style={{margin:"4px 0"}}><strong>Malpractice $2,200/bed</strong> {" - "} Institutional premium allocation. Total US malpractice system cost $55.6bn (Mello et al, Health Affairs 2010). 8% premium reduction from consolidation is a modelled assumption. <Md s="$2,200/bed is modelled. 8% reduction is assumption based on CRICO communication failure data."/></p>
+          <p style={{margin:"4px 0"}}><strong>Medical indemnity A$3,800/bed</strong> {" - "} Institutional indemnity allocation based on state scheme data (icare NSW, VMIA VIC). 5% reduction from consolidation is a modelled assumption based on ACSQHC communication failure data. <Md s="A$3,800/bed is modelled from state indemnity scheme data. 5% reduction based on ACSQHC communication failure proportion (35%)."/></p>
           <p style={{margin:"4px 0"}}><strong>Provider type multipliers</strong> affect ABF funding proportion, private patient rate, and system complexity weighting. Rural hospitals have lower private patient rates; tertiary centres have higher system complexity due to research and teaching platforms. <Md s="Provider multipliers are modelled estimates based on Australian hospital classification and casemix data."/></p>
         </S>
 
@@ -2822,7 +2824,7 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:12}}>
         <div style={{flex:"1 1 160px",padding:"16px 18px",background:C.greenPale,borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>3-year gross savings</div>
-          <div style={{fontSize:22,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.total3WithABF & quality):"–"}</div>
+          <div style={{fontSize:22,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement):"–"}</div>
           <div style={{fontSize:11,color:C.textMuted}}>Phased: 40% / 80% / 100%</div>
         </div>
         <div style={{flex:"1 1 160px",padding:"16px 18px",background:"#fef0f0",borderRadius:10,textAlign:"center"}}>
@@ -2835,10 +2837,10 @@ function ROICalculator() {
           <div style={{fontSize:22,fontWeight:800,color:"#993535",margin:"6px 0"}}>{fmtK(Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))}</div>
           <div style={{fontSize:11,color:C.textMuted}}>{fmtK(galenAnnualCost)}/yr phased</div>
         </div>
-        <div style={{flex:"1 1 160px",padding:"16px 18px",background:(r.total3WithABF & quality - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.greenPale : "#fef0f0",borderRadius:10,textAlign:"center"}}>
+        <div style={{flex:"1 1 160px",padding:"16px 18px",background:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.greenPale : "#fef0f0",borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>3-year net savings</div>
-          <div style={{fontSize:22,fontWeight:800,color:(r.total3WithABF & quality - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.green : "#993535",margin:"6px 0"}}>{an?fmtK(r.total3WithABF & quality - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))):"–"}</div>
-          <div style={{fontSize:11,color:C.textMuted}}>Payback: ~{an && r.annualWithABF & quality > galenAnnualCost ? (galenMigrationCost / (r.annualWithABF & quality - galenAnnualCost)).toFixed(1) : "–"} years</div>
+          <div style={{fontSize:22,fontWeight:800,color:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.green : "#993535",margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))):"–"}</div>
+          <div style={{fontSize:11,color:C.textMuted}}>Payback: ~{an && r.annualWithReimbursement > galenAnnualCost ? (galenMigrationCost / (r.annualWithReimbursement - galenAnnualCost)).toFixed(1) : "–"} years</div>
         </div>
       </div>
     </Card>}
