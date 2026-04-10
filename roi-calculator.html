@@ -323,7 +323,8 @@ const DQ = { CLEAN: 0.75, MIXED: 1.0, POOR: 1.4 };
 function tierCost(tier, beds, cx) {
   const base = tier === "enterprise" ? 250000 : tier === "departmental" ? 65000 : 12000;
   const perBed = tier === "enterprise" ? 600 : tier === "departmental" ? 140 : 18;
-  return Math.round(((base + beds * perBed) * cx) / 1000) * 1000;
+  const maxCost = tier === "enterprise" ? 3000000 : tier === "departmental" ? 500000 : 80000;
+  return Math.min(maxCost, Math.round(((base + beds * perBed) * cx) / 1000) * 1000);
 }
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
@@ -435,7 +436,8 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const duplicateSystems = isMultiHospital ? Math.round(legacy * DUPLICATE_SYSTEM_RATE) : 0;
   const duplicateSystemCost = isMultiHospital ? Math.round(duplicateSystems * blendedCost) : 0;
   const duplicateElimination = Math.round(duplicateSystemCost * sc.decom_pct);
-  const duplicateInfraCost = isMultiHospital ? inp.org_count * DUPLICATE_INFRA_COST_PER_FACILITY : 0;
+  const lhdCount = inp._lhdCount || Math.max(1, Math.round(inp.org_count / 15)); // LHDs/HHSs, not individual hospitals
+  const duplicateInfraCost = isMultiHospital ? lhdCount * DUPLICATE_INFRA_COST_PER_FACILITY : 0;
   const infraConsolidation = Math.round(duplicateInfraCost * 0.60 * sc.decom_pct); // 60% consolidatable
   const standardisationSave = isMultiHospital ? Math.round(totalEstate * CROSS_FACILITY_STANDARDISATION_PCT * sc.decom_pct) : 0;
 
@@ -501,7 +503,7 @@ const PRESETS = {
   TYPICAL: { label:"Regional Hospital", desc:"~200 beds · 1 facility · 15 systems", data:{ bed_count:250, org_count:1, journey:"EVALUATING", tiers:{enterprise:1,departmental:5,niche:9}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:1,RAD_REPORTS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   LARGE: { label:"Metropolitan / Tertiary", desc:"~500 beds · 1 facility · 25 systems", data:{ bed_count:600, org_count:1, journey:"EVALUATING", tiers:{enterprise:2,departmental:8,niche:15}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:2,RAD_REPORTS:1,DOC_ECM:2,SCANNED_NOTES:1,MATERNITY:1,COMMUNITY:1}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   REGIONAL: { label:"Local Health District / HHS", desc:"~3000 beds · 12 hospitals · 80+ systems", data:{ bed_count:3000, org_count:12, journey:"EVALUATING", tiers:{enterprise:4,departmental:28,niche:50}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
-  STATEWIDE: { label:"Statewide Programme", desc:"~25000 beds · 200+ hospitals · 15+ LHDs · 500+ systems", data:{ bed_count:25000, org_count:15, journey:"EVALUATING", tiers:{enterprise:24,departmental:150,niche:400}, data_types:{...emptyDt(),EPR_PAS:8,ED:6,THEATRES:5,LAB:8,RAD_REPORTS:6,DOC_ECM:8,SCANNED_NOTES:6,MATERNITY:5,COMMUNITY:6,MENTAL_HEALTH:4,REFERRALS:3,OTHER:4}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.65 }},
+  STATEWIDE: { label:"Statewide Programme", desc:"~25000 beds · 200+ hospitals · 15+ LHDs · 500+ systems", data:{ bed_count:25000, org_count:200, journey:"EVALUATING", tiers:{enterprise:24,departmental:150,niche:400}, data_types:{...emptyDt(),EPR_PAS:8,ED:6,THEATRES:5,LAB:8,RAD_REPORTS:6,DOC_ECM:8,SCANNED_NOTES:6,MATERNITY:5,COMMUNITY:6,MENTAL_HEALTH:4,REFERRALS:3,OTHER:4}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.65 }},
 };
 
 // ── Model constants ──
@@ -1087,6 +1089,7 @@ function ROICalculator() {
       _occupancy: occupancyRate,
       _rampYears: rampYears,
       _providerType: providerType,
+      _lhdCount: providerType === "statewide" ? 15 : (providerType === "state_network" ? Math.max(1, inputs.org_count) : 0),
       _privatePct: PROVIDER_MULTIPLIERS[providerType]?.private_pct || 0.15,
       _portfolioSystems: portfolioImpact.addSystems,
       _portfolioStaff: portfolioImpact.addStaff,
