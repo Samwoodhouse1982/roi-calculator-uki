@@ -1532,9 +1532,9 @@ function ROICalculator() {
       head: [["Category", "Annual impact", "Source"]],
       body: [
         ["ABF efficiency gain", fmtK(r.abfEfficiencyGain || 0) + "/yr", "15% of legacy estate admin overhead (modelled)"],
-        ["HAC penalty avoidance", fmtK(r.hacReduction) + "/yr", "CMS HAC programme (1%)"],
-        ["Accreditation context", fmtK(r.vbpImprovement) + "/yr", "CMS VBP (2% pool)"],
-        ["Documentation quality", fmtK(r.denialRecovery) + "/yr", "HFMA/MDaudit 2024"],
+        ["Private patient uplift", fmtK(r.privateRevRecovery) + "/yr", "30% recovery of leaked private episodes"],
+        ["Medical indemnity reduction", fmtK(r.malpracticeReduction) + "/yr", "3% of A$20,000/bed (VMIA 2025-26)"],
+        ["Excess bed day savings", fmtK(r.excessDayCostAvoided) + "/yr", "QAHCS/AIHW (A$3,100/day x fragmentation attribution)"],
         ["Malpractice premium reduction", fmtK(r.malpracticeReduction) + "/yr", "Modelled (8% reduction)"],
         ["Excess bed day cost avoided", fmtK(r.excessDayCostAvoided) + "/yr", "IHACPA 2023 (A$3,100/day)"],
         ["Duplicate testing reduction", fmtK(r.duplicateReduction) + "/yr", "ONC (25% duplicate rate)"],
@@ -2510,18 +2510,18 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>ABF efficiency gain</div>
-          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.hrrpReduction + r.hacReduction):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>ABF efficiency: {fmtK(r.abfEfficiencyGain || 0)} + Private: {fmtK(r.privateRevRecovery || 0)}</div>
+          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.abfEfficiencyGain + r.privateRevRecovery):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>ABF efficiency: {fmtK(r.abfEfficiencyGain)} + Private revenue: {fmtK(r.privateRevRecovery)}</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Documentation quality + VBP</div>
-          <div style={{fontSize:28,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.denialRecovery + r.vbpImprovement):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>Denials: {fmtK(r.denialRecovery)} + VBP: {fmtK(r.vbpImprovement)}</div>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Indemnity + excess bed days</div>
+          <div style={{fontSize:28,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.malpracticeReduction + r.excessDayCostAvoided):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>Indemnity: {fmtK(r.malpracticeReduction)} + Bed days: {fmtK(r.excessDayCostAvoided)}</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.blue25,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Quality & safety savings</div>
           <div style={{fontSize:28,fontWeight:800,color:"#0f4146",margin:"6px 0"}}>{an?fmtK(r.qualitySavings):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>Malpractice: {fmtK(r.malpracticeReduction)} + Bed days: {fmtK(r.excessDayCostAvoided)} + Duplicates: {fmtK(r.duplicateReduction)}</div>
+          <div style={{fontSize:11,color:C.textMuted}}>Duplicates: {fmtK(r.duplicateReduction)} + Indemnity: {fmtK(r.malpracticeReduction)} + Bed days: {fmtK(r.excessDayCostAvoided)}</div>
         </div>
       </div>
 
@@ -2817,10 +2817,10 @@ function ROICalculator() {
 
         <S title="8. ABF efficiency and compliance methodology">
           <p style={{margin:"0 0 8px"}}>ABF efficiency gain and revenue cycle impact are modelled from verified programme rates and provider-specific multipliers.</p>
-          <F>hrrpReduction = medicareDrg {"\u00d7"} 0.33% {"\u00d7"} safetyFactor {"\u00d7"} penaltyWeight<br/>hacReduction = medicareDrg {"\u00d7"} 1% {"\u00d7"} 25% quartile {"\u00d7"} safetyFactor<br/>vbpImprovement = medicareDrg {"\u00d7"} 2% {"\u00d7"} 15% score {"\u00d7"} qualityBonus<br/>denialRecovery = revenue {"\u00d7"} 4.8% {"\u00d7"} 20% recoverable {"\u00d7"} decomFactor</F>
+          <F>abfEfficiencyGain = totalEstate {"\u00d7"} 15% {"\u00d7"} decomFactor<br/>privateRevRecovery = admissions {"\u00d7"} privatePct {"\u00d7"} 15% leakage {"\u00d7"} A$4,200 {"\u00d7"} 30% recoverable<br/>indemnityReduction = beds {"\u00d7"} A$20,000 {"\u00d7"} 3% {"\u00d7"} safetyFactor<br/>excessBedDaySavings = beds {"\u00d7"} 8.0 days {"\u00d7"} 35% attribution {"\u00d7"} fragmentation {"\u00d7"} safetyFactor {"\u00d7"} A$3,100</F>
           <p style={{margin:"8px 0 4px"}}><strong>ABF efficiency</strong> {" - "} Activity Based Funding through IHPA. National Efficient Price A$6,465/NWAU (IHACPA 2024-25 Determination; 2025-26 = A$7,258). IT/admin overhead estimated at 8% of total hospital costs, with 25% addressable through system consolidation. <Ev s="IHPA National Efficient Price Determination 2024-25; AIHW hospital expenditure data."/></p>
-          <p style={{margin:"4px 0"}}><strong>HAC 1% bottom quartile</strong> {" - "} Hospital-Acquired Condition Reduction Program. Bottom 25% of hospitals lose 1% of total Medicare payments. <Ev s="CMS HAC Reduction Program; 42 CFR 412.170-172."/></p>
-          <p style={{margin:"4px 0"}}><strong>VBP 2% withhold</strong> {" - "} Value-Based Purchasing. Budget neutral: 2% withheld from all, redistributed based on performance. ~$1.7bn redistributed FY2026. <Ev s="CMS VBP programme; AHA fact sheet 2025."/></p>
+          <p style={{margin:"4px 0"}}><strong>Private patient revenue</strong> {" - "} 15% of privately insured episodes in public hospitals estimated to go unbilled due to incomplete documentation. Average private episode value A$4,200 above ABF rate. <Ev s="VAGO 2019; APRA PHI statistics; PHIO annual reports."/></p>
+          <p style={{margin:"4px 0"}}><strong>Medical indemnity</strong> {" - "} A$20,000/bed institutional indemnity (VMIA 2025-26: $380.9M for ~16,000 VIC beds). 3% reduction modelled from ACSQHC communication failure data. <Ev s="VMIA 2025-26 annual report; ACSQHC root cause analyses."/></p>
           <p style={{margin:"4px 0"}}><strong>Private patient revenue leakage</strong> {" - "} Estimated 15% of privately insured episodes in public hospitals go unbilled or under-billed due to incomplete clinical documentation (state audit data). Average private episode value A$4,200 above ABF rate. <Ev s="State health department audit reports; PHIO annual reports."/></p>
           <p style={{margin:"4px 0"}}><strong>Medical indemnity A$20,000/bed</strong> {" - "} Institutional indemnity allocation based on state scheme data (icare NSW, VMIA VIC). 5% reduction from consolidation is a modelled assumption based on ACSQHC communication failure data. <Md s="A$20,000/bed based on VMIA 2025-26 premium pool ($380.9M for ~16,000 VIC beds). 3% reduction is a modelled assumption; no direct Australian evidence links EMR implementation to reduced indemnity claims. Flagged as conservative estimate."/></p>
           <p style={{margin:"4px 0"}}><strong>Provider type multipliers</strong> affect ABF funding proportion, private patient rate, and system complexity weighting. Rural hospitals have lower private patient rates; tertiary centres have higher system complexity due to research and teaching platforms. <Md s="Provider multipliers are modelled estimates based on Australian hospital classification and casemix data."/></p>
