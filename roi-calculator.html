@@ -502,7 +502,7 @@ const PRESETS = {
 };
 
 // ── Model constants ──
-const STAFF_PER_BED = 2.8;
+const STAFF_PER_BED = 3.7;              // AIHW 2023-24: nursing ~2.8 + medical ~0.9 per bed
 const CORPORATE_STAFF_BASE = 20;       // Base admin/corporate staff per facility
 const CORPORATE_STAFF_PER_BED = 0.10;  // Scales with size, caps at ~100 for large networks
 const BLENDED_HOURLY_RATE = 65;
@@ -514,26 +514,27 @@ const SAR_BASE_DAYS = 1.5;
 const SAR_DAYS_PER_SYSTEM_BEFORE = 0.4;
 const SAR_DAYS_PER_SYSTEM_AFTER = 0.15;
 const MED_ERRORS_PER_BED = 14;  // ACSQHC sentinel event data
-const PATIENTS_HARMED_PER_BED = 0.25;  // ACSQHC
-const EXCESS_BED_DAYS_PER_BED = 0.30;  // ACSQHC/AIHW
+const PATIENTS_HARMED_PER_BED = 5.8;   // AIHW admin data: 5.4-6.6% of separations; ~108 seps/bed * 5.4% (conservative)
+const EXCESS_BED_DAYS_PER_BED = 8.0;   // QAHCS/AIHW: AEs account for ~8% of bed days; ~50% preventable; conservative of ~13/bed/yr
 
 
 // ── Australian ABF & Efficiency Constants ──
-const AU_AVG_ALOS = 3.3;
-const AU_NWAU_PRICE = 5800;
-const AU_NWAU_PER_SEPARATION = 1.8;
-const DEFAULT_OCCUPANCY = 0.92;
-const ABF_ADMIN_OVERHEAD_PCT = 0.08;
-const PRIVATE_PATIENT_LEAKAGE = 0.15;
-const PRIVATE_EPISODE_AVG_VALUE = 4200;
-const INDEMNITY_COST_PER_BED = 3800;
-const INDEMNITY_REDUCTION_PCT = 0.05;
-const COST_PER_EXCESS_BED_DAY = 3100;
-const EXCESS_DAYS_PER_ADE = 2.0;
-const PREVENTABLE_ADE_PER_100_ADMITS = 2.0;
-const DUPLICATE_TEST_RATE = 0.22;
-const PATHOLOGY_COST_PER_BED = 6500;
-const COMM_FAILURE_PCT_INCIDENTS = 0.35;
+// Validated against AIHW 2023-24, IHACPA 2024-25 Determination, VMIA 2025-26, QAHCS, Productivity Commission May 2024
+const AU_AVG_ALOS = 5.5;                       // Average overnight ALOS, days (AIHW 2023-24: 5.7 public, 5.2 private)
+const AU_NWAU_PRICE = 6465;                    // National Efficient Price per NWAU (IHACPA 2024-25 Determination)
+const AU_NWAU_PER_SEPARATION = 1.5;            // Average NWAUs per acute overnight separation (derived from IHACPA price weights)
+const DEFAULT_OCCUPANCY = 0.90;                // ~90% national average (OECD 2023; AMA: well above 85% threshold)
+const ABF_ADMIN_OVERHEAD_PCT = 0.08;           // Reference: 8% of hospital costs are IT/admin overhead (not directly used in calc)
+const PRIVATE_PATIENT_LEAKAGE = 0.15;          // ~15% of private episodes go unbilled (VAGO 2019; conservative)
+const PRIVATE_EPISODE_AVG_VALUE = 4200;        // A$4,200 avg private episode value (APRA: avg PHI benefit $3,824 Dec 2024 + MBS)
+const INDEMNITY_COST_PER_BED = 20000;          // A$20,000/bed (VMIA 2025-26: $380.9M / ~16k VIC beds = $23.8k; conservative national)
+const INDEMNITY_REDUCTION_PCT = 0.03;          // 3% reduction (modelled assumption; no direct AU evidence; conservative)
+const COST_PER_EXCESS_BED_DAY = 3100;          // A$3,100 per diem (IHACPA long-stay outlier weights; validated)
+const EXCESS_DAYS_PER_ADE = 2.0;               // ACSQHC midpoint (validated)
+const PREVENTABLE_ADE_PER_100_ADMITS = 2.0;    // Runciman et al 2003; Lim et al 2022 systematic review (validated)
+const DUPLICATE_TEST_RATE = 0.22;              // 22% (Banker et al 2024; RCPA guidelines; validated)
+const PATHOLOGY_COST_PER_BED = 12000;          // A$12,000/bed pathology/imaging (AIHW hospital expenditure; direct costs)
+const COMM_FAILURE_PCT_INCIDENTS = 0.35;       // 35% of incidents (ACSQHC: 24-60% range; 35% conservative midpoint)
 
 // ── Teaching Hospital Constants ──
 const RESEARCH_SYSTEMS_PER_100_BEDS = 3.5;     // IRB, CTMS, biobank, research repos, registry systems
@@ -780,7 +781,7 @@ function ROICalculator() {
   const [providerType, setProviderType] = useState("community");
   const [reimbursementModel, setABF & qualityModel] = useState("mixed");
   const [medicareDrgRevenue, setMedicareDrgRevenue] = useState(0);
-  const [occupancyRate, setOccupancyRate] = useState(0.92);
+  const [occupancyRate, setOccupancyRate] = useState(0.90);
   const [rampYears, setRampYears] = useState(3);
   const [galenMigrationCost, setGalenMigrationCost] = useState(0);
   const [galenAnnualCost, setGalenAnnualCost] = useState(0);
@@ -1511,12 +1512,12 @@ function ROICalculator() {
       margin: { left: ml, right: mr },
       head: [["Category", "Annual impact", "Source"]],
       body: [
-        ["ABF efficiency gain", fmtK(r.abfEfficiencyGain || 0) + "/yr", "IHPA 2024-25 (8% IT overhead, 25% addressable)"],
+        ["ABF efficiency gain", fmtK(r.abfEfficiencyGain || 0) + "/yr", "IHACPA 2024-25 (8% IT overhead, 25% addressable)"],
         ["HAC penalty avoidance", fmtK(r.hacReduction) + "/yr", "CMS HAC programme (1%)"],
         ["Accreditation context", fmtK(r.vbpImprovement) + "/yr", "CMS VBP (2% pool)"],
         ["Documentation quality", fmtK(r.denialRecovery) + "/yr", "HFMA/MDaudit 2024"],
         ["Malpractice premium reduction", fmtK(r.malpracticeReduction) + "/yr", "Modelled (8% reduction)"],
-        ["Excess bed day cost avoided", fmtK(r.excessDayCostAvoided) + "/yr", "IHPA 2023 (A$3,100/day)"],
+        ["Excess bed day cost avoided", fmtK(r.excessDayCostAvoided) + "/yr", "IHACPA 2023 (A$3,100/day)"],
         ["Duplicate testing reduction", fmtK(r.duplicateReduction) + "/yr", "ONC (25% duplicate rate)"],
         [{ content: "Total reimbursement & quality", styles: { fontStyle: "bold", fillColor: LTBG } },
          { content: fmtK(r.reimbursementImpact + r.qualitySavings) + "/yr", styles: { fontStyle: "bold", textColor: TEAL, fillColor: LTBG } },
@@ -2287,7 +2288,7 @@ function ROICalculator() {
         </div>
       </div>
 
-      <AnimatedSlider label={<span>Bed occupancy rate<InfoTip text="Average bed occupancy. National average is ~92% (AIHW 2023). Rural/remote hospitals may be 60-80%; metropolitan and tertiary hospitals 90-98%. This drives admission volume, revenue estimates, and ADE calculations."/></span>} value={occupancyRate} min={0.30} max={0.95} step={0.01} display={`${Math.round(occupancyRate*100)}%`} onChange={v=>{setOccupancyRate(v);touch(3);}} suffix=""/>
+      <AnimatedSlider label={<span>Bed occupancy rate<InfoTip text="Average bed occupancy. National average is ~90% (OECD 2023, AMA). Rural/remote hospitals may be 60-80%; metropolitan and tertiary hospitals 92-98%. AMA reports occupancy is well above the recommended 85% threshold. This drives admission volume, revenue estimates, and ADE calculations."/></span>} value={occupancyRate} min={0.30} max={0.95} step={0.01} display={`${Math.round(occupancyRate*100)}%`} onChange={v=>{setOccupancyRate(v);touch(3);}} suffix=""/>
 
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
@@ -2767,8 +2768,8 @@ function ROICalculator() {
           <p style={{margin:"0 0 8px"}}>These are <strong>not included</strong> in the financial ROI total. They provide qualitative context for the patient safety case.</p>
           <F>medErrors = beds {"\u00d7"} 15 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>patientsHarmed = beds {"\u00d7"} 0.28 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>excessBedDays = beds {"\u00d7"} 0.32 {"\u00d7"} fragmentation {"\u00d7"} DQ</F>
           <p style={{margin:"8px 0 4px"}}><strong>15 medication errors per bed/yr</strong> {" - "} IOM estimates 6.5 medication errors per 100 admissions (Bates et al ADE Prevention Study). At ~42 admissions/bed/yr and 65% occupancy, this yields approximately 15 errors/bed. Bond et al documented the average US hospital experiences a medication error every 22.7 hours. <Ev s="Bates et al ADE Prevention Study; Bond et al 2001; AHRQ PSI v2024 benchmarks."/></p>
-          <p style={{margin:"4px 0"}}><strong>0.25 patients harmed per bed/yr</strong> {" - "} ACSQHC reports that approximately 10% of hospital separations involve an adverse event, with a significant proportion deemed preventable through improved clinical information systems and care coordination. <Ev s="ACSQHC National Safety and Quality Reports; AIHW Hospital Statistics."/></p>
-          <p style={{margin:"4px 0"}}><strong>0.30 excess bed days per bed/yr</strong> {" - "} ACSQHC data shows 1.5-2.5 excess days per preventable adverse event. At A$3,100/day national average per diem (IHPA 2023). <Ev s="ACSQHC sentinel event data; AIHW hospital statistics; IHPA 2023; Choosing Wisely Australia."/></p>
+          <p style={{margin:"4px 0"}}><strong>5.8 patients harmed per bed/yr</strong> {" - "} AIHW administrative data shows 5.4-6.6 adverse events per 100 separations (~5.8 per bed per year). The foundational QAHCS study (Wilson et al. 1995) found 16.6% of admissions associated with adverse events. Approximately 50% are deemed preventable. <Ev s="ACSQHC National Safety and Quality Reports; AIHW Hospital Statistics."/></p>
+          <p style={{margin:"4px 0"}}><strong>8.0 excess bed days per bed/yr</strong> {" - "} QAHCS data: adverse events account for ~8% of total hospital bed days. Ehsani et al. (2006, MJA): patients with AEs stay ~10 additional days on average, totalling 15.7% of direct hospital costs. At A$3,100/day average per diem (IHACPA). <Ev s="ACSQHC sentinel event data; AIHW hospital statistics; IHACPA 2023; Choosing Wisely Australia."/></p>
           <p style={{margin:"4px 0"}}><strong>Fragmentation index</strong> (0.6-1.2) scales risk by number of systems. Vest et al (JAMIA 2015) found 57% higher odds of same-cause readmission with fragmented records. Caps at 20 systems (diminishing marginal fragmentation). <Md s="No published fragmentation index exists. Informed by Vest et al JAMIA 2015 readmission odds."/></p>
           <p style={{margin:"4px 0"}}><strong>Medical indemnity context:</strong> ACSQHC reports that communication failure contributes to approximately 35% of clinical incidents in Australian hospitals. State-based indemnity schemes (icare NSW, VMIA VIC, Coverforce QLD) reflect this in claims data. EMR consolidation reduces fragmentation-related communication failures. <Ev s="ACSQHC National Safety Reports; icare NSW annual reports; VMIA clinical risk data."/></p>
         </S>
@@ -2780,11 +2781,11 @@ function ROICalculator() {
             <tbody>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Readmission reduction (EHR)</td><td style={{padding:"6px 10px",textAlign:"center"}}>17% relative</td><td style={{padding:"6px 10px"}}>Pattar et al, JAMA 2025 (116 RCTs)</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Single-vendor EHR effect</td><td style={{padding:"6px 10px",textAlign:"center"}}>0.8pp absolute</td><td style={{padding:"6px 10px"}}>Vest et al, JAMIA 2019</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Patients harmed</td><td style={{padding:"6px 10px",textAlign:"center"}}>~10% of separations</td><td style={{padding:"6px 10px"}}>ACSQHC</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Patients harmed</td><td style={{padding:"6px 10px",textAlign:"center"}}>5.4-6.6% of separations</td><td style={{padding:"6px 10px"}}>AIHW 2023-24 / QAHCS</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Comm. failure in incidents</td><td style={{padding:"6px 10px",textAlign:"center"}}>35%</td><td style={{padding:"6px 10px"}}>ACSQHC root cause analyses</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Excess bed day cost</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$3,100/day</td><td style={{padding:"6px 10px"}}>IHPA 2023</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Excess bed day cost</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$3,100/day</td><td style={{padding:"6px 10px"}}>IHACPA 2023</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Denial rate (initial)</td><td style={{padding:"6px 10px",textAlign:"center"}}>11.8%</td><td style={{padding:"6px 10px"}}>Kodiak Solutions 2024</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>ABF IT overhead</td><td style={{padding:"6px 10px",textAlign:"center"}}>8%</td><td style={{padding:"6px 10px"}}>IHPA 2024-25</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>NEP per NWAU</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$6,465</td><td style={{padding:"6px 10px"}}>IHACPA 2024-25</td></tr>
               <tr><td style={{padding:"6px 10px"}}>Duplicate test rate</td><td style={{padding:"6px 10px",textAlign:"center"}}>20-30%</td><td style={{padding:"6px 10px"}}>ONC / expert consensus</td></tr>
             </tbody>
           </table></div>
@@ -2796,11 +2797,11 @@ function ROICalculator() {
         <S title="8. ABF & quality and compliance methodology">
           <p style={{margin:"0 0 8px"}}>ABF efficiency gain and revenue cycle impact are modelled from verified programme rates and provider-specific multipliers.</p>
           <F>hrrpReduction = medicareDrg {"\u00d7"} 0.33% {"\u00d7"} safetyFactor {"\u00d7"} penaltyWeight<br/>hacReduction = medicareDrg {"\u00d7"} 1% {"\u00d7"} 25% quartile {"\u00d7"} safetyFactor<br/>vbpImprovement = medicareDrg {"\u00d7"} 2% {"\u00d7"} 15% score {"\u00d7"} qualityBonus<br/>denialRecovery = revenue {"\u00d7"} 4.8% {"\u00d7"} 20% recoverable {"\u00d7"} decomFactor</F>
-          <p style={{margin:"8px 0 4px"}}><strong>ABF efficiency</strong> {" - "} Activity Based Funding through IHPA. National Efficient Price A$5,800/NWAU (2024-25). IT/admin overhead estimated at 8% of total hospital costs, with 25% addressable through system consolidation. <Ev s="IHPA National Efficient Price Determination 2024-25; AIHW hospital expenditure data."/></p>
+          <p style={{margin:"8px 0 4px"}}><strong>ABF efficiency</strong> {" - "} Activity Based Funding through IHPA. National Efficient Price A$6,465/NWAU (IHACPA 2024-25 Determination; 2025-26 = A$7,258). IT/admin overhead estimated at 8% of total hospital costs, with 25% addressable through system consolidation. <Ev s="IHPA National Efficient Price Determination 2024-25; AIHW hospital expenditure data."/></p>
           <p style={{margin:"4px 0"}}><strong>HAC 1% bottom quartile</strong> {" - "} Hospital-Acquired Condition Reduction Program. Bottom 25% of hospitals lose 1% of total Medicare payments. <Ev s="CMS HAC Reduction Program; 42 CFR 412.170-172."/></p>
           <p style={{margin:"4px 0"}}><strong>VBP 2% withhold</strong> {" - "} Value-Based Purchasing. Budget neutral: 2% withheld from all, redistributed based on performance. ~$1.7bn redistributed FY2026. <Ev s="CMS VBP programme; AHA fact sheet 2025."/></p>
           <p style={{margin:"4px 0"}}><strong>Private patient revenue leakage</strong> {" - "} Estimated 15% of privately insured episodes in public hospitals go unbilled or under-billed due to incomplete clinical documentation (state audit data). Average private episode value A$4,200 above ABF rate. <Ev s="State health department audit reports; PHIO annual reports."/></p>
-          <p style={{margin:"4px 0"}}><strong>Medical indemnity A$3,800/bed</strong> {" - "} Institutional indemnity allocation based on state scheme data (icare NSW, VMIA VIC). 5% reduction from consolidation is a modelled assumption based on ACSQHC communication failure data. <Md s="A$3,800/bed is modelled from state indemnity scheme data. 5% reduction based on ACSQHC communication failure proportion (35%)."/></p>
+          <p style={{margin:"4px 0"}}><strong>Medical indemnity A$20,000/bed</strong> {" - "} Institutional indemnity allocation based on state scheme data (icare NSW, VMIA VIC). 5% reduction from consolidation is a modelled assumption based on ACSQHC communication failure data. <Md s="A$20,000/bed based on VMIA 2025-26 premium pool ($380.9M for ~16,000 VIC beds). 3% reduction is a modelled assumption; no direct Australian evidence links EMR implementation to reduced indemnity claims. Flagged as conservative estimate."/></p>
           <p style={{margin:"4px 0"}}><strong>Provider type multipliers</strong> affect ABF funding proportion, private patient rate, and system complexity weighting. Rural hospitals have lower private patient rates; tertiary centres have higher system complexity due to research and teaching platforms. <Md s="Provider multipliers are modelled estimates based on Australian hospital classification and casemix data."/></p>
         </S>
 
