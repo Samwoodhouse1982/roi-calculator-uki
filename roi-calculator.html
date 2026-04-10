@@ -449,16 +449,18 @@ function calc(inp, mode, ov = {}, flagships = []) {
 
   const annual = decomSave + timeSave;
   const annualWithReimbursement = annual + reimbursementImpact + qualitySavings + academicSavings + mergeSavings;
-  // Phased ramp: Year 1 = 40%, Year 2 = 80%, Year 3 = 100% of steady-state
-  const y1Pct = 0.40, y2Pct = 0.80, y3Pct = 1.00;
-  const yr1 = Math.round(annual * y1Pct);
-  const yr2 = Math.round(annual * y2Pct);
-  const yr3 = Math.round(annual * y3Pct);
-  const total3 = yr1 + yr2 + yr3;
-  const yr1R = Math.round(annualWithReimbursement * y1Pct);
-  const yr2R = Math.round(annualWithReimbursement * y2Pct);
-  const yr3R = Math.round(annualWithReimbursement * y3Pct);
-  const total3WithReimbursement = yr1R + yr2R + yr3R;
+  // Phased ramp: configurable 3-year or 5-year
+  const rampN = inp._rampYears || 3;
+  const rampPcts = rampN === 5
+    ? [0.20, 0.40, 0.60, 0.80, 1.00]
+    : [0.40, 0.80, 1.00];
+  const y1Pct = rampPcts[0], y2Pct = rampPcts[1], y3Pct = rampPcts[2] || 1.0;
+  const yrValues = rampPcts.map(p => Math.round(annual * p));
+  const yr1 = yrValues[0], yr2 = yrValues[1], yr3 = yrValues[2] || 0;
+  const total3 = yrValues.reduce((a,b) => a+b, 0);
+  const yrRValues = rampPcts.map(p => Math.round(annualWithReimbursement * p));
+  const yr1R = yrRValues[0], yr2R = yrRValues[1], yr3R = yrRValues[2] || 0;
+  const total3WithReimbursement = yrRValues.reduce((a,b) => a+b, 0);
   return {
     legacy, ent, dep, nic, entCost, depCost, nicCost, blendedCost, totalEstate,
     decom, entDecom, depDecom, nicDecom, decomSave,
@@ -467,7 +469,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
-    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realisation: sc.realisation, isArchiveOnly,
+    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, rampN, rampPcts, yrValues, yrRValues, realisation: sc.realisation, isArchiveOnly,
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
     flagshipCount, flagshipRetireCount,
     // ABF & quality & compliance
@@ -779,6 +781,7 @@ function ROICalculator() {
   const [reimbursementModel, setABF & qualityModel] = useState("mixed");
   const [medicareDrgRevenue, setMedicareDrgRevenue] = useState(0);
   const [occupancyRate, setOccupancyRate] = useState(0.92);
+  const [rampYears, setRampYears] = useState(3);
   const [galenMigrationCost, setGalenMigrationCost] = useState(0);
   const [galenAnnualCost, setGalenAnnualCost] = useState(0);
   const [mergerMode, setMergerMode] = useState(false);
@@ -1076,6 +1079,7 @@ function ROICalculator() {
       _qualityBonus: rm.quality_bonus,
       _medicareDrgRevenue: medicareDrgRevenue,
       _occupancy: occupancyRate,
+      _rampYears: rampYears,
       _providerType: providerType,
       _privatePct: PROVIDER_MULTIPLIERS[providerType]?.private_pct || 0.15,
       _portfolioSystems: portfolioImpact.addSystems,
@@ -1147,7 +1151,8 @@ function ROICalculator() {
 
     // Totals
     annual_savings: r.annual,
-    three_year_total: r.total3,
+    projection_years: r.rampN,
+    projection_total: r.total3,
 
     // Provider profile
     provider_type: providerType,
@@ -1190,7 +1195,7 @@ function ROICalculator() {
     three_year_with_reimbursement: r.total3WithReimbursement,
     galen_migration_cost: galenMigrationCost,
     galen_annual_cost: galenAnnualCost,
-    galen_3yr_total: galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)),
+    galen_3yr_total: galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b) => a+b, 0)),
     merger_mode: mergerMode,
     merger_orgs: mergerOrgs.map(o => ({ label: o.label, beds: o.beds, facilities: o.orgs, cat: o.cat })),
     facility_portfolio: facilityPortfolio,
@@ -1383,7 +1388,7 @@ function ROICalculator() {
 
     // Summary cards
     const cards = [
-      { label: "3-YEAR COMBINED", value: fmtK(r.total3WithReimbursement), sub: "All savings + reimbursement", bg: LTBG },
+      { label: r.rampN + "-YEAR COMBINED", value: fmtK(r.total3WithReimbursement), sub: "All savings + ABF & quality", bg: LTBG },
       { label: "ANNUAL RECURRING", value: fmtK(r.annual), sub: fmtK(r.decomSave) + " decom + " + fmtK(r.timeSave) + " time", bg: TEALBG },
       { label: "REIMBURSEMENT / YR", value: fmtK(r.reimbursementImpact + r.qualitySavings), sub: "Penalties + denials + quality", bg: [254,249,236] },
       { label: "HOURS FREED / YR", value: fmtNum(r.hrsSaved), sub: Math.round(r.realisation*100) + "% realisation", bg: [230,248,252] },
@@ -1585,11 +1590,11 @@ function ROICalculator() {
     // Year-by-year
     if (y > 220) { doc.addPage(); addPageHeader(); y = 22; }
     doc.setFontSize(12); doc.setFont("helvetica","bold"); setC(TEAL);
-    doc.text("Year-by-Year Projection", ml, y); y += 2;
+    doc.text(r.rampN + "-Year Projection", ml, y); y += 2;
     doc.autoTable({
       startY: y,
       margin: { left: ml, right: mr },
-      head: [["Benefit", "Year 1", "Year 2", "Year 3", "Total"]],
+      head: [r.rampN === 5 ? ["Benefit", "Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Total"] : ["Benefit", "Year 1", "Year 2", "Year 3", "Total"]],
       body: [
         ["Decom savings", fmt(r.decomSave), fmt(r.decomSave), fmt(r.decomSave), { content: fmt(r.decomSave * 3), styles: { fontStyle: "bold" } }],
         ["Clinician time", fmt(r.timeSave), fmt(r.timeSave), fmt(r.timeSave), { content: fmt(r.timeSave * 3), styles: { fontStyle: "bold" } }],
@@ -1623,7 +1628,7 @@ function ROICalculator() {
           ["Time savings", fmtK(rCon.timeSave) + "/yr", fmtK(r.timeSave) + "/yr", fmtK(rStr.timeSave) + "/yr"],
           ["ABF & quality & quality", fmtK(rCon.reimbursementImpact + rCon.qualitySavings) + "/yr", fmtK(r.reimbursementImpact + r.qualitySavings) + "/yr", fmtK(rStr.reimbursementImpact + rStr.qualitySavings) + "/yr"],
           [{ content: "Combined annual", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.annualWithReimbursement) + "/yr", styles: { fontStyle: "bold" } }, { content: fmtK(r.annualWithReimbursement) + "/yr", styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.annualWithReimbursement) + "/yr", styles: { fontStyle: "bold" } }],
-          [{ content: "3-year combined", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.total3WithReimbursement), styles: { fontStyle: "bold" } }, { content: fmtK(r.total3WithReimbursement), styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.total3WithReimbursement), styles: { fontStyle: "bold" } }],
+          [{ content: r.rampN + "-year combined", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.total3WithReimbursement), styles: { fontStyle: "bold" } }, { content: fmtK(r.total3WithReimbursement), styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.total3WithReimbursement), styles: { fontStyle: "bold" } }],
         ],
         headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
         styles: { fontSize: 8.5, cellPadding: { top: 2.2, bottom: 2.2, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
@@ -2267,6 +2272,21 @@ function ROICalculator() {
           <select value={inputs.data_quality_level} onChange={e=>{update("data_quality_level",e.target.value);touch(3);}} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,fontFamily:"inherit"}}><option value="CLEAN">Clean</option><option value="MIXED">Mixed</option><option value="POOR">Poor</option></select></div>
       </div>
       <AnimatedSlider label={<span>Decommission target<InfoTip text="What % of legacy systems do you plan to retire? 60-80% is typical as most programmes retain a few for standalone or long-retention use."/></span>} value={inputs.decom_retire_rate} min={0} max={1} step={0.05} display={`${Math.round(inputs.decom_retire_rate*100)}%`} onChange={v=>{update("decom_retire_rate",v);touch(3);}} suffix=""/>
+      <div style={{marginBottom:16,padding:"14px 18px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+          <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Projection period</span>
+          <div style={{display:"flex",gap:6}}>
+            <button type="button" onClick={()=>setRampYears(3)} style={{padding:"6px 16px",borderRadius:999,fontSize:12,fontWeight:700,cursor:"pointer",border:rampYears===3?`2px solid ${C.accent}`:`1px solid ${C.border}`,background:rampYears===3?C.accentPale:"#fff",color:rampYears===3?C.accent:C.textMid}}>3 years</button>
+            <button type="button" onClick={()=>setRampYears(5)} style={{padding:"6px 16px",borderRadius:999,fontSize:12,fontWeight:700,cursor:"pointer",border:rampYears===5?`2px solid ${C.accent}`:`1px solid ${C.border}`,background:rampYears===5?C.accentPale:"#fff",color:rampYears===5?C.accent:C.textMid}}>5 years</button>
+          </div>
+        </div>
+        <div style={{fontSize:11,color:C.textMuted,marginTop:6}}>
+          {rampYears === 3
+            ? "3-year phased ramp: 40% / 80% / 100% of steady-state savings."
+            : "5-year phased ramp: 20% / 40% / 60% / 80% / 100%. Recommended for state-wide programmes."}
+        </div>
+      </div>
+
       <AnimatedSlider label={<span>Bed occupancy rate<InfoTip text="Average bed occupancy. National average is ~92% (AIHW 2023). Rural/remote hospitals may be 60-80%; metropolitan and tertiary hospitals 90-98%. This drives admission volume, revenue estimates, and ADE calculations."/></span>} value={occupancyRate} min={0.30} max={0.95} step={0.01} display={`${Math.round(occupancyRate*100)}%`} onChange={v=>{setOccupancyRate(v);touch(3);}} suffix=""/>
 
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
@@ -2390,7 +2410,7 @@ function ROICalculator() {
 
     {/* Headline cards */}
     <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
-      <ResultCard dimmed={dim} label="Total savings (3-year)" value={an?<AnimatedK value={r.total3} active={an}/>:"–"} sub={an?"Decom + clinician time x 3 years":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
+      <ResultCard dimmed={dim} label={`Total savings (${rampYears}-year)`} value={an?<AnimatedK value={r.total3} active={an}/>:"–"} sub={an?"Decom + clinician time x 3 years":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
       <ResultCard dimmed={dim} label="Annual recurring" value={an?<AnimatedK value={r.annual} active={an}/>:"–"} sub={an?`${fmtK(r.decomSave)} decom + ${fmtK(r.timeSave)} time`:""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
       <ResultCard dimmed={dim} label="Clinician time (annual)" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={an?<span>{fmtNum(r.hrsSaved)} hrs/yr, {Math.round(r.realisation*100)}% realisation</span>:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
       <ResultCard dimmed={dim} label="ABF & quality & quality" value={an?<AnimatedK value={r.reimbursementImpact + r.qualitySavings} active={an}/>:"–"} sub={an?"Penalties + denials + quality":""} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
@@ -2823,9 +2843,9 @@ function ROICalculator() {
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 12px"}}>Gross savings from legacy decommission, minus the cost of Galen Clinical Archive migration and ongoing annual fees.</p>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:12}}>
         <div style={{flex:"1 1 160px",padding:"16px 18px",background:C.greenPale,borderRadius:10,textAlign:"center"}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>3-year gross savings</div>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>{rampYears}-year gross savings</div>
           <div style={{fontSize:22,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement):"–"}</div>
-          <div style={{fontSize:11,color:C.textMuted}}>Phased: 40% / 80% / 100%</div>
+          <div style={{fontSize:11,color:C.textMuted}}>{rampYears === 5 ? "Phased: 20/40/60/80/100%" : "Phased: 40/80/100%"}</div>
         </div>
         <div style={{flex:"1 1 160px",padding:"16px 18px",background:"#fef0f0",borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Galen migration</div>
@@ -2837,9 +2857,9 @@ function ROICalculator() {
           <div style={{fontSize:22,fontWeight:800,color:"#993535",margin:"6px 0"}}>{fmtK(Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))}</div>
           <div style={{fontSize:11,color:C.textMuted}}>{fmtK(galenAnnualCost)}/yr phased</div>
         </div>
-        <div style={{flex:"1 1 160px",padding:"16px 18px",background:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.greenPale : "#fef0f0",borderRadius:10,textAlign:"center"}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>3-year net savings</div>
-          <div style={{fontSize:22,fontWeight:800,color:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.green : "#993535",margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))):"–"}</div>
+        <div style={{flex:"1 1 160px",padding:"16px 18px",background:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b) => a+b, 0)))) > 0 ? C.greenPale : "#fef0f0",borderRadius:10,textAlign:"center"}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>{rampYears}-year net savings</div>
+          <div style={{fontSize:22,fontWeight:800,color:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b) => a+b, 0)))) > 0 ? C.green : "#993535",margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b) => a+b, 0)))):"–"}</div>
           <div style={{fontSize:11,color:C.textMuted}}>Payback: ~{an && r.annualWithReimbursement > galenAnnualCost ? (galenMigrationCost / (r.annualWithReimbursement - galenAnnualCost)).toFixed(1) : "–"} years</div>
         </div>
       </div>
