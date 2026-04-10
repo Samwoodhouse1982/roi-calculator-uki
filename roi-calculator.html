@@ -2297,13 +2297,13 @@ function ROICalculator() {
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:13,color:C.textMuted}}>{"A$"}</span>
-          <input type="number" value={medicareDrgRevenue || ""} placeholder={fmtNum(Math.round(inputs.bed_count * (365/US_AVG_ALOS) * occupancyRate * US_AVG_REVENUE_PER_ADMISSION * (PROVIDER_MULTIPLIERS[providerType]?.medicare_pct || 0.42)))} min={0} step={100000}
+          <input type="number" value={medicareDrgRevenue || ""} placeholder={fmtNum(Math.round(inputs.bed_count * (365/AU_AVG_ALOS) * occupancyRate * AU_NWAU_PER_SEPARATION * AU_NWAU_PRICE * 0.70))} min={0} step={100000}
             onChange={e => setMedicareDrgRevenue(parseInt(e.target.value) || 0)}
             style={{flex:1,maxWidth:200,padding:"8px 12px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
           <span style={{fontSize:12,color:C.textMuted}}>/yr</span>
           {medicareDrgRevenue > 0 && <button type="button" onClick={()=>setMedicareDrgRevenue(0)} style={{border:"none",background:"none",color:C.textMuted,fontSize:12,cursor:"pointer",textDecoration:"underline"}}>Use estimate</button>}
         </div>
-        {!medicareDrgRevenue && <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Estimated: {fmtK(Math.round(inputs.bed_count * (365/US_AVG_ALOS) * occupancyRate * US_AVG_REVENUE_PER_ADMISSION * (PROVIDER_MULTIPLIERS[providerType]?.medicare_pct || 0.42)))}/yr ({fmtNum(Math.round(inputs.bed_count * (365/US_AVG_ALOS) * occupancyRate))} admissions at {Math.round(occupancyRate*100)}% occupancy)</div>}
+        {!medicareDrgRevenue && <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Estimated: {fmtK(Math.round(inputs.bed_count * (365/AU_AVG_ALOS) * occupancyRate * AU_NWAU_PER_SEPARATION * AU_NWAU_PRICE * 0.70))}/yr ({fmtNum(Math.round(inputs.bed_count * (365/AU_AVG_ALOS) * occupancyRate))} admissions at {Math.round(occupancyRate*100)}% occupancy)</div>}
       </div>
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
