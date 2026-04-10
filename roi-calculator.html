@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EHR Migration and Archiving - ROI Calculator</title>
+  <title>EMR Migration and Archiving - ROI Calculator</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background: transparent; overflow-x: hidden; }
@@ -354,7 +354,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const depDecom = Math.min(Math.round(dep * decomFrac), dep);
   const nicDecom = clamp(Math.min(Math.round(rawDecom), tieredLegacy) - entDecom - depDecom, 0, nic);
   const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * sc.decom_pct);
-  const corpPerOrg = Math.min(120, Math.round(CORPORATE_STAFF_BASE + (inp.bed_count / Math.max(1, inp.org_count)) * CORPORATE_STAFF_PER_BED));
+  const corpPerOrg = Math.min(100, Math.round(CORPORATE_STAFF_BASE + (inp.bed_count / Math.max(1, inp.org_count)) * CORPORATE_STAFF_PER_BED));
   const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * corpPerOrg + (inp._portfolioStaff || 0));
   const switchPenalty = Math.max(0, legacy - 1) * SWITCH_PENALTY_PER_SYSTEM;
   const baseMin = isArchiveOnly ? 5 : 12;
@@ -380,35 +380,34 @@ function calc(inp, mode, ov = {}, flagships = []) {
     safetyPatientsProtected = Math.round(harmedBl * sc.safety);
     safetyBedDaysAvoided = Math.round(bedDaysBl * sc.safety);
   }
-  // ── Reimbursement & Compliance Impact ──
+  // ── ABF & quality & Compliance Impact ──
   // Admissions and revenue (evidence-based derivation)
   const occupancy = inp._occupancy || DEFAULT_OCCUPANCY;
-  const admissionsPerYear = Math.round(inp.bed_count * (365 / US_AVG_ALOS) * occupancy);
-  const estAnnualRevenueCalc = admissionsPerYear * US_AVG_REVENUE_PER_ADMISSION;
-  // Medicare DRG revenue estimate (if not provided by user)
-  const estMedicareDrgRevenue = Math.round(estAnnualRevenueCalc * (inp._medicarePct || 0.42));
+  const admissionsPerYear = Math.round(inp.bed_count * (365 / AU_AVG_ALOS) * occupancy);
+  const estAnnualRevenueCalc = admissionsPerYear * AU_NWAU_PER_SEPARATION * AU_NWAU_PRICE;
+  // ABF revenue estimate (if not provided by user)
+  const estMedicareDrgRevenue = Math.round(estAnnualRevenueCalc * 0.70);
   const medicareDrg = inp._medicareDrgRevenue > 0 ? inp._medicareDrgRevenue : estMedicareDrgRevenue;
 
-  // HRRP penalty exposure
-  const hrrpExposure = medicareDrg * CMS_HRRP_AVG_PENALTY;
-  const hrrpReduction = Math.round(hrrpExposure * sc.safety * (inp._penaltyWeight || 1.0));
+  // ABF efficiency gain
+  const abfOverhead = Math.round(estAnnualRevenueCalc * ABF_ADMIN_OVERHEAD_PCT);
+  const abfEfficiencyGain = Math.round(abfOverhead * 0.25 * sc.decom_pct);
+  const hrrpExposure = 0;
+  const hrrpReduction = 0;
 
   // HAC penalty exposure (bottom quartile = 1% of all Medicare payments)
-  const hacExposure = medicareDrg * CMS_HAC_PENALTY * 0.25; // 25% probability of being in bottom quartile
-  const hacReduction = Math.round(hacExposure * sc.safety * (inp._penaltyWeight || 1.0));
+  // Private patient revenue uplift
+  const privateLeakage = Math.round(admissionsPerYear * 0.15 * PRIVATE_PATIENT_LEAKAGE * PRIVATE_EPISODE_AVG_VALUE);
+  const privateRevRecovery = Math.round(privateLeakage * 0.30 * sc.decom_pct);
+  const hacExposure = 0, hacReduction = 0;
 
-  // VBP improvement potential
-  const vbpPool = medicareDrg * CMS_VBP_WITHHOLD;
-  const vbpImprovement = Math.round(vbpPool * 0.15 * sc.safety * (inp._qualityBonus || 0.5));
+  const vbpPool = 0, vbpImprovement = 0;
 
-  // Denial rate reduction (FFS pathway)
-  const estAnnualRevenue = estAnnualRevenueCalc; // from admissions-based model above
-  const denialBaseline = estAnnualRevenue * DENIAL_NET_REVENUE_LOSS;
-  const denialRecovery = Math.round(denialBaseline * 0.20 * sc.decom_pct * (inp._denialWeight || 1.0));
+  const denialBaseline = 0, denialRecovery = 0;
 
   // Malpractice premium reduction (modelled assumption)
-  const malpracticePremium = inp.bed_count * MALPRACTICE_AVG_PREMIUM_PER_BED;
-  const malpracticeReduction = Math.round(malpracticePremium * 0.05 * sc.safety); // 5% reduction — conservative (CRICO: 30% of claims involve comms failure)
+  const malpracticePremium = inp.bed_count * INDEMNITY_COST_PER_BED;
+  const malpracticeReduction = Math.round(malpracticePremium * INDEMNITY_REDUCTION_PCT * sc.safety); — conservative (CRICO: 30% of claims involve comms failure)
 
   // Excess bed days avoided (unified with safety section)
   const preventableADEs = Math.round(admissionsPerYear / 100 * PREVENTABLE_ADE_PER_100_ADMITS);
@@ -417,12 +416,12 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const excessDayCostAvoided = Math.round(excessDaysAvoided * COST_PER_EXCESS_BED_DAY);
 
   // Duplicate testing reduction
-  const estLabSpend = inp.bed_count * 8500; // ~$8,500 per bed in lab/imaging spend
+  const estLabSpend = inp.bed_count * PATHOLOGY_COST_PER_BED;
   const duplicateWaste = estLabSpend * DUPLICATE_TEST_RATE;
   const duplicateReduction = Math.round(duplicateWaste * 0.50 * sc.decom_pct); // 50% of duplicates addressable
 
-  // ── Academic Medical Center Module ──
-  const isAcademic = inp._providerType === "academic";
+  // ── Teaching Hospital Module ──
+  const isAcademic = inp._providerType === "tertiary";
   const researchSystems = isAcademic ? Math.round(inp.bed_count / 100 * RESEARCH_SYSTEMS_PER_100_BEDS) : 0;
   const researchSystemCost = researchSystems * RESEARCH_SYSTEM_AVG_COST;
   const researchDecomSave = Math.round(researchSystemCost * 0.60 * sc.decom_pct); // 60% retirable
@@ -430,8 +429,8 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const gmeEfficiency = Math.round(gmeComplianceCost * 0.25 * sc.decom_pct); // 25% efficiency gain
   const teachingOverhead = isAcademic ? Math.round(totalEstate * TEACHING_OVERHEAD_PCT * 0.30 * sc.decom_pct) : 0; // 30% of 12% extra complexity
 
-  // ── M&A / Multi-Hospital Module ──
-  const isMultiHospital = inp._providerType === "multi_hospital";
+  // ── Network Consolidation Module ──
+  const isMultiHospital = inp._providerType === "state_network";
   const duplicateSystems = isMultiHospital ? Math.round(legacy * DUPLICATE_SYSTEM_RATE) : 0;
   const duplicateSystemCost = isMultiHospital ? Math.round(duplicateSystems * blendedCost) : 0;
   const duplicateElimination = Math.round(duplicateSystemCost * sc.decom_pct);
@@ -444,21 +443,21 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const mergeSavings = duplicateElimination + infraConsolidation + standardisationSave;
 
   // Total reimbursement impact
-  const reimbursementImpact = hrrpReduction + hacReduction + vbpImprovement + denialRecovery;
+  const reimbursementImpact = abfEfficiencyGain + privateRevRecovery;
   const qualitySavings = malpracticeReduction + excessDayCostAvoided + duplicateReduction;
 
   const annual = decomSave + timeSave;
-  const annualWithReimbursement = annual + reimbursementImpact + qualitySavings + academicSavings + mergeSavings;
+  const annualWithABF & quality = annual + reimbursementImpact + qualitySavings + academicSavings + mergeSavings;
   // Phased ramp: Year 1 = 40%, Year 2 = 80%, Year 3 = 100% of steady-state
   const y1Pct = 0.40, y2Pct = 0.80, y3Pct = 1.00;
   const yr1 = Math.round(annual * y1Pct);
   const yr2 = Math.round(annual * y2Pct);
   const yr3 = Math.round(annual * y3Pct);
   const total3 = yr1 + yr2 + yr3;
-  const yr1R = Math.round(annualWithReimbursement * y1Pct);
-  const yr2R = Math.round(annualWithReimbursement * y2Pct);
-  const yr3R = Math.round(annualWithReimbursement * y3Pct);
-  const total3WithReimbursement = yr1R + yr2R + yr3R;
+  const yr1R = Math.round(annualWithABF & quality * y1Pct);
+  const yr2R = Math.round(annualWithABF & quality * y2Pct);
+  const yr3R = Math.round(annualWithABF & quality * y3Pct);
+  const total3WithABF & quality = yr1R + yr2R + yr3R;
   return {
     legacy, ent, dep, nic, entCost, depCost, nicCost, blendedCost, totalEstate,
     decom, entDecom, depDecom, nicDecom, decomSave,
@@ -470,7 +469,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realisation: sc.realisation, isArchiveOnly,
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
     flagshipCount, flagshipRetireCount,
-    // Reimbursement & compliance
+    // ABF & quality & compliance
     admissionsPerYear, estAnnualRevenueCalc, occupancy, medicareDrg, hrrpExposure, hrrpReduction, hacExposure, hacReduction,
     vbpPool, vbpImprovement, denialBaseline, denialRecovery,
     malpracticePremium, malpracticeReduction,
@@ -483,7 +482,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     // M&A module
     isMultiHospital, duplicateSystems, duplicateSystemCost, duplicateElimination,
     duplicateInfraCost, infraConsolidation, standardisationSave, mergeSavings,
-    annualWithReimbursement, total3WithReimbursement, yr1R, yr2R, yr3R,
+    annualWithABF & quality, total3WithABF & quality, yr1R, yr2R, yr3R,
   };
 }
 
@@ -493,79 +492,53 @@ function calc(inp, mode, ov = {}, flagships = []) {
 
 const emptyDt = () => ({ EPR_PAS:0,ED:0,MATERNITY:0,THEATRES:0,LAB:0,RAD_REPORTS:0,PACS_LINKS:0,DOC_ECM:0,SCANNED_NOTES:0,REFERRALS:0,COMMUNITY:0,MENTAL_HEALTH:0,OTHER:0 });
 const PRESETS = {
-  SMALL: { label:"Critical Access Hospital", desc:"~50 beds · 1 facility · 6 systems", data:{ bed_count:50, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:2,niche:3}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1,RAD_REPORTS:1}, complexity_level:"LOW", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
-  TYPICAL: { label:"Community Hospital", desc:"~250 beds · 1 facility · 15 systems", data:{ bed_count:250, org_count:1, journey:"EVALUATING", tiers:{enterprise:1,departmental:5,niche:9}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:1,RAD_REPORTS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
-  LARGE: { label:"Regional Medical Center", desc:"~600 beds · 1 facility · 25 systems", data:{ bed_count:600, org_count:1, journey:"EVALUATING", tiers:{enterprise:2,departmental:8,niche:15}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:2,RAD_REPORTS:1,DOC_ECM:2,SCANNED_NOTES:1,MATERNITY:1,COMMUNITY:1}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
-  REGIONAL: { label:"Multi-Hospital System", desc:"~2500 beds · 5 facilities · 70+ systems", data:{ bed_count:2500, org_count:5, journey:"EVALUATING", tiers:{enterprise:5,departmental:22,niche:45}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
+  SMALL: { label:"Rural / Remote Hospital", desc:"~30 beds · 1 facility · 6 systems", data:{ bed_count:30, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:2,niche:3}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1,RAD_REPORTS:1}, complexity_level:"LOW", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
+  TYPICAL: { label:"Regional Hospital", desc:"~200 beds · 1 facility · 15 systems", data:{ bed_count:250, org_count:1, journey:"EVALUATING", tiers:{enterprise:1,departmental:5,niche:9}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:1,RAD_REPORTS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
+  LARGE: { label:"Metropolitan / Tertiary", desc:"~500 beds · 1 facility · 25 systems", data:{ bed_count:600, org_count:1, journey:"EVALUATING", tiers:{enterprise:2,departmental:8,niche:15}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:2,RAD_REPORTS:1,DOC_ECM:2,SCANNED_NOTES:1,MATERNITY:1,COMMUNITY:1}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
+  REGIONAL: { label:"State Health Network / LHD", desc:"~3000 beds · 5 facilities · 70+ systems", data:{ bed_count:3000, org_count:8, journey:"EVALUATING", tiers:{enterprise:6,departmental:28,niche:50}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
 };
 
 // ── Model constants ──
-const STAFF_PER_BED = 3.2;
+const STAFF_PER_BED = 2.8;
 const CORPORATE_STAFF_BASE = 20;       // Base admin/corporate staff per facility
-const CORPORATE_STAFF_PER_BED = 0.15;  // Scales with size, caps at ~120 for large facilities
-const BLENDED_HOURLY_RATE = 95;
-const WORKING_WEEKS = 50;
+const CORPORATE_STAFF_PER_BED = 0.10;  // Scales with size, caps at ~100 for large networks
+const BLENDED_HOURLY_RATE = 65;
+const WORKING_WEEKS = 48;
 const TICKETS_PER_SYSTEM = 2.5;
 const SWITCH_PENALTY_PER_SYSTEM = 0.04;
 const SURVIVING_SYSTEM_TICKET_FACTOR = 0.6;
 const SAR_BASE_DAYS = 1.5;
 const SAR_DAYS_PER_SYSTEM_BEFORE = 0.4;
 const SAR_DAYS_PER_SYSTEM_AFTER = 0.15;
-const MED_ERRORS_PER_BED = 15;  // AHRQ PSI data; IOM estimates 6.5 medication errors per 100 admissions
-const PATIENTS_HARMED_PER_BED = 0.28;  // HHS OIG 2022: 25% of Medicare patients experience adverse events
-const EXCESS_BED_DAYS_PER_BED = 0.32;  // Bates/Classen: 1.74-3.15 excess days per ADE; Zhan & Miller JAMA 2003
+const MED_ERRORS_PER_BED = 14;  // ACSQHC sentinel event data
+const PATIENTS_HARMED_PER_BED = 0.25;  // ACSQHC
+const EXCESS_BED_DAYS_PER_BED = 0.30;  // ACSQHC/AIHW
 
 
-// ── US Reimbursement & Compliance Constants ──
-// CMS Penalty Programmes (verified from CMS programme pages, FY2025/2026)
-const CMS_HRRP_MAX_PENALTY = 0.03;          // 3% max HRRP penalty (Section 1886(q) SSA)
-const CMS_HRRP_AVG_PENALTY = 0.0033;        // 0.33% average penalty (Advisory Board FY2025)
-const CMS_HAC_PENALTY = 0.01;               // 1% HAC Reduction Program (bottom quartile)
-const CMS_VBP_WITHHOLD = 0.02;              // 2% VBP withholding (budget neutral, AHA)
-const CMS_VBP_REDISTRIBUTION = 1700000000;  // $1.7bn redistributed FY2026
+// ── Australian ABF & Efficiency Constants ──
+const AU_AVG_ALOS = 3.3;
+const AU_NWAU_PRICE = 5800;
+const AU_NWAU_PER_SEPARATION = 1.8;
+const DEFAULT_OCCUPANCY = 0.92;
+const ABF_ADMIN_OVERHEAD_PCT = 0.08;
+const PRIVATE_PATIENT_LEAKAGE = 0.15;
+const PRIVATE_EPISODE_AVG_VALUE = 4200;
+const INDEMNITY_COST_PER_BED = 3800;
+const INDEMNITY_REDUCTION_PCT = 0.05;
+const COST_PER_EXCESS_BED_DAY = 3100;
+const EXCESS_DAYS_PER_ADE = 2.0;
+const PREVENTABLE_ADE_PER_100_ADMITS = 2.0;
+const DUPLICATE_TEST_RATE = 0.22;
+const PATHOLOGY_COST_PER_BED = 6500;
+const COMM_FAILURE_PCT_INCIDENTS = 0.35;
 
-// Revenue Cycle / Denial Benchmarks (HFMA, MDaudit, Kodiak Solutions 2024-2025)
-const DENIAL_RATE_BASELINE = 0.118;          // 11.8% initial denial rate (Kodiak 2024)
-const DENIAL_NET_REVENUE_LOSS = 0.048;       // 4.8% net revenue lost to denials (HFMA Pulse Survey)
-const DENIAL_AVG_INPATIENT = 10000;          // $10,000 avg denied inpatient claim (MDaudit 2024)
-const DENIAL_RECOVERY_PER_BN = 10000000;     // $10m recoverable per $1bn revenue (Advisory Board 2024)
-
-// Malpractice (Mello et al 2010, Health Affairs; AMA MLM 2024)
-const MALPRACTICE_SYSTEM_COST = 55600000000; // $55.6bn total system cost (2008 dollars)
-const MALPRACTICE_AVG_PREMIUM_PER_BED = 8500; // ~$10,870 premium-only per bed (Mello 2010 adjusted); conservative at $8,500
-
-// Readmission benchmarks (AHRQ HCUP 2023; Vest et al JAMIA 2019; Pattar et al JAMA 2025)
-const READMISSION_RATE_NATIONAL = 0.139;     // 13.9% 30-day all-cause (AHRQ HCUP 2023)
-const READMISSION_RATE_MEDICARE = 0.170;     // 17.0% Medicare 30-day rate
-const READMIT_REDUCTION_EHR = 0.008;         // 0.8pp absolute reduction, single-vendor EHR (Vest JAMIA 2019)
-const READMIT_REDUCTION_META = 0.17;         // 17% relative reduction, EHR interventions (Pattar JAMA 2025, 116 RCTs)
-
-// Excess bed day costs (KFF/AHA 2023; Bates et al; Zhan & Miller JAMA 2003)
-const COST_PER_EXCESS_BED_DAY = 3132;
-const US_AVG_ALOS = 4.7;                      // Average length of stay, days (AHA 2023)
-const US_AVG_REVENUE_PER_ADMISSION = 15200;    // Average inpatient revenue per admission (AHA/HCUP 2023)
-const DEFAULT_OCCUPANCY = 0.65;                // 65% national average (AHA 2023)        // $3,132 national average (KFF/AHA 2023)
-const EXCESS_DAYS_PER_ADE = 2.2;             // 1.74-3.15 range, midpoint (Bates/Classen/Hug)
-const PREVENTABLE_ADE_PER_100_ADMITS = 1.8;  // Bates et al ADE Prevention Study
-
-// Duplicate testing (ONC; PMC studies; Walker Health Affairs 2005)
-const DUPLICATE_TEST_RATE = 0.25;            // 20-30% of lab tests are duplicates (ONC/expert consensus)
-const DUPLICATE_IMAGING_RATE = 0.28;         // 28.2% of transferred patients get duplicate imaging (PMC)
-const DUPLICATE_TESTING_NATIONAL_COST = 43000000000; // $43bn/yr (RAND/ONC estimates)
-
-// Communication failures (CRICO 2016; Joint Commission; Ponemon 2014)
-const COMM_FAILURE_PCT_CLAIMS = 0.30;        // 30% of malpractice claims involve communication failure (CRICO)
-const COMM_FAILURE_COST_5YR = 1700000000;    // $1.7bn over 5 years (CRICO, 23,658 claims)
-const COMM_WASTE_PER_HOSPITAL = 1375000;     // $1-1.75m/yr avg (Ponemon Institute)
-
-
-// ── Academic Medical Center Constants ──
+// ── Teaching Hospital Constants ──
 const RESEARCH_SYSTEMS_PER_100_BEDS = 3.5;     // IRB, CTMS, biobank, research repos, registry systems
 const RESEARCH_SYSTEM_AVG_COST = 180000;        // Avg annual cost of a research/academic system
 const GME_COMPLIANCE_COST_PER_BED = 850;        // ACGME reporting, residency tracking, procedure logging
 const TEACHING_OVERHEAD_PCT = 0.12;             // 12% additional system complexity for teaching workflows
 
-// ── M&A / Multi-Hospital Constants ──
+// ── Network Consolidation Constants ──
 const DUPLICATE_SYSTEM_RATE = 0.35;             // 35% of systems are duplicated across facilities post-M&A
 const DUPLICATE_INFRA_COST_PER_FACILITY = 250000; // Per-facility duplicate infrastructure (data center, network, help desk)
 const CROSS_FACILITY_STANDARDISATION_PCT = 0.15; // 15% of operational costs addressable through standardisation
@@ -573,21 +546,21 @@ const CROSS_FACILITY_STANDARDISATION_PCT = 0.15; // 15% of operational costs add
 // Provider type multipliers (modelled assumptions, clearly labelled)
 
 const PROVIDER_PRESET_MAP = {
-  critical_access: "SMALL",
-  community: "TYPICAL",
-  regional: "LARGE",
-  academic: "LARGE",
-  multi_hospital: "REGIONAL",
+  rural_remote: "SMALL",
+  regional: "TYPICAL",
+  metropolitan: "LARGE",
+  tertiary: "LARGE",
+  state_network: "REGIONAL",
 };
 const PROVIDER_MULTIPLIERS = {
-  critical_access:  { medicare_pct: 0.60, denial_factor: 0.7, penalty_exposure: 0.0, complexity_boost: 0.8 },  // CAHs exempt from HRRP, HAC, VBP
-  community:        { medicare_pct: 0.45, denial_factor: 1.0, penalty_exposure: 0.7, complexity_boost: 1.0 },
-  regional:         { medicare_pct: 0.40, denial_factor: 1.1, penalty_exposure: 1.0, complexity_boost: 1.2 },
-  academic:         { medicare_pct: 0.35, denial_factor: 1.3, penalty_exposure: 1.2, complexity_boost: 1.5 },
-  multi_hospital:   { medicare_pct: 0.42, denial_factor: 1.2, penalty_exposure: 1.0, complexity_boost: 1.3 },
+  rural_remote:     { abf_pct: 0.80, private_pct: 0.05, complexity_boost: 0.7 },
+  regional:         { abf_pct: 0.75, private_pct: 0.12, complexity_boost: 1.0 },
+  metropolitan:     { abf_pct: 0.70, private_pct: 0.18, complexity_boost: 1.2 },
+  tertiary:         { abf_pct: 0.65, private_pct: 0.25, complexity_boost: 1.5 },
+  state_network:    { abf_pct: 0.72, private_pct: 0.15, complexity_boost: 1.3 },
 };
 
-// Reimbursement model multipliers
+// ABF & quality model multipliers
 const REIMBURSE_MULTIPLIERS = {
   ffs:   { denial_weight: 1.2, penalty_weight: 0.5, quality_bonus: 0.0 },
   vbc:   { denial_weight: 0.8, penalty_weight: 1.5, quality_bonus: 1.0 },
@@ -596,36 +569,26 @@ const REIMBURSE_MULTIPLIERS = {
 
 // ── Known EPR/PAS systems (UK & Ireland) ──
 const KNOWN_SYSTEMS = [
-  // Cost = baseCost + (perBed * bed_count). Sources: KLAS 2025, Becker's, EMR Guides
-  { label: "Epic", baseCost: 1500000, perBed: 7500, type: "EHR", cat: "enterprise" },
-  { label: "Oracle Health (Cerner) Millennium", baseCost: 1000000, perBed: 5000, type: "EHR", cat: "enterprise" },
-  { label: "MEDITECH Expanse", baseCost: 400000, perBed: 1800, type: "EHR", cat: "enterprise" },
-  { label: "MEDITECH Magic / Client-Server", baseCost: 250000, perBed: 900, type: "Legacy EHR", cat: "enterprise" },
-  { label: "Altera (Allscripts) Sunrise", baseCost: 600000, perBed: 2300, type: "EHR", cat: "enterprise" },
-  { label: "Altera Paragon / Denali", baseCost: 400000, perBed: 1300, type: "EHR", cat: "enterprise" },
-  { label: "TruBridge (CPSI/Evident)", baseCost: 200000, perBed: 650, type: "EHR", cat: "enterprise" },
-  { label: "MEDHOST", baseCost: 150000, perBed: 400, type: "EHR", cat: "enterprise" },
-  { label: "Azalea Health", baseCost: 100000, perBed: 250, type: "EHR", cat: "enterprise" },
-  { label: "Siemens Soarian", baseCost: 500000, perBed: 2100, type: "Legacy EHR", cat: "enterprise" },
-  { label: "GE Centricity", baseCost: 350000, perBed: 1400, type: "Legacy EHR", cat: "enterprise" },
-  { label: "McKesson Paragon", baseCost: 300000, perBed: 1100, type: "Legacy EHR", cat: "enterprise" },
-  { label: "eClinicalWorks", baseCost: 150000, perBed: 320, type: "Ambulatory EHR", cat: "departmental" },
-  { label: "athenahealth", baseCost: 200000, perBed: 480, type: "Ambulatory EHR/RCM", cat: "departmental" },
-  { label: "NextGen Healthcare", baseCost: 120000, perBed: 280, type: "Ambulatory EHR", cat: "departmental" },
-  { label: "Greenway Health", baseCost: 100000, perBed: 240, type: "Ambulatory EHR", cat: "departmental" },
-  { label: "Veradigm (Allscripts Practice)", baseCost: 80000, perBed: 190, type: "Ambulatory EHR", cat: "departmental" },
-  { label: "Varian ARIA", baseCost: 1200000, perBed: 2800, type: "Oncology", cat: "departmental" },
-  { label: "Netsmart", baseCost: 150000, perBed: 400, type: "Behavioral Health", cat: "departmental" },
-  { label: "WellSky", baseCost: 120000, perBed: 360, type: "Post-Acute/Rehab", cat: "departmental" },
-  { label: "Philips ICCA / Capsule", baseCost: 200000, perBed: 480, type: "ICU/Critical Care", cat: "departmental" },
-  { label: "Cerner Soarian Financials", baseCost: 300000, perBed: 800, type: "Revenue Cycle", cat: "departmental" },
-  { label: "GE Centricity Perinatal", baseCost: 120000, perBed: 280, type: "OB/Perinatal", cat: "departmental" },
-  { label: "Nuance PowerScribe / DAX", baseCost: 200000, perBed: 620, type: "Clinical Documentation", cat: "standalone" },
-  { label: "3M / Solventum CDI", baseCost: 150000, perBed: 400, type: "CDI/Coding", cat: "standalone" },
-  { label: "Omnicell / Pyxis", baseCost: 300000, perBed: 800, type: "Pharmacy/Dispensing", cat: "standalone" },
-  { label: "Hyland OnBase", baseCost: 120000, perBed: 360, type: "Document Management", cat: "standalone" },
-  { label: "InterSystems TrakCare", baseCost: 500000, perBed: 1600, type: "EHR/Integration", cat: "enterprise" },
-  { label: "Rhapsody / Corepoint", baseCost: 80000, perBed: 190, type: "Integration Engine", cat: "standalone" },
+  { label: "Oracle Health (Cerner)", baseCost: 1500000, perBed: 3500, type: "EMR" },
+  { label: "Epic", baseCost: 2500000, perBed: 5500, type: "EMR" },
+  { label: "InterSystems TrakCare", baseCost: 800000, perBed: 1800, type: "EMR/PAS" },
+  { label: "Telstra Health", baseCost: 400000, perBed: 800, type: "Clinical" },
+  { label: "DXC Technology (legacy)", baseCost: 600000, perBed: 1200, type: "PAS/EMR" },
+  { label: "Allscripts / Sunrise", baseCost: 350000, perBed: 700, type: "EMR" },
+  { label: "MEDITECH Expanse", baseCost: 600000, perBed: 1500, type: "EMR" },
+  { label: "Dedalus (Orion Health)", baseCost: 500000, perBed: 1000, type: "Integration" },
+  { label: "Citadel Health (BOSSnet)", baseCost: 250000, perBed: 500, type: "Theatre" },
+  { label: "Alcidion Miya", baseCost: 300000, perBed: 600, type: "Clinical" },
+  { label: "CliniSys AUSLAB", baseCost: 200000, perBed: 350, type: "LIMS" },
+  { label: "Agfa ORBIS / RIS", baseCost: 250000, perBed: 400, type: "Radiology" },
+  { label: "Hyland OnBase", baseCost: 180000, perBed: 280, type: "ECM" },
+  { label: "iPM (DXC legacy PAS)", baseCost: 400000, perBed: 800, type: "PAS" },
+  { label: "iPharmacy / JAC", baseCost: 150000, perBed: 200, type: "Pharmacy" },
+  { label: "WinScribe / BigHand", baseCost: 120000, perBed: 180, type: "Dictation" },
+  { label: "Maternity (various)", baseCost: 150000, perBed: 200, type: "Maternity" },
+  { label: "RiskMan / Datix", baseCost: 80000, perBed: 120, type: "Incident" },
+  { label: "MIMS Integrated", baseCost: 100000, perBed: 150, type: "Pharmacy" },
+  { label: "Karisma / ORMIS", baseCost: 200000, perBed: 350, type: "Theatre" },
 ]
 function systemCost(sys, beds) { return Math.round(((sys.baseCost || 250000) + (sys.perBed || 0) * beds) / 1000) * 1000; }
 // ── Cost line item helpers ──
@@ -649,9 +612,9 @@ function lineItemTotal(items) {
   return Object.values(items).reduce((a,b) => a + (b || 0), 0);
 }
 
-const fmt = n => "$" + Math.round(n).toLocaleString("en-US");
-const fmtK = n => n >= 1e6 ? `$${(n/1e6).toFixed(1)}m` : n >= 1000 ? `$${Math.round(n/1000).toLocaleString("en-US")}k` : fmt(n);
-const fmtNum = n => Math.round(n).toLocaleString("en-US");
+const fmt = n => "A$" + Math.round(n).toLocaleString("en-AU");
+const fmtK = n => n >= 1e6 ? `A$${(n/1e6).toFixed(1)}m` : n >= 1000 ? `A$${Math.round(n/1000).toLocaleString("en-AU")}k` : fmt(n);
+const fmtNum = n => Math.round(n).toLocaleString("en-AU");
 
 /* ═══════════════════════════════════════════════════════════════════════
    THEME & SMALL COMPONENTS
@@ -812,9 +775,9 @@ const tdR_={padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`,textAl
 function ROICalculator() {
   // Provider profile
   const [providerType, setProviderType] = useState("community");
-  const [reimbursementModel, setReimbursementModel] = useState("mixed");
+  const [reimbursementModel, setABF & qualityModel] = useState("mixed");
   const [medicareDrgRevenue, setMedicareDrgRevenue] = useState(0);
-  const [occupancyRate, setOccupancyRate] = useState(0.65);
+  const [occupancyRate, setOccupancyRate] = useState(0.92);
   const [galenMigrationCost, setGalenMigrationCost] = useState(0);
   const [galenAnnualCost, setGalenAnnualCost] = useState(0);
   const [mergerMode, setMergerMode] = useState(false);
@@ -880,7 +843,7 @@ function ROICalculator() {
   const PDF_LOGO_BASE64 = "";     // e.g. "iVBORw0KGgo..."
   const PDF_LOGO_FORMAT = "PNG";  // "PNG" or "JPEG"
   const PDF_LOGO_WIDTH = 42;      // mm — adjust to taste (height auto-scales)
-  const PDF_COMPANY_NAME = "RLDatix Data Solutions Group (US)";
+  const PDF_COMPANY_NAME = "RLDatix Data Solutions Group (AU)";
   const setOv = useCallback((k,v) => setOverrides(p=>({...p,[k]:v})),[]);
   const overrideCount = Object.values(overrides).filter(v=>v!=null).length;
   const resetOv = useCallback(()=>setOverrides({enterprise:null,departmental:null,niche:null,entCost:null,depCost:null,nicCost:null,clinicians:null,minsWasted:null,ticketsBaseline:null,sarDaysBefore:null}),[]);
@@ -974,54 +937,27 @@ function ROICalculator() {
   }, [touch]);
 
   // Facility types beyond acute care
-  // Facility types: shared systems exist once (the platform), perSite scale with locations
+  // Facility types: shared + perSite (AU)
   const FACILITY_TYPES = [
-    { key: "asc", label: "Ambulatory surgery centers", unit: "sites",
-      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 0, nic: 1 },
-      staffPer: 25, baseCost: 120000, perSiteCost: 35000 },
-    { key: "practices", label: "Physician practices / clinics", unit: "sites",
-      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 0, nic: 1 },
-      staffPer: 12, baseCost: 65000, perSiteCost: 18000 },
-    { key: "urgent_care", label: "Urgent care centers", unit: "sites",
-      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 0, nic: 1 },
-      staffPer: 10, baseCost: 55000, perSiteCost: 15000 },
-    { key: "freestanding_ed", label: "Freestanding EDs", unit: "sites",
-      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 1, nic: 1 },
-      staffPer: 20, baseCost: 80000, perSiteCost: 40000 },
-    { key: "snf", label: "Skilled nursing facilities", unit: "facilities",
-      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 1, nic: 1 },
-      staffPer: 40, baseCost: 95000, perSiteCost: 45000 },
-    { key: "home_health", label: "Home health / hospice", unit: "agencies",
-      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 0, nic: 1 },
-      staffPer: 30, baseCost: 70000, perSiteCost: 22000 },
-    { key: "irf", label: "Inpatient rehab facilities", unit: "facilities",
-      shared: { ent: 1, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 1, nic: 1 },
-      staffPer: 50, baseCost: 140000, perSiteCost: 55000 },
-    { key: "imaging", label: "Freestanding imaging centers", unit: "sites",
-      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 0, nic: 1 },
-      staffPer: 8, baseCost: 75000, perSiteCost: 20000 },
-    { key: "dialysis", label: "Dialysis centers", unit: "sites",
-      shared: { ent: 0, dep: 1, nic: 1 }, perSite: { ent: 0, dep: 0, nic: 1 },
-      staffPer: 12, baseCost: 60000, perSiteCost: 22000 },
-    { key: "infusion", label: "Infusion centers", unit: "sites",
-      shared: { ent: 0, dep: 1, nic: 0 }, perSite: { ent: 0, dep: 0, nic: 1 },
-      staffPer: 6, baseCost: 40000, perSiteCost: 12000 },
+    { key: "community_health", label: "Community health centres", unit: "sites", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:0,nic:1}, staffPer:15, baseCost:60000, perSiteCost:18000 },
+    { key: "outpatient", label: "Outpatient clinics", unit: "sites", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:0,nic:1}, staffPer:10, baseCost:45000, perSiteCost:15000 },
+    { key: "oral_health", label: "Oral health clinics", unit: "sites", shared:{ent:0,dep:1,nic:0}, perSite:{ent:0,dep:0,nic:1}, staffPer:8, baseCost:35000, perSiteCost:10000 },
+    { key: "multipurpose", label: "Multipurpose services (rural)", unit: "sites", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:1,nic:1}, staffPer:20, baseCost:55000, perSiteCost:25000 },
+    { key: "mental_health_inpatient", label: "Mental health inpatient", unit: "units", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:1,nic:1}, staffPer:35, baseCost:90000, perSiteCost:40000 },
+    { key: "community_mental", label: "Community mental health teams", unit: "teams", shared:{ent:0,dep:1,nic:0}, perSite:{ent:0,dep:0,nic:1}, staffPer:12, baseCost:40000, perSiteCost:12000 },
+    { key: "rehab", label: "Rehabilitation units", unit: "units", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:1,nic:1}, staffPer:30, baseCost:80000, perSiteCost:35000 },
+    { key: "aged_care", label: "Aged care / sub-acute", unit: "facilities", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:1,nic:1}, staffPer:25, baseCost:70000, perSiteCost:30000 },
   ];
 
   const MERGER_ORG_OPTIONS = [
-    // Acute
-    { key: "cah", label: "Critical Access Hospital", cat: "Acute", beds: 25, orgs: 1, tiers: { enterprise: 1, departmental: 1, niche: 3 }, ambSites: 0 },
-    { key: "small_community", label: "Small Community Hospital", cat: "Acute", beds: 100, orgs: 1, tiers: { enterprise: 1, departmental: 3, niche: 5 }, ambSites: 2 },
-    { key: "community", label: "Community Hospital", cat: "Acute", beds: 250, orgs: 1, tiers: { enterprise: 1, departmental: 5, niche: 9 }, ambSites: 5 },
-    { key: "regional", label: "Regional Medical Center", cat: "Acute", beds: 600, orgs: 1, tiers: { enterprise: 2, departmental: 8, niche: 15 }, ambSites: 12 },
-    { key: "academic", label: "Academic Medical Center", cat: "Acute", beds: 800, orgs: 1, tiers: { enterprise: 3, departmental: 12, niche: 20 }, ambSites: 20 },
-    { key: "large_system", label: "Large Health System", cat: "Acute", beds: 1500, orgs: 3, tiers: { enterprise: 4, departmental: 18, niche: 35 }, ambSites: 40 },
-    // Ambulatory / Post-acute
-    { key: "physician_group", label: "Physician group (20 sites)", cat: "Ambulatory", beds: 0, orgs: 0, tiers: { enterprise: 0, departmental: 20, niche: 40 }, ambSites: 20 },
-    { key: "asc_network", label: "ASC network (5 centers)", cat: "Ambulatory", beds: 0, orgs: 0, tiers: { enterprise: 0, departmental: 10, niche: 15 }, ambSites: 5 },
-    { key: "urgent_care_chain", label: "Urgent care chain (10 sites)", cat: "Ambulatory", beds: 0, orgs: 0, tiers: { enterprise: 0, departmental: 10, niche: 20 }, ambSites: 10 },
-    { key: "post_acute", label: "Post-acute network (SNF/IRF/HH)", cat: "Post-acute", beds: 200, orgs: 0, tiers: { enterprise: 1, departmental: 6, niche: 12 }, ambSites: 8 },
-    { key: "home_health_agency", label: "Home health / hospice agency", cat: "Post-acute", beds: 0, orgs: 0, tiers: { enterprise: 0, departmental: 2, niche: 4 }, ambSites: 3 },
+    { key: "rural", label: "Rural / Remote Hospital", cat: "Acute", beds: 30, orgs: 1, tiers: { enterprise: 1, departmental: 1, niche: 3 }, ambSites: 0 },
+    { key: "regional_h", label: "Regional Hospital", cat: "Acute", beds: 200, orgs: 1, tiers: { enterprise: 1, departmental: 5, niche: 9 }, ambSites: 3 },
+    { key: "metro", label: "Metropolitan Hospital", cat: "Acute", beds: 500, orgs: 1, tiers: { enterprise: 2, departmental: 8, niche: 15 }, ambSites: 8 },
+    { key: "tertiary_h", label: "Tertiary Referral Centre", cat: "Acute", beds: 800, orgs: 1, tiers: { enterprise: 3, departmental: 12, niche: 20 }, ambSites: 15 },
+    { key: "community_h", label: "Community Health (cluster)", cat: "Non-acute", beds: 0, orgs: 0, tiers: { enterprise: 0, departmental: 8, niche: 15 }, ambSites: 10 },
+    { key: "mh_service", label: "Mental Health Service", cat: "Non-acute", beds: 80, orgs: 1, tiers: { enterprise: 1, departmental: 4, niche: 8 }, ambSites: 5 },
+    { key: "rehab_aged", label: "Rehabilitation / Aged Care", cat: "Non-acute", beds: 120, orgs: 1, tiers: { enterprise: 1, departmental: 3, niche: 6 }, ambSites: 4 },
+    { key: "mps", label: "Multipurpose Service (rural)", cat: "Non-acute", beds: 15, orgs: 1, tiers: { enterprise: 0, departmental: 2, niche: 4 }, ambSites: 1 },
   ];
   const addMergerOrg = useCallback((opt) => {
     setMergerOrgs(p => [...p, { ...opt, id: Date.now() + Math.random() }]);
@@ -1215,7 +1151,7 @@ function ROICalculator() {
     provider_type: providerType,
     reimbursement_model: reimbursementModel,
 
-    // Reimbursement & compliance
+    // ABF & quality & compliance
     medicare_drg_revenue: r.medicareDrg,
     hrrp_exposure: r.hrrpExposure,
     hrrp_reduction: r.hrrpReduction,
@@ -1234,7 +1170,7 @@ function ROICalculator() {
     duplicate_reduction: r.duplicateReduction,
     reimbursement_impact: r.reimbursementImpact,
     quality_savings: r.qualitySavings,
-    annual_with_reimbursement: r.annualWithReimbursement,
+    annual_with_reimbursement: r.annualWithABF & quality,
     // Academic module
     is_academic: r.isAcademic,
     research_systems: r.researchSystems,
@@ -1249,7 +1185,7 @@ function ROICalculator() {
     infra_consolidation: r.infraConsolidation,
     standardisation_save: r.standardisationSave,
     merge_savings: r.mergeSavings,
-    three_year_with_reimbursement: r.total3WithReimbursement,
+    three_year_with_reimbursement: r.total3WithABF & quality,
     galen_migration_cost: galenMigrationCost,
     galen_annual_cost: galenAnnualCost,
     galen_3yr_total: galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)),
@@ -1259,7 +1195,7 @@ function ROICalculator() {
     portfolio_additional_systems: portfolioImpact.addSystems,
     portfolio_additional_staff: portfolioImpact.addStaff,
     portfolio_additional_cost: portfolioImpact.addCost,
-    net_3yr_savings: (galenMigrationCost > 0 || galenAnnualCost > 0) ? r.total3WithReimbursement - galenMigrationCost - Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)) : null,
+    net_3yr_savings: (galenMigrationCost > 0 || galenAnnualCost > 0) ? r.total3WithABF & quality - galenMigrationCost - Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)) : null,
     yr1: r.yr1, yr2: r.yr2, yr3: r.yr3,
     yr1_pct: r.y1Pct, yr2_pct: r.y2Pct, yr3_pct: r.y3Pct,
     admissions_per_year: r.admissionsPerYear,
@@ -1382,7 +1318,7 @@ function ROICalculator() {
       doc.setFillColor(TEAL[0],TEAL[1],TEAL[2]);
       doc.rect(0, 0, pw, 14, "F");
       doc.setFontSize(8); doc.setFont("helvetica","bold"); setC(WHITE);
-      doc.text("EHR Migration & Archiving  |  ROI Estimate", ml, 9);
+      doc.text("EMR Migration & Archiving  |  ROI Estimate", ml, 9);
       doc.setFont("helvetica","normal"); doc.setTextColor(190,230,220);
       doc.text(leadForm.org || "", pw - mr, 9, { align: "right" });
       if (PDF_LOGO_BASE64) {
@@ -1413,7 +1349,7 @@ function ROICalculator() {
     // Title text (left side)
     const titleMaxW = PDF_LOGO_BASE64 ? cw - PDF_LOGO_WIDTH - 8 : cw;
     doc.setFontSize(20); doc.setFont("helvetica","bold"); setC(WHITE);
-    doc.text("EHR Migration & Archiving", ml, 14);
+    doc.text("EMR Migration & Archiving", ml, 14);
     doc.setFontSize(24); doc.setTextColor(128,248,228);
     doc.text("ROI Estimate", ml, 25);
     doc.setFontSize(9); doc.setFont("helvetica","normal"); setC([190,230,220]);
@@ -1445,7 +1381,7 @@ function ROICalculator() {
 
     // Summary cards
     const cards = [
-      { label: "3-YEAR COMBINED", value: fmtK(r.total3WithReimbursement), sub: "All savings + reimbursement", bg: LTBG },
+      { label: "3-YEAR COMBINED", value: fmtK(r.total3WithABF & quality), sub: "All savings + reimbursement", bg: LTBG },
       { label: "ANNUAL RECURRING", value: fmtK(r.annual), sub: fmtK(r.decomSave) + " decom + " + fmtK(r.timeSave) + " time", bg: TEALBG },
       { label: "REIMBURSEMENT / YR", value: fmtK(r.reimbursementImpact + r.qualitySavings), sub: "Penalties + denials + quality", bg: [254,249,236] },
       { label: "HOURS FREED / YR", value: fmtNum(r.hrsSaved), sub: Math.round(r.realisation*100) + "% realisation", bg: [230,248,252] },
@@ -1474,8 +1410,8 @@ function ROICalculator() {
       styles: { fontSize: 9, cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 55 }, 1: { halign: "right" } },
       body: [
-        ["Provider type", ({"critical_access":"Critical Access","community":"Community Hospital","regional":"Regional Medical Center","academic":"Academic Medical Center","multi_hospital":"Multi-Hospital System"})[providerType] || providerType],
-        ["Reimbursement model", ({"ffs":"Fee-for-Service","vbc":"Value-Based Care / ACO","mixed":"Mixed"})[reimbursementModel] || reimbursementModel],
+        ["Provider type", ({"rural_remote":"Rural / Remote","regional":"Regional Hospital","metropolitan":"Metropolitan Hospital","tertiary":"Tertiary Referral","state_network":"State Health Network"})[providerType] || providerType],
+        ["ABF & quality model", ({"ffs":"Fee-for-Service","vbc":"Value-Based Care / ACO","mixed":"Mixed"})[reimbursementModel] || reimbursementModel],
         ["Journey", isArchiveOnly ? "Have enterprise EHR" : "Evaluating EHRs"],
         ["Beds", fmtNum(inputs.bed_count)],
         ["Facilities", String(inputs.org_count)],
@@ -1559,21 +1495,21 @@ function ROICalculator() {
       y = safetyEnd + 14;
     }
 
-    // Reimbursement & compliance
+    // ABF & quality & compliance
     if (y > 180) { doc.addPage(); addPageHeader(); y = 22; }
     doc.setFontSize(12); doc.setFont("helvetica","bold"); setC(TEAL);
-    doc.text("Reimbursement & Compliance Impact", ml, y); y += 2;
+    doc.text("ABF & quality & Compliance Impact", ml, y); y += 2;
     doc.autoTable({
       startY: y,
       margin: { left: ml, right: mr },
       head: [["Category", "Annual impact", "Source"]],
       body: [
-        ["HRRP penalty avoidance", fmtK(r.hrrpReduction) + "/yr", "CMS FY2025 (0.33% avg)"],
+        ["ABF efficiency gain", fmtK(r.abfEfficiencyGain || 0) + "/yr", "IHPA 2024-25 (8% IT overhead, 25% addressable)"],
         ["HAC penalty avoidance", fmtK(r.hacReduction) + "/yr", "CMS HAC programme (1%)"],
-        ["VBP improvement", fmtK(r.vbpImprovement) + "/yr", "CMS VBP (2% pool)"],
-        ["Denial recovery", fmtK(r.denialRecovery) + "/yr", "HFMA/MDaudit 2024"],
+        ["Accreditation context", fmtK(r.vbpImprovement) + "/yr", "CMS VBP (2% pool)"],
+        ["Documentation quality", fmtK(r.denialRecovery) + "/yr", "HFMA/MDaudit 2024"],
         ["Malpractice premium reduction", fmtK(r.malpracticeReduction) + "/yr", "Modelled (8% reduction)"],
-        ["Excess bed day cost avoided", fmtK(r.excessDayCostAvoided) + "/yr", "KFF/AHA 2023 ($3,132/day)"],
+        ["Excess bed day cost avoided", fmtK(r.excessDayCostAvoided) + "/yr", "IHPA 2023 (A$3,100/day)"],
         ["Duplicate testing reduction", fmtK(r.duplicateReduction) + "/yr", "ONC (25% duplicate rate)"],
         [{ content: "Total reimbursement & quality", styles: { fontStyle: "bold", fillColor: LTBG } },
          { content: fmtK(r.reimbursementImpact + r.qualitySavings) + "/yr", styles: { fontStyle: "bold", textColor: TEAL, fillColor: LTBG } },
@@ -1591,7 +1527,7 @@ function ROICalculator() {
     doc.setFontSize(8); doc.setFont("helvetica","bold"); setC(TEAL);
     doc.text("Combined annual impact:", ml + 4, y + 5);
     doc.setFontSize(12);
-    doc.text(fmtK(r.annualWithReimbursement) + "/yr", ml + 4, y + 11);
+    doc.text(fmtK(r.annualWithABF & quality) + "/yr", ml + 4, y + 11);
     doc.setFontSize(7); doc.setFont("helvetica","normal"); setC(MID);
     doc.text(fmtK(r.annual) + " (decom + time) + " + fmtK(r.reimbursementImpact + r.qualitySavings) + " (reimbursement & quality)", ml + 60, y + 8);
     y += 22;
@@ -1600,7 +1536,7 @@ function ROICalculator() {
     if (r.isAcademic && r.academicSavings > 0) {
       if (y > 200) { doc.addPage(); addPageHeader(); y = 22; }
       doc.setFontSize(12); doc.setFont("helvetica","bold"); setC([83,74,183]);
-      doc.text("Academic Medical Center Module", ml, y); y += 2;
+      doc.text("Teaching Hospital Module", ml, y); y += 2;
       doc.autoTable({
         startY: y,
         margin: { left: ml, right: mr },
@@ -1624,7 +1560,7 @@ function ROICalculator() {
     if (r.isMultiHospital && r.mergeSavings > 0) {
       if (y > 200) { doc.addPage(); addPageHeader(); y = 22; }
       doc.setFontSize(12); doc.setFont("helvetica","bold"); setC(TEAL);
-      doc.text("Multi-Hospital / M&A Consolidation Module", ml, y); y += 2;
+      doc.text("Network Consolidation Module", ml, y); y += 2;
       doc.autoTable({
         startY: y,
         margin: { left: ml, right: mr },
@@ -1669,7 +1605,7 @@ function ROICalculator() {
     doc.setFontSize(8); doc.setFont("helvetica","bold"); setC(TEAL);
     doc.text("Range across scenarios:", ml + 4, y + 5);
     doc.setFont("helvetica","normal"); setC(GREY);
-    doc.text(fmtK(rCon.total3WithReimbursement) + " (conservative)  to  " + fmtK(rStr.total3WithReimbursement) + " (stretch) — including reimbursement & quality impact. All figures are user-overridable.", ml + 4, y + 10);
+    doc.text(fmtK(rCon.total3WithABF & quality) + " (conservative)  to  " + fmtK(rStr.total3WithABF & quality) + " (stretch) — including reimbursement & quality impact. All figures are user-overridable.", ml + 4, y + 10);
     y += 22;
 
     // Scenario comparison mini-table
@@ -1683,9 +1619,9 @@ function ROICalculator() {
         body: [
           ["Decom savings", fmtK(rCon.decomSave) + "/yr", fmtK(r.decomSave) + "/yr", fmtK(rStr.decomSave) + "/yr"],
           ["Time savings", fmtK(rCon.timeSave) + "/yr", fmtK(r.timeSave) + "/yr", fmtK(rStr.timeSave) + "/yr"],
-          ["Reimbursement & quality", fmtK(rCon.reimbursementImpact + rCon.qualitySavings) + "/yr", fmtK(r.reimbursementImpact + r.qualitySavings) + "/yr", fmtK(rStr.reimbursementImpact + rStr.qualitySavings) + "/yr"],
-          [{ content: "Combined annual", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.annualWithReimbursement) + "/yr", styles: { fontStyle: "bold" } }, { content: fmtK(r.annualWithReimbursement) + "/yr", styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.annualWithReimbursement) + "/yr", styles: { fontStyle: "bold" } }],
-          [{ content: "3-year combined", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.total3WithReimbursement), styles: { fontStyle: "bold" } }, { content: fmtK(r.total3WithReimbursement), styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.total3WithReimbursement), styles: { fontStyle: "bold" } }],
+          ["ABF & quality & quality", fmtK(rCon.reimbursementImpact + rCon.qualitySavings) + "/yr", fmtK(r.reimbursementImpact + r.qualitySavings) + "/yr", fmtK(rStr.reimbursementImpact + rStr.qualitySavings) + "/yr"],
+          [{ content: "Combined annual", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.annualWithABF & quality) + "/yr", styles: { fontStyle: "bold" } }, { content: fmtK(r.annualWithABF & quality) + "/yr", styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.annualWithABF & quality) + "/yr", styles: { fontStyle: "bold" } }],
+          [{ content: "3-year combined", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.total3WithABF & quality), styles: { fontStyle: "bold" } }, { content: fmtK(r.total3WithABF & quality), styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.total3WithABF & quality), styles: { fontStyle: "bold" } }],
         ],
         headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
         styles: { fontSize: 8.5, cellPadding: { top: 2.2, bottom: 2.2, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
@@ -1838,11 +1774,11 @@ function ROICalculator() {
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20}}>
         {[
-          {k:"critical_access",l:"Critical Access / Rural",d:"≤25 beds, limited legacy estate",e:"🏥"},
-          {k:"community",l:"Community Hospital",d:"100-400 beds, moderate complexity",e:"🏨"},
-          {k:"regional",l:"Regional Medical Center",d:"400-1,000 beds, multiple service lines",e:"🏗️"},
-          {k:"academic",l:"Academic Medical Center",d:"Teaching hospital, research systems",e:"🎓"},
-          {k:"multi_hospital",l:"Multi-Hospital System / IDN",d:"Post-M&A, multiple facilities",e:"🏢"},
+          {k:"rural_remote",l:"Rural / Remote Hospital",d:"Small facility, standalone systems",e:"🏥"},
+          {k:"regional",l:"Regional Hospital",d:"100-300 beds, district systems",e:"🏥"},
+          {k:"metropolitan",l:"Metropolitan Hospital",d:"300-600 beds, complex integrations",e:"🏥"},
+          {k:"tertiary",l:"Tertiary Referral / Teaching",d:"Major teaching hospital, research",e:"🎓"},
+          {k:"state_network",l:"State Health Network / LHD",d:"Multiple facilities, whole-of-network",e:"🏢"},
         ].map(p=><button type="button" key={p.k} onClick={()=>{setProviderType(p.k);const pk=PROVIDER_PRESET_MAP[p.k];if(pk)applyPreset(pk);}} className="roi-preset" style={{width:"100%",padding:"12px 14px",textAlign:"left",border:providerType===p.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:providerType===p.k?C.accentPale:"#fff",cursor:"pointer"}}>
           <div style={{fontSize:13,fontWeight:700,color:providerType===p.k?C.accent:C.text}}>{p.e} {p.l}</div>
           <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{p.d}</div>
@@ -1855,18 +1791,18 @@ function ROICalculator() {
           {k:"ffs",l:"Fee-for-Service",d:"Traditional FFS / commercial"},
           {k:"vbc",l:"Value-Based Care / ACO",d:"Shared savings, quality bonuses"},
           {k:"mixed",l:"Mixed",d:"Combination of FFS + VBC contracts"},
-        ].map(r=><button type="button" key={r.k} onClick={()=>setReimbursementModel(r.k)} className="roi-btn" style={{flex:"1 1 140px",padding:"12px 14px",textAlign:"left",border:reimbursementModel===r.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,background:reimbursementModel===r.k?C.accentPale:"#fff",cursor:"pointer"}}>
+        ].map(r=><button type="button" key={r.k} onClick={()=>setABF & qualityModel(r.k)} className="roi-btn" style={{flex:"1 1 140px",padding:"12px 14px",textAlign:"left",border:reimbursementModel===r.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,background:reimbursementModel===r.k?C.accentPale:"#fff",cursor:"pointer"}}>
           <div style={{fontSize:13,fontWeight:700,color:reimbursementModel===r.k?C.accent:C.text}}>{r.l}</div>
           <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{r.d}</div>
         </button>)}
       </div>
 
       <div style={{padding:"12px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`,fontSize:12,color:C.textMuted,lineHeight:1.6}}>
-        {providerType === "critical_access" && "Critical Access Hospitals are exempt from HRRP penalties but benefit from reduced operational costs and improved care coordination."}
-        {providerType === "community" && "Community hospitals face moderate CMS penalty exposure. EHR consolidation typically yields the strongest ROI through decommission savings and reduced denials."}
-        {providerType === "regional" && "Regional centers face full CMS penalty exposure across HRRP, HAC, and VBP programmes. The case for consolidation includes both cost reduction and penalty avoidance."}
-        {providerType === "academic" && "Academic centers carry the highest system complexity (40-200+ legacy applications). The ROI case includes research system integration and GME compliance alongside financial savings."}
-        {providerType === "multi_hospital" && "Multi-hospital systems post-M&A typically have 2-3x the normal legacy system count. Consolidation eliminates duplicate infrastructure across facilities."}
+        {providerType === "critical_access" && "Rural and remote hospitals often run standalone legacy systems. Consolidation improves care coordination and reduces per-site IT costs."}
+        {providerType === "community" && "Regional hospitals serve as district hubs. EMR consolidation yields strong ROI through decommission savings and improved data sharing."}
+        {providerType === "regional" && "Metropolitan hospitals have complex legacy estates. The consolidation case includes cost reduction and improved clinical data continuity."}
+        {providerType === "academic" && "Tertiary referral centres carry the highest system complexity (40-200+ applications). The ROI case includes research system rationalisation alongside operational savings."}
+        {providerType === "multi_hospital" && "State health networks and LHDs typically have 2-3x the legacy system count. Consolidation eliminates duplicate infrastructure across the network."}
       </div>
     </Card>
     <LockedConnector/>
@@ -1902,7 +1838,7 @@ function ROICalculator() {
       {/* Merger question */}
       <div style={{marginBottom:20,padding:"14px 18px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-          <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Are you planning a merger or acquisition?</span>
+          <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Are you consolidating across multiple facilities or LHDs?</span>
           <div style={{display:"flex",gap:6}}>
             <button type="button" onClick={()=>setMergerMode(true)} style={{padding:"6px 16px",borderRadius:999,fontSize:12,fontWeight:700,cursor:"pointer",border:mergerMode===true?`2px solid ${C.accent}`:`1px solid ${C.border}`,background:mergerMode===true?C.accentPale:"#fff",color:mergerMode===true?C.accent:C.textMid}}>Yes</button>
             <button type="button" onClick={()=>{setMergerMode(false);setMergerOrgs([]);}} style={{padding:"6px 16px",borderRadius:999,fontSize:12,fontWeight:700,cursor:"pointer",border:mergerMode===false?`2px solid ${C.accent}`:`1px solid ${C.border}`,background:mergerMode===false?C.accentPale:"#fff",color:mergerMode===false?C.accent:C.textMid}}>No</button>
@@ -1911,7 +1847,7 @@ function ROICalculator() {
 
         {mergerMode === true && (
           <div style={{marginTop:14}}>
-            <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Build your future health system</div>
+            <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Select facilities in scope for consolidation</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:12}}>
               {MERGER_ORG_OPTIONS.map(opt => (
                 <button type="button" key={opt.key} onClick={()=>addMergerOrg(opt)} className="roi-preset" style={{width:"100%",padding:"8px 10px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:10,background:"#fff",cursor:"pointer"}}>
@@ -2003,9 +1939,9 @@ function ROICalculator() {
       {inputs.bed_count===0&&<div style={{marginTop:10,padding:"8px 14px",background:C.accentPale,borderRadius:6,fontSize:13,color:C.accent}}>Community provider {"\u2013"} model still works.</div>}
 
       {/* ── Ambulatory sites ── */}
-      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:24}}>Ambulatory</div>
+      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:24}}>Community and outpatient</div>
       <div style={{display:"flex",flexDirection:"column",gap:4}}>
-        {FACILITY_TYPES.filter(ft => ["asc","practices","urgent_care","freestanding_ed"].includes(ft.key)).map(ft => (
+        {FACILITY_TYPES.filter(ft => ["community_health","outpatient","oral_health","multipurpose"].includes(ft.key)).map(ft => (
           <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
@@ -2021,9 +1957,9 @@ function ROICalculator() {
       </div>
 
       {/* ── Post-acute ── */}
-      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:24}}>Post-acute</div>
+      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:24}}>Mental health and rehabilitation</div>
       <div style={{display:"flex",flexDirection:"column",gap:4}}>
-        {FACILITY_TYPES.filter(ft => ["snf","home_health","irf"].includes(ft.key)).map(ft => (
+        {FACILITY_TYPES.filter(ft => ["mental_health_inpatient","community_mental","rehab"].includes(ft.key)).map(ft => (
           <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
@@ -2039,9 +1975,9 @@ function ROICalculator() {
       </div>
 
       {/* ── Ancillary ── */}
-      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:24}}>Ancillary</div>
+      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:24}}>Aged and sub-acute care</div>
       <div style={{display:"flex",flexDirection:"column",gap:4}}>
-        {FACILITY_TYPES.filter(ft => ["imaging","dialysis","infusion"].includes(ft.key)).map(ft => (
+        {FACILITY_TYPES.filter(ft => ["aged_care"].includes(ft.key)).map(ft => (
           <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
@@ -2094,7 +2030,7 @@ function ROICalculator() {
         <div style={{marginBottom:16,padding:"18px 20px",background:C.accentPale,borderRadius:10,border:`1px solid ${C.accent}33`}}>
           <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>Total annual legacy system spend</div>
           <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-            <span style={{fontSize:18,fontWeight:800,color:C.accent}}>{"$"}</span>
+            <span style={{fontSize:18,fontWeight:800,color:C.accent}}>{"A$"}</span>
             <input type="number" value={knownAnnualSpend||""} placeholder="e.g. 5000000"
               onChange={e=>{const v=parseInt(e.target.value);setKnownAnnualSpend(isNaN(v)?null:v);setActivePreset(null);}}
               style={{flex:"1 1 200px",maxWidth:260,padding:"12px 14px",border:`2px solid ${C.accent}`,borderRadius:999,fontSize:18,fontWeight:700,fontFamily:"inherit"}}/>
@@ -2131,7 +2067,7 @@ function ROICalculator() {
                 <InfoTip text={t.tip}/>
                 {isEditing ? (
                   <span style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4}}>
-                    <span style={{fontSize:13,color:C.textMuted}}>{"$"}</span>
+                    <span style={{fontSize:13,color:C.textMuted}}>{"A$"}</span>
                     <input type="number" autoFocus defaultValue={displayCost} min={0} max={1000000} step={1000}
                       onBlur={e => { const v = parseInt(e.target.value); if (!isNaN(v) && v >= 0) { setTierCostEdits(p=>({...p,[editKey]:v})); } setEditingTierCost(null); }}
                       onKeyDown={e => { if(e.key==="Enter") e.target.blur(); if(e.key==="Escape"){ setEditingTierCost(null); } }}
@@ -2284,7 +2220,7 @@ function ROICalculator() {
                       {COST_CATEGORIES.map(cat => (
                         <div key={cat.key} style={{display:"flex",alignItems:"center",gap:8}}>
                           <span style={{fontSize:12,color:C.textMid,flex:"1 1 160px",minWidth:120}}>{cat.label}</span>
-                          <span style={{fontSize:12,color:C.textMuted}}>{"$"}</span>
+                          <span style={{fontSize:12,color:C.textMuted}}>{"A$"}</span>
                           <input type="number" value={(f.items && f.items[cat.key]) || 0} min={0} max={20000000} step={1000}
                             onChange={e => updateLineItem(i, cat.key, parseInt(e.target.value)||0)}
                             style={{width:100,padding:"5px 8px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:12,fontFamily:"inherit",textAlign:"right"}}/>
@@ -2329,15 +2265,15 @@ function ROICalculator() {
           <select value={inputs.data_quality_level} onChange={e=>{update("data_quality_level",e.target.value);touch(3);}} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,fontFamily:"inherit"}}><option value="CLEAN">Clean</option><option value="MIXED">Mixed</option><option value="POOR">Poor</option></select></div>
       </div>
       <AnimatedSlider label={<span>Decommission target<InfoTip text="What % of legacy systems do you plan to retire? 60-80% is typical as most programmes retain a few for standalone or long-retention use."/></span>} value={inputs.decom_retire_rate} min={0} max={1} step={0.05} display={`${Math.round(inputs.decom_retire_rate*100)}%`} onChange={v=>{update("decom_retire_rate",v);touch(3);}} suffix=""/>
-      <AnimatedSlider label={<span>Bed occupancy rate<InfoTip text="Average bed occupancy. National average is 65% (AHA 2023). Critical access hospitals may be 40-50%; urban academic centres 75-85%. This drives admission volume, revenue estimates, and ADE calculations."/></span>} value={occupancyRate} min={0.30} max={0.95} step={0.01} display={`${Math.round(occupancyRate*100)}%`} onChange={v=>{setOccupancyRate(v);touch(3);}} suffix=""/>
+      <AnimatedSlider label={<span>Bed occupancy rate<InfoTip text="Average bed occupancy. National average is ~92% (AIHW 2023). Rural/remote hospitals may be 60-80%; metropolitan and tertiary hospitals 90-98%. This drives admission volume, revenue estimates, and ADE calculations."/></span>} value={occupancyRate} min={0.30} max={0.95} step={0.01} display={`${Math.round(occupancyRate*100)}%`} onChange={v=>{setOccupancyRate(v);touch(3);}} suffix=""/>
 
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-          <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>Medicare DRG revenue (optional)</span>
-          <InfoTip text="If you know your annual Medicare DRG revenue, enter it here for more accurate CMS penalty and VBP calculations. If left blank, we estimate from bed count and occupancy."/>
+          <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>ABF revenue (optional)</span>
+          <InfoTip text="If you know your annual ABF revenue (total NWAU funding), enter it here. If left blank, we estimate from bed count, occupancy, and casemix."/>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:13,color:C.textMuted}}>{"$"}</span>
+          <span style={{fontSize:13,color:C.textMuted}}>{"A$"}</span>
           <input type="number" value={medicareDrgRevenue || ""} placeholder={fmtNum(Math.round(inputs.bed_count * (365/US_AVG_ALOS) * occupancyRate * US_AVG_REVENUE_PER_ADMISSION * (PROVIDER_MULTIPLIERS[providerType]?.medicare_pct || 0.42)))} min={0} step={100000}
             onChange={e => setMedicareDrgRevenue(parseInt(e.target.value) || 0)}
             style={{flex:1,maxWidth:200,padding:"8px 12px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
@@ -2354,14 +2290,14 @@ function ROICalculator() {
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontSize:12,color:C.textMid,minWidth:120}}>Migration cost</span>
-            <span style={{fontSize:13,color:C.textMuted}}>{"$"}</span>
+            <span style={{fontSize:13,color:C.textMuted}}>{"A$"}</span>
             <input type="number" value={galenMigrationCost || ""} placeholder="One-time" min={0} step={10000}
               onChange={e => setGalenMigrationCost(parseInt(e.target.value) || 0)}
               style={{flex:1,maxWidth:160,padding:"8px 12px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontSize:12,color:C.textMid,minWidth:120}}>Annual archive cost</span>
-            <span style={{fontSize:13,color:C.textMuted}}>{"$"}</span>
+            <span style={{fontSize:13,color:C.textMuted}}>{"A$"}</span>
             <input type="number" value={galenAnnualCost || ""} placeholder="Per year" min={0} step={10000}
               onChange={e => setGalenAnnualCost(parseInt(e.target.value) || 0)}
               style={{flex:1,maxWidth:160,padding:"8px 12px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
@@ -2455,7 +2391,7 @@ function ROICalculator() {
       <ResultCard dimmed={dim} label="Total savings (3-year)" value={an?<AnimatedK value={r.total3} active={an}/>:"–"} sub={an?"Decom + clinician time x 3 years":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
       <ResultCard dimmed={dim} label="Annual recurring" value={an?<AnimatedK value={r.annual} active={an}/>:"–"} sub={an?`${fmtK(r.decomSave)} decom + ${fmtK(r.timeSave)} time`:""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
       <ResultCard dimmed={dim} label="Clinician time (annual)" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={an?<span>{fmtNum(r.hrsSaved)} hrs/yr, {Math.round(r.realisation*100)}% realisation</span>:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
-      <ResultCard dimmed={dim} label="Reimbursement & quality" value={an?<AnimatedK value={r.reimbursementImpact + r.qualitySavings} active={an}/>:"–"} sub={an?"Penalties + denials + quality":""} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
+      <ResultCard dimmed={dim} label="ABF & quality & quality" value={an?<AnimatedK value={r.reimbursementImpact + r.qualitySavings} active={an}/>:"–"} sub={an?"Penalties + denials + quality":""} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
     </div>
 
     {/* Decom – tiered breakdown */}
@@ -2490,7 +2426,7 @@ function ROICalculator() {
         <Stat label="Hours freed / yr" value={an?<AnimatedNum value={r.hrsSaved} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Result: ${fmtNum(r.hrsSaved)} hours per year.`}/>
         <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at the BLS median blended rate of $95/hr (BLS median clinical compensation including benefits). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity, since not all freed time converts to measurable output. This represents capacity redirected to patient care, not a direct cash saving.`}/>
       </div>
-      <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"$"}55 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong></Callout>
+      <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"A$"}55 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong></Callout>
     </Card><LockedConnector/>
 
     {/* Clinical safety */}
@@ -2517,24 +2453,24 @@ function ROICalculator() {
       {/* Litigation context */}
       <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,border:`1px solid ${C.rose}15`,fontSize:12,lineHeight:1.6,color:C.textMid}}>
         <strong style={{color:C.text}}>Evidence & litigation context</strong><br/>
-        AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data: over 250,000 adverse events at care transitions annually (AHRQ), with EHR fragmentation a contributing factor in 40% of cases. US health systems face an estimated <strong>{"$"}55bn/yr</strong> in malpractice liability costs (Coverys/PIAA). Malpractice premiums are directly influenced by claims history {"\u2013"} fewer adverse events means fewer malpractice claims, lower premiums, and better CMS quality scores. Every patient harmed by fragmented records is a potential malpractice claim and CMS penalty event.
+        ACSQHC National Safety and Quality Health Service Standards; AIHW hospital statistics: approximately 10% of hospital separations involve an adverse event (ACSQHC), with communication failure a contributing factor in 35% of clinical incidents. Australian state health systems face significant medical indemnity costs through schemes such as icare (NSW) and VMIA (VIC). Indemnity premiums are influenced by claims history {"\u2013"} fewer adverse events means fewer indemnity claims and lower premiums. Every patient harmed by fragmented records is a potential indemnity claim and accreditation risk under ACSQHC Standards 1 and 6.
       </div>
     </Card><LockedConnector/>
     </div>}
 
-    {/* Reimbursement & compliance impact */}
+    {/* ABF efficiency & revenue impact */}
     <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Reimbursement & compliance impact</h3>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Estimated annual impact from CMS penalty avoidance, denial reduction, and quality improvements. These are modelled estimates with improvement rates attributed to EHR consolidation as a contributing factor, not sole cause. Actual attribution will depend on your implementation scope and existing infrastructure.</p>
+      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>ABF efficiency & revenue impact</h3>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Estimated annual impact from ABF efficiency gains, private patient revenue uplift, and quality improvements. These are modelled estimates attributed to EMR consolidation as a contributing factor, not sole cause. Actual outcomes will depend on your implementation scope and existing infrastructure.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>CMS penalty avoidance</div>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>ABF efficiency gain</div>
           <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.hrrpReduction + r.hacReduction):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>HRRP: {fmtK(r.hrrpReduction)} + HAC: {fmtK(r.hacReduction)}</div>
+          <div style={{fontSize:11,color:C.textMuted}}>ABF efficiency: {fmtK(r.abfEfficiencyGain || 0)} + Private: {fmtK(r.privateRevRecovery || 0)}</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Denial recovery + VBP</div>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Documentation quality + VBP</div>
           <div style={{fontSize:28,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.denialRecovery + r.vbpImprovement):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>Denials: {fmtK(r.denialRecovery)} + VBP: {fmtK(r.vbpImprovement)}</div>
         </div>
@@ -2549,17 +2485,17 @@ function ROICalculator() {
         <strong style={{color:C.green}}>Total reimbursement & quality impact:</strong>{" "}
         {fmtK(r.reimbursementImpact + r.qualitySavings)}/yr
         <span style={{margin:"0 8px",color:C.textMuted}}>|</span>
-        Combined total: <strong style={{color:C.accent}}>{fmtK(r.annualWithReimbursement)}/yr</strong>
+        Combined total: <strong style={{color:C.accent}}>{fmtK(r.annualWithABF & quality)}/yr</strong>
       </Callout>
 
       <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
-        <strong>Methodology:</strong> CMS penalty rates are verified (HRRP 3% cap, HAC 1%, VBP 2%). Improvement attribution is modelled: Pattar et al (JAMA 2025, 116 RCTs) found 17% readmission reduction from EHR-based interventions broadly; Vest et al (JAMIA 2019) found 0.8pp from single-vendor EHR specifically. This model uses scenario-adjusted fractions (15-35%) as an upper bound for the combined effect of consolidation, archiving, and workflow simplification. Denial recovery assumes partial attribution only (20% of 4.8% revenue loss).
+        <strong>Methodology:</strong> ABF efficiency modelled at 25% of IT/admin overhead (8% of total costs, IHPA). Private patient revenue uplift modelled at 30% recovery of leaked episodes (15% leakage rate, state audit data). Medical indemnity reduction at 5% of A$3,800/bed (ACSQHC: 35% of incidents involve communication failure). All figures are scenario-adjusted estimates.
       </div>
     </Card><LockedConnector/>
 
     {/* Academic module - conditional */}
     {r.isAcademic && <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{"🎓"} Academic medical center module</h3>
+      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{"🎓"} Teaching hospital module</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and GME compliance obligations.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -2593,7 +2529,7 @@ function ROICalculator() {
 
     {/* M&A module - conditional */}
     {r.isMultiHospital && <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{"🏢"} Multi-hospital / M&A consolidation module</h3>
+      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{"🏢"} Network consolidation module</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Savings from eliminating duplicate systems and infrastructure across {inputs.org_count} facilities post-merger.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -2774,9 +2710,9 @@ function ROICalculator() {
           <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:12,margin:"8px 0"}}>
             <thead><tr style={{background:C.accent,color:"#fff"}}><th style={{padding:"6px 10px",textAlign:"left"}}>Tier</th><th style={{padding:"6px 10px"}}>Base</th><th style={{padding:"6px 10px"}}>Per bed</th><th style={{padding:"6px 10px"}}>800 beds (Typical)</th></tr></thead>
             <tbody>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px",fontWeight:600}}>Enterprise</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"$"}300k</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"$"}700/bed</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"$"}860k/yr</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px",fontWeight:600}}>Departmental</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"$"}75k</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"$"}160/bed</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"$"}203k/yr</td></tr>
-              <tr><td style={{padding:"6px 10px",fontWeight:600}}>Standalone</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"$"}14k</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"$"}20/bed</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"$"}30k/yr</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px",fontWeight:600}}>Enterprise</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"A$"}300k</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"A$"}700/bed</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"A$"}860k/yr</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px",fontWeight:600}}>Departmental</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"A$"}75k</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"A$"}160/bed</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"A$"}203k/yr</td></tr>
+              <tr><td style={{padding:"6px 10px",fontWeight:600}}>Standalone</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"A$"}14k</td><td style={{padding:"6px 10px",textAlign:"center"}}>{"A$"}20/bed</td><td style={{padding:"6px 10px",textAlign:"center",fontWeight:700}}>{"A$"}30k/yr</td></tr>
             </tbody>
           </table></div>
           <p style={{margin:"8px 0 4px"}}>These formulas were calibrated against real contract data from a large acute health system (~1,385 beds, 42 legacy systems). Default estimates cover ~80% of actual estate value. <Bn s="Validated against contract register from a large acute health system (~1,385 beds, 42 systems, 2024/25 data)."/></p>
@@ -2793,11 +2729,11 @@ function ROICalculator() {
 
         <S title="4. Clinician time savings">
           <p style={{margin:"0 0 8px"}}>Time freed when clinicians no longer switch between multiple legacy systems.</p>
-          <F>corpPerOrg = min(120, 20 + bedsPerFacility {"\u00d7"} 0.15)<br/>clinicians = beds {"\u00d7"} 3.2 + facilities {"\u00d7"} corpPerOrg<br/>switchPenalty = min(max(0, systems - 1) {"\u00d7"} 0.04, 4.0)<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 50wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"$"}95/hr {"\u00d7"} realisationRate</F>
+          <F>corpPerOrg = min(120, 20 + bedsPerFacility {"\u00d7"} 0.15)<br/>clinicians = beds {"\u00d7"} 3.2 + facilities {"\u00d7"} corpPerOrg<br/>switchPenalty = min(max(0, systems - 1) {"\u00d7"} 0.04, 4.0)<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 50wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"A$"}95/hr {"\u00d7"} realisationRate</F>
           <p style={{margin:"8px 0 4px"}}><strong>3.2 staff per bed</strong> {" - "} BLS Occupational Employment and Wage Statistics show 2.8-3.5 clinical full-time equivalents (FTEs) per acute bed (doctors, nurses, allied health professionals (AHPs), pharmacists). <Ev s="BLS OEWS 2023; MGMA staffing benchmarks."/></p>
           <p style={{margin:"4px 0"}}><strong>12 min/wk base</strong> (migration path) {" - "} Westbrook et al 2010 (JAMIA) found nurses interrupted 3-6 times/hour by system-switching. Nuffield Trust 2020 estimated 15-20 min/day lost to system navigation. Our 12 min/week is conservative (reducible portion only). Archive-only uses 5 min/wk. <Ev s="Westbrook et al 2010 (JAMIA); Nuffield Trust 2020 system navigation study."/></p>
           <p style={{margin:"4px 0"}}><strong>+4% per system</strong> {" - "} each additional legacy system adds cognitive overhead. At 42 systems (as in the benchmarked Trust), this produces ~10 min/day wasted, consistent with published studies. <Md s="First-principles switching cost model. Validated against benchmarked Trust (42 systems)."/></p>
-          <p style={{margin:"4px 0"}}><strong>{"$"}95/hr blended rate</strong> {" - "} BLS median hourly compensation for clinical staff including benefits (OEWS 2023). RN ~$45-55/hr, physicians ~$120-180/hr, AHPs ~$35-65/hr. Blended $95/hr weighted towards nursing as the largest user group. <Ev s="BLS OEWS 2023; MGMA physician compensation report 2024."/></p>
+          <p style={{margin:"4px 0"}}><strong>{"A$"}95/hr blended rate</strong> {" - "} BLS median hourly compensation for clinical staff including benefits (OEWS 2023). RN ~$45-55/hr, physicians ~$120-180/hr, AHPs ~$35-65/hr. Blended $95/hr weighted towards nursing as the largest user group. <Ev s="BLS OEWS 2023; MGMA physician compensation report 2024."/></p>
         </S>
 
         <S title="5. Support tickets & patient records request (SAR) turnaround">
@@ -2810,7 +2746,7 @@ function ROICalculator() {
           <F>medErrors = beds {"\u00d7"} 15 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>patientsHarmed = beds {"\u00d7"} 0.28 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>excessBedDays = beds {"\u00d7"} 0.32 {"\u00d7"} fragmentation {"\u00d7"} DQ</F>
           <p style={{margin:"8px 0 4px"}}><strong>15 medication errors per bed/yr</strong> {" - "} IOM estimates 6.5 medication errors per 100 admissions (Bates et al ADE Prevention Study). At ~42 admissions/bed/yr and 65% occupancy, this yields approximately 15 errors/bed. Bond et al documented the average US hospital experiences a medication error every 22.7 hours. <Ev s="Bates et al ADE Prevention Study; Bond et al 2001; AHRQ PSI v2024 benchmarks."/></p>
           <p style={{margin:"4px 0"}}><strong>0.28 patients harmed per bed/yr</strong> {" - "} HHS OIG (2022) found 25% of hospitalized Medicare patients experienced adverse events, with 12% experiencing serious harm and 43% of all harm events deemed preventable. <Ev s="HHS Office of Inspector General, Adverse Events in Hospitals, 2022."/></p>
-          <p style={{margin:"4px 0"}}><strong>0.32 excess bed days per bed/yr</strong> {" - "} Bates/Classen studies show 1.74-3.15 excess days per ADE. Zhan & Miller (JAMA 2003) established 0-10.89 excess days per AHRQ PSI event type. At $3,132/day national average (KFF/AHA 2023). <Ev s="Bates et al 1997; Classen et al 2011; Zhan & Miller JAMA 2003; KFF/AHA 2023."/></p>
+          <p style={{margin:"4px 0"}}><strong>0.30 excess bed days per bed/yr</strong> {" - "} ACSQHC data shows 1.5-2.5 excess days per preventable adverse event. At A$3,100/day national average per diem (IHPA 2023). <Ev s="ACSQHC sentinel event data; AIHW hospital statistics; IHPA 2023."/></p>
           <p style={{margin:"4px 0"}}><strong>Fragmentation index</strong> (0.6-1.2) scales risk by number of systems. Vest et al (JAMIA 2015) found 57% higher odds of same-cause readmission with fragmented records. Caps at 20 systems (diminishing marginal fragmentation). <Md s="No published fragmentation index exists. Informed by Vest et al JAMIA 2015 readmission odds."/></p>
           <p style={{margin:"4px 0"}}><strong>Malpractice context:</strong> CRICO Strategies analysis of 23,658 malpractice claims found communication failures in 30% of all claims, contributing to 1,744 patient deaths and $1.7bn in costs over 5 years. Mello et al (Health Affairs 2010) estimated total US malpractice system cost at $55.6bn. <Ev s="CRICO Strategies 2016; Mello et al Health Affairs 2010; AMA MLM 2024."/></p>
         </S>
@@ -2824,9 +2760,9 @@ function ROICalculator() {
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Single-vendor EHR effect</td><td style={{padding:"6px 10px",textAlign:"center"}}>0.8pp absolute</td><td style={{padding:"6px 10px"}}>Vest et al, JAMIA 2019</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Patients harmed (Medicare)</td><td style={{padding:"6px 10px",textAlign:"center"}}>25% of admits</td><td style={{padding:"6px 10px"}}>HHS OIG 2022</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Comm. failure in claims</td><td style={{padding:"6px 10px",textAlign:"center"}}>30%</td><td style={{padding:"6px 10px"}}>CRICO 2016 (23,658 claims)</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Excess bed day cost</td><td style={{padding:"6px 10px",textAlign:"center"}}>$3,132/day</td><td style={{padding:"6px 10px"}}>KFF/AHA 2023</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Excess bed day cost</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$3,100/day</td><td style={{padding:"6px 10px"}}>IHPA 2023</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Denial rate (initial)</td><td style={{padding:"6px 10px",textAlign:"center"}}>11.8%</td><td style={{padding:"6px 10px"}}>Kodiak Solutions 2024</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>HRRP avg penalty</td><td style={{padding:"6px 10px",textAlign:"center"}}>0.33%</td><td style={{padding:"6px 10px"}}>CMS FY2025 programme data</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>ABF IT overhead</td><td style={{padding:"6px 10px",textAlign:"center"}}>8%</td><td style={{padding:"6px 10px"}}>IHPA 2024-25</td></tr>
               <tr><td style={{padding:"6px 10px"}}>Duplicate test rate</td><td style={{padding:"6px 10px",textAlign:"center"}}>20-30%</td><td style={{padding:"6px 10px"}}>ONC / expert consensus</td></tr>
             </tbody>
           </table></div>
@@ -2835,15 +2771,15 @@ function ROICalculator() {
           <p style={{margin:"4px 0"}}>Tier cost formulas are calibrated against KLAS 2025 market data, Becker{"'"}s Hospital Review pricing surveys, and EMR Guides contract analyses. Each named system uses a baseCost + perBed model that scales with hospital size.</p>
         </S>
 
-        <S title="8. Reimbursement and compliance methodology">
-          <p style={{margin:"0 0 8px"}}>CMS penalty avoidance and revenue cycle impact are modelled from verified programme rates and provider-specific multipliers.</p>
+        <S title="8. ABF & quality and compliance methodology">
+          <p style={{margin:"0 0 8px"}}>ABF efficiency gain and revenue cycle impact are modelled from verified programme rates and provider-specific multipliers.</p>
           <F>hrrpReduction = medicareDrg {"\u00d7"} 0.33% {"\u00d7"} safetyFactor {"\u00d7"} penaltyWeight<br/>hacReduction = medicareDrg {"\u00d7"} 1% {"\u00d7"} 25% quartile {"\u00d7"} safetyFactor<br/>vbpImprovement = medicareDrg {"\u00d7"} 2% {"\u00d7"} 15% score {"\u00d7"} qualityBonus<br/>denialRecovery = revenue {"\u00d7"} 4.8% {"\u00d7"} 20% recoverable {"\u00d7"} decomFactor</F>
-          <p style={{margin:"8px 0 4px"}}><strong>HRRP 3% cap, 0.33% average</strong> {" - "} Hospital Readmissions Reduction Program. Section 1886(q) SSA. ~78% of hospitals penalised in FY2025. Average penalty 0.33% (Advisory Board). <Ev s="CMS HRRP programme page; Advisory Board FY2025 analysis."/></p>
+          <p style={{margin:"8px 0 4px"}}><strong>ABF efficiency</strong> {" - "} Activity Based Funding through IHPA. National Efficient Price A$5,800/NWAU (2024-25). IT/admin overhead estimated at 8% of total hospital costs, with 25% addressable through system consolidation. <Ev s="IHPA National Efficient Price Determination 2024-25; AIHW hospital expenditure data."/></p>
           <p style={{margin:"4px 0"}}><strong>HAC 1% bottom quartile</strong> {" - "} Hospital-Acquired Condition Reduction Program. Bottom 25% of hospitals lose 1% of total Medicare payments. <Ev s="CMS HAC Reduction Program; 42 CFR 412.170-172."/></p>
           <p style={{margin:"4px 0"}}><strong>VBP 2% withhold</strong> {" - "} Value-Based Purchasing. Budget neutral: 2% withheld from all, redistributed based on performance. ~$1.7bn redistributed FY2026. <Ev s="CMS VBP programme; AHA fact sheet 2025."/></p>
-          <p style={{margin:"4px 0"}}><strong>11.8% denial rate</strong> {" - "} Initial claim denial rate (Kodiak Solutions 2024). Net revenue loss of 4.8% after appeals (HFMA Pulse Survey). Average denied inpatient claim value $10,000 (MDaudit 2024). <Ev s="Kodiak Solutions 2024; HFMA Pulse Survey; MDaudit 2024."/></p>
+          <p style={{margin:"4px 0"}}><strong>Private patient revenue leakage</strong> {" - "} Estimated 15% of privately insured episodes in public hospitals go unbilled or under-billed due to incomplete clinical documentation (state audit data). Average private episode value A$4,200 above ABF rate. <Ev s="State health department audit reports; PHIO annual reports."/></p>
           <p style={{margin:"4px 0"}}><strong>Malpractice $2,200/bed</strong> {" - "} Institutional premium allocation. Total US malpractice system cost $55.6bn (Mello et al, Health Affairs 2010). 8% premium reduction from consolidation is a modelled assumption. <Md s="$2,200/bed is modelled. 8% reduction is assumption based on CRICO communication failure data."/></p>
-          <p style={{margin:"4px 0"}}><strong>Provider type multipliers</strong> affect Medicare %, denial factor, penalty exposure, and quality bonus weighting. Critical access hospitals have limited HRRP exposure; academic centres have higher denial rates due to case complexity. <Md s="Provider multipliers are modelled estimates based on CMS programme eligibility rules."/></p>
+          <p style={{margin:"4px 0"}}><strong>Provider type multipliers</strong> affect ABF funding proportion, private patient rate, and system complexity weighting. Rural hospitals have lower private patient rates; tertiary centres have higher system complexity due to research and teaching platforms. <Md s="Provider multipliers are modelled estimates based on Australian hospital classification and casemix data."/></p>
         </S>
 
         <S title="9. Complexity and data quality adjustments">
@@ -2862,13 +2798,13 @@ function ROICalculator() {
         <S title="10. How the three input modes work">
           <p style={{margin:"0 0 8px"}}>You can provide cost data at three levels of detail, depending on what you know about your legacy estate.</p>
           <p style={{margin:"4px 0"}}><strong>Estimate (default):</strong> The calculator uses the bed-scaled tier cost formulas to estimate your annual legacy spend. Best when you do not have contract data available. In benchmarking, this covered approximately 80% of a real Trust's actual estate value.</p>
-          <p style={{margin:"4px 0"}}><strong>Named flagship systems:</strong> Add your highest-cost systems individually with their actual contract values (for example, a legacy ADT/registration system at {"$"}3m/yr). The remaining systems are still costed through the tier formulas. This captures outlier contracts that generic formulas underestimate.</p>
+          <p style={{margin:"4px 0"}}><strong>Named flagship systems:</strong> Add your highest-cost systems individually with their actual contract values (for example, a legacy ADT/registration system at {"A$"}3m/yr). The remaining systems are still costed through the tier formulas. This captures outlier contracts that generic formulas underestimate.</p>
           <p style={{margin:"4px 0"}}><strong>"I know my spend" mode:</strong> Enter your total annual legacy system spend. The calculator distributes it across tiers using a 5:2:1 weighting ratio (enterprise : departmental : standalone). You can then click any derived tier cost to fine-tune. In benchmarking, this mode produced results within 2.5% of the stated estimate.</p>
           <p style={{margin:"4px 0"}}>In all modes, you can click any individual tier cost to override it with your actual figure.</p>
         </S>
 
         <S title="11. What is included and excluded">
-          <p style={{margin:"0 0 8px"}}><strong>Included:</strong> Decommission savings (licensing, hosting, support costs eliminated), clinician time capacity value (hours freed, valued at blended rate with realisation discount), CMS penalty avoidance (HRRP, HAC, VBP), denial recovery, malpractice premium reduction, excess bed day cost avoidance, and duplicate testing reduction.</p>
+          <p style={{margin:"0 0 8px"}}><strong>Included:</strong> Decommission savings (licensing, hosting, support costs eliminated), clinician time capacity value (hours freed, valued at blended rate with realisation discount), ABF efficiency gain, private patient revenue uplift, medical indemnity reduction, excess bed day cost avoidance, and duplicate testing reduction.</p>
           <p style={{margin:"4px 0"}}><strong>Excluded:</strong> EHR implementation costs (covered separately), parallel-run costs (too variable to model), data migration costs (one-off programme budget), implementation disruption period (12-24 months of potential performance degradation per NYU Langone and VA studies), and staffing increases during transition (20%+ per VA experience).</p>
           <p style={{margin:"4px 0"}}>The 3-year total assumes flat annual savings. In practice, savings may increase in years 2-3 as more systems are retired, or decrease as easy wins are captured first.</p>
         </S>
@@ -2886,7 +2822,7 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:12}}>
         <div style={{flex:"1 1 160px",padding:"16px 18px",background:C.greenPale,borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>3-year gross savings</div>
-          <div style={{fontSize:22,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement):"–"}</div>
+          <div style={{fontSize:22,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.total3WithABF & quality):"–"}</div>
           <div style={{fontSize:11,color:C.textMuted}}>Phased: 40% / 80% / 100%</div>
         </div>
         <div style={{flex:"1 1 160px",padding:"16px 18px",background:"#fef0f0",borderRadius:10,textAlign:"center"}}>
@@ -2899,10 +2835,10 @@ function ROICalculator() {
           <div style={{fontSize:22,fontWeight:800,color:"#993535",margin:"6px 0"}}>{fmtK(Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))}</div>
           <div style={{fontSize:11,color:C.textMuted}}>{fmtK(galenAnnualCost)}/yr phased</div>
         </div>
-        <div style={{flex:"1 1 160px",padding:"16px 18px",background:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.greenPale : "#fef0f0",borderRadius:10,textAlign:"center"}}>
+        <div style={{flex:"1 1 160px",padding:"16px 18px",background:(r.total3WithABF & quality - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.greenPale : "#fef0f0",borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>3-year net savings</div>
-          <div style={{fontSize:22,fontWeight:800,color:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.green : "#993535",margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))):"–"}</div>
-          <div style={{fontSize:11,color:C.textMuted}}>Payback: ~{an && r.annualWithReimbursement > galenAnnualCost ? (galenMigrationCost / (r.annualWithReimbursement - galenAnnualCost)).toFixed(1) : "–"} years</div>
+          <div style={{fontSize:22,fontWeight:800,color:(r.total3WithABF & quality - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.green : "#993535",margin:"6px 0"}}>{an?fmtK(r.total3WithABF & quality - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))):"–"}</div>
+          <div style={{fontSize:11,color:C.textMuted}}>Payback: ~{an && r.annualWithABF & quality > galenAnnualCost ? (galenMigrationCost / (r.annualWithABF & quality - galenAnnualCost)).toFixed(1) : "–"} years</div>
         </div>
       </div>
     </Card>}
