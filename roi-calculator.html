@@ -426,8 +426,8 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const researchSystems = isAcademic ? Math.round(inp.bed_count / 100 * RESEARCH_SYSTEMS_PER_100_BEDS) : 0;
   const researchSystemCost = researchSystems * RESEARCH_SYSTEM_AVG_COST;
   const researchDecomSave = Math.round(researchSystemCost * 0.60 * sc.decom_pct); // 60% retirable
-  const gmeComplianceCost = isAcademic ? Math.round(inp.bed_count * GME_COMPLIANCE_COST_PER_BED) : 0;
-  const gmeEfficiency = Math.round(gmeComplianceCost * 0.25 * sc.decom_pct); // 25% efficiency gain
+  const teachingComplianceCost = isAcademic ? Math.round(inp.bed_count * TEACHING_COMPLIANCE_COST_PER_BED) : 0;
+  const teachingEfficiency = Math.round(teachingComplianceCost * 0.25 * sc.decom_pct); // 25% efficiency gain
   const teachingOverhead = isAcademic ? Math.round(totalEstate * TEACHING_OVERHEAD_PCT * 0.30 * sc.decom_pct) : 0; // 30% of 12% extra complexity
 
   // ── Network Consolidation Module ──
@@ -440,7 +440,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const standardisationSave = isMultiHospital ? Math.round(totalEstate * CROSS_FACILITY_STANDARDISATION_PCT * sc.decom_pct) : 0;
 
   // Module totals
-  const academicSavings = researchDecomSave + gmeEfficiency + teachingOverhead;
+  const academicSavings = researchDecomSave + teachingEfficiency + teachingOverhead;
   const mergeSavings = duplicateElimination + infraConsolidation + standardisationSave;
 
   // Total reimbursement impact
@@ -479,7 +479,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     reimbursementImpact, qualitySavings,
     // Academic module
     isAcademic, researchSystems, researchSystemCost, researchDecomSave,
-    gmeComplianceCost, gmeEfficiency, teachingOverhead, academicSavings,
+    teachingComplianceCost, teachingEfficiency, teachingOverhead, academicSavings,
     // M&A module
     isMultiHospital, duplicateSystems, duplicateSystemCost, duplicateElimination,
     duplicateInfraCost, infraConsolidation, standardisationSave, mergeSavings,
@@ -536,7 +536,7 @@ const COMM_FAILURE_PCT_INCIDENTS = 0.35;
 // ── Teaching Hospital Constants ──
 const RESEARCH_SYSTEMS_PER_100_BEDS = 3.5;     // IRB, CTMS, biobank, research repos, registry systems
 const RESEARCH_SYSTEM_AVG_COST = 180000;        // Avg annual cost of a research/academic system
-const GME_COMPLIANCE_COST_PER_BED = 850;        // ACGME reporting, residency tracking, procedure logging
+const TEACHING_COMPLIANCE_COST_PER_BED = 650;   // Registrar training systems, procedural logging, AMC reporting
 const TEACHING_OVERHEAD_PCT = 0.12;             // 12% additional system complexity for teaching workflows
 
 // ── Network Consolidation Constants ──
@@ -1177,7 +1177,7 @@ function ROICalculator() {
     is_academic: r.isAcademic,
     research_systems: r.researchSystems,
     research_decom_save: r.researchDecomSave,
-    gme_efficiency: r.gmeEfficiency,
+    teaching_efficiency: r.teachingEfficiency,
     teaching_overhead: r.teachingOverhead,
     academic_savings: r.academicSavings,
     // M&A module
@@ -1413,7 +1413,7 @@ function ROICalculator() {
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 55 }, 1: { halign: "right" } },
       body: [
         ["Provider type", ({"rural_remote":"Rural / Remote","regional":"Regional Hospital","metropolitan":"Metropolitan Hospital","tertiary":"Tertiary Referral","state_network":"State Health Network"})[providerType] || providerType],
-        ["ABF & quality model", ({"ffs":"Fee-for-Service","vbc":"Value-Based Care / ACO","mixed":"Mixed"})[reimbursementModel] || reimbursementModel],
+        ["ABF & quality model", ({"public":"Public (ABF-funded)","mixed":"Public + Private","private":"Predominantly Private"})[reimbursementModel] || reimbursementModel],
         ["Journey", isArchiveOnly ? "Have enterprise EHR" : "Evaluating EHRs"],
         ["Beds", fmtNum(inputs.bed_count)],
         ["Facilities", String(inputs.org_count)],
@@ -1545,7 +1545,7 @@ function ROICalculator() {
         head: [["Category", "Annual savings", "Basis"]],
         body: [
           ["Research system decommission", fmtK(r.researchDecomSave) + "/yr", r.researchSystems + " systems at " + fmtK(RESEARCH_SYSTEM_AVG_COST) + " avg"],
-          ["GME compliance efficiency", fmtK(r.gmeEfficiency) + "/yr", "25% reduction in reporting overhead"],
+          ["Teaching compliance efficiency", fmtK(r.teachingEfficiency) + "/yr", "25% reduction in reporting overhead"],
           ["Teaching workflow savings", fmtK(r.teachingOverhead) + "/yr", "Reduced complexity from consolidation"],
           [{ content: "Academic module total", styles: { fontStyle: "bold", fillColor: [243,238,250] } },
            { content: fmtK(r.academicSavings) + "/yr", styles: { fontStyle: "bold", textColor: [83,74,183], fillColor: [243,238,250] } },
@@ -1790,9 +1790,9 @@ function ROICalculator() {
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Primary reimbursement model</div>
       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
         {[
-          {k:"ffs",l:"Fee-for-Service",d:"Traditional FFS / commercial"},
-          {k:"vbc",l:"Value-Based Care / ACO",d:"Shared savings, quality bonuses"},
-          {k:"mixed",l:"Mixed",d:"Combination of FFS + VBC contracts"},
+          {k:"public",l:"Public (ABF-funded)",d:"Standard public hospital ABF model"},
+          {k:"mixed",l:"Public + Private",d:"Public hospital with significant private patient revenue"},
+          {k:"private",l:"Predominantly Private",d:"Private hospital or PPP model"},
         ].map(r=><button type="button" key={r.k} onClick={()=>setABF & qualityModel(r.k)} className="roi-btn" style={{flex:"1 1 140px",padding:"12px 14px",textAlign:"left",border:reimbursementModel===r.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,background:reimbursementModel===r.k?C.accentPale:"#fff",cursor:"pointer"}}>
           <div style={{fontSize:13,fontWeight:700,color:reimbursementModel===r.k?C.accent:C.text}}>{r.l}</div>
           <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{r.d}</div>
@@ -2498,7 +2498,7 @@ function ROICalculator() {
     {/* Academic module - conditional */}
     {r.isAcademic && <Card dimmed={dim}>
       <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{"🎓"} Teaching hospital module</h3>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and GME compliance obligations.</p>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and registrar training and teaching compliance.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
@@ -2507,9 +2507,9 @@ function ROICalculator() {
           <div style={{fontSize:11,color:C.textMuted}}>{r.researchSystems} research systems at ~{fmtK(RESEARCH_SYSTEM_AVG_COST)} avg</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>GME compliance efficiency</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.gmeEfficiency):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>ACGME reporting, residency tracking</div>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Teaching compliance efficiency</div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.teachingEfficiency):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>Registrar training, procedural logging</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Teaching workflow savings</div>
@@ -2747,8 +2747,8 @@ function ROICalculator() {
           <p style={{margin:"0 0 8px"}}>These are <strong>not included</strong> in the financial ROI total. They provide qualitative context for the patient safety case.</p>
           <F>medErrors = beds {"\u00d7"} 15 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>patientsHarmed = beds {"\u00d7"} 0.28 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>excessBedDays = beds {"\u00d7"} 0.32 {"\u00d7"} fragmentation {"\u00d7"} DQ</F>
           <p style={{margin:"8px 0 4px"}}><strong>15 medication errors per bed/yr</strong> {" - "} IOM estimates 6.5 medication errors per 100 admissions (Bates et al ADE Prevention Study). At ~42 admissions/bed/yr and 65% occupancy, this yields approximately 15 errors/bed. Bond et al documented the average US hospital experiences a medication error every 22.7 hours. <Ev s="Bates et al ADE Prevention Study; Bond et al 2001; AHRQ PSI v2024 benchmarks."/></p>
-          <p style={{margin:"4px 0"}}><strong>0.28 patients harmed per bed/yr</strong> {" - "} HHS OIG (2022) found 25% of hospitalized Medicare patients experienced adverse events, with 12% experiencing serious harm and 43% of all harm events deemed preventable. <Ev s="HHS Office of Inspector General, Adverse Events in Hospitals, 2022."/></p>
-          <p style={{margin:"4px 0"}}><strong>0.30 excess bed days per bed/yr</strong> {" - "} ACSQHC data shows 1.5-2.5 excess days per preventable adverse event. At A$3,100/day national average per diem (IHPA 2023). <Ev s="ACSQHC sentinel event data; AIHW hospital statistics; IHPA 2023."/></p>
+          <p style={{margin:"4px 0"}}><strong>0.25 patients harmed per bed/yr</strong> {" - "} ACSQHC reports that approximately 10% of hospital separations involve an adverse event, with a significant proportion deemed preventable through improved clinical information systems and care coordination. <Ev s="ACSQHC National Safety and Quality Reports; AIHW Hospital Statistics."/></p>
+          <p style={{margin:"4px 0"}}><strong>0.30 excess bed days per bed/yr</strong> {" - "} ACSQHC data shows 1.5-2.5 excess days per preventable adverse event. At A$3,100/day national average per diem (IHPA 2023). <Ev s="ACSQHC sentinel event data; AIHW hospital statistics; IHPA 2023; Choosing Wisely Australia."/></p>
           <p style={{margin:"4px 0"}}><strong>Fragmentation index</strong> (0.6-1.2) scales risk by number of systems. Vest et al (JAMIA 2015) found 57% higher odds of same-cause readmission with fragmented records. Caps at 20 systems (diminishing marginal fragmentation). <Md s="No published fragmentation index exists. Informed by Vest et al JAMIA 2015 readmission odds."/></p>
           <p style={{margin:"4px 0"}}><strong>Medical indemnity context:</strong> ACSQHC reports that communication failure contributes to approximately 35% of clinical incidents in Australian hospitals. State-based indemnity schemes (icare NSW, VMIA VIC, Coverforce QLD) reflect this in claims data. EMR consolidation reduces fragmentation-related communication failures. <Ev s="ACSQHC National Safety Reports; icare NSW annual reports; VMIA clinical risk data."/></p>
         </S>
@@ -2760,7 +2760,7 @@ function ROICalculator() {
             <tbody>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Readmission reduction (EHR)</td><td style={{padding:"6px 10px",textAlign:"center"}}>17% relative</td><td style={{padding:"6px 10px"}}>Pattar et al, JAMA 2025 (116 RCTs)</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Single-vendor EHR effect</td><td style={{padding:"6px 10px",textAlign:"center"}}>0.8pp absolute</td><td style={{padding:"6px 10px"}}>Vest et al, JAMIA 2019</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Patients harmed (Medicare)</td><td style={{padding:"6px 10px",textAlign:"center"}}>25% of admits</td><td style={{padding:"6px 10px"}}>HHS OIG 2022</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Patients harmed</td><td style={{padding:"6px 10px",textAlign:"center"}}>~10% of separations</td><td style={{padding:"6px 10px"}}>ACSQHC</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Comm. failure in incidents</td><td style={{padding:"6px 10px",textAlign:"center"}}>35%</td><td style={{padding:"6px 10px"}}>ACSQHC root cause analyses</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Excess bed day cost</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$3,100/day</td><td style={{padding:"6px 10px"}}>IHPA 2023</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Denial rate (initial)</td><td style={{padding:"6px 10px",textAlign:"center"}}>11.8%</td><td style={{padding:"6px 10px"}}>Kodiak Solutions 2024</td></tr>
