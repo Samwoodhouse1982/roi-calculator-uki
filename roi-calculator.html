@@ -390,8 +390,8 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const medicareDrg = inp._medicareDrgRevenue > 0 ? inp._medicareDrgRevenue : estMedicareDrgRevenue;
 
   // ABF efficiency gain
-  const abfOverhead = Math.round(estAnnualRevenueCalc * ABF_ADMIN_OVERHEAD_PCT);
-  const abfEfficiencyGain = Math.round(abfOverhead * 0.25 * sc.decom_pct);
+  // ABF efficiency: based on legacy estate cost, not total hospital revenue
+  const abfEfficiencyGain = Math.round(totalEstate * 0.15 * sc.decom_pct);
   const hrrpExposure = 0;
   const hrrpReduction = 0;
 
@@ -473,7 +473,9 @@ function calc(inp, mode, ov = {}, flagships = []) {
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
     flagshipCount, flagshipRetireCount,
     // ABF efficiency and compliance
-    admissionsPerYear, estAnnualRevenueCalc, occupancy, medicareDrg, hrrpExposure, hrrpReduction, hacExposure, hacReduction,
+    admissionsPerYear, estAnnualRevenueCalc, occupancy, medicareDrg,
+    abfEfficiencyGain, privateRevRecovery,
+    hrrpExposure, hrrpReduction, hacExposure, hacReduction,
     vbpPool, vbpImprovement, denialBaseline, denialRecovery,
     malpracticePremium, malpracticeReduction,
     preventableADEs, excessDaysAvoided, excessDayCostAvoided,
@@ -1512,7 +1514,7 @@ function ROICalculator() {
       margin: { left: ml, right: mr },
       head: [["Category", "Annual impact", "Source"]],
       body: [
-        ["ABF efficiency gain", fmtK(r.abfEfficiencyGain || 0) + "/yr", "IHACPA 2024-25 (8% IT overhead, 25% addressable)"],
+        ["ABF efficiency gain", fmtK(r.abfEfficiencyGain || 0) + "/yr", "15% of legacy estate admin overhead (modelled)"],
         ["HAC penalty avoidance", fmtK(r.hacReduction) + "/yr", "CMS HAC programme (1%)"],
         ["Accreditation context", fmtK(r.vbpImprovement) + "/yr", "CMS VBP (2% pool)"],
         ["Documentation quality", fmtK(r.denialRecovery) + "/yr", "HFMA/MDaudit 2024"],
