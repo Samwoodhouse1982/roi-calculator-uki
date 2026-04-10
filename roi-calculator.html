@@ -959,15 +959,18 @@ function ROICalculator() {
   };
 
   // Facility types: shared + perSite (AU)
+  // Lightweight sites (community, outpatient, collection) connect to LHD shared platforms
+  // — perSite reflects only genuinely local integrations, not full system instances
+  // Heavier sites (inpatient, labs, MPS) run their own departmental systems
   const FACILITY_TYPES = [
-    { key: "community_health", label: "Community health centres", unit: "sites", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:0,nic:1}, staffPer:15, baseCost:60000, perSiteCost:18000 },
-    { key: "outpatient", label: "Outpatient clinics", unit: "sites", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:0,nic:1}, staffPer:10, baseCost:45000, perSiteCost:15000 },
-    { key: "oral_health", label: "Oral health clinics", unit: "sites", shared:{ent:0,dep:1,nic:0}, perSite:{ent:0,dep:0,nic:1}, staffPer:8, baseCost:35000, perSiteCost:10000 },
+    { key: "community_health", label: "Community health centres", unit: "sites", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:0,nic:0.05}, staffPer:15, baseCost:60000, perSiteCost:5000 },
+    { key: "outpatient", label: "Outpatient clinics", unit: "sites", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:0,nic:0.1}, staffPer:10, baseCost:45000, perSiteCost:4000 },
+    { key: "oral_health", label: "Oral health clinics", unit: "sites", shared:{ent:0,dep:1,nic:0}, perSite:{ent:0,dep:0,nic:0.1}, staffPer:8, baseCost:35000, perSiteCost:3000 },
     { key: "pathology_lab", label: "Pathology laboratories", unit: "labs", shared:{ent:1,dep:1,nic:1}, perSite:{ent:0,dep:1,nic:1}, staffPer:25, baseCost:120000, perSiteCost:45000 },
-    { key: "pathology_collection", label: "Pathology collection centres", unit: "centres", shared:{ent:0,dep:1,nic:0}, perSite:{ent:0,dep:0,nic:1}, staffPer:5, baseCost:25000, perSiteCost:8000 },
+    { key: "pathology_collection", label: "Pathology collection centres", unit: "centres", shared:{ent:0,dep:1,nic:0}, perSite:{ent:0,dep:0,nic:0.05}, staffPer:5, baseCost:25000, perSiteCost:2000 },
     { key: "multipurpose", label: "Multipurpose services (rural)", unit: "sites", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:1,nic:1}, staffPer:20, baseCost:55000, perSiteCost:25000 },
     { key: "mental_health_inpatient", label: "Mental health inpatient", unit: "units", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:1,nic:1}, staffPer:35, baseCost:90000, perSiteCost:40000 },
-    { key: "community_mental", label: "Community mental health teams", unit: "teams", shared:{ent:0,dep:1,nic:0}, perSite:{ent:0,dep:0,nic:1}, staffPer:12, baseCost:40000, perSiteCost:12000 },
+    { key: "community_mental", label: "Community mental health teams", unit: "teams", shared:{ent:0,dep:1,nic:0}, perSite:{ent:0,dep:0,nic:0.1}, staffPer:12, baseCost:40000, perSiteCost:4000 },
     { key: "rehab", label: "Rehabilitation units", unit: "units", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:1,nic:1}, staffPer:30, baseCost:80000, perSiteCost:35000 },
     { key: "aged_care", label: "Aged care / sub-acute", unit: "facilities", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:1,nic:1}, staffPer:25, baseCost:70000, perSiteCost:30000 },
   ];
@@ -1062,7 +1065,7 @@ function ROICalculator() {
         addSites += count;
       }
     });
-    return { addEnt, addDep, addNic, addSystems: addEnt + addDep + addNic, addStaff, addCost, addSites };
+    return { addEnt, addDep, addNic, addSystems: Math.round(addEnt + addDep + addNic), addStaff, addCost, addSites };
   }, [facilityPortfolio]);
   const totalSystems = inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche;
   const knownCostOv = useMemo(() => {
