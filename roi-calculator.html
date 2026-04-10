@@ -503,7 +503,7 @@ const PRESETS = {
   TYPICAL: { label:"Regional Hospital", desc:"~200 beds · 1 facility · 15 systems", data:{ bed_count:250, org_count:1, journey:"EVALUATING", tiers:{enterprise:1,departmental:5,niche:9}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:1,RAD_REPORTS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   LARGE: { label:"Metropolitan / Tertiary", desc:"~500 beds · 1 facility · 25 systems", data:{ bed_count:600, org_count:1, journey:"EVALUATING", tiers:{enterprise:2,departmental:8,niche:15}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:2,RAD_REPORTS:1,DOC_ECM:2,SCANNED_NOTES:1,MATERNITY:1,COMMUNITY:1}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   REGIONAL: { label:"Local Health District / HHS", desc:"~3000 beds · 12 hospitals · 80+ systems", data:{ bed_count:3000, org_count:12, journey:"EVALUATING", tiers:{enterprise:4,departmental:28,niche:50}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
-  STATEWIDE: { label:"Statewide Programme", desc:"~25000 beds · 200+ hospitals · 15+ LHDs · 500+ systems", data:{ bed_count:25000, org_count:200, journey:"EVALUATING", tiers:{enterprise:24,departmental:150,niche:400}, data_types:{...emptyDt(),EPR_PAS:8,ED:6,THEATRES:5,LAB:8,RAD_REPORTS:6,DOC_ECM:8,SCANNED_NOTES:6,MATERNITY:5,COMMUNITY:6,MENTAL_HEALTH:4,REFERRALS:3,OTHER:4}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.65 }},
+  STATEWIDE: { label:"Statewide Programme", desc:"~25000 beds · 200+ hospitals · 600+ community · 60 path labs · 15+ LHDs", data:{ bed_count:25000, org_count:200, journey:"EVALUATING", tiers:{enterprise:24,departmental:150,niche:400}, data_types:{...emptyDt(),EPR_PAS:8,ED:6,THEATRES:5,LAB:8,RAD_REPORTS:6,DOC_ECM:8,SCANNED_NOTES:6,MATERNITY:5,COMMUNITY:6,MENTAL_HEALTH:4,REFERRALS:3,OTHER:4}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.65 }},
 };
 
 // ── Model constants ──
@@ -950,11 +950,21 @@ function ROICalculator() {
   }, [touch]);
 
   // Facility types beyond acute care
+  // Statewide portfolio defaults (based on NSW SDPR scope)
+  const STATEWIDE_PORTFOLIO = {
+    community_health: 600, outpatient: 200, oral_health: 80,
+    pathology_lab: 60, pathology_collection: 150,
+    multipurpose: 50, mental_health_inpatient: 40,
+    community_mental: 80, rehab: 30, aged_care: 25,
+  };
+
   // Facility types: shared + perSite (AU)
   const FACILITY_TYPES = [
     { key: "community_health", label: "Community health centres", unit: "sites", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:0,nic:1}, staffPer:15, baseCost:60000, perSiteCost:18000 },
     { key: "outpatient", label: "Outpatient clinics", unit: "sites", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:0,nic:1}, staffPer:10, baseCost:45000, perSiteCost:15000 },
     { key: "oral_health", label: "Oral health clinics", unit: "sites", shared:{ent:0,dep:1,nic:0}, perSite:{ent:0,dep:0,nic:1}, staffPer:8, baseCost:35000, perSiteCost:10000 },
+    { key: "pathology_lab", label: "Pathology laboratories", unit: "labs", shared:{ent:1,dep:1,nic:1}, perSite:{ent:0,dep:1,nic:1}, staffPer:25, baseCost:120000, perSiteCost:45000 },
+    { key: "pathology_collection", label: "Pathology collection centres", unit: "centres", shared:{ent:0,dep:1,nic:0}, perSite:{ent:0,dep:0,nic:1}, staffPer:5, baseCost:25000, perSiteCost:8000 },
     { key: "multipurpose", label: "Multipurpose services (rural)", unit: "sites", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:1,nic:1}, staffPer:20, baseCost:55000, perSiteCost:25000 },
     { key: "mental_health_inpatient", label: "Mental health inpatient", unit: "units", shared:{ent:0,dep:1,nic:1}, perSite:{ent:0,dep:1,nic:1}, staffPer:35, baseCost:90000, perSiteCost:40000 },
     { key: "community_mental", label: "Community mental health teams", unit: "teams", shared:{ent:0,dep:1,nic:0}, perSite:{ent:0,dep:0,nic:1}, staffPer:12, baseCost:40000, perSiteCost:12000 },
@@ -1024,6 +1034,7 @@ function ROICalculator() {
     const d = PRESETS[key].data;
     setInputs({...d,data_types:{...d.data_types},tiers:{...d.tiers}});
     setActivePreset(key);resetOv();setThinking(true);
+    if (key === 'STATEWIDE') setFacilityPortfolio({...STATEWIDE_PORTFOLIO}); else setFacilityPortfolio({});
     setPerOrgBeds(false); setPerOrgSystems(false); setFlagships([]); setTierCostEdits({enterprise:null,departmental:null,niche:null}); setEditingTierCost(null); setCostMode("estimate"); setKnownAnnualSpend(null);
     // Size per-org arrays to match org count, split evenly
     const n = d.org_count;
@@ -1795,7 +1806,7 @@ function ROICalculator() {
           {k:"metropolitan",l:"Metropolitan Hospital",d:"300-600 beds, complex integrations",e:"🏥"},
           {k:"tertiary",l:"Tertiary Referral / Teaching",d:"Major teaching hospital, research",e:"🎓"},
           {k:"state_network",l:"LHD / Health Service",d:"Single district, multiple facilities",e:"🏢"},
-          {k:"statewide",l:"Statewide Programme",d:"All LHDs, 200+ hospitals, single EMR",e:"🏥"},
+          {k:"statewide",l:"Statewide Programme",d:"All LHDs, hospitals, community, pathology",e:"🏥"},
         ].map(p=><button type="button" key={p.k} onClick={()=>{setProviderType(p.k);const pk=PROVIDER_PRESET_MAP[p.k];if(pk)applyPreset(pk);}} className="roi-preset" style={{width:"100%",padding:"12px 14px",textAlign:"left",border:providerType===p.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:providerType===p.k?C.accentPale:"#fff",cursor:"pointer"}}>
           <div style={{fontSize:13,fontWeight:700,color:providerType===p.k?C.accent:C.text}}>{p.e} {p.l}</div>
           <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{p.d}</div>
@@ -1921,7 +1932,7 @@ function ROICalculator() {
 
       {/* ── Hospitals ── */}
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:4}}>Hospitals</div>
-      <AnimatedSlider label={<span>Acute care hospitals<InfoTip text="Number of hospitals (inpatient facilities). Drives bed count, clinical staff, enterprise system costs, and safety metrics."/></span>} value={inputs.org_count} min={1} max={20} step={1} onChange={v=>handleOrgCountChange(v)}/>
+      <AnimatedSlider label={<span>Acute care hospitals<InfoTip text="Number of hospitals (inpatient facilities). Drives bed count, clinical staff, enterprise system costs, and safety metrics."/></span>} value={inputs.org_count} min={1} max={300} step={1} onChange={v=>handleOrgCountChange(v)}/>
 
       <div style={{marginTop:12}}>
         {inputs.org_count > 1 && (
@@ -1932,7 +1943,7 @@ function ROICalculator() {
         )}
         {!perOrgBeds ? (
           <div>
-            <AnimatedSlider label={inputs.org_count <= 1 ? <span>Total acute beds<InfoTip text="Total staffed beds across all hospitals. Scales clinical staff (3.2 per bed), system costs, revenue estimates, and safety metrics."/></span> : null} value={inputs.bed_count} min={0} max={Math.max(8000, inputs.bed_count + 500)} step={10} onChange={v=>{update("bed_count",v);touch(1);}}/>
+            <AnimatedSlider label={inputs.org_count <= 1 ? <span>Total acute beds<InfoTip text="Total staffed beds across all hospitals. Scales clinical staff (3.7 per bed), system costs, revenue estimates, and safety metrics."/></span> : null} value={inputs.bed_count} min={0} max={Math.max(40000, inputs.bed_count + 500)} step={10} onChange={v=>{update("bed_count",v);touch(1);}}/>
           </div>
         ) : (
           <div>
@@ -1957,9 +1968,9 @@ function ROICalculator() {
       {inputs.bed_count===0&&<div style={{marginTop:10,padding:"8px 14px",background:C.accentPale,borderRadius:6,fontSize:13,color:C.accent}}>Community provider {"\u2013"} model still works.</div>}
 
       {/* ── Ambulatory sites ── */}
-      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:24}}>Community and outpatient</div>
+      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:24}}>Community, outpatient and pathology</div>
       <div style={{display:"flex",flexDirection:"column",gap:4}}>
-        {FACILITY_TYPES.filter(ft => ["community_health","outpatient","oral_health","multipurpose"].includes(ft.key)).map(ft => (
+        {FACILITY_TYPES.filter(ft => ["community_health","outpatient","oral_health","pathology_lab","pathology_collection","multipurpose"].includes(ft.key)).map(ft => (
           <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
