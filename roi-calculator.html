@@ -568,9 +568,9 @@ const PROVIDER_MULTIPLIERS = {
 
 // ABF model multipliers
 const REIMBURSE_MULTIPLIERS = {
-  ffs:   { denial_weight: 1.2, penalty_weight: 0.5, quality_bonus: 0.0 },
-  vbc:   { denial_weight: 0.8, penalty_weight: 1.5, quality_bonus: 1.0 },
-  mixed: { denial_weight: 1.0, penalty_weight: 1.0, quality_bonus: 0.5 },
+  public:  { private_weight: 0.5, efficiency_weight: 1.2 },
+  mixed:   { private_weight: 1.0, efficiency_weight: 1.0 },
+  private: { private_weight: 1.5, efficiency_weight: 0.7 },
 };
 
 // ── Known EPR/PAS systems (UK & Ireland) ──
@@ -1073,13 +1073,12 @@ function ROICalculator() {
     return base;
   }, [overrides, tierCostEdits, costMode, knownAnnualSpend, knownCostOv]);
   const calcInputs = useMemo(() => {
-    const pm = PROVIDER_MULTIPLIERS[providerType] || PROVIDER_MULTIPLIERS.community;
+    const pm = PROVIDER_MULTIPLIERS[providerType] || PROVIDER_MULTIPLIERS.regional;
     const rm = REIMBURSE_MULTIPLIERS[reimbursementModel] || REIMBURSE_MULTIPLIERS.mixed;
     return {...inputs,
-      _medicarePct: pm.medicare_pct,
-      _denialWeight: pm.denial_factor * rm.denial_weight,
-      _penaltyWeight: pm.penalty_exposure * rm.penalty_weight,
-      _qualityBonus: rm.quality_bonus,
+      _abfPct: pm.abf_pct || 0.72,
+      _privateWeight: rm.private_weight || 1.0,
+      _efficiencyWeight: rm.efficiency_weight || 1.0,
       _medicareDrgRevenue: medicareDrgRevenue,
       _occupancy: occupancyRate,
       _rampYears: rampYears,
@@ -1089,7 +1088,7 @@ function ROICalculator() {
       _portfolioStaff: portfolioImpact.addStaff,
       _portfolioCost: portfolioImpact.addCost,
     };
-  }, [inputs, providerType, reimbursementModel, medicareDrgRevenue]);
+  }, [inputs, providerType, reimbursementModel, medicareDrgRevenue, rampYears, occupancyRate]);
   const rCon=useMemo(()=>calc(calcInputs,"CONSERVATIVE",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
   const rExp=useMemo(()=>calc(calcInputs,"EXPECTED",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
   const rStr=useMemo(()=>calc(calcInputs,"STRETCH",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
