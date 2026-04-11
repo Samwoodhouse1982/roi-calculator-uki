@@ -327,7 +327,7 @@ const DQ = { CLEAN: 0.75, MIXED: 1.0, POOR: 1.4 };
 function tierCost(tier, beds, cx) {
   const base = tier === "enterprise" ? 250000 : tier === "departmental" ? 65000 : 12000;
   const perBed = tier === "enterprise" ? 600 : tier === "departmental" ? 140 : 18;
-  const maxCost = tier === "enterprise" ? 3000000 : tier === "departmental" ? 500000 : 80000;
+  const maxCost = tier === "enterprise" ? 8000000 : tier === "departmental" ? 500000 : 80000;
   return Math.min(maxCost, Math.round(((base + beds * perBed) * cx) / 1000) * 1000);
 }
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -507,7 +507,7 @@ const PRESETS = {
   TYPICAL: { label:"Regional Hospital", desc:"~200 beds · 1 facility · 15 systems", data:{ bed_count:250, org_count:1, journey:"EVALUATING", tiers:{enterprise:1,departmental:5,niche:9}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:1,RAD_REPORTS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   LARGE: { label:"Metropolitan / Tertiary", desc:"~500 beds · 1 facility · 25 systems", data:{ bed_count:600, org_count:1, journey:"EVALUATING", tiers:{enterprise:2,departmental:8,niche:15}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:2,RAD_REPORTS:1,DOC_ECM:2,SCANNED_NOTES:1,MATERNITY:1,COMMUNITY:1}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   REGIONAL: { label:"Local Health District / HHS", desc:"~3000 beds · 12 hospitals · 80+ systems", data:{ bed_count:3000, org_count:12, journey:"EVALUATING", tiers:{enterprise:4,departmental:28,niche:50}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
-  STATEWIDE: { label:"Statewide Programme", desc:"~22000 beds · 228 hospitals · 600+ community · 60 path labs · 17 LHDs", data:{ bed_count:22000, org_count:228, journey:"EVALUATING", tiers:{enterprise:24,departmental:150,niche:400}, data_types:{...emptyDt(),EPR_PAS:8,ED:6,THEATRES:5,LAB:8,RAD_REPORTS:6,DOC_ECM:8,SCANNED_NOTES:6,MATERNITY:5,COMMUNITY:6,MENTAL_HEALTH:4,REFERRALS:3,OTHER:4}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.65 }},
+  STATEWIDE: { label:"Statewide Programme", desc:"~22000 beds · 228 hospitals · 600+ community · 60 path labs · 17 LHDs", data:{ bed_count:22000, org_count:228, journey:"EVALUATING", tiers:{enterprise:30,departmental:140,niche:350}, data_types:{...emptyDt(),EPR_PAS:8,ED:6,THEATRES:5,LAB:8,RAD_REPORTS:6,DOC_ECM:8,SCANNED_NOTES:6,MATERNITY:5,COMMUNITY:6,MENTAL_HEALTH:4,REFERRALS:3,OTHER:4}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.65 }},
 };
 
 // ── Model constants ──
@@ -585,26 +585,32 @@ const REIMBURSE_MULTIPLIERS = {
 
 // ── Known EPR/PAS systems (UK & Ireland) ──
 const KNOWN_SYSTEMS = [
-  { label: "Oracle Health (Cerner)", baseCost: 1500000, perBed: 3500, type: "EMR" },
-  { label: "Epic", baseCost: 2500000, perBed: 5500, type: "EMR" },
+  { label: "Oracle Health (Cerner Millennium)", baseCost: 2000000, perBed: 5500, type: "EMR" },
+  { label: "Epic", baseCost: 3000000, perBed: 6000, type: "EMR" },
   { label: "InterSystems TrakCare", baseCost: 800000, perBed: 1800, type: "EMR/PAS" },
   { label: "Telstra Health", baseCost: 400000, perBed: 800, type: "Clinical" },
-  { label: "DXC Technology (legacy)", baseCost: 600000, perBed: 1200, type: "PAS/EMR" },
+  { label: "DXC iPM / Technology (legacy)", baseCost: 800000, perBed: 1800, type: "PAS" },
   { label: "Allscripts / Sunrise", baseCost: 350000, perBed: 700, type: "EMR" },
   { label: "MEDITECH Expanse", baseCost: 600000, perBed: 1500, type: "EMR" },
   { label: "Dedalus (Orion Health)", baseCost: 500000, perBed: 1000, type: "Integration" },
   { label: "Citadel Health (BOSSnet)", baseCost: 250000, perBed: 500, type: "Theatre" },
   { label: "Alcidion Miya", baseCost: 300000, perBed: 600, type: "Clinical" },
-  { label: "CliniSys AUSLAB", baseCost: 200000, perBed: 350, type: "LIMS" },
+  { label: "Citadel Health (Auslab / vLab)", baseCost: 400000, perBed: 800, type: "LIMS" },
   { label: "Agfa ORBIS / RIS", baseCost: 250000, perBed: 400, type: "Radiology" },
   { label: "Hyland OnBase", baseCost: 180000, perBed: 280, type: "ECM" },
-  { label: "iPM (DXC legacy PAS)", baseCost: 400000, perBed: 800, type: "PAS" },
-  { label: "iPharmacy / JAC", baseCost: 150000, perBed: 200, type: "Pharmacy" },
+  { label: "ISS OmniLab", baseCost: 350000, perBed: 700, type: "LIMS" },
+  { label: "i.Pharmacy (NSW Health statewide)", baseCost: 200000, perBed: 300, type: "Pharmacy" },
   { label: "WinScribe / BigHand", baseCost: 120000, perBed: 180, type: "Dictation" },
   { label: "Maternity (various)", baseCost: 150000, perBed: 200, type: "Maternity" },
   { label: "RiskMan / Datix", baseCost: 80000, perBed: 120, type: "Incident" },
   { label: "MIMS Integrated", baseCost: 100000, perBed: 150, type: "Pharmacy" },
   { label: "Karisma / ORMIS", baseCost: 200000, perBed: 350, type: "Theatre" },
+  { label: "Cerner PathNet", baseCost: 350000, perBed: 700, type: "LIMS" },
+  { label: "iMDsoft MetaVision (eRIC)", baseCost: 300000, perBed: 600, type: "ICU" },
+  { label: "Orion Health (HealtheNet / CAP)", baseCost: 500000, perBed: 900, type: "Portal" },
+  { label: "DXC MedChart", baseCost: 250000, perBed: 500, type: "eMeds" },
+  { label: "Cerner eMeds", baseCost: 300000, perBed: 600, type: "eMeds" },
+  { label: "CorePAS", baseCost: 200000, perBed: 400, type: "PAS" },
 ]
 function systemCost(sys, beds) { return Math.round(((sys.baseCost || 250000) + (sys.perBed || 0) * beds) / 1000) * 1000; }
 // ── Cost line item helpers ──
@@ -1041,7 +1047,7 @@ function ROICalculator() {
     const d = PRESETS[key].data;
     setInputs({...d,data_types:{...d.data_types},tiers:{...d.tiers}});
     setActivePreset(key);resetOv();setThinking(true);
-    if (key === 'STATEWIDE') setFacilityPortfolio({...STATEWIDE_PORTFOLIO}); else setFacilityPortfolio({});
+    if (key === 'STATEWIDE') { setFacilityPortfolio({...STATEWIDE_PORTFOLIO}); setGalenMigrationCost(15000000); setGalenAnnualCost(6800000); } else { setFacilityPortfolio({}); }
     setPerOrgBeds(false); setPerOrgSystems(false); setFlagships([]); setTierCostEdits({enterprise:null,departmental:null,niche:null}); setEditingTierCost(null); setCostMode("estimate"); setKnownAnnualSpend(null);
     // Size per-org arrays to match org count, split evenly
     const n = d.org_count;
@@ -1838,7 +1844,7 @@ function ROICalculator() {
         {providerType === "regional" && "Metropolitan hospitals have complex legacy estates. The consolidation case includes cost reduction and improved clinical data continuity."}
         {providerType === "academic" && "Tertiary referral centres carry the highest system complexity (40-200+ applications). The ROI case includes research system rationalisation alongside operational savings."}
         {providerType === "state_network" && "LHDs and Health Services typically have 2-3x the legacy system count across their facilities. Consolidation eliminates duplicate infrastructure across the district."}
-        {providerType === "statewide" && "Statewide programmes replace the entire state legacy estate with a single EMR across 200+ hospitals, 600+ community sites, 60+ pathology labs and 150+ collection centres. Based on NSW SDPR scope: 22,000 beds, 228 hospitals, 17 LHDs, ~122,000 staff FTE. The ROI case is driven by the scale of duplicate systems, clinician time freed, and patient safety gains from a single source of truth."}
+        {providerType === "statewide" && "Statewide programmes replace the entire state legacy estate with a single EMR. NSW SDPR benchmark: 24 core systems (9 EMR, 10 PAS, 5 LIMS) from 5 vendors across 228 hospitals, 600+ community sites, 60 path labs, 17 LHDs. Legacy estate est. A$225-385M/yr; Epic contract A$969M/10yr; Galen archive A$83M/10yr. 30-40+ systems in full scope (Microsoft ODS: 34+ systems statewide)."}
       </div>
     </Card>
     <LockedConnector/>
@@ -2540,7 +2546,7 @@ function ROICalculator() {
       </Callout>
 
       <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
-        <strong>Methodology:</strong> ABF efficiency modelled at 15% of legacy estate cost addressable through consolidation. Private patient revenue uplift modelled at 30% recovery of leaked episodes (15% leakage rate, VAGO 2019). Medical indemnity reduction at 3% of A$20,000/bed (VMIA 2025-26). Excess bed days: 35% fragmentation attribution of preventable AEs (ACSQHC). All figures are scenario-adjusted estimates.
+        <strong>Methodology:</strong> ABF efficiency modelled at 15% of legacy estate cost addressable through consolidation. NSW SDPR benchmark: estimated legacy estate cost A$225-385M/yr (modelled from QLD Health proxy and NSW programme data); Epic replacement contract A$969M/10yr (~A$97M/yr); implied gross saving A$130-290M/yr. Private patient revenue uplift modelled at 30% recovery of leaked episodes (15% leakage rate, VAGO 2019). Medical indemnity reduction at 3% of A$20,000/bed (VMIA 2025-26). Excess bed days: 35% fragmentation attribution of preventable AEs (ACSQHC). All figures are scenario-adjusted estimates.<br/><br/><strong>Confidence key:</strong> Legacy system count (24 core): CONFIRMED (NSW Health Oct 2023). Hospital count (228): CONFIRMED. Epic contract (A$969M): CONFIRMED. Legacy estate cost (A$225-385M): ESTIMATE (QLD proxy + programme data). Galen archive (A$83M): CONFIRMED (IDM Magazine Dec 2024). Full estate (30-40+ systems): ESTIMATE (Microsoft ODS case study: 34+ systems).
       </div>
     </Card><LockedConnector/>
 
