@@ -1194,17 +1194,9 @@ function ROICalculator() {
     reimbursement_model: reimbursementModel,
 
     // ABF efficiency and compliance
-    medicare_drg_revenue: r.medicareDrg,
-    hrrp_exposure: r.hrrpExposure,
-    hrrp_reduction: r.hrrpReduction,
-    hac_exposure: r.hacExposure,
-    hac_reduction: r.hacReduction,
-    vbp_pool: r.vbpPool,
-    vbp_improvement: r.vbpImprovement,
-    denial_baseline: r.denialBaseline,
-    denial_recovery: r.denialRecovery,
-    malpractice_premium: r.malpracticePremium,
-    malpractice_reduction: r.malpracticeReduction,
+    abf_revenue: r.medicareDrg,
+    indemnity_premium: r.malpracticePremium,
+    indemnity_reduction: r.malpracticeReduction,
     preventable_ades: r.preventableADEs,
     excess_days_avoided: r.excessDaysAvoided,
     excess_day_cost_avoided: r.excessDayCostAvoided,
@@ -1425,7 +1417,7 @@ function ROICalculator() {
     const cards = [
       { label: r.rampN + "-YEAR COMBINED", value: fmtK(r.total3WithReimbursement), sub: "All savings incl. ABF and quality", bg: LTBG },
       { label: "ANNUAL RECURRING", value: fmtK(r.annual), sub: fmtK(r.decomSave) + " decom + " + fmtK(r.timeSave) + " time", bg: TEALBG },
-      { label: "REIMBURSEMENT / YR", value: fmtK(r.reimbursementImpact + r.qualitySavings), sub: "ABF efficiency + private revenue + quality", bg: [254,249,236] },
+      { label: "ABF & QUALITY / YR", value: fmtK(r.reimbursementImpact + r.qualitySavings), sub: "ABF efficiency + private revenue + quality", bg: [254,249,236] },
       { label: "HOURS FREED / YR", value: fmtNum(r.hrsSaved), sub: Math.round(r.realisation*100) + "% realisation", bg: [230,248,252] },
     ];
     const cardW = (cw - 12) / 4;
@@ -1454,7 +1446,7 @@ function ROICalculator() {
       body: [
         ["Provider type", ({"rural_remote":"Rural / Remote","regional":"Regional Hospital","metropolitan":"Metropolitan Hospital","tertiary":"Tertiary Referral","state_network":"LHD / Health Service","statewide":"Statewide Programme"})[providerType] || providerType],
         ["Funding model", ({"public":"Public (ABF-funded)","mixed":"Public + Private","private":"Predominantly Private"})[reimbursementModel] || reimbursementModel],
-        ["Journey", isArchiveOnly ? "Have enterprise EHR" : "Evaluating EHRs"],
+        ["Journey", isArchiveOnly ? "Have enterprise EMR" : "Evaluating EMRs"],
         ["Beds", fmtNum(inputs.bed_count)],
         ["Facilities", String(inputs.org_count)],
         ["Legacy systems", r.legacy + " (" + r.ent + " enterprise, " + r.dep + " departmental, " + r.nic + " standalone" + (flagships.length > 0 ? ", " + flagships.length + " named" : "") + ")"],
@@ -1550,10 +1542,8 @@ function ROICalculator() {
         ["Private patient uplift", fmtK(r.privateRevRecovery) + "/yr", "30% recovery of leaked private episodes"],
         ["Medical indemnity reduction", fmtK(r.malpracticeReduction) + "/yr", "3% of A$20,000/bed (VMIA 2025-26)"],
         ["Excess bed day savings", fmtK(r.excessDayCostAvoided) + "/yr", "QAHCS/AIHW (A$3,100/day x fragmentation attribution)"],
-        ["Malpractice premium reduction", fmtK(r.malpracticeReduction) + "/yr", "Modelled (8% reduction)"],
-        ["Excess bed day cost avoided", fmtK(r.excessDayCostAvoided) + "/yr", "IHACPA 2023 (A$3,100/day)"],
-        ["Duplicate testing reduction", fmtK(r.duplicateReduction) + "/yr", "ONC (25% duplicate rate)"],
-        [{ content: "Total reimbursement & quality", styles: { fontStyle: "bold", fillColor: LTBG } },
+        ["Duplicate testing reduction", fmtK(r.duplicateReduction) + "/yr", "22% duplicate rate (Banker et al 2024; RCPA)"],
+        [{ content: "Total ABF efficiency & quality", styles: { fontStyle: "bold", fillColor: LTBG } },
          { content: fmtK(r.reimbursementImpact + r.qualitySavings) + "/yr", styles: { fontStyle: "bold", textColor: TEAL, fillColor: LTBG } },
          { content: "", styles: { fillColor: LTBG } }],
       ],
@@ -1853,12 +1843,12 @@ function ROICalculator() {
     {/* STEP 1 – Journey stage */}
     <Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
-        <span style={{width:24,height:24,borderRadius:"50%",background:C.accent,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>2</span>        Where are you on your EHR journey?
+        <span style={{width:24,height:24,borderRadius:"50%",background:C.accent,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>2</span>        Where are you on your EMR journey?
       </div>
       <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
         {[
-          {k:"HAVE_EPR",icon:"✅",title:"We have an enterprise EHR",desc:"Already on Epic, Oracle/Cerner or similar, and looking to archive and decommission legacy systems.",focus:"Archiving + decommission savings"},
-          {k:"EVALUATING",icon:"🔍",title:"We’re evaluating enterprise EHRs",desc:"Assessing migration to a single platform and need the full case for migration and archiving.",focus:"Migration safety + archiving savings"},
+          {k:"HAVE_EPR",icon:"✅",title:"We have an enterprise EMR",desc:"Already on Epic, Oracle Health or similar, and looking to archive and decommission legacy systems.",focus:"Archiving + decommission savings"},
+          {k:"EVALUATING",icon:"🔍",title:"We’re evaluating enterprise EMRs",desc:"Assessing migration to a single EMR platform and need the full case for migration and archiving.",focus:"Migration safety + archiving savings"},
         ].map(j=><button type="button" key={j.k} onClick={()=>{update("journey",j.k);touch(0);setTimeout(()=>scrollTo(ref1),200);}} className="roi-btn" style={{
           flex:"1 1 240px",minWidth:0,padding:"18px 20px",textAlign:"left",cursor:"pointer",
           border:inputs.journey===j.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:12,
@@ -2093,7 +2083,7 @@ function ROICalculator() {
         <div>
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
             {[
-              {tier:"enterprise",label:"Enterprise systems",color:C.accent,bg:C.accentPale,br:C.border,hint:"e.g. legacy EHR, PAS, large clinical suites",max:Math.max(10, inputs.tiers.enterprise + 2),tip:"Large clinical platforms, e.g. legacy EHR/PAS, major departmental suites. High per-system cost."},
+              {tier:"enterprise",label:"Enterprise systems",color:C.accent,bg:C.accentPale,br:C.border,hint:"e.g. legacy EMR, PAS, large clinical suites",max:Math.max(10, inputs.tiers.enterprise + 2),tip:"Large clinical platforms, e.g. legacy EMR/PAS, major departmental suites. High per-system cost."},
               {tier:"departmental",label:"Departmental systems",color:"#1a7a7a",bg:"#eef9f7",br:"#c0e8e2",hint:"e.g. theatres, lab, ED, maternity, radiology",max:Math.max(30, inputs.tiers.departmental + 5),tip:"Mid-tier clinical systems serving one department or specialty. Moderate running costs."},
               {tier:"niche",label:"Standalone systems",color:"#3d8a8a",bg:C.tealPale,br:`${C.teal}22`,hint:"e.g. document stores, scanned notes, specialty databases",max:Math.max(100, inputs.tiers.niche + 10),tip:"Small self-contained tools, e.g. single-function databases, document stores, scanned notes. Low individual cost but they add up."},
             ].map(t=>{
@@ -2400,12 +2390,12 @@ function ROICalculator() {
       </div>
       <div style={{fontSize:14,color:C.text,lineHeight:1.6}}>
         <span style={{fontWeight:600}}>You said:</span> {isArchiveOnly
-          ? "\"We have an enterprise EHR\" , so we've estimated the potential ROI for archiving and decommissioning your legacy systems."
-          : "\"We're evaluating enterprise EHRs\" , so we've estimated the potential ROI for both migration and archiving."}
+          ? "\"We have an enterprise EMR\" , so we've estimated the potential ROI for archiving and decommissioning your legacy systems."
+          : "\"We're evaluating enterprise EMRs\" , so we've estimated the potential ROI for both migration and archiving."}
       </div>
       <div style={{fontSize:13,color:C.textMid,marginTop:6,lineHeight:1.5}}>{isArchiveOnly
-        ? "Your enterprise EHR is in place. Retiring legacy systems eliminates ongoing licensing, hosting and support costs. A clinical archive ensures historical patient records remain accessible to clinicians at the point of care, supporting continuity of care and regulatory compliance."
-        : "Migrating to a single EHR improves patient safety at care transitions. Archiving legacy systems eliminates ongoing costs, while ensuring historical information can be accessed, in context, by clinicians at the point of care."}</div>
+        ? "Your enterprise EMR is in place. Retiring legacy systems eliminates ongoing licensing, hosting and support costs. A clinical archive ensures historical patient records remain accessible to clinicians at the point of care, supporting continuity of care and regulatory compliance."
+        : "Migrating to a single EMR improves patient safety at care transitions. Archiving legacy systems eliminates ongoing costs, while ensuring historical information can be accessed, in context, by clinicians at the point of care."}</div>
     </div>
 
     {/* Scenario chooser */}
@@ -2495,7 +2485,7 @@ function ROICalculator() {
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Patient safety context":"Patient safety case for migration"}</h3>
         <InfoTip text={`Source: ACSQHC safety reports; AIHW hospital statistics; QAHCS (Wilson et al 1995). Per-bed rates from Australian public hospital data, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). NOT included in financial totals.`}/>
       </div>
-      <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EHR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
+      <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EMR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         {[
           {label:"Medication errors",bl:r.safetyMedErrorsBaseline,av:r.safetyMedErrorsAvoided,avl:"potentially avoidable",sub:"at admission, transfer, or discharge"},
@@ -2779,7 +2769,7 @@ function ROICalculator() {
         <S title="3. Decommission savings">
           <p style={{margin:"0 0 8px"}}>The primary financial benefit: retiring legacy systems eliminates their annual running costs.</p>
           <F>1. Set decom target (default 75%)<br/>2. rawDecom = totalSystems {"\u00d7"} decomTarget {"\u00d7"} scenarioMultiplier<br/>3. Systems retired pro-rata across tiers<br/>4. decomSave = (entRetired {"\u00d7"} entCost) + (depRetired {"\u00d7"} depCost) + (nicRetired {"\u00d7"} nicCost) + flagshipSave</F>
-          <p style={{margin:"8px 0 4px"}}><strong>75% default decom target</strong> {" - "} most EHR migration programmes plan to retire 60-80% of legacy systems. Some are retained for long-retention data or functions not covered by the new EHR. Validated against real health system data where ~32 of 42 systems were candidates for retirement. <Bm s="EHR programme consensus; validated against benchmarked health system application footprint."/></p>
+          <p style={{margin:"8px 0 4px"}}><strong>75% default decom target</strong> {" - "} most EMR migration programmes plan to retire 60-80% of legacy systems. Some are retained for long-retention data or functions not covered by the new EMR. Validated against real health system data where ~32 of 42 systems were candidates for retirement. <Bm s="EMR programme consensus; validated against benchmarked health system application footprint."/></p>
           <p style={{margin:"4px 0"}}><strong>Named flagship systems</strong> flagged as {"\u201c"}Retire{"\u201d"} are decommissioned at their full stated contract value, scaled by the scenario multiplier.</p>
         </S>
 
@@ -2794,7 +2784,7 @@ function ROICalculator() {
 
         <S title="5. Support tickets & patient records request (SAR) turnaround">
           <p style={{margin:"0 0 8px"}}><strong>Tickets:</strong> 2.5 per system/month baseline (IT Infrastructure Library / ITIL service desk metrics). Surviving systems generate 40% fewer tickets due to consolidated support. <Bm s="ITIL service desk reporting in US health systems; 0.6 factor is a modelled estimate."/></p>
-          <p style={{margin:"4px 0"}}><strong>Patient records request turnaround:</strong> 3-day base (cross-LHD coordination, redaction, QA) + 0.8 days per core system (before), 0.15 days per surviving system (after). NSW public health organisations must respond to records requests within a reasonable timeframe (no explicit statutory maximum for public sector; HRIP Act 2002 applies to private health). Turnaround scales with core clinical systems searched (capped at 20) {" - "} consistent with reports from health systems with fragmented EHR estates. <Md s="Capped at 20 core clinical systems. Based on Australian HIM department workflow data."/></p>
+          <p style={{margin:"4px 0"}}><strong>Patient records request turnaround:</strong> 3-day base (cross-LHD coordination, redaction, QA) + 0.8 days per core system (before), 0.15 days per surviving system (after). NSW public health organisations must respond to records requests within a reasonable timeframe (no explicit statutory maximum for public sector; HRIP Act 2002 applies to private health). Turnaround scales with core clinical systems searched (capped at 20) {" - "} consistent with reports from health systems with fragmented EMR estates. <Md s="Capped at 20 core clinical systems. Based on Australian HIM department workflow data."/></p>
         </S>
 
         <S title="6. Patient safety metrics">
@@ -2861,7 +2851,7 @@ function ROICalculator() {
 
         <S title="11. What is included and excluded">
           <p style={{margin:"0 0 8px"}}><strong>Included:</strong> Decommission savings (licensing, hosting, support costs eliminated), clinician time capacity value (hours freed, valued at blended rate with realisation discount), ABF efficiency gain, private patient revenue uplift, medical indemnity reduction, excess bed day cost avoidance, and duplicate testing reduction.</p>
-          <p style={{margin:"4px 0"}}><strong>Excluded:</strong> EHR implementation costs (covered separately), parallel-run costs (too variable to model), data migration costs (one-off programme budget), implementation disruption period (12-24 months of potential performance degradation per QLD ieMR and SA EPAS experience), and staffing increases during transition.</p>
+          <p style={{margin:"4px 0"}}><strong>Excluded:</strong> EMR implementation costs (covered separately), parallel-run costs (too variable to model), data migration costs (one-off programme budget), implementation disruption period (12-24 months of potential performance degradation per QLD ieMR and SA EPAS experience), and staffing increases during transition.</p>
           <p style={{margin:"4px 0"}}>The 3-year total assumes flat annual savings. In practice, savings may increase in years 2-3 as more systems are retired, or decrease as easy wins are captured first.</p>
         </S>
 
