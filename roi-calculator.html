@@ -2492,7 +2492,7 @@ function ROICalculator() {
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
         <span style={{fontSize:20}}>{"🛡️"}</span>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Patient safety context":"Patient safety case for migration"}</h3>
-        <InfoTip text={`Source: AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data. Per-bed rates from ~100K acute beds nationally, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). NOT included in financial totals.`}/>
+        <InfoTip text={`Source: ACSQHC safety reports; AIHW hospital statistics; QAHCS (Wilson et al 1995). Per-bed rates from Australian public hospital data, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). NOT included in financial totals.`}/>
       </div>
       <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EHR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -2613,7 +2613,7 @@ function ROICalculator() {
       </Callout>
 
       <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
-        <strong>Note:</strong> Assumes 35% of legacy systems are duplicated across facilities (Becker{"'"}s: only 35% of acquired hospitals switch to acquirer{"'"}s EHR). Infrastructure savings at $250k/facility for duplicate data center, network, and support desk costs. Standardization covers formulary, order set, and protocol harmonization.
+        <strong>Note:</strong> Assumes 35% of legacy systems are duplicated across facilities (modelled from NSW SDPR: overlapping vendor coverage across LHDs). Infrastructure savings at $250k/facility for duplicate data center, network, and support desk costs. Standardization covers formulary, order set, and protocol harmonization.
       </div>
     </Card>}
     {r.isMultiHospital && <LockedConnector/>}
@@ -2758,7 +2758,7 @@ function ROICalculator() {
           </table></div>
           <p style={{margin:"8px 0 4px"}}><strong>Decom scaling</strong> adjusts how many of your planned retirements actually happen {" - "} Conservative assumes 85% (programme delays, contractual holdups), Stretch assumes 10% overachievement. <Md s="No published benchmark. User sets their own target and this scales it."/></p>
           <p style={{margin:"4px 0"}}><strong>Time realisation</strong> {" - "} the fraction of freed clinician time that translates into measurable capacity. IHI productive ward reported 20-40%. <Bm s="IHI productive ward programme; IHI operational efficiency framework."/></p>
-          <p style={{margin:"4px 0"}}><strong>Safety reduction</strong> {" - "} avoidable medication errors from system consolidation. AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data, Gate et al 2023 found 25-50% reductions. <Ev s="AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data; Gate et al 2023."/></p>
+          <p style={{margin:"4px 0"}}><strong>Safety reduction</strong> {" - "} avoidable medication errors from system consolidation. QAO 2018 (Princess Alexandra Hospital): 8% reduction in medication errors, 37% decrease in infections post-ieMR. Woods et al 2024 (DigiMat): 12.87% decline in medication complications. <Ev s="QAO 2018-19 (QLD ieMR); Woods et al 2024 DigiMat; ACSQHC safety reports."/></p>
         </S>
 
         <S title="2. System cost estimation">
@@ -2800,8 +2800,8 @@ function ROICalculator() {
 
         <S title="6. Patient safety metrics">
           <p style={{margin:"0 0 8px"}}>These are <strong>not included</strong> in the financial ROI total. They provide qualitative context for the patient safety case.</p>
-          <F>medErrors = beds {"\u00d7"} 15 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>patientsHarmed = beds {"\u00d7"} 0.28 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>excessBedDays = beds {"\u00d7"} 0.32 {"\u00d7"} fragmentation {"\u00d7"} DQ</F>
-          <p style={{margin:"8px 0 4px"}}><strong>15 medication errors per bed/yr</strong> {" - "} IOM estimates 6.5 medication errors per 100 admissions (Bates et al ADE Prevention Study). At ~42 admissions/bed/yr and 65% occupancy, this yields approximately 15 errors/bed. Bond et al documented the average US hospital experiences a medication error every 22.7 hours. <Ev s="Bates et al ADE Prevention Study; Bond et al 2001; AHRQ PSI v2024 benchmarks."/></p>
+          <F>medErrors = beds {"\u00d7"} 14 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>patientsHarmed = beds {"\u00d7"} 5.8 {"\u00d7"} 35% attribution {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>excessBedDays = beds {"\u00d7"} 8.0 {"\u00d7"} 35% attribution {"\u00d7"} fragmentation {"\u00d7"} DQ</F>
+          <p style={{margin:"8px 0 4px"}}><strong>14 medication errors per bed/yr</strong> {" - "} Westbrook et al (2015, two Sydney teaching hospitals) found incident reports capture only 1.2 per 1,000 actual errors. Administration errors occur in ~9% of medication administrations (ACSQHC 2013). At least 250,000 medication-related admissions annually costing A$1.4 billion (ACSQHC 2020). <Ev s="Westbrook et al 2015; ACSQHC 2013/2020; Runciman et al 2003."/></p>
           <p style={{margin:"4px 0"}}><strong>5.8 patients harmed per bed/yr</strong> {" - "} AIHW administrative data shows 5.4-6.6 adverse events per 100 separations (~5.8 per bed per year). The foundational QAHCS study (Wilson et al. 1995) found 16.6% of admissions associated with adverse events. Approximately 50% are deemed preventable. <Ev s="ACSQHC National Safety and Quality Reports; AIHW Hospital Statistics."/></p>
           <p style={{margin:"4px 0"}}><strong>8.0 excess bed days per bed/yr</strong> {" - "} QAHCS data: adverse events account for ~8% of total hospital bed days. Ehsani et al. (2006, MJA): patients with AEs stay ~10 additional days on average, totalling 15.7% of direct hospital costs. At A$3,100/day average per diem (IHACPA). <Ev s="ACSQHC sentinel event data; AIHW hospital statistics; IHACPA 2023; Choosing Wisely Australia."/></p>
           <p style={{margin:"4px 0"}}><strong>Fragmentation index</strong> (0.6-1.2) scales risk by number of systems. Vest et al (JAMIA 2015) found 57% higher odds of same-cause readmission with fragmented records. Caps at 20 systems (diminishing marginal fragmentation). <Md s="No published fragmentation index exists. Informed by Vest et al JAMIA 2015 readmission odds."/></p>
@@ -2809,34 +2809,34 @@ function ROICalculator() {
         </S>
 
         <S title="7. Evidence base and validation">
-          <p style={{margin:"0 0 8px"}}>Key evidence sources underpinning the US model:</p>
+          <p style={{margin:"0 0 8px"}}>Key evidence sources underpinning the Australian model:</p>
           <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:12,margin:"8px 0"}}>
             <thead><tr style={{background:C.accent,color:"#fff"}}><th style={{padding:"6px 10px",textAlign:"left"}}>Metric</th><th style={{padding:"6px 10px"}}>Value</th><th style={{padding:"6px 10px"}}>Source</th></tr></thead>
             <tbody>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Readmission reduction (EHR)</td><td style={{padding:"6px 10px",textAlign:"center"}}>17% relative</td><td style={{padding:"6px 10px"}}>Pattar et al, JAMA 2025 (116 RCTs)</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Single-vendor EHR effect</td><td style={{padding:"6px 10px",textAlign:"center"}}>0.8pp absolute</td><td style={{padding:"6px 10px"}}>Vest et al, JAMIA 2019</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Medication complications (post-EMR)</td><td style={{padding:"6px 10px",textAlign:"center"}}>12.87% decline</td><td style={{padding:"6px 10px"}}>Woods et al 2024 DigiMat (1.55M QLD episodes)</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>In-hospital mortality (post-EMR)</td><td style={{padding:"6px 10px",textAlign:"center"}}>22% decrease</td><td style={{padding:"6px 10px"}}>South et al 2022 (RCH Melbourne)</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Patients harmed</td><td style={{padding:"6px 10px",textAlign:"center"}}>5.4-6.6% of separations</td><td style={{padding:"6px 10px"}}>AIHW 2023-24 / QAHCS</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Comm. failure in incidents</td><td style={{padding:"6px 10px",textAlign:"center"}}>35%</td><td style={{padding:"6px 10px"}}>ACSQHC root cause analyses</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Excess bed day cost</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$3,100/day</td><td style={{padding:"6px 10px"}}>IHACPA 2023</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Denial rate (initial)</td><td style={{padding:"6px 10px",textAlign:"center"}}>11.8%</td><td style={{padding:"6px 10px"}}>Kodiak Solutions 2024</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Excess bed day cost</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$3,100/day</td><td style={{padding:"6px 10px"}}>IHACPA long-stay outlier per diems</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Duplicate testing rate</td><td style={{padding:"6px 10px",textAlign:"center"}}>22%</td><td style={{padding:"6px 10px"}}>Banker et al 2024 (SA); RCPA guidelines</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>NEP per NWAU</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$6,465</td><td style={{padding:"6px 10px"}}>IHACPA 2024-25</td></tr>
-              <tr><td style={{padding:"6px 10px"}}>Duplicate test rate</td><td style={{padding:"6px 10px",textAlign:"center"}}>20-30%</td><td style={{padding:"6px 10px"}}>ONC / expert consensus</td></tr>
+              <tr><td style={{padding:"6px 10px"}}>Medical indemnity/bed</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$20,000</td><td style={{padding:"6px 10px"}}>VMIA 2025-26 ($380.9M / ~16k beds)</td></tr>
             </tbody>
           </table></div>
-          <p style={{margin:"8px 0 4px"}}>Full integration case study: NYU Langone Health achieved a 33% relative reduction in risk-adjusted mortality after fully integrating an acquired safety net hospital onto a unified Epic-based EHR with unified governance and quality analytics (Wang et al, JAMA Network Open 2022). <Ev s="Wang et al, JAMA Network Open 2022; NYU Langone integration study."/></p>
-          <p style={{margin:"4px 0"}}>Cautionary counterexample: the VA Oracle Health implementation experienced 826 major performance incidents and confirmed harm to at least 149 veterans, underscoring that poorly executed migration creates worse outcomes than fragmented systems. <Ev s="VA OIG reports 2023-2024; Federal News Network."/></p>
-          <p style={{margin:"4px 0"}}>Tier cost formulas are calibrated against KLAS 2025 market data, Becker{"'"}s Hospital Review pricing surveys, and EMR Guides contract analyses. Each named system uses a baseCost + perBed model that scales with hospital size.</p>
+          <p style={{margin:"8px 0 4px"}}>Queensland DigiMat study (Woods et al 2024): analysis of 1.55 million episodes across 13 Queensland hospitals found 12.87% decline in medication complications, 14.27% reduction in hospital-acquired infections, and 3.42% increase in hospital activity post-ieMR. <Ev s="Woods et al 2024, Int J Medical Informatics; Queensland Audit Office 2018-19."/></p>
+          <p style={{margin:"4px 0"}}>Royal Children's Hospital Melbourne (South et al 2022): analysis of 355,709 discharges showed sustained ~22% decrease in in-hospital mortality after Epic implementation. Productivity Commission May 2024: better use of EMR data could save up to A$5.4 billion/yr nationally. <Ev s="South et al 2022, J Paediatrics and Child Health; Productivity Commission May 2024."/></p>
+
         </S>
 
         <S title="8. ABF efficiency and compliance methodology">
           <p style={{margin:"0 0 8px"}}>ABF efficiency gain and revenue cycle impact are modelled from verified programme rates and provider-specific multipliers.</p>
           <F>abfEfficiencyGain = totalEstate {"\u00d7"} 15% {"\u00d7"} decomFactor<br/>privateRevRecovery = admissions {"\u00d7"} privatePct {"\u00d7"} 15% leakage {"\u00d7"} A$4,200 {"\u00d7"} 30% recoverable<br/>indemnityReduction = beds {"\u00d7"} A$20,000 {"\u00d7"} 3% {"\u00d7"} safetyFactor<br/>excessBedDaySavings = beds {"\u00d7"} 8.0 days {"\u00d7"} 35% attribution {"\u00d7"} fragmentation {"\u00d7"} safetyFactor {"\u00d7"} A$3,100</F>
-          <p style={{margin:"8px 0 4px"}}><strong>ABF efficiency</strong> {" - "} Activity Based Funding through IHPA. National Efficient Price A$6,465/NWAU (IHACPA 2024-25 Determination; 2025-26 = A$7,258). IT/admin overhead estimated at 8% of total hospital costs, with 25% addressable through system consolidation. <Ev s="IHPA National Efficient Price Determination 2024-25; AIHW hospital expenditure data."/></p>
+          <p style={{margin:"8px 0 4px"}}><strong>ABF efficiency</strong> {" - "} Activity Based Funding through IHPA. National Efficient Price A$6,465/NWAU (IHACPA 2024-25 Determination; 2025-26 = A$7,258). IT/admin overhead estimated at 8% of total hospital costs, with 25% addressable through system consolidation. <Ev s="IHACPA National Efficient Price Determination 2024-25; AIHW hospital expenditure data."/></p>
           <p style={{margin:"4px 0"}}><strong>Private patient revenue</strong> {" - "} 15% of privately insured episodes in public hospitals estimated to go unbilled due to incomplete documentation. Average private episode value A$4,200 above ABF rate. <Ev s="VAGO 2019; APRA PHI statistics; PHIO annual reports."/></p>
           <p style={{margin:"4px 0"}}><strong>Medical indemnity</strong> {" - "} A$20,000/bed institutional indemnity (VMIA 2025-26: $380.9M for ~16,000 VIC beds). 3% reduction modelled from ACSQHC communication failure data. <Ev s="VMIA 2025-26 annual report; ACSQHC root cause analyses."/></p>
-          <p style={{margin:"4px 0"}}><strong>Private patient revenue leakage</strong> {" - "} Estimated 15% of privately insured episodes in public hospitals go unbilled or under-billed due to incomplete clinical documentation (state audit data). Average private episode value A$4,200 above ABF rate. <Ev s="State health department audit reports; PHIO annual reports."/></p>
-          <p style={{margin:"4px 0"}}><strong>Medical indemnity A$20,000/bed</strong> {" - "} Institutional indemnity allocation based on state scheme data (icare NSW, VMIA VIC). 5% reduction from consolidation is a modelled assumption based on ACSQHC communication failure data. <Md s="A$20,000/bed based on VMIA 2025-26 premium pool ($380.9M for ~16,000 VIC beds). 3% reduction is a modelled assumption; no direct Australian evidence links EMR implementation to reduced indemnity claims. Flagged as conservative estimate."/></p>
-          <p style={{margin:"4px 0"}}><strong>Provider type multipliers</strong> affect ABF funding proportion, private patient rate, and system complexity weighting. Rural hospitals have lower private patient rates; tertiary centres have higher system complexity due to research and teaching platforms. <Md s="Provider multipliers are modelled estimates based on Australian hospital classification and casemix data."/></p>
+
+          
+          <p style={{margin:"4px 0"}}><strong>Provider type multipliers</strong> affect ABF funding proportion, private patient rate, and system complexity weighting. Rural hospitals have lower private patient rates; tertiary centres have higher system complexity due to research and teaching platforms. <Md s="Provider multipliers modelled from Australian hospital classification data. Statewide preset calibrated against NSW Health SDPR EOI (HT20037): 25,632 beds, 75,500+ clinical staff, 450+ facilities, 60+ labs, 200+ collection points, 110,000+ EMR users."/></p>
         </S>
 
         <S title="9. Complexity and data quality adjustments">
@@ -2862,12 +2862,12 @@ function ROICalculator() {
 
         <S title="11. What is included and excluded">
           <p style={{margin:"0 0 8px"}}><strong>Included:</strong> Decommission savings (licensing, hosting, support costs eliminated), clinician time capacity value (hours freed, valued at blended rate with realisation discount), ABF efficiency gain, private patient revenue uplift, medical indemnity reduction, excess bed day cost avoidance, and duplicate testing reduction.</p>
-          <p style={{margin:"4px 0"}}><strong>Excluded:</strong> EHR implementation costs (covered separately), parallel-run costs (too variable to model), data migration costs (one-off programme budget), implementation disruption period (12-24 months of potential performance degradation per NYU Langone and VA studies), and staffing increases during transition (20%+ per VA experience).</p>
+          <p style={{margin:"4px 0"}}><strong>Excluded:</strong> EHR implementation costs (covered separately), parallel-run costs (too variable to model), data migration costs (one-off programme budget), implementation disruption period (12-24 months of potential performance degradation per QLD ieMR and SA EPAS experience), and staffing increases during transition.</p>
           <p style={{margin:"4px 0"}}>The 3-year total assumes flat annual savings. In practice, savings may increase in years 2-3 as more systems are retired, or decrease as easy wins are captured first.</p>
         </S>
 
         <div style={{marginTop:12,padding:"10px 14px",background:C.bg,borderRadius:8,fontSize:11,color:C.textMuted,lineHeight:1.6}}>
-          All formulas sourced from peer-reviewed literature and federal programme data. Tier costs calibrated against KLAS 2025 market data. CMS penalties verified from programme pages. All figures are user-overridable. See the evidence audit document for complete citations.
+          All formulas sourced from peer-reviewed Australian and international literature, AIHW/IHACPA data, state audit reports, and Productivity Commission research. Tier costs calibrated against QLD and NSW state contract data. All figures are user-overridable.
         </div>
       </Card>;
     })()}
