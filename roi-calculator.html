@@ -557,7 +557,6 @@ const TEACHING_OVERHEAD_PCT = 0.12;             // 12% additional system complex
 // ── Network Consolidation Constants ──
 const DUPLICATE_SYSTEM_RATE = 0.35;             // 35% of systems are duplicated across facilities post-M&A
 const DUPLICATE_INFRA_COST_PER_FACILITY = 350000; // Per-LHD/facility duplicate infrastructure (data centre, network, service desk, training)
-const CROSS_FACILITY_STANDARDISATION_PCT = 0.15; // 15% of operational costs addressable through standardisation
 
 // Provider type multipliers (modelled assumptions, clearly labelled)
 
@@ -1610,7 +1609,6 @@ function ROICalculator() {
         body: [
           ["Duplicate system elimination", fmtK(r.duplicateElimination) + "/yr", r.duplicateSystems + " duplicates across " + inputs.org_count + " facilities"],
           ["Infrastructure consolidation", fmtK(r.infraConsolidation) + "/yr", "$250k/facility for DC, network, help desk"],
-          ["Cross-facility standardization", fmtK(r.standardisationSave) + "/yr", "Formulary, order sets, protocols"],
           [{ content: "M&A module total", styles: { fontStyle: "bold", fillColor: LTBG } },
            { content: fmtK(r.mergeSavings) + "/yr", styles: { fontStyle: "bold", textColor: TEAL, fillColor: LTBG } },
            { content: "", styles: { fillColor: LTBG } }],
@@ -2603,9 +2601,7 @@ function ROICalculator() {
           <div style={{fontSize:11,color:C.textMuted}}>Data center, network, help desk</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Cross-facility standardization</div>
-          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.standardisationSave):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>Formulary, order sets, protocols</div>
+
         </div>
       </div>
 
@@ -2615,7 +2611,7 @@ function ROICalculator() {
       </Callout>
 
       <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
-        <strong>Note:</strong> Assumes 35% of legacy systems are duplicated across facilities (modelled from NSW SDPR: overlapping vendor coverage across LHDs). Infrastructure savings at $250k/facility for duplicate data center, network, and support desk costs. Standardization covers formulary, order set, and protocol harmonization.
+        <strong>Note:</strong> Assumes 35% of legacy systems are duplicated across facilities (modelled from NSW SDPR: overlapping vendor coverage across LHDs). Infrastructure savings at A$350k/LHD for duplicate data centre, network, and service desk costs.
       </div>
     </Card>}
     {r.isMultiHospital && <LockedConnector/>}
