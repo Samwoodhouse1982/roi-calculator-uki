@@ -437,13 +437,15 @@ function calc(inp, mode, ov = {}, flagships = []) {
 
   // ── Network Consolidation Module ──
   const isMultiHospital = inp._providerType === "state_network" || inp._providerType === "statewide";
-  const duplicateSystems = isMultiHospital ? Math.round(legacy * DUPLICATE_SYSTEM_RATE) : 0;
+  const survivingSystems = legacy - decom;
+  const duplicateSystems = isMultiHospital ? Math.round(survivingSystems * DUPLICATE_SYSTEM_RATE) : 0;
   const duplicateSystemCost = isMultiHospital ? Math.round(duplicateSystems * blendedCost) : 0;
   const duplicateElimination = Math.round(duplicateSystemCost * sc.decom_pct);
   const lhdCount = inp._lhdCount || Math.max(1, Math.round(inp.org_count / 15)); // LHDs/HHSs, not individual hospitals
   const duplicateInfraCost = isMultiHospital ? lhdCount * DUPLICATE_INFRA_COST_PER_FACILITY : 0;
   const infraConsolidation = Math.round(duplicateInfraCost * 0.60 * sc.decom_pct); // 60% consolidatable
-  const standardisationSave = isMultiHospital ? Math.round(totalEstate * CROSS_FACILITY_STANDARDISATION_PCT * sc.decom_pct) : 0;
+  // standardisationSave removed — identical formula to abfEfficiencyGain (both totalEstate*15%), was double-counting
+  const standardisationSave = 0;
 
   // Module totals
   const academicSavings = researchDecomSave + teachingEfficiency + teachingOverhead;
@@ -523,7 +525,7 @@ const SAR_BASE_DAYS = 1.5;
 const SAR_DAYS_PER_SYSTEM_BEFORE = 0.4;
 const SAR_DAYS_PER_SYSTEM_AFTER = 0.15;
 const MED_ERRORS_PER_BED = 14;  // ACSQHC sentinel event data
-const PATIENTS_HARMED_PER_BED = 5.8;   // AIHW admin data: 5.4-6.6% of separations; ~108 seps/bed * 5.4% (conservative)
+const PATIENTS_HARMED_PER_BED = 3.2;   // AIHW admin data: 5.4% of separations; ~60 seps/bed at ALOS 5.5 * 5.4% = 3.2
 const EXCESS_BED_DAYS_PER_BED = 8.0;   // QAHCS/AIHW: AEs account for ~8% of bed days; ~50% preventable
 const FRAGMENTATION_ATTRIBUTION = 0.35;  // 35% of preventable AEs attributable to information/communication failure (ACSQHC)
 
@@ -2802,7 +2804,7 @@ function ROICalculator() {
           <p style={{margin:"0 0 8px"}}>These are <strong>not included</strong> in the financial ROI total. They provide qualitative context for the patient safety case.</p>
           <F>medErrors = beds {"\u00d7"} 14 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>patientsHarmed = beds {"\u00d7"} 5.8 {"\u00d7"} 35% attribution {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>excessBedDays = beds {"\u00d7"} 8.0 {"\u00d7"} 35% attribution {"\u00d7"} fragmentation {"\u00d7"} DQ</F>
           <p style={{margin:"8px 0 4px"}}><strong>14 medication errors per bed/yr</strong> {" - "} Westbrook et al (2015, two Sydney teaching hospitals) found incident reports capture only 1.2 per 1,000 actual errors. Administration errors occur in ~9% of medication administrations (ACSQHC 2013). At least 250,000 medication-related admissions annually costing A$1.4 billion (ACSQHC 2020). <Ev s="Westbrook et al 2015; ACSQHC 2013/2020; Runciman et al 2003."/></p>
-          <p style={{margin:"4px 0"}}><strong>5.8 patients harmed per bed/yr</strong> {" - "} AIHW administrative data shows 5.4-6.6 adverse events per 100 separations (~5.8 per bed per year). The foundational QAHCS study (Wilson et al. 1995) found 16.6% of admissions associated with adverse events. Approximately 50% are deemed preventable. <Ev s="ACSQHC National Safety and Quality Reports; AIHW Hospital Statistics."/></p>
+          <p style={{margin:"4px 0"}}><strong>3.2 patients harmed per bed/yr</strong> {" - "} AIHW administrative data shows 5.4% of separations; at ~60 overnight separations per bed per year (ALOS 5.5), this yields ~3.2 adverse events per bed. The foundational QAHCS study (Wilson et al. 1995) found 16.6% of admissions associated with adverse events. Approximately 50% are deemed preventable. <Ev s="ACSQHC National Safety and Quality Reports; AIHW Hospital Statistics."/></p>
           <p style={{margin:"4px 0"}}><strong>8.0 excess bed days per bed/yr</strong> {" - "} QAHCS data: adverse events account for ~8% of total hospital bed days. Ehsani et al. (2006, MJA): patients with AEs stay ~10 additional days on average, totalling 15.7% of direct hospital costs. At A$3,100/day average per diem (IHACPA). <Ev s="ACSQHC sentinel event data; AIHW hospital statistics; IHACPA 2023; Choosing Wisely Australia."/></p>
           <p style={{margin:"4px 0"}}><strong>Fragmentation index</strong> (0.6-1.2) scales risk by number of systems. Vest et al (JAMIA 2015) found 57% higher odds of same-cause readmission with fragmented records. Caps at 20 systems (diminishing marginal fragmentation). <Md s="No published fragmentation index exists. Informed by Vest et al JAMIA 2015 readmission odds."/></p>
           <p style={{margin:"4px 0"}}><strong>Medical indemnity context:</strong> ACSQHC reports that communication failure contributes to approximately 35% of clinical incidents in Australian hospitals. State-based indemnity schemes (icare NSW, VMIA VIC, Coverforce QLD) reflect this in claims data. EMR consolidation reduces fragmentation-related communication failures. <Ev s="ACSQHC National Safety Reports; icare NSW annual reports; VMIA clinical risk data."/></p>
