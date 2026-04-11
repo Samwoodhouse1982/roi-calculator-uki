@@ -371,8 +371,9 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const ticketsBaselineMonthly = ov.ticketsBaseline != null ? ov.ticketsBaseline : Math.round(legacy * TICKETS_PER_SYSTEM * dq);
   const ticketsAfter = Math.min(Math.round((legacy - decom) * TICKETS_PER_SYSTEM * dq * SURVIVING_SYSTEM_TICKET_FACTOR), ticketsBaselineMonthly);
   const ticketsReductionPct = Math.round((ticketsBaselineMonthly - ticketsAfter) / Math.max(1, ticketsBaselineMonthly) * 100);
-  const sarDaysBefore = ov.sarDaysBefore != null ? ov.sarDaysBefore : Math.round((SAR_BASE_DAYS + legacy * SAR_DAYS_PER_SYSTEM_BEFORE * dq) * 10) / 10;
-  const sarDaysAfter = Math.min(Math.round((SAR_BASE_DAYS + (legacy - decom) * SAR_DAYS_PER_SYSTEM_AFTER) * 10) / 10, sarDaysBefore);
+  const sarSystemsCapped = Math.min(legacy, 20); // Records requests search core clinical systems, not every niche tool
+  const sarDaysBefore = ov.sarDaysBefore != null ? ov.sarDaysBefore : Math.round((SAR_BASE_DAYS + sarSystemsCapped * SAR_DAYS_PER_SYSTEM_BEFORE * dq) * 10) / 10;
+  const sarDaysAfter = Math.min(Math.round((SAR_BASE_DAYS + Math.min(legacy - decom, 20) * SAR_DAYS_PER_SYSTEM_AFTER) * 10) / 10, sarDaysBefore);
   const sarReductionPct = Math.round((sarDaysBefore - sarDaysAfter) / Math.max(1, sarDaysBefore) * 100);
   const hasClinicalScope = legacy >= 3 && inp.bed_count > 0;
   let safetyMedErrorsAvoided=0, safetyPatientsProtected=0, safetyBedDaysAvoided=0, safetyMedErrorsBaseline=0;
@@ -2636,7 +2637,7 @@ function ROICalculator() {
         </div>
         <div style={{flex:"1 1 200px",minWidth:240,padding:"18px 20px",background:C.blue25,borderRadius:10}}>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:14,fontWeight:700}}>Records request turnaround</span></div>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,color:C.textMuted,marginBottom:3}}><span>Before</span><OverridableStat inline label="" computed={calc(calcInputs,am,{...mergedOv,sarDaysBefore:null},flagships).sarDaysBefore} override={overrides.sarDaysBefore} onOverride={v=>setOv("sarDaysBefore",v)} suffix=" days" step={.5} info={`Working days to fulfil a patient records request. Each legacy system adds search time, login overhead, and potentially manual extraction. With ${r.legacy} systems, estimated turnaround is ${r.sarDaysBefore} working days. HIPAA requires covered entities to search all systems where patient data may be held.`}/></div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,color:C.textMuted,marginBottom:3}}><span>Before</span><OverridableStat inline label="" computed={calc(calcInputs,am,{...mergedOv,sarDaysBefore:null},flagships).sarDaysBefore} override={overrides.sarDaysBefore} onOverride={v=>setOv("sarDaysBefore",v)} suffix=" days" step={.5} info={`Working days to fulfil a patient records request. Each legacy system adds search time, login overhead, and potentially manual extraction. With ${r.legacy} systems, estimated turnaround is ${r.sarDaysBefore} working days. Under the Health Records and Information Privacy Act 2002 (NSW) and Privacy Act 1988 (Cth), health services must search all systems where patient data may be held.`}/></div>
           <div style={{height:8,background:"#e0e4ea",borderRadius:4,marginBottom:6}}><div style={{height:"100%",width:"100%",background:"#b0b8c4",borderRadius:4}}/></div>
           <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.textMuted,marginBottom:3}}><span>After</span><span style={{fontWeight:600,color:C.accent}}>{r.sarDaysAfter} days</span></div>
           <div style={{height:8,background:"#e0e4ea",borderRadius:4,marginBottom:8}}><div style={{height:"100%",width:`${Math.max(5,Math.round(r.sarDaysAfter/Math.max(1,r.sarDaysBefore)*100))}%`,background:C.accent,borderRadius:4,transition:"width .8s"}}/></div>
@@ -2793,7 +2794,7 @@ function ROICalculator() {
 
         <S title="5. Support tickets & patient records request (SAR) turnaround">
           <p style={{margin:"0 0 8px"}}><strong>Tickets:</strong> 2.5 per system/month baseline (IT Infrastructure Library / ITIL service desk metrics). Surviving systems generate 40% fewer tickets due to consolidated support. <Bm s="ITIL service desk reporting in US health systems; 0.6 factor is a modelled estimate."/></p>
-          <p style={{margin:"4px 0"}}><strong>Patient records request turnaround:</strong> 1.5 day base + 0.4 days per system (before), 0.15 days per surviving system (after). The HIPAA Privacy Rule requires searching all systems where patient data may be held. At 42 systems, this produces ~18 working days per SAR {" - "} consistent with reports from health systems with fragmented EHR estates. <Md s="Consistent with HIM department reports. Validated against benchmarked health system data."/></p>
+          <p style={{margin:"4px 0"}}><strong>Patient records request turnaround:</strong> 1.5 day base + 0.4 days per system (before), 0.15 days per surviving system (after). Under Australian privacy legislation (HRIP Act 2002 NSW, Privacy Act 1988 Cth), health services must search all systems holding patient data. Records request turnaround scales with the number of core clinical systems searched (capped at 20) {" - "} consistent with reports from health systems with fragmented EHR estates. <Md s="Capped at 20 core clinical systems. Based on Australian HIM department workflow data."/></p>
         </S>
 
         <S title="6. Patient safety metrics">
