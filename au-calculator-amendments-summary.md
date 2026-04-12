@@ -25,37 +25,37 @@ The original calculator was developed for the UK NHS market, specifically target
 
 The US expansion was a fundamental rebuild of the financial model to reflect the radically different economics of American healthcare. The US market has no single payer, no standardised pay scales, and a complex web of reimbursement penalties and claim denial mechanics that have no NHS equivalent.
 
-## 2.1 Replacing the funding model
+## 2.1 Replacing the funding model `Planned scope change`
 
 **What we did:** Removed the NHS single-payer funding assumptions and built a Medicare/CMS reimbursement model with five penalty and revenue programmes: Hospital Readmissions Reduction Programme (HRRP), Hospital Acquired Condition Reduction Programme (HAC), Value-Based Purchasing (VBP), claim denial recovery, and malpractice premium reduction.
 
 **Why:** US hospitals generate revenue per admission (~US$15,200 average) and face financial penalties for quality failures. A 250-bed US hospital might lose US$1-3M/yr in CMS penalties alone. The UK NHS does not penalise Trusts for readmissions in the same way, so the entire penalty-avoidance value stream had to be built from scratch.
 
-## 2.2 Adding provider profiling
+## 2.2 Adding provider profiling `Planned scope change`
 
 **What we did:** Added a provider type selector with five categories (Critical Access, Community, Regional, Academic Medical Center, Multi-Hospital System), each with calibrated multipliers for Medicare percentage, denial factors, and penalty exposure. Critical Access Hospitals were correctly exempted from HRRP, HAC, and VBP penalties.
 
 **Why:** US hospitals vary enormously. A 25-bed Critical Access Hospital in rural Montana has completely different economics from a 2,500-bed academic system in Boston. The UK model treated all Trusts as roughly comparable. The US version needed to differentiate.
 
-## 2.3 Expanding the organisation model
+## 2.3 Expanding the organisation model `Planned scope change`
 
 **What we did:** Added non-acute facility types (ambulatory surgery centres, physician practices, skilled nursing facilities, dialysis centres, imaging centres, urgent care, home health, hospice, behavioural health, long-term acute care), a merger/acquisition builder, and per-facility-type system counting using a shared + per-site model.
 
 **Why:** US health systems operate far more facility types than NHS Trusts. Post-M&A system consolidation (100+ deals per year in the US) is the primary use case for legacy archiving. The merger builder lets users compose their future health system and immediately see how many duplicate systems need decommissioning.
 
-## 2.4 Rebuilding workforce and cost constants
+## 2.4 Rebuilding workforce and cost constants `Planned scope change`
 
 **What we did:** Replaced all UK workforce and cost constants with US equivalents sourced from the Bureau of Labor Statistics (BLS), KLAS, Becker's Hospital Review, and CMS programme data.
 
 **Key changes:** Staff per bed 2.8 → 3.2, blended hourly rate £55 → US$95, working weeks 48 → 50, malpractice US$8,500/bed (Mello et al, Health Affairs), excess bed day cost US$3,132 (KFF/AHA 2023), 29 US vendor systems with KLAS market share data.
 
-## 2.5 Replacing all evidence and case studies
+## 2.5 Replacing all evidence and case studies `Planned scope change`
 
 **What we did:** Replaced every UK evidence citation with US sources: JAMA 2025 (Pattar et al, 116 RCTs), JAMIA 2019 (Vest et al, single-vendor consolidation), HHS OIG 2022, CRICO 2016, NYU Langone (Wang et al, 33% mortality reduction), and the VA Oracle Health cautionary example (826 major incidents, 149 veterans harmed).
 
 **Why:** US executives need to see evidence from institutions they recognise: JAMA, AHRQ, CMS, and named US health systems.
 
-## 2.6 Adding academic and M&A modules
+## 2.6 Adding academic and M&A modules `Planned scope change`
 
 **What we did:** Built two conditional modules: an Academic Medical Center module (research system decommission, GME compliance efficiency, teaching overhead) and a Multi-Hospital/M&A module (duplicate system elimination, infrastructure consolidation, cross-facility standardisation).
 
@@ -73,7 +73,13 @@ The US expansion was a fundamental rebuild of the financial model to reflect the
 
 The Australian version required a third fundamental rebuild. Australia's health system shares some structural similarities with the UK (public funding, activity-based pricing) but has its own regulatory framework, funding mechanics, workforce costs, and institutional landscape.
 
-## 3.1 Replacing the funding and revenue model
+## 3.0 Currency, locale, and date formatting `Planned scope change`
+
+**What we did:** Converted all financial outputs from USD to AUD, number formatting to Australian conventions (comma thousands separator, two decimal places), and date formatting from en-US to en-AU throughout the calculator and PDF report.
+
+**Why:** Basic localisation. Australian health budgets are in AUD. Date formatting (day/month/year) and number conventions must match what Australian finance teams expect to see in a business case.
+
+## 3.1 Replacing the funding and revenue model `Planned scope change`
 
 **What we did:** Removed the entire US Medicare/CMS reimbursement model (fee-for-service, value-based purchasing, Hospital Acquired Conditions penalties, Hospital Readmissions Reduction Programme, claim denials) and replaced it with Australia's Activity Based Funding (ABF) model.
 
@@ -85,7 +91,7 @@ The Australian version required a third fundamental rebuild. Australia's health 
 - Default bed occupancy: 90% (OECD 2023; AMA position statement)
 - ABF efficiency gain: modelled at 15% of legacy estate cost addressable through consolidation
 
-## 3.2 Replacing all clinical and workforce constants
+## 3.2 Replacing all clinical and workforce constants `Planned scope change`
 
 **What we did:** Replaced every clinical constant with values sourced from Australian data.
 
@@ -101,7 +107,7 @@ The Australian version required a third fundamental rebuild. Australia's health 
 - Pathology cost per bed: A$12,000/yr (AIHW hospital expenditure data)
 - Working weeks: 48 (Australian standard)
 
-## 3.3 Replacing all evidence citations and case studies
+## 3.3 Replacing all evidence citations and case studies `Planned scope change`
 
 **What we did:** Removed every US-specific evidence reference, case study, and source citation. Replaced with Australian peer-reviewed research, government reports, and state audit findings.
 
@@ -121,7 +127,10 @@ The Australian version required a third fundamental rebuild. Australia's health 
 | Clinician time studies | AMIA 2019, Brigham & Women's | Westbrook et al 2010 (JAMIA); Nuffield Trust 2020 |
 | Privacy legislation | HIPAA | HRIP Act 2002 (NSW, private sector) |
 
-## 3.4 Building for statewide programme scale
+
+**Accreditation risk narrative added:** The patient safety section now references ACSQHC National Safety and Quality Health Service Standards 1 (Clinical Governance) and 6 (Communicating for Safety) as a qualitative risk context. Fragmented clinical records create a compliance risk under these standards. This is presented as narrative context alongside the safety metrics, not as a financial line item.
+
+## 3.4 Building for statewide programme scale `Planned scope change`
 
 **What we did:** Added a "Statewide Programme" provider type as the primary option, pre-loaded with NSW-scale defaults (25,000 beds, 228 hospitals, 17 Local Health Districts).
 
@@ -133,7 +142,7 @@ The Australian version required a third fundamental rebuild. Australia's health 
 - Network consolidation module for duplicate system elimination across LHDs
 - Tranche-based rollout modelling with configurable go-live dates per tranche
 
-## 3.5 Integrating NSW SDPR programme data
+## 3.5 Integrating NSW SDPR programme data `Additional to scope`
 
 **What we did:** Incorporated specific operational data from the NSW SDPR Expression of Interest (HT20037) and a detailed research mapping of the NSW legacy system estate, cross-referenced against Queensland and Victorian programme data.
 
@@ -150,7 +159,7 @@ The Australian version required a third fundamental rebuild. Australia's health 
 
 **Confidence labelling:** Every anchor figure in the methodology section is labelled as either CONFIRMED (from published sources) or ESTIMATE (modelled from proxy data).
 
-## 3.6 Building an Australian vendor and system list
+## 3.6 Building an Australian vendor and system list `Planned scope change`
 
 **What we did:** Replaced the US vendor list with 20+ systems in active use across Australian public health, each with cost models calibrated from state contract data.
 
@@ -158,26 +167,26 @@ The Australian version required a third fundamental rebuild. Australia's health 
 
 **Systems included:** Oracle Health (Cerner Millennium), Epic, InterSystems TrakCare, Telstra Health, DXC iPM, Allscripts/Sunrise, MEDITECH Expanse, Dedalus (Orion Health), Citadel Health (BOSSnet), Alcidion Miya, Citadel Health (Auslab/vLab), Agfa ORBIS/RIS, Hyland OnBase, ISS OmniLab, i.Pharmacy, WinScribe/BigHand, RiskMan/Datix, MIMS Integrated, Karisma/ORMIS, Cerner PathNet, iMDsoft MetaVision (eRIC), Orion Health (HealtheNet/CAP), DXC MedChart, Cerner eMeds, CorePAS.
 
-## 3.7 Applying a fragmentation attribution factor
+## 3.7 Applying a fragmentation attribution factor `Additional to scope`
 
 **What we did:** Added a 35% attribution factor so that only 35% of preventable adverse event bed days are attributed to information fragmentation, rather than 100%.
 
 **Why:** Adverse events happen for many reasons, including staffing, fatigue, training, equipment. The ACSQHC reports that approximately 35% of clinical incidents involve communication or information failure. Applying this factor reduced excess bed day savings from ~A$150M/yr to ~A$91M/yr at statewide scale. Still significant, but grounded in evidence and clearly classified as cost avoidance rather than cashable savings.
 
 
-## 3.8 Adding configurable projection periods
+## 3.8 Adding configurable projection periods `Planned scope change`
 
 **What we did:** Added a toggle between 3-year and 5-year projection periods, each with a phased benefit ramp that reflects the progressive nature of legacy system retirement.
 
 **Why:** Legacy systems are not switched off on day one. Decommission programmes run over multiple years as data is migrated, interfaces are retired, and clinical workflows transition. The 3-year ramp (40% / 80% / 100% of steady-state savings) suits single-hospital or LHD-scale programmes. The 5-year ramp (20% / 40% / 60% / 80% / 100%) is more realistic for statewide programmes where hundreds of facilities transition in stages. NSW Treasury business cases typically use 5-year or 10-year appraisal periods, making the 5-year option the natural default for statewide conversations.
 
-## 3.9 Adding optional archiving investment modelling
+## 3.9 Adding optional archiving investment modelling `Planned scope change`
 
 **What we did:** Added optional fields for clinical archive migration cost and ongoing annual cost. When entered, the results page calculates net benefit (gross savings minus archive costs), archive payback period, archive benefit-cost ratio, and a cumulative cashflow chart showing the J-curve from negative investment to positive return.
 
 **Why:** The calculator models the benefits of decommissioning legacy systems, but without a clinical archive, legacy systems cannot be safely switched off. The archive is the enabling investment. By allowing users to enter their archiving costs (or leave them blank for a benefits-only view), the calculator can answer both "what are the potential savings?" and "does the archive investment pay for itself?" The archive payback and BCR are scoped specifically to decommission savings, since those are the benefits directly unlocked by archiving.
 
-## 3.10 Adding tranche-based rollout modelling
+## 3.10 Adding tranche-based rollout modelling `Additional to scope`
 
 **What we did:** Added the ability to model a statewide programme as 1-5 tranches, each with a configurable name, bed percentage, and go-live year. The statewide preset auto-loads three tranches matching the NSW SDPR rollout structure: Tranche A (Hunter New England + Justice Health, 16% of beds, Year 1), Tranche B (Metro LHDs, 32%, Year 2), Tranche C (Remaining, 52%, Year 3). The results page shows a stacked bar chart and year-by-year table breaking down benefits by tranche.
 
@@ -193,7 +202,7 @@ The Australian version required a third fundamental rebuild. Australia's health 
 | 4 | A$88M | A$176M | A$229M | A$494M |
 | 5 | A$88M | A$176M | A$287M | A$551M |
 
-## 3.11 Internal audit and accuracy corrections
+## 3.11 Internal audit and accuracy corrections `Additional to scope`
 
 **What we did:** Ran a systematic internal audit and a complete calculation trace at NSW statewide scale, identifying and correcting financial errors, model gaps, and inflated assumptions.
 
@@ -211,7 +220,7 @@ The Australian version required a third fundamental rebuild. Australia's health 
 
 **Net impact:** Combined annual benefits reduced from A$775M/yr to A$551M/yr, a 29% reduction producing a more credible and defensible output.
 
-## 3.12 Removing all US and American references
+## 3.12 Removing all US and American references `Planned scope change`
 
 **What we did:** Conducted multiple sweeps to identify and replace every remaining US reference, across user-facing text, methodology sections, formula displays, source citations, date formatting, and configuration.
 
@@ -219,7 +228,7 @@ The Australian version required a third fundamental rebuild. Australia's health 
 
 **Examples found and corrected:** "Default costs are US benchmarks" → "modelled from Australian state contract data"; formula display showing US staff ratios and wages; "ITIL service desk reporting in US health systems"; date locale en-US → en-AU; "malpractice" → "indemnity" throughout; "EHR" → "EMR" throughout.
 
-## 3.13 Restructuring the user experience
+## 3.13 Restructuring the user experience `Additional to scope`
 
 **What we did:** Restructured both the input flow and results page to reduce complexity for executive audiences.
 
@@ -229,11 +238,26 @@ The Australian version required a third fundamental rebuild. Australia's health 
 
 **Results changes:** Level 1 shows 4 KPI cards and a proportion bar without scrolling. Level 2 provides collapsible sections (executive detail, archiving investment, tranche timeline, evidence benchmarks, detailed breakdown), all closed by default. Every piece of content preserved, just reorganised behind progressive disclosure.
 
-## 3.14 Expanding all acronyms
+
+## 3.14 Expanding all acronyms `Additional to scope`
 
 **What we did:** Ensured every acronym is spelled out on first user-facing occurrence, covering 22 acronyms in total including EMR, ABF, NPV, BCR, FTE, LHD, NWAU, SDPR, ACSQHC, AIHW, IHACPA, VMIA, and others.
 
 **Why:** An executive unfamiliar with health informatics terminology should not have to guess what NWAU or IHACPA means. First-use expansion is standard practice in government business cases.
+
+
+## 3.15 Updating PDF report and methodology citations `Planned scope change`
+
+**What we did:** Updated all methodology sections and the PDF report to reference Australian evidence sources exclusively. Replaced CMS/HFMA/CRICO references with ACSQHC, AIHW, IHACPA, Productivity Commission, Choosing Wisely Australia, and state health department data. The methodology now references ABF, NWAUs, and state health department financial frameworks throughout.
+
+**Why:** Australian health department audiences expect Australian evidence and regulatory references. US or UK citations in a methodology section reduce credibility with the target audience. The PDF report needs to be suitable for a state health department board paper or treasury submission.
+
+## 3.16 Retaining and localising the legal disclaimer `Planned scope change`
+
+**What we did:** Retained the legal disclaimer from the UK/US versions and localised it for Australian context. Organisation spelling updated. The disclaimer makes clear that all outputs are indicative estimates, not binding commitments or guaranteed savings targets.
+
+**Why:** The same principle applies across all markets: the calculator produces modelled approximations that should be independently validated before being used to support investment decisions.
+
 
 ---
 
