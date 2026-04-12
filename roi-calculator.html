@@ -1079,7 +1079,7 @@ function ROICalculator() {
     const d = PRESETS[key].data;
     setInputs({...d,data_types:{...d.data_types},tiers:{...d.tiers}});
     setActivePreset(key);resetOv();setThinking(true);
-    if (key === 'STATEWIDE') { setFacilityPortfolio({...STATEWIDE_PORTFOLIO}); setGalenMigrationCost(15000000); setGalenAnnualCost(6800000); setTrancheMode(true); setMergerMode(false); setMergerOrgs([]); setReimbursementModel('public'); setShowFacilities(true); setTranches([{name:'Tranche A (HNE + Justice)',bedPct:0.16,yearOffset:0},{name:'Tranche B (Metro LHDs)',bedPct:0.32,yearOffset:1},{name:'Tranche C (Remaining)',bedPct:0.52,yearOffset:2}]); } else { setFacilityPortfolio({}); }
+    if (key === 'STATEWIDE') { setFacilityPortfolio({...STATEWIDE_PORTFOLIO}); setGalenMigrationCost(0); setGalenAnnualCost(0); setTrancheMode(true); setMergerMode(false); setMergerOrgs([]); setReimbursementModel('public'); setShowFacilities(true); setTranches([{name:'Tranche A (HNE + Justice)',bedPct:0.16,yearOffset:0},{name:'Tranche B (Metro LHDs)',bedPct:0.32,yearOffset:1},{name:'Tranche C (Remaining)',bedPct:0.52,yearOffset:2}]); } else { setFacilityPortfolio({}); }
     setPerOrgBeds(false); setPerOrgSystems(false); setFlagships([]); setTierCostEdits({enterprise:null,departmental:null,niche:null}); setEditingTierCost(null); setCostMode("estimate"); setKnownAnnualSpend(null);
     // Size per-org arrays to match org count, split evenly
     const n = d.org_count;
