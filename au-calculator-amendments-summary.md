@@ -164,7 +164,36 @@ The Australian version required a third fundamental rebuild. Australia's health 
 
 **Why:** Adverse events happen for many reasons, including staffing, fatigue, training, equipment. The ACSQHC reports that approximately 35% of clinical incidents involve communication or information failure. Applying this factor reduced excess bed day savings from ~A$150M/yr to ~A$91M/yr at statewide scale. Still significant, but grounded in evidence and clearly classified as cost avoidance rather than cashable savings.
 
-## 3.8 Internal audit and accuracy corrections
+
+## 3.8 Adding configurable projection periods
+
+**What we did:** Added a toggle between 3-year and 5-year projection periods, each with a phased benefit ramp that reflects the progressive nature of legacy system retirement.
+
+**Why:** Legacy systems are not switched off on day one. Decommission programmes run over multiple years as data is migrated, interfaces are retired, and clinical workflows transition. The 3-year ramp (40% / 80% / 100% of steady-state savings) suits single-hospital or LHD-scale programmes. The 5-year ramp (20% / 40% / 60% / 80% / 100%) is more realistic for statewide programmes where hundreds of facilities transition in stages. NSW Treasury business cases typically use 5-year or 10-year appraisal periods, making the 5-year option the natural default for statewide conversations.
+
+## 3.9 Adding optional archiving investment modelling
+
+**What we did:** Added optional fields for clinical archive migration cost and ongoing annual cost. When entered, the results page calculates net benefit (gross savings minus archive costs), archive payback period, archive benefit-cost ratio, and a cumulative cashflow chart showing the J-curve from negative investment to positive return.
+
+**Why:** The calculator models the benefits of decommissioning legacy systems, but without a clinical archive, legacy systems cannot be safely switched off. The archive is the enabling investment. By allowing users to enter their archiving costs (or leave them blank for a benefits-only view), the calculator can answer both "what are the potential savings?" and "does the archive investment pay for itself?" The archive payback and BCR are scoped specifically to decommission savings, since those are the benefits directly unlocked by archiving.
+
+## 3.10 Adding tranche-based rollout modelling
+
+**What we did:** Added the ability to model a statewide programme as 1-5 tranches, each with a configurable name, bed percentage, and go-live year. The statewide preset auto-loads three tranches matching the NSW SDPR rollout structure: Tranche A (Hunter New England + Justice Health, 16% of beds, Year 1), Tranche B (Metro LHDs, 32%, Year 2), Tranche C (Remaining, 52%, Year 3). The results page shows a stacked bar chart and year-by-year table breaking down benefits by tranche.
+
+**Why:** Statewide programmes do not go live simultaneously across all hospitals. They roll out in tranches, with each tranche starting its own benefit ramp from its go-live date. A steering committee reviewing the business case needs to see when each tranche starts contributing, when the programme reaches full steady state, and what the cumulative position looks like year by year. Without tranche modelling, the calculator would show a single ramp that does not reflect how these programmes actually deliver value.
+
+**NSW SDPR example (expected scenario):**
+
+| Year | Tranche A | Tranche B | Tranche C | Total |
+|---|---|---|---|---|
+| 1 | A$35M | | | A$35M |
+| 2 | A$71M | A$71M | | A$141M |
+| 3 | A$88M | A$141M | A$115M | A$344M |
+| 4 | A$88M | A$176M | A$229M | A$494M |
+| 5 | A$88M | A$176M | A$287M | A$551M |
+
+## 3.11 Internal audit and accuracy corrections
 
 **What we did:** Ran a systematic internal audit and a complete calculation trace at NSW statewide scale, identifying and correcting financial errors, model gaps, and inflated assumptions.
 
@@ -182,7 +211,7 @@ The Australian version required a third fundamental rebuild. Australia's health 
 
 **Net impact:** Combined annual benefits reduced from A$775M/yr to A$551M/yr, a 29% reduction producing a more credible and defensible output.
 
-## 3.9 Removing all US and American references
+## 3.12 Removing all US and American references
 
 **What we did:** Conducted multiple sweeps to identify and replace every remaining US reference, across user-facing text, methodology sections, formula displays, source citations, date formatting, and configuration.
 
@@ -190,7 +219,7 @@ The Australian version required a third fundamental rebuild. Australia's health 
 
 **Examples found and corrected:** "Default costs are US benchmarks" → "modelled from Australian state contract data"; formula display showing US staff ratios and wages; "ITIL service desk reporting in US health systems"; date locale en-US → en-AU; "malpractice" → "indemnity" throughout; "EHR" → "EMR" throughout.
 
-## 3.10 Restructuring the user experience
+## 3.13 Restructuring the user experience
 
 **What we did:** Restructured both the input flow and results page to reduce complexity for executive audiences.
 
@@ -200,7 +229,7 @@ The Australian version required a third fundamental rebuild. Australia's health 
 
 **Results changes:** Level 1 shows 4 KPI cards and a proportion bar without scrolling. Level 2 provides collapsible sections (executive detail, archiving investment, tranche timeline, evidence benchmarks, detailed breakdown), all closed by default. Every piece of content preserved, just reorganised behind progressive disclosure.
 
-## 3.11 Expanding all acronyms
+## 3.14 Expanding all acronyms
 
 **What we did:** Ensured every acronym is spelled out on first user-facing occurrence, covering 22 acronyms in total including EMR, ABF, NPV, BCR, FTE, LHD, NWAU, SDPR, ACSQHC, AIHW, IHACPA, VMIA, and others.
 
