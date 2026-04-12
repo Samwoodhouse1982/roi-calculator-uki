@@ -2076,31 +2076,6 @@ function ROICalculator() {
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 12px"}}>How many legacy systems in each tier? Default costs are modelled from Australian state contract data, scaled to your bed count. <strong style={{color:C.textMid}}>Click any tier cost to override it</strong>, add named high-cost systems below, or switch to {"\u201c"}I know my spend{"\u201d"} if you have your total.</p>
 
 
-      {portfolioImpact.addSystems > 0 && <div style={{marginBottom:14,padding:"14px 16px",background:C.greenPale,borderRadius:10,border:`1px solid ${C.green}25`}}>
-        <div style={{fontSize:11,fontWeight:700,letterSpacing:0.5,color:C.green,marginBottom:8}}>FROM NON-ACUTE FACILITIES</div>
-        <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:8}}>
-          <div>
-            <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:2}}>Legacy systems</div>
-            <input type="number" value={portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems} min={0} max={999}
-              onChange={e=>setPortfolioOv(p=>({...p,systems:Math.max(0,parseInt(e.target.value)||0)}))}
-              style={{width:60,fontSize:18,fontWeight:800,color:C.green,border:`1px solid ${C.borderLight}`,borderRadius:6,padding:"4px 6px",background:"#fff",fontFamily:"inherit"}}/>
-          </div>
-          <div>
-            <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:2}}>Estate cost/yr</div>
-            <div style={{display:"flex",alignItems:"center",gap:4}}>
-              <span style={{fontSize:12,color:C.textMuted}}>A$</span>
-              <input type="number" value={portfolioOv.cost != null ? portfolioOv.cost : portfolioImpact.addCost} min={0} max={99999999} step={10000}
-                onChange={e=>setPortfolioOv(p=>({...p,cost:Math.max(0,parseInt(e.target.value)||0)}))}
-                style={{width:90,fontSize:18,fontWeight:800,color:C.green,border:`1px solid ${C.borderLight}`,borderRadius:6,padding:"4px 6px",background:"#fff",fontFamily:"inherit"}}/>
-            </div>
-          </div>
-        </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <span style={{fontSize:11,color:C.textMuted}}>Calculated from {portfolioImpact.addSites} non-acute sites configured above</span>
-          {(portfolioOv.systems != null || portfolioOv.cost != null) &&
-            <button type="button" onClick={()=>setPortfolioOv({systems:null,cost:null})} style={{border:"none",background:"none",color:C.accent,fontSize:11,cursor:"pointer",textDecoration:"underline"}}>Reset to calculated</button>}
-        </div>
-      </div>}
       {/* Cost input mode */}
       <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
         <TogglePill active={costMode} onToggle={v=>setCostMode(v)}
@@ -2170,6 +2145,31 @@ function ROICalculator() {
               </div>
               <AnimatedSlider value={inputs.tiers[t.tier]} min={0} max={t.max} step={1} onChange={v=>{updateTier(t.tier,v);touch(2);}} hideRange label={<span style={{fontSize:12,color:C.textMuted}}>{t.hint}</span>}/>
             </div>})}
+
+          {/* Non-acute facility systems */}
+          {portfolioImpact.addSystems > 0 && <div style={{padding:"12px 16px",background:C.greenPale,borderRadius:10,border:`1px solid ${C.green}25`}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+              <span style={{fontSize:14,fontWeight:700,color:C.green}}>Non-acute facilities</span>
+              <span style={{fontSize:11,color:C.textMuted}}>from {portfolioImpact.addSites} sites above</span>
+              <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:12}}>
+                <div style={{display:"flex",alignItems:"center",gap:4}}>
+                  <input type="number" value={portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems} min={0} max={999}
+                    onChange={e=>setPortfolioOv(p=>({...p,systems:Math.max(0,parseInt(e.target.value)||0)}))}
+                    style={{width:48,fontSize:15,fontWeight:800,color:C.green,border:`1px solid ${C.borderLight}`,borderRadius:6,padding:"3px 5px",background:"#fff",fontFamily:"inherit",textAlign:"right"}}/>
+                  <span style={{fontSize:11,color:C.textMuted}}>systems</span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:4}}>
+                  <span style={{fontSize:11,color:C.textMuted}}>A$</span>
+                  <input type="number" value={portfolioOv.cost != null ? portfolioOv.cost : portfolioImpact.addCost} min={0} max={99999999} step={10000}
+                    onChange={e=>setPortfolioOv(p=>({...p,cost:Math.max(0,parseInt(e.target.value)||0)}))}
+                    style={{width:80,fontSize:15,fontWeight:800,color:C.green,border:`1px solid ${C.borderLight}`,borderRadius:6,padding:"3px 5px",background:"#fff",fontFamily:"inherit",textAlign:"right"}}/>
+                  <span style={{fontSize:11,color:C.textMuted}}>/yr</span>
+                </div>
+                {(portfolioOv.systems != null || portfolioOv.cost != null) &&
+                  <button type="button" onClick={()=>setPortfolioOv({systems:null,cost:null})} style={{border:"none",background:"none",color:C.accent,fontSize:11,cursor:"pointer",padding:2}}>{"✕"}</button>}
+              </div>
+            </div>
+          </div>}
           </div>
 
         </div>
@@ -2204,8 +2204,8 @@ function ROICalculator() {
           </div>
           <div style={{marginTop:12,padding:"10px 14px",background:C.accentPale,borderRadius:8,display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
             <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Totals:</span>
-            <span style={{fontSize:13,color:C.textMid}}>{inputs.tiers.enterprise} enterprise, {inputs.tiers.departmental} departmental, {inputs.tiers.niche} standalone</span>
-            <span style={{fontSize:20,fontWeight:800,color:C.accent,marginLeft:"auto"}}>{totalSystems + flagships.length}</span>
+            <span style={{fontSize:13,color:C.textMid}}>{inputs.tiers.enterprise} enterprise, {inputs.tiers.departmental} departmental, {inputs.tiers.niche} standalone{(portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems) > 0 ? `, +${(portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)} non-acute` : ""}</span>
+            <span style={{fontSize:20,fontWeight:800,color:C.accent,marginLeft:"auto"}}>{totalSystems + flagships.length + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)}</span>
           </div>
         </div>
       )}
@@ -2222,11 +2222,11 @@ function ROICalculator() {
         return <>
           <div style={{marginTop:16,padding:"14px 18px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <div style={{fontSize:34,fontWeight:800,color:C.accent,lineHeight:1}}>{totalSystems + flagships.length}</div>
+              <div style={{fontSize:34,fontWeight:800,color:C.accent,lineHeight:1}}>{totalSystems + flagships.length + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)}</div>
               <div style={{fontSize:14,fontWeight:700,color:C.text}}>legacy systems{flagships.length > 0 ? ` (incl. ${flagships.length} named)` : ""}</div>
             </div>
             <div style={{fontSize:12,color:C.textMuted,marginTop:4}}>
-              Estate: ~{fmtK(estEstate)}/yr {hasCustomCost ? "" : "(modelled estimate) "}running costs
+              Estate: ~{fmtK(estEstate + (portfolioOv.cost != null ? portfolioOv.cost : portfolioImpact.addCost))}/yr {hasCustomCost ? "" : "(modelled estimate) "}running costs
             </div>
           </div>
           {!hasCustomCost && costMode === "estimate" && <div style={{marginTop:8,padding:"12px 16px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:13,color:"#7a6520",lineHeight:1.6}}>
