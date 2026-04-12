@@ -813,6 +813,12 @@ function ROICalculator() {
   const [galenMigrationCost, setGalenMigrationCost] = useState(0);
   const [discountRate, setDiscountRate] = useState(0.07); // NSW Treasury default 7%
   const [parallelRunMonths, setParallelRunMonths] = useState(0); // Months of dual-running (0 = off, user opt-in)
+  const [trancheMode, setTrancheMode] = useState(false);
+  const [tranches, setTranches] = useState([
+    { name: "Tranche A", bedPct: 0.16, yearOffset: 0 },
+    { name: "Tranche B", bedPct: 0.32, yearOffset: 1 },
+    { name: "Tranche C", bedPct: 0.52, yearOffset: 2 },
+  ]);
   const [galenAnnualCost, setGalenAnnualCost] = useState(0);
   const [mergerMode, setMergerMode] = useState(false);
   const [mergerOrgs, setMergerOrgs] = useState([]);
@@ -1058,7 +1064,7 @@ function ROICalculator() {
     const d = PRESETS[key].data;
     setInputs({...d,data_types:{...d.data_types},tiers:{...d.tiers}});
     setActivePreset(key);resetOv();setThinking(true);
-    if (key === 'STATEWIDE') { setFacilityPortfolio({...STATEWIDE_PORTFOLIO}); setGalenMigrationCost(15000000); setGalenAnnualCost(6800000); } else { setFacilityPortfolio({}); }
+    if (key === 'STATEWIDE') { setFacilityPortfolio({...STATEWIDE_PORTFOLIO}); setGalenMigrationCost(15000000); setGalenAnnualCost(6800000); setTrancheMode(true); setTranches([{name:'Tranche A (HNE + Justice)',bedPct:0.16,yearOffset:0},{name:'Tranche B (Metro LHDs)',bedPct:0.32,yearOffset:1},{name:'Tranche C (Remaining)',bedPct:0.52,yearOffset:2}]); } else { setFacilityPortfolio({}); }
     setPerOrgBeds(false); setPerOrgSystems(false); setFlagships([]); setTierCostEdits({enterprise:null,departmental:null,niche:null}); setEditingTierCost(null); setCostMode("estimate"); setKnownAnnualSpend(null);
     // Size per-org arrays to match org count, split evenly
     const n = d.org_count;
@@ -2393,6 +2399,39 @@ function ROICalculator() {
             <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>Dual-running legacy + new EMR</div>
           </div>
         </div>
+      <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>Tranche-based rollout</span>
+            <InfoTip text="Model the programme as phased tranches with different go-live dates. Each tranche starts its own benefit ramp from its go-live year. Default: 3 tranches matching NSW SDPR rollout."/>
+          </div>
+          <button type="button" onClick={()=>setTrancheMode(!trancheMode)} style={{padding:"4px 12px",borderRadius:999,fontSize:11,fontWeight:600,cursor:"pointer",border:`1px solid ${trancheMode?C.accent:C.border}`,background:trancheMode?C.accentPale:"#fff",color:trancheMode?C.accent:C.textMid}}>{trancheMode?"On":"Off"}</button>
+        </div>
+        {trancheMode && <div>
+          {tranches.map((t,i) => <div key={i} style={{display:"flex",gap:8,alignItems:"center",marginBottom:6,flexWrap:"wrap"}}>
+            <input type="text" value={t.name} onChange={e=>{const nw=[...tranches];nw[i]={...nw[i],name:e.target.value};setTranches(nw);}}
+              style={{flex:"1 1 120px",minWidth:100,padding:"6px 10px",border:`1px solid ${C.borderLight}`,borderRadius:6,fontSize:12}}/>
+            <div style={{display:"flex",alignItems:"center",gap:4}}>
+              <input type="number" value={Math.round(t.bedPct*100)} min={1} max={100} step={1}
+                onChange={e=>{const nw=[...tranches];nw[i]={...nw[i],bedPct:Math.max(0.01,Math.min(1,(parseInt(e.target.value)||0)/100))};setTranches(nw);}}
+                style={{width:45,padding:"6px 6px",border:`1px solid ${C.borderLight}`,borderRadius:6,fontSize:12,textAlign:"right"}}/>
+              <span style={{fontSize:11,color:C.textMuted}}>%</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:4}}>
+              <span style={{fontSize:11,color:C.textMuted}}>Yr</span>
+              <input type="number" value={t.yearOffset+1} min={1} max={7} step={1}
+                onChange={e=>{const nw=[...tranches];nw[i]={...nw[i],yearOffset:Math.max(0,(parseInt(e.target.value)||1)-1)};setTranches(nw);}}
+                style={{width:35,padding:"6px 6px",border:`1px solid ${C.borderLight}`,borderRadius:6,fontSize:12,textAlign:"right"}}/>
+            </div>
+            {tranches.length>1 && <button type="button" onClick={()=>setTranches(tranches.filter((_,j)=>j!==i))} style={{border:"none",background:"none",color:C.textMuted,cursor:"pointer",fontSize:14,padding:"2px 4px"}}>{"×"}</button>}
+          </div>)}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6}}>
+            {tranches.length<5 && <button type="button" onClick={()=>setTranches([...tranches,{name:`Tranche ${String.fromCharCode(65+tranches.length)}`,bedPct:Math.max(0.01,1-tranches.reduce((s,t)=>s+t.bedPct,0)),yearOffset:tranches.length}])}
+              style={{border:"none",background:"none",color:C.accent,fontSize:12,cursor:"pointer",fontWeight:600}}>+ Add tranche</button>}
+            <div style={{fontSize:10,color:Math.abs(tranches.reduce((s,t)=>s+t.bedPct,0)-1)<0.02?C.textMuted:"#993535"}}>{Math.round(tranches.reduce((s,t)=>s+t.bedPct,0)*100)}% allocated {Math.abs(tranches.reduce((s,t)=>s+t.bedPct,0)-1)>=0.02?" (should total 100%)":""}</div>
+          </div>
+        </div>}
+      </div>
         {(galenMigrationCost > 0 || galenAnnualCost > 0) && <button type="button" onClick={()=>{setGalenMigrationCost(0);setGalenAnnualCost(0);}} style={{border:"none",background:"none",color:C.textMuted,fontSize:11,cursor:"pointer",textDecoration:"underline",padding:"4px 0",marginTop:2}}>Clear costs</button>}
       </div>
     </Card></div>
@@ -2571,6 +2610,106 @@ function ROICalculator() {
               </div>;
             })}
           </div>
+        </div>;
+      })()}
+
+
+      {/* Tranche rollout timeline */}
+      {trancheMode && tranches.length > 1 && (() => {
+        const ramp3 = [0.40, 0.80, 1.00];
+        const maxYr = Math.max(...tranches.map(t => t.yearOffset)) + 3;
+        const totalYrs = Math.max(maxYr, rampYears);
+        const yrBenefits = [];
+        for (let y = 0; y < totalYrs; y++) {
+          let yrTotal = 0;
+          tranches.forEach(t => {
+            const trancheYr = y - t.yearOffset;
+            if (trancheYr >= 0 && trancheYr < ramp3.length) {
+              yrTotal += r.annualWithReimbursement * t.bedPct * ramp3[trancheYr];
+            } else if (trancheYr >= ramp3.length) {
+              yrTotal += r.annualWithReimbursement * t.bedPct;
+            }
+          });
+          yrBenefits.push(Math.round(yrTotal));
+        }
+        const maxBen = Math.max(...yrBenefits, 1);
+        const cumBenefits = [];
+        let cum = galenMigrationCost > 0 ? -galenMigrationCost : 0;
+        cumBenefits.push(cum);
+        for (let y = 0; y < totalYrs; y++) {
+          cum += yrBenefits[y] - (galenAnnualCost > 0 ? galenAnnualCost : 0);
+          cumBenefits.push(cum);
+        }
+        return <div style={{marginBottom:16}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginBottom:8}}>Tranche rollout timeline</div>
+
+          {/* Stacked bar chart */}
+          <div style={{display:"flex",gap:2,alignItems:"flex-end",height:100,marginBottom:4}}>
+            {yrBenefits.map((total,y) => {
+              const segments = tranches.map(t => {
+                const trancheYr = y - t.yearOffset;
+                let pct = 0;
+                if (trancheYr >= 0 && trancheYr < ramp3.length) pct = ramp3[trancheYr];
+                else if (trancheYr >= ramp3.length) pct = 1.0;
+                return Math.round(r.annualWithReimbursement * t.bedPct * pct);
+              });
+              const colors = ["#2d8a6e","#4fb39a","#8fd4c0","#b8e6d8","#d0f0e6"];
+              return <div key={y} style={{flex:1,display:"flex",flexDirection:"column-reverse",height:"100%",justifyContent:"flex-start"}}>
+                {segments.map((seg,si) => seg > 0 ? <div key={si} style={{height:`${seg/maxBen*80}%`,minHeight:seg>0?2:0,background:colors[si%colors.length],borderRadius:si===segments.length-1?"3px 3px 0 0":"0"}} title={`${tranches[si].name}: ${fmtK(seg)}`}/> : null)}
+                <div style={{fontSize:9,textAlign:"center",color:C.textMuted,marginTop:2}}>Yr {y+1}</div>
+              </div>;
+            })}
+          </div>
+
+          {/* Legend */}
+          <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:8}}>
+            {tranches.map((t,i) => {
+              const colors = ["#2d8a6e","#4fb39a","#8fd4c0","#b8e6d8","#d0f0e6"];
+              return <div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:C.textMid}}>
+                <div style={{width:8,height:8,borderRadius:2,background:colors[i%colors.length]}}/>
+                {t.name} ({Math.round(t.bedPct*100)}%, yr {t.yearOffset+1})
+              </div>;
+            })}
+          </div>
+
+          {/* Summary table */}
+          <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+            <thead><tr style={{background:C.accent+"15"}}>
+              <th style={{padding:"5px 8px",textAlign:"left",fontWeight:600,color:C.textMid}}>Year</th>
+              {tranches.map((t,i) => <th key={i} style={{padding:"5px 8px",textAlign:"right",fontWeight:600,color:C.textMid}}>{t.name}</th>)}
+              <th style={{padding:"5px 8px",textAlign:"right",fontWeight:700,color:C.accent}}>Total</th>
+              <th style={{padding:"5px 8px",textAlign:"right",fontWeight:600,color:C.textMid}}>Cumulative</th>
+            </tr></thead>
+            <tbody>
+              {yrBenefits.map((total,y) => <tr key={y} style={{borderBottom:`1px solid ${C.borderLight}`}}>
+                <td style={{padding:"4px 8px",fontWeight:600}}>Year {y+1}</td>
+                {tranches.map((t,i) => {
+                  const trancheYr = y - t.yearOffset;
+                  let pct = 0;
+                  if (trancheYr >= 0 && trancheYr < ramp3.length) pct = ramp3[trancheYr];
+                  else if (trancheYr >= ramp3.length) pct = 1.0;
+                  const val = Math.round(r.annualWithReimbursement * t.bedPct * pct);
+                  return <td key={i} style={{padding:"4px 8px",textAlign:"right",color:pct===0?C.textMuted:C.textMid}}>{pct===0?"—":fmtK(val)}</td>;
+                })}
+                <td style={{padding:"4px 8px",textAlign:"right",fontWeight:700,color:C.accent}}>{fmtK(total)}</td>
+                <td style={{padding:"4px 8px",textAlign:"right",color:cumBenefits[y+1]>=0?C.green:"#993535",fontWeight:600}}>{fmtK(cumBenefits[y+1])}</td>
+              </tr>)}
+              <tr style={{background:C.accent+"10"}}>
+                <td style={{padding:"5px 8px",fontWeight:700}}>{totalYrs}-yr total</td>
+                {tranches.map((t,i) => <td key={i} style={{padding:"5px 8px",textAlign:"right",fontWeight:600,color:C.textMid}}>
+                  {fmtK(yrBenefits.reduce((s,_,y) => {
+                    const trancheYr = y - t.yearOffset;
+                    let pct = 0;
+                    if (trancheYr >= 0 && trancheYr < ramp3.length) pct = ramp3[trancheYr];
+                    else if (trancheYr >= ramp3.length) pct = 1.0;
+                    return s + Math.round(r.annualWithReimbursement * t.bedPct * pct);
+                  }, 0))}
+                </td>)}
+                <td style={{padding:"5px 8px",textAlign:"right",fontWeight:800,color:C.accent}}>{fmtK(yrBenefits.reduce((a,b) => a+b, 0))}</td>
+                <td style={{padding:"5px 8px",textAlign:"right",fontWeight:700,color:cumBenefits[totalYrs]>=0?C.green:"#993535"}}>{fmtK(cumBenefits[totalYrs])}</td>
+              </tr>
+            </tbody>
+          </table></div>
         </div>;
       })()}
 
