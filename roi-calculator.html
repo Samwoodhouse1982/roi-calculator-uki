@@ -2421,7 +2421,7 @@ function ROICalculator() {
             <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>Tranche-based rollout</span>
             <InfoTip text="Model the programme as phased tranches with different go-live dates. Each tranche starts its own benefit ramp from its go-live year. Default: 3 tranches matching NSW SDPR rollout."/>
           </div>
-          <button type="button" onClick={()=>setTrancheMode(!trancheMode)} style={{padding:"4px 12px",borderRadius:999,fontSize:11,fontWeight:600,cursor:"pointer",border:`1px solid ${trancheMode?C.accent:C.border}`,background:trancheMode?C.accentPale:"#fff",color:trancheMode?C.accent:C.textMid}}>{trancheMode?"On":"Off"}</button>
+          <div onClick={()=>setTrancheMode(!trancheMode)} style={{width:40,height:22,borderRadius:11,background:trancheMode?C.accent:"#ccc",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0}}><div style={{width:18,height:18,borderRadius:9,background:"#fff",position:"absolute",top:2,left:trancheMode?20:2,transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)"}}/></div>
         </div>
         {trancheMode && <div>
           {tranches.map((t,i) => <div key={i} style={{display:"flex",gap:8,alignItems:"center",marginBottom:6,flexWrap:"wrap"}}>
