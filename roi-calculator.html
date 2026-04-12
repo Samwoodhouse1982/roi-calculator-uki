@@ -1077,7 +1077,7 @@ function ROICalculator() {
     const d = PRESETS[key].data;
     setInputs({...d,data_types:{...d.data_types},tiers:{...d.tiers}});
     setActivePreset(key);resetOv();setThinking(true);
-    if (key === 'STATEWIDE') { setFacilityPortfolio({...STATEWIDE_PORTFOLIO}); setGalenMigrationCost(15000000); setGalenAnnualCost(6800000); setTrancheMode(true); setTranches([{name:'Tranche A (HNE + Justice)',bedPct:0.16,yearOffset:0},{name:'Tranche B (Metro LHDs)',bedPct:0.32,yearOffset:1},{name:'Tranche C (Remaining)',bedPct:0.52,yearOffset:2}]); } else { setFacilityPortfolio({}); }
+    if (key === 'STATEWIDE') { setFacilityPortfolio({...STATEWIDE_PORTFOLIO}); setGalenMigrationCost(15000000); setGalenAnnualCost(6800000); setTrancheMode(true); setMergerMode(false); setMergerOrgs([]); setTranches([{name:'Tranche A (HNE + Justice)',bedPct:0.16,yearOffset:0},{name:'Tranche B (Metro LHDs)',bedPct:0.32,yearOffset:1},{name:'Tranche C (Remaining)',bedPct:0.52,yearOffset:2}]); } else { setFacilityPortfolio({}); }
     setPerOrgBeds(false); setPerOrgSystems(false); setFlagships([]); setTierCostEdits({enterprise:null,departmental:null,niche:null}); setEditingTierCost(null); setCostMode("estimate"); setKnownAnnualSpend(null);
     // Size per-org arrays to match org count, split evenly
     const n = d.org_count;
@@ -1898,8 +1898,8 @@ function ROICalculator() {
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:step>=0?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>3</span>        Organization scale
       </div>
-      {/* Merger question */}
-      <div style={{marginBottom:20,padding:"14px 18px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
+      {/* Merger question - hidden for statewide (already handled by preset) */}
+      {providerType !== "statewide" && <div style={{marginBottom:20,padding:"14px 18px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
           <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Are you consolidating across multiple facilities or LHDs?</span>
           <div style={{display:"flex",gap:6}}>
@@ -1963,6 +1963,7 @@ function ROICalculator() {
           </div>
         )}
       </div>
+}
 
       {/* ── Hospitals ── */}
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:4}}>Hospitals</div>
