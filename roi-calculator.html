@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EMR Migration and Archiving - ROI Calculator</title>
+  <title>EMR (Electronic Medical Record) Migration and Archiving - ROI Calculator</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background: transparent; overflow-x: hidden; }
@@ -516,12 +516,12 @@ const PRESETS = {
   SMALL: { label:"Rural / Remote Hospital", desc:"~30 beds · 1 facility · 6 systems", data:{ bed_count:30, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:2,niche:3}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1,RAD_REPORTS:1}, complexity_level:"LOW", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   TYPICAL: { label:"Regional Hospital", desc:"~200 beds · 1 facility · 15 systems", data:{ bed_count:250, org_count:1, journey:"EVALUATING", tiers:{enterprise:1,departmental:5,niche:9}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:1,RAD_REPORTS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   LARGE: { label:"Metropolitan / Tertiary", desc:"~500 beds · 1 facility · 25 systems", data:{ bed_count:600, org_count:1, journey:"EVALUATING", tiers:{enterprise:2,departmental:8,niche:15}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:2,RAD_REPORTS:1,DOC_ECM:2,SCANNED_NOTES:1,MATERNITY:1,COMMUNITY:1}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
-  REGIONAL: { label:"Local Health District / HHS", desc:"~3000 beds · 12 hospitals · 80+ systems", data:{ bed_count:3000, org_count:12, journey:"EVALUATING", tiers:{enterprise:4,departmental:28,niche:50}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
+  REGIONAL: { label:"Local Health District (LHD) / Hospital and Health Service (HHS)", desc:"~3000 beds · 12 hospitals · 80+ systems", data:{ bed_count:3000, org_count:12, journey:"EVALUATING", tiers:{enterprise:4,departmental:28,niche:50}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
   STATEWIDE: { label:"Statewide Programme", desc:"~25000 beds · 228 hospitals · 600+ community · 60 labs · 200+ collection · 17 LHDs", data:{ bed_count:25000, org_count:228, journey:"EVALUATING", tiers:{enterprise:24,departmental:80,niche:80}, data_types:{...emptyDt(),EPR_PAS:8,ED:6,THEATRES:5,LAB:8,RAD_REPORTS:6,DOC_ECM:8,SCANNED_NOTES:6,MATERNITY:5,COMMUNITY:6,MENTAL_HEALTH:4,REFERRALS:3,OTHER:4}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.65 }},
 };
 
 // ── Model constants ──
-const STAFF_PER_BED = 3.0;              // NSW Health SDPR EOI: 75,500 clinical EMR users / 25,632 beds = ~3.0
+const STAFF_PER_BED = 3.0;              // NSW Health SDPR Expression of Interest (EOI): 75,500 clinical EMR users / 25,632 beds = ~3.0
 const CORPORATE_STAFF_BASE = 20;       // Base admin/corporate staff per facility
 const CORPORATE_STAFF_PER_BED = 0.10;  // Scales with size, caps at ~100 for large networks
 const BLENDED_HOURLY_RATE = 65;
@@ -534,7 +534,7 @@ const SAR_DAYS_PER_SYSTEM_BEFORE = 0.8;  // Per-system search, extraction, recon
 const SAR_DAYS_PER_SYSTEM_AFTER = 0.15;
 const MED_ERRORS_PER_BED = 14;  // ACSQHC sentinel event data
 const PATIENTS_HARMED_PER_BED = 3.2;   // AIHW admin data: 5.4% of separations; ~60 seps/bed at ALOS 5.5 * 5.4% = 3.2
-const EXCESS_BED_DAYS_PER_BED = 8.0;   // QAHCS/AIHW: AEs account for ~8% of bed days; ~50% preventable
+const EXCESS_BED_DAYS_PER_BED = 8.0;   // QAHCS (Quality in Australian Health Care Study)/AIHW: AEs account for ~8% of bed days; ~50% preventable
 const FRAGMENTATION_ATTRIBUTION = 0.35;  // 35% of preventable AEs attributable to information/communication failure (ACSQHC)
 
 
@@ -1866,7 +1866,7 @@ function ROICalculator() {
         {providerType === "regional" && "Metropolitan hospitals have complex legacy estates. The consolidation case includes cost reduction and improved clinical data continuity."}
         {providerType === "academic" && "Tertiary referral centres carry the highest system complexity (40-200+ applications). The ROI case includes research system rationalisation alongside operational savings."}
         {providerType === "state_network" && "LHDs and Health Services typically have 2-3x the legacy system count across their facilities. Consolidation eliminates duplicate infrastructure across the district."}
-        {providerType === "statewide" && "Statewide programmes replace the entire state legacy estate with a single EMR. NSW SDPR benchmark: 24 core systems (9 EMR, 10 PAS, 5 LIMS) from 5 vendors across 228 hospitals, 600+ community sites, 60 path labs, 17 LHDs. Legacy estate est. A$225-385M/yr; Epic contract A$969M/10yr; Galen archive A$83M/10yr. 30-40+ systems in full scope (Microsoft ODS: 34+ systems statewide)."}
+        {providerType === "statewide" && "Statewide programmes replace the entire state legacy estate with a single EMR. NSW SDPR (Single Digital Patient Record) benchmark: 24 core systems (9 EMR, 10 PAS, 5 LIMS) from 5 vendors across 228 hospitals, 600+ community sites, 60 path labs, 17 LHDs. Legacy estate est. A$225-385M/yr; Epic contract A$969M/10yr; Galen archive A$83M/10yr. 30-40+ systems in full scope (Microsoft ODS: 34+ systems statewide)."}
       </div>
     </Card>
     <LockedConnector/>
@@ -2356,7 +2356,7 @@ function ROICalculator() {
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
           <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>ABF revenue (optional)</span>
-          <InfoTip text="If you know your annual ABF revenue (total NWAU funding), enter it here. If left blank, we estimate from bed count, occupancy, and casemix."/>
+          <InfoTip text="If you know your annual ABF revenue (total NWAU (National Weighted Activity Unit) funding), enter it here. If left blank, we estimate from bed count, occupancy, and casemix."/>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:13,color:C.textMuted}}>{"A$"}</span>
@@ -2396,7 +2396,7 @@ function ROICalculator() {
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
           <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>Financial analysis settings</span>
-          <InfoTip text="Discount rate for NPV calculation (NSW Treasury default 7%). Parallel-run period accounts for dual-running costs during migration."/>
+          <InfoTip text="Discount rate for NPV (Net Present Value) calculation (NSW Treasury default 7%). Parallel-run period accounts for dual-running costs during migration."/>
         </div>
         <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
           <div style={{flex:"1 1 120px"}}>
@@ -2573,7 +2573,7 @@ function ROICalculator() {
             {label:"Combined annual",value:fmtK(r.annualWithReimbursement)+"/yr",color:C.green,bg:C.greenPale},
             {label:rampYears+"-year net benefit",value:hasGalen?fmtK(netBenefit):"Enter Galen costs",color:hasGalen?C.accent:C.textMuted,bg:hasGalen?"#e8faf6":"#f5f5f5"},
             {label:"Archive payback",value:hasGalen&&payback>0?payback.toFixed(1)+" yrs":"—",color:"#0f4146",bg:C.blue25},
-            {label:"FTE capacity freed",value:r.fteEquivalent.toFixed(0)+" FTE",color:"#b8860b",bg:"#fef9ec"},
+            {label:"FTE (full-time equivalent) capacity freed",value:r.fteEquivalent.toFixed(0)+" FTE",color:"#b8860b",bg:"#fef9ec"},
           ].map((kpi,i) => <div key={i} style={{flex:"1 1 130px",minWidth:120,padding:"12px 14px",background:kpi.bg,borderRadius:10,textAlign:"center"}}>
             <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:3}}>{kpi.label}</div>
             <div style={{fontSize:20,fontWeight:800,color:kpi.color}}>{kpi.value}</div>
@@ -2618,7 +2618,7 @@ function ROICalculator() {
             {[
               {label:"Total investment",value:fmtK(galenTotalInvest+parallelRunCost),color:"#993535",bg:"#fef0f0"},
               {label:`NPV (${Math.round(dr*100)}%)`,value:fmtK(npv),color:npv>0?C.green:"#993535",bg:npv>0?C.greenPale:"#fef0f0"},
-              {label:"BCR",value:bcr.toFixed(1)+":1",color:bcr>=1?C.accent:"#993535",bg:bcr>=1?"#e8faf6":"#fef0f0"},
+              {label:"BCR (benefit-cost ratio)",value:bcr.toFixed(1)+":1",color:bcr>=1?C.accent:"#993535",bg:bcr>=1?"#e8faf6":"#fef0f0"},
               {label:rampYears+"-yr gross",value:fmtK(r.total3WithReimbursement),color:C.green,bg:C.greenPale},
             ].map((kpi,i) => <div key={i} style={{flex:"1 1 100px",padding:"10px 12px",background:kpi.bg,borderRadius:8,textAlign:"center"}}>
               <div style={{fontSize:9,fontWeight:600,color:C.textMuted}}>{kpi.label}</div>
@@ -2730,8 +2730,8 @@ function ROICalculator() {
         {[
           {source:"Productivity Commission",date:"May 2024",metric:"Up to A$5.4bn/yr",desc:"national savings from better EMR data use",color:"#2d6a4f"},
           {source:"QLD DigiMat",date:"Woods et al 2024",metric:"12.9% decline",desc:"in medication complications (1.55M episodes)",color:"#e07020"},
-          {source:"RCH Melbourne",date:"South et al 2022",metric:"22% decrease",desc:"in in-hospital mortality post-Epic",color:"#993535"},
-          {source:"QAO 2018",date:"Princess Alexandra",metric:"37% fewer",desc:"hospital-acquired infections post-ieMR",color:"#0f4146"},
+          {source:"RCH (Royal Children's Hospital) Melbourne",date:"South et al 2022",metric:"22% decrease",desc:"in in-hospital mortality post-Epic",color:"#993535"},
+          {source:"QAO (Queensland Audit Office) 2018",date:"Princess Alexandra",metric:"37% fewer",desc:"hospital-acquired infections post-ieMR",color:"#0f4146"},
         ].map((b,i) => <div key={i} style={{flex:"1 1 150px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
           <div style={{fontSize:18,fontWeight:800,color:b.color,marginBottom:2}}>{b.metric}</div>
           <div style={{fontSize:11,color:C.textMid,lineHeight:1.4}}>{b.desc}</div>
@@ -2790,7 +2790,7 @@ function ROICalculator() {
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
         <span style={{fontSize:20}}>{"🛡️"}</span>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Patient safety context":"Patient safety case for migration"}</h3>
-        <InfoTip text={`Source: ACSQHC safety reports; AIHW hospital statistics; QAHCS (Wilson et al 1995). Per-bed rates from Australian public hospital data, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). NOT included in financial totals.`}/>
+        <InfoTip text={`Source: ACSQHC (Australian Commission on Safety and Quality in Health Care) safety reports; AIHW hospital statistics; QAHCS (Wilson et al 1995). Per-bed rates from Australian public hospital data, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). NOT included in financial totals.`}/>
       </div>
       <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EMR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -2813,7 +2813,7 @@ function ROICalculator() {
     </Card><LockedConnector/>
     </div>}
 
-    {/* ABF efficiency & revenue impact */}
+    {/* ABF (Activity Based Funding) efficiency & revenue impact */}
     <Card dimmed={dim}>
       <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>ABF efficiency & revenue impact</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Cashable benefits from improved ABF coding efficiency and private patient billing accuracy, attributed to EMR consolidation as a contributing factor.</p>
@@ -2827,7 +2827,7 @@ function ROICalculator() {
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Private patient revenue uplift</div>
           <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.privateRevRecovery):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>30% recovery of leaked private episodes (15% leakage, VAGO 2019)</div>
+          <div style={{fontSize:11,color:C.textMuted}}>30% recovery of leaked private episodes (15% leakage, VAGO (Victorian Auditor-General's Office) 2019)</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate testing reduction</div>
@@ -2860,14 +2860,14 @@ function ROICalculator() {
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#f5f0f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Excess bed days avoided</div>
           <div style={{fontSize:28,fontWeight:800,color:"#7a4f8a",margin:"6px 0"}}>{an?fmtK(r.excessDayCostAvoided):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>{an?fmtNum(r.excessDaysAvoided):0} days at A$3,100/day (IHACPA)</div>
+          <div style={{fontSize:11,color:C.textMuted}}>{an?fmtNum(r.excessDaysAvoided):0} days at A$3,100/day (IHACPA — Independent Health and Aged Care Pricing Authority)</div>
           <div style={{fontSize:10,color:"#7a4f8a",marginTop:4}}>35% fragmentation attribution (ACSQHC)</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#f5f0f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Medical indemnity reduction</div>
           <div style={{fontSize:28,fontWeight:800,color:"#7a4f8a",margin:"6px 0"}}>{an?fmtK(r.malpracticeReduction):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>3% of A$20,000/bed institutional premium</div>
-          <div style={{fontSize:10,color:"#7a4f8a",marginTop:4}}>VMIA 2025-26 benchmark</div>
+          <div style={{fontSize:10,color:"#7a4f8a",marginTop:4}}>VMIA (Victorian Managed Insurance Authority) 2025-26 benchmark</div>
         </div>
       </div>
       <Callout bg="#f5f0f8" border="#d4c4df">
@@ -2965,7 +2965,7 @@ function ROICalculator() {
         </div>
         <div style={{flex:"1 1 200px",minWidth:240,padding:"18px 20px",background:C.blue25,borderRadius:10}}>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:14,fontWeight:700}}>Records request turnaround</span></div>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,color:C.textMuted,marginBottom:3}}><span>Before</span><OverridableStat inline label="" computed={calc(calcInputs,am,{...mergedOv,sarDaysBefore:null},flagships).sarDaysBefore} override={overrides.sarDaysBefore} onOverride={v=>setOv("sarDaysBefore",v)} suffix=" days" step={.5} info={`Working days to fulfil a patient records request. Each legacy system adds search time, login overhead, and potentially manual extraction. With ${r.legacy} systems, estimated turnaround is ${r.sarDaysBefore} working days. NSW public health organisations are expected to respond to patient records requests within a reasonable timeframe. No explicit maximum is prescribed for the public sector (the HRIP Act 2002 applies to private health), but best practice and clinical governance expectations mean complex multi-LHD requests routinely take 4-6 weeks.`}/></div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,color:C.textMuted,marginBottom:3}}><span>Before</span><OverridableStat inline label="" computed={calc(calcInputs,am,{...mergedOv,sarDaysBefore:null},flagships).sarDaysBefore} override={overrides.sarDaysBefore} onOverride={v=>setOv("sarDaysBefore",v)} suffix=" days" step={.5} info={`Working days to fulfil a patient records request. Each legacy system adds search time, login overhead, and potentially manual extraction. With ${r.legacy} systems, estimated turnaround is ${r.sarDaysBefore} working days. NSW public health organisations are expected to respond to patient records requests within a reasonable timeframe. No explicit maximum is prescribed for the public sector (the HRIP (Health Records and Information Privacy) Act 2002 applies to private health), but best practice and clinical governance expectations mean complex multi-LHD requests routinely take 4-6 weeks.`}/></div>
           <div style={{height:8,background:"#e0e4ea",borderRadius:4,marginBottom:6}}><div style={{height:"100%",width:"100%",background:"#b0b8c4",borderRadius:4}}/></div>
           <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.textMuted,marginBottom:3}}><span>After</span><span style={{fontWeight:600,color:C.accent}}>{r.sarDaysAfter} days</span></div>
           <div style={{height:8,background:"#e0e4ea",borderRadius:4,marginBottom:8}}><div style={{height:"100%",width:`${Math.max(5,Math.round(r.sarDaysAfter/Math.max(1,r.sarDaysBefore)*100))}%`,background:C.accent,borderRadius:4,transition:"width .8s"}}/></div>
@@ -3117,7 +3117,7 @@ function ROICalculator() {
           <p style={{margin:"8px 0 4px"}}><strong>3.0 staff per bed</strong> {" - "} NSW Health SDPR EOI: 75,500 clinical staff / 25,632 beds = 2.95, rounded to 3.0. Includes doctors, nurses, allied health, pharmacists. <Ev s="NSW Health SDPR EOI (HT20037) Annexure A; AIHW workforce data."/></p>
           <p style={{margin:"4px 0"}}><strong>12 min/wk base</strong> (migration path) {" - "} Westbrook et al 2010 (JAMIA) found nurses interrupted 3-6 times/hour by system-switching. Nuffield Trust 2020 estimated 15-20 min/day lost to system navigation. Our 12 min/week is conservative (reducible portion only). Archive-only uses 5 min/wk. <Ev s="Westbrook et al 2010 (JAMIA); Nuffield Trust 2020 system navigation study."/></p>
           <p style={{margin:"4px 0"}}><strong>+4% per system</strong> {" - "} each additional legacy system adds cognitive overhead. At 42 systems (as in the benchmarked Trust), this produces ~10 min/day wasted, consistent with published studies. <Md s="First-principles switching cost model. Validated against benchmarked Trust (42 systems)."/></p>
-          <p style={{margin:"4px 0"}}><strong>{"A$"}65/hr blended rate</strong> {" - "} AIHW workforce cost data. RN ~A$45-55/hr, medical ~A$90-120/hr, allied health ~A$40-60/hr. Blended A$65/hr weighted towards nursing as the largest clinical user group (~62% of clinical FTE). <Ev s="AIHW Health Workforce data; ABS Employee Earnings and Hours; NSW Health Annual Report."/></p>
+          <p style={{margin:"4px 0"}}><strong>{"A$"}65/hr blended rate</strong> {" - "} AIHW (Australian Institute of Health and Welfare) workforce cost data. RN ~A$45-55/hr, medical ~A$90-120/hr, allied health ~A$40-60/hr. Blended A$65/hr weighted towards nursing as the largest clinical user group (~62% of clinical FTE). <Ev s="AIHW Health Workforce data; ABS Employee Earnings and Hours; NSW Health Annual Report."/></p>
         </S>
 
         <S title="5. Support tickets & patient records request (SAR) turnaround">
@@ -3146,7 +3146,7 @@ function ROICalculator() {
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Comm. failure in incidents</td><td style={{padding:"6px 10px",textAlign:"center"}}>35%</td><td style={{padding:"6px 10px"}}>ACSQHC root cause analyses</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Excess bed day cost</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$3,100/day</td><td style={{padding:"6px 10px"}}>IHACPA long-stay outlier per diems</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Duplicate testing rate</td><td style={{padding:"6px 10px",textAlign:"center"}}>22%</td><td style={{padding:"6px 10px"}}>Banker et al 2024 (SA); RCPA guidelines</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>NEP per NWAU</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$6,465</td><td style={{padding:"6px 10px"}}>IHACPA 2024-25</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>NEP (National Efficient Price) per NWAU</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$6,465</td><td style={{padding:"6px 10px"}}>IHACPA 2024-25</td></tr>
               <tr><td style={{padding:"6px 10px"}}>Medical indemnity/bed</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$20,000</td><td style={{padding:"6px 10px"}}>VMIA 2025-26 ($380.9M / ~16k beds)</td></tr>
             </tbody>
           </table></div>
@@ -3159,7 +3159,7 @@ function ROICalculator() {
           <p style={{margin:"0 0 8px"}}>ABF efficiency gain and revenue cycle impact are modelled from verified programme rates and provider-specific multipliers.</p>
           <F>abfEfficiencyGain = totalEstate {"\u00d7"} 15% {"\u00d7"} decomFactor<br/>privateRevRecovery = admissions {"\u00d7"} privatePct {"\u00d7"} 15% leakage {"\u00d7"} A$4,200 {"\u00d7"} 30% recoverable<br/>indemnityReduction = beds {"\u00d7"} A$20,000 {"\u00d7"} 3% {"\u00d7"} safetyFactor<br/>excessBedDaySavings = beds {"\u00d7"} 8.0 days {"\u00d7"} 35% attribution {"\u00d7"} fragmentation {"\u00d7"} safetyFactor {"\u00d7"} A$3,100</F>
           <p style={{margin:"8px 0 4px"}}><strong>ABF efficiency</strong> {" - "} Activity Based Funding through IHPA. National Efficient Price A$6,465/NWAU (IHACPA 2024-25 Determination; 2025-26 = A$7,258). IT/admin overhead estimated at 8% of total hospital costs, with 25% addressable through system consolidation. <Ev s="IHACPA National Efficient Price Determination 2024-25; AIHW hospital expenditure data."/></p>
-          <p style={{margin:"4px 0"}}><strong>Private patient revenue</strong> {" - "} 15% of privately insured episodes in public hospitals estimated to go unbilled due to incomplete documentation. Average private episode value A$4,200 above ABF rate. <Ev s="VAGO 2019; APRA PHI statistics; PHIO annual reports."/></p>
+          <p style={{margin:"4px 0"}}><strong>Private patient revenue</strong> {" - "} 15% of privately insured episodes in public hospitals estimated to go unbilled due to incomplete documentation. Average private episode value A$4,200 above ABF rate. <Ev s="VAGO 2019; APRA (Australian Prudential Regulation Authority) Private Health Insurance (PHI) statistics; PHIO annual reports."/></p>
           <p style={{margin:"4px 0"}}><strong>Medical indemnity</strong> {" - "} A$20,000/bed institutional indemnity (VMIA 2025-26: $380.9M for ~16,000 VIC beds). 3% reduction modelled from ACSQHC communication failure data. <Ev s="VMIA 2025-26 annual report; ACSQHC root cause analyses."/></p>
 
           
