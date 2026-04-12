@@ -718,6 +718,19 @@ function OverridableStat({label,computed,override,onOverride,prefix,suffix,step:
 }
 
 function Stat({label,value,sub,color,info}){return<div style={{minWidth:130,flex:"1 1 130px"}}><div style={{fontSize:12,fontWeight:600,color:C.textMuted,letterSpacing:".01em",display:"flex",alignItems:"center"}}>{label}{info&&<InfoTip text={info}/>}</div><div style={{fontSize:26,fontWeight:800,color:color||C.text,letterSpacing:"-.5px",margin:"2px 0"}}>{value}</div>{sub&&<div style={{fontSize:12,color:C.textMuted}}>{sub}</div>}</div>;}
+function ResultSection({ title, icon, defaultOpen, children, dimmed, accent }) {
+  const [open, setOpen] = React.useState(defaultOpen || false);
+  if (dimmed) return null;
+  return <div style={{marginBottom:12}}>
+    <button type="button" onClick={()=>setOpen(!open)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"12px 16px",background:open?(accent||C.accent)+"08":"#fff",border:`1px solid ${open?(accent||C.accent)+"30":C.borderLight}`,borderRadius:open?"10px 10px 0 0":10,cursor:"pointer",transition:"all .2s"}}>
+      {icon && <span style={{fontSize:16}}>{icon}</span>}
+      <span style={{flex:1,textAlign:"left",fontSize:14,fontWeight:600,color:open?(accent||C.accent):C.textMid}}>{title}</span>
+      <span style={{fontSize:12,color:C.textMuted,transition:"transform .2s",transform:open?"rotate(180deg)":"rotate(0)"}}>{"▼"}</span>
+    </button>
+    {open && <div style={{padding:"16px",border:`1px solid ${(accent||C.accent)}20`,borderTop:"none",borderRadius:"0 0 10px 10px",background:"#fff"}}>{children}</div>}
+  </div>;
+}
+
 function ResultCard({ label, value, sub, bg, border, valueColor, icon, dimmed }) {
   return (
     <div className="roi-result" style={{
@@ -2526,248 +2539,107 @@ function ROICalculator() {
     )}
 
 
-    {/* ═══ EXECUTIVE SUMMARY ═══ */}
-    {!dim && <Card style={{background:"linear-gradient(135deg, #f0f7f5 0%, #e8f4f0 100%)",border:`2px solid ${C.accent}`,marginBottom:20}}>
-      <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,color:C.accent,marginBottom:12,textTransform:"uppercase"}}>Executive Summary</div>
-
-      {/* KPI cards row */}
-      {(() => {
-        const galenTotalInvest = galenMigrationCost + Math.round(galenAnnualCost * rampYears);
-        const parallelRunCost = Math.round(r.totalEstate * (parallelRunMonths / 12) * 0.80);
-        const totalInvestment = galenTotalInvest + parallelRunCost;
-        const grossPhased = r.total3WithReimbursement;
-        const galenPhased = galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b) => a+b, 0));
-        const netBenefit = grossPhased - galenPhased - parallelRunCost;
-        // NPV calculation
-        const dr = discountRate;
-        let npvBenefit = 0, npvCost = galenMigrationCost + parallelRunCost;
-        for (let y = 0; y < r.rampPcts.length; y++) {
-          const benefit = Math.round(r.annualWithReimbursement * r.rampPcts[y]);
-          const cost = Math.round(galenAnnualCost * r.rampPcts[y]);
-          npvBenefit += (benefit - cost) / Math.pow(1 + dr, y + 1);
-        }
-        const npv = Math.round(npvBenefit - npvCost);
-        const bcr = npvCost > 0 ? (npvBenefit / npvCost) : 0;
-        const payback = galenMigrationCost > 0 && r.annualWithReimbursement > galenAnnualCost ? (galenMigrationCost / (r.annualWithReimbursement - galenAnnualCost)) : 0;
-        const hasGalen = galenMigrationCost > 0;
-        return <div>
+        {/* ═══ LEVEL 1: AT-A-GLANCE ═══ */}
+    {!dim && (() => {
+      const hasGalen = galenMigrationCost > 0;
+      const galenTotalInvest = galenMigrationCost + Math.round(galenAnnualCost * rampYears);
+      const parallelRunCost = Math.round(r.totalEstate * (parallelRunMonths / 12) * 0.80);
+      const totalInvestment = galenTotalInvest + parallelRunCost;
+      const grossPhased = r.total3WithReimbursement;
+      const galenPhased = galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b) => a+b, 0));
+      const netBenefit = grossPhased - galenPhased - parallelRunCost;
+      const dr = discountRate;
+      let npvBenefit = 0, npvCost = galenMigrationCost + parallelRunCost;
+      for (let y = 0; y < r.rampPcts.length; y++) {
+        const benefit = Math.round(r.annualWithReimbursement * r.rampPcts[y]);
+        const cost = Math.round(galenAnnualCost * r.rampPcts[y]);
+        npvBenefit += (benefit - cost) / Math.pow(1 + dr, y + 1);
+      }
+      const npv = Math.round(npvBenefit - npvCost);
+      const bcr = npvCost > 0 ? (npvBenefit / npvCost) : 0;
+      const payback = hasGalen && r.annualWithReimbursement > galenAnnualCost ? (galenMigrationCost / (r.annualWithReimbursement - galenAnnualCost)) : 0;
+      return <Card style={{background:"linear-gradient(135deg, #f0f7f5 0%, #e8f4f0 100%)",border:`2px solid ${C.accent}`,marginBottom:16}}>
+        {/* Row 1: The four numbers that matter */}
         <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:12}}>
           {[
-            {label:"Total investment",value:hasGalen?fmtK(totalInvestment):"–",sub:hasGalen?(parallelRunCost>0?`Archive A$${(galenTotalInvest/1e6).toFixed(0)}M + parallel-run A$${(parallelRunCost/1e6).toFixed(0)}M`:`A$${(galenMigrationCost/1e6).toFixed(0)}M migration + A$${(galenAnnualCost/1e6).toFixed(1)}M/yr`):"Enter Galen costs",color:"#993535",bg:"#fef0f0"},
-            {label:`${rampYears}-year gross`,value:fmtK(grossPhased),sub:`Phased: ${rampYears===5?"20/40/60/80/100%":"40/80/100%"}`,color:C.green,bg:C.greenPale},
-            {label:`${rampYears}-year net`,value:hasGalen?fmtK(netBenefit):"–",sub:hasGalen?"After all investment":"Enter Galen costs",color:C.accent,bg:"#e8faf6"},
-            {label:"Payback",value:hasGalen&&payback>0?payback.toFixed(1)+" yrs":"–",sub:hasGalen?"On archive investment":"",color:"#0f4146",bg:C.blue25},
+            {label:"Combined annual",value:fmtK(r.annualWithReimbursement)+"/yr",color:C.green,bg:C.greenPale},
+            {label:rampYears+"-year net benefit",value:hasGalen?fmtK(netBenefit):"Enter Galen costs",color:hasGalen?C.accent:C.textMuted,bg:hasGalen?"#e8faf6":"#f5f5f5"},
+            {label:"Payback",value:hasGalen&&payback>0?payback.toFixed(1)+" yrs":"—",color:"#0f4146",bg:C.blue25},
+            {label:"FTE capacity freed",value:r.fteEquivalent.toFixed(0)+" FTE",color:"#b8860b",bg:"#fef9ec"},
           ].map((kpi,i) => <div key={i} style={{flex:"1 1 130px",minWidth:120,padding:"12px 14px",background:kpi.bg,borderRadius:10,textAlign:"center"}}>
             <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:3}}>{kpi.label}</div>
             <div style={{fontSize:20,fontWeight:800,color:kpi.color}}>{kpi.value}</div>
-            <div style={{fontSize:9,color:C.textMuted,marginTop:2}}>{kpi.sub}</div>
           </div>)}
         </div>
-        {hasGalen && <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
-          {[
-            {label:`NPV (${Math.round(dr*100)}% discount)`,value:fmtK(npv),color:npv>0?C.green:"#993535",bg:npv>0?C.greenPale:"#fef0f0"},
-            {label:"Benefit-cost ratio",value:bcr.toFixed(1)+":1",color:bcr>=1?C.accent:"#993535",bg:bcr>=1?"#e8faf6":"#fef0f0"},
-            {label:"FTE capacity freed",value:r.fteEquivalent.toFixed(0),sub:"clinical equivalent",color:"#b8860b",bg:"#fef9ec"},
-          ].map((kpi,i) => <div key={i} style={{flex:"1 1 100px",minWidth:95,padding:"10px 12px",background:kpi.bg,borderRadius:8,textAlign:"center"}}>
-            <div style={{fontSize:9,fontWeight:600,color:C.textMuted,marginBottom:2}}>{kpi.label}</div>
-            <div style={{fontSize:18,fontWeight:800,color:kpi.color}}>{kpi.value}</div>
-            {kpi.sub && <div style={{fontSize:9,color:C.textMuted}}>{kpi.sub}</div>}
-          </div>)}
+
+        {/* Row 2: Benefit type split — one line */}
+        <div style={{display:"flex",height:10,borderRadius:5,overflow:"hidden",marginBottom:4}}>
+          {r.cashable > 0 && <div style={{flex:r.cashable,background:C.green}} title={"Cashable: "+fmtK(r.cashable)}/>}
+          {r.nonCashable > 0 && <div style={{flex:r.nonCashable,background:"#daa520"}} title={"Capacity: "+fmtK(r.nonCashable)}/>}
+          {r.costAvoidance > 0 && <div style={{flex:r.costAvoidance,background:"#9b6bae"}} title={"Avoidance: "+fmtK(r.costAvoidance)}/>}
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:C.textMuted,marginBottom:hasGalen?12:0}}>
+          <span><span style={{display:"inline-block",width:8,height:8,borderRadius:2,background:C.green,marginRight:4}}/>Cashable {fmtK(r.cashable)} ({Math.round(r.cashable/r.annualWithReimbursement*100)}%)</span>
+          <span><span style={{display:"inline-block",width:8,height:8,borderRadius:2,background:"#daa520",marginRight:4}}/>Capacity {fmtK(r.nonCashable)} ({Math.round(r.nonCashable/r.annualWithReimbursement*100)}%)</span>
+          <span><span style={{display:"inline-block",width:8,height:8,borderRadius:2,background:"#9b6bae",marginRight:4}}/>Avoidance {fmtK(r.costAvoidance)} ({Math.round(r.costAvoidance/r.annualWithReimbursement*100)}%)</span>
+        </div>
+
+        {/* Row 3: Galen one-liner */}
+        {hasGalen && <div style={{padding:"8px 12px",background:C.accent+"10",borderRadius:6,fontSize:12,color:C.textMid}}>
+          <strong style={{color:C.accent}}>Archiving investment:</strong> {fmtK(galenMigrationCost)} migration {"→"} unlocks {fmtK(r.decomSave)}/yr decommission savings ({(r.decomSave/Math.max(1,galenMigrationCost)).toFixed(1)}x return)
         </div>}
-        </div>;
-      })()}
+      </Card>;
+    })()}
 
-      {/* Cumulative cashflow chart */}
-      {galenMigrationCost > 0 && (() => {
-        const yrs = r.rampPcts.length;
-        const galenTotal = galenMigrationCost + r.rampPcts.reduce((a,p) => a + Math.round(galenAnnualCost * p), 0);
-        const cumulative = [0];
+    {/* ═══ LEVEL 2: EXPANDABLE DETAIL ═══ */}
+
+    {!dim && <ResultSection title="Executive detail" icon="📊" dimmed={dim}>
+      {(() => {
+        const hasGalen = galenMigrationCost > 0;
+        const galenTotalInvest = galenMigrationCost + Math.round(galenAnnualCost * rampYears);
         const parallelRunCost = Math.round(r.totalEstate * (parallelRunMonths / 12) * 0.80);
-        let running = -(galenMigrationCost + parallelRunCost);
-        cumulative.push(running);
-        for (let y = 0; y < yrs; y++) {
-          running += Math.round(r.annualWithReimbursement * r.rampPcts[y]) - Math.round(galenAnnualCost * r.rampPcts[y]);
-          cumulative.push(running);
+        const dr = discountRate;
+        let npvBenefit = 0, npvCost = galenMigrationCost + parallelRunCost;
+        for (let y = 0; y < r.rampPcts.length; y++) {
+          npvBenefit += (Math.round(r.annualWithReimbursement * r.rampPcts[y]) - Math.round(galenAnnualCost * r.rampPcts[y])) / Math.pow(1 + dr, y + 1);
         }
-        const maxVal = Math.max(...cumulative.map(Math.abs), 1);
-        const chartH = 140, chartW = 320, barW = Math.floor(chartW / (yrs + 2));
-        const zero = chartH * 0.35;
-        return <div style={{marginBottom:16}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginBottom:8}}>Cumulative net cashflow (incl. parallel-run costs)</div>
-          <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:2,height:chartH,position:"relative"}}>
-            <div style={{position:"absolute",left:0,right:0,top:zero,height:1,background:C.textMuted+"40"}}/>
-            <div style={{position:"absolute",left:0,top:zero-2,fontSize:9,color:C.textMuted}}>A$0</div>
-            {cumulative.map((val,i) => {
-              const isNeg = val < 0;
-              const h = Math.max(2, Math.abs(val) / maxVal * (chartH * 0.6));
-              return <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",width:barW,flexShrink:0}}>
-                {!isNeg && <div style={{height:zero-h,flexShrink:0}}/>}
-                {!isNeg && <div style={{fontSize:9,fontWeight:600,color:C.green,marginBottom:2}}>{val>0?fmtK(val):""}</div>}
-                <div style={{width:barW-4,height:h,background:isNeg?"#e87c7c":C.green,borderRadius:3,opacity:0.85}}/>
-                {isNeg && <div style={{fontSize:9,fontWeight:600,color:"#993535",marginTop:2}}>{fmtK(val)}</div>}
-                {isNeg && <div style={{height:Math.max(0,chartH-zero-h-16)}}/>}
-                <div style={{fontSize:10,color:C.textMuted,marginTop:4}}>{"Yr "+i}</div>
-              </div>;
-            })}
+        const npv = Math.round(npvBenefit - npvCost);
+        const bcr = npvCost > 0 ? (npvBenefit / npvCost) : 0;
+        return <div>
+          {hasGalen && <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
+            {[
+              {label:"Total investment",value:fmtK(galenTotalInvest+parallelRunCost),color:"#993535",bg:"#fef0f0"},
+              {label:`NPV (${Math.round(dr*100)}%)`,value:fmtK(npv),color:npv>0?C.green:"#993535",bg:npv>0?C.greenPale:"#fef0f0"},
+              {label:"BCR",value:bcr.toFixed(1)+":1",color:bcr>=1?C.accent:"#993535",bg:bcr>=1?"#e8faf6":"#fef0f0"},
+              {label:rampYears+"-yr gross",value:fmtK(r.total3WithReimbursement),color:C.green,bg:C.greenPale},
+            ].map((kpi,i) => <div key={i} style={{flex:"1 1 100px",padding:"10px 12px",background:kpi.bg,borderRadius:8,textAlign:"center"}}>
+              <div style={{fontSize:9,fontWeight:600,color:C.textMuted}}>{kpi.label}</div>
+              <div style={{fontSize:18,fontWeight:800,color:kpi.color}}>{kpi.value}</div>
+            </div>)}
+          </div>}
+
+          {/* Cashable / Capacity / Avoidance breakdown */}
+          <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
+            {[
+              {label:"CASHABLE",sub:"Budget reductions",value:r.cashable,color:C.green,bg:C.greenPale,
+               items:[["Legacy decommission",r.decomSave],["ABF efficiency",r.abfEfficiencyGain],["Private patient revenue",r.privateRevRecovery],...(r.isMultiHospital?[["Network consolidation",r.duplicateElimination+r.infraConsolidation]]:[])].filter(x=>x[1]>0)},
+              {label:"CAPACITY",sub:"Non-cashable value",value:r.nonCashable,color:"#b8860b",bg:"#fef9ec",
+               items:[["Clinician time freed",r.timeSave],...(r.isAcademic?[["Teaching efficiency",r.teachingEfficiency+r.teachingOverhead]]:[])].filter(x=>x[1]>0)},
+              {label:"AVOIDANCE",sub:"Costs not incurred",value:r.costAvoidance,color:"#7a4f8a",bg:"#f5f0f8",
+               items:[["Excess bed days",r.excessDayCostAvoided],["Duplicate testing",r.duplicateReduction],["Medical indemnity",r.malpracticeReduction]].filter(x=>x[1]>0)},
+            ].map((cat,i) => <div key={i} style={{flex:"1 1 180px",padding:"12px 14px",background:cat.bg,borderRadius:10,border:`1px solid ${cat.color}20`}}>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:cat.color}}>{cat.label}</div>
+              <div style={{fontSize:20,fontWeight:800,color:cat.color,margin:"4px 0"}}>{fmtK(cat.value)}<span style={{fontSize:11,fontWeight:500}}>/yr</span></div>
+              {cat.items.map((item,j) => <div key={j} style={{display:"flex",justifyContent:"space-between",fontSize:11,color:C.textMid,padding:"2px 0"}}><span>{item[0]}</span><span style={{fontWeight:600}}>{fmtK(item[1])}</span></div>)}
+            </div>)}
           </div>
         </div>;
       })()}
+    </ResultSection>}
 
-
-      {/* Tranche rollout timeline */}
-      {trancheMode && tranches.length > 1 && (() => {
-        const ramp3 = [0.40, 0.80, 1.00];
-        const maxYr = Math.max(...tranches.map(t => t.yearOffset)) + 3;
-        const totalYrs = Math.max(maxYr, rampYears);
-        const yrBenefits = [];
-        for (let y = 0; y < totalYrs; y++) {
-          let yrTotal = 0;
-          tranches.forEach(t => {
-            const trancheYr = y - t.yearOffset;
-            if (trancheYr >= 0 && trancheYr < ramp3.length) {
-              yrTotal += r.annualWithReimbursement * t.bedPct * ramp3[trancheYr];
-            } else if (trancheYr >= ramp3.length) {
-              yrTotal += r.annualWithReimbursement * t.bedPct;
-            }
-          });
-          yrBenefits.push(Math.round(yrTotal));
-        }
-        const maxBen = Math.max(...yrBenefits, 1);
-        const cumBenefits = [];
-        let cum = galenMigrationCost > 0 ? -galenMigrationCost : 0;
-        cumBenefits.push(cum);
-        for (let y = 0; y < totalYrs; y++) {
-          cum += yrBenefits[y] - (galenAnnualCost > 0 ? galenAnnualCost : 0);
-          cumBenefits.push(cum);
-        }
-        return <div style={{marginBottom:16}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginBottom:8}}>Tranche rollout timeline</div>
-
-          {/* Stacked bar chart */}
-          <div style={{display:"flex",gap:2,alignItems:"flex-end",height:100,marginBottom:4}}>
-            {yrBenefits.map((total,y) => {
-              const segments = tranches.map(t => {
-                const trancheYr = y - t.yearOffset;
-                let pct = 0;
-                if (trancheYr >= 0 && trancheYr < ramp3.length) pct = ramp3[trancheYr];
-                else if (trancheYr >= ramp3.length) pct = 1.0;
-                return Math.round(r.annualWithReimbursement * t.bedPct * pct);
-              });
-              const colors = ["#2d8a6e","#4fb39a","#8fd4c0","#b8e6d8","#d0f0e6"];
-              return <div key={y} style={{flex:1,display:"flex",flexDirection:"column-reverse",height:"100%",justifyContent:"flex-start"}}>
-                {segments.map((seg,si) => seg > 0 ? <div key={si} style={{height:`${seg/maxBen*80}%`,minHeight:seg>0?2:0,background:colors[si%colors.length],borderRadius:si===segments.length-1?"3px 3px 0 0":"0"}} title={`${tranches[si].name}: ${fmtK(seg)}`}/> : null)}
-                <div style={{fontSize:9,textAlign:"center",color:C.textMuted,marginTop:2}}>Yr {y+1}</div>
-              </div>;
-            })}
-          </div>
-
-          {/* Legend */}
-          <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:8}}>
-            {tranches.map((t,i) => {
-              const colors = ["#2d8a6e","#4fb39a","#8fd4c0","#b8e6d8","#d0f0e6"];
-              return <div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:C.textMid}}>
-                <div style={{width:8,height:8,borderRadius:2,background:colors[i%colors.length]}}/>
-                {t.name} ({Math.round(t.bedPct*100)}%, yr {t.yearOffset+1})
-              </div>;
-            })}
-          </div>
-
-          {/* Summary table */}
-          <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
-            <thead><tr style={{background:C.accent+"15"}}>
-              <th style={{padding:"5px 8px",textAlign:"left",fontWeight:600,color:C.textMid}}>Year</th>
-              {tranches.map((t,i) => <th key={i} style={{padding:"5px 8px",textAlign:"right",fontWeight:600,color:C.textMid}}>{t.name}</th>)}
-              <th style={{padding:"5px 8px",textAlign:"right",fontWeight:700,color:C.accent}}>Total</th>
-              <th style={{padding:"5px 8px",textAlign:"right",fontWeight:600,color:C.textMid}}>Cumulative</th>
-            </tr></thead>
-            <tbody>
-              {yrBenefits.map((total,y) => <tr key={y} style={{borderBottom:`1px solid ${C.borderLight}`}}>
-                <td style={{padding:"4px 8px",fontWeight:600}}>Year {y+1}</td>
-                {tranches.map((t,i) => {
-                  const trancheYr = y - t.yearOffset;
-                  let pct = 0;
-                  if (trancheYr >= 0 && trancheYr < ramp3.length) pct = ramp3[trancheYr];
-                  else if (trancheYr >= ramp3.length) pct = 1.0;
-                  const val = Math.round(r.annualWithReimbursement * t.bedPct * pct);
-                  return <td key={i} style={{padding:"4px 8px",textAlign:"right",color:pct===0?C.textMuted:C.textMid}}>{pct===0?"—":fmtK(val)}</td>;
-                })}
-                <td style={{padding:"4px 8px",textAlign:"right",fontWeight:700,color:C.accent}}>{fmtK(total)}</td>
-                <td style={{padding:"4px 8px",textAlign:"right",color:cumBenefits[y+1]>=0?C.green:"#993535",fontWeight:600}}>{fmtK(cumBenefits[y+1])}</td>
-              </tr>)}
-              <tr style={{background:C.accent+"10"}}>
-                <td style={{padding:"5px 8px",fontWeight:700}}>{totalYrs}-yr total</td>
-                {tranches.map((t,i) => <td key={i} style={{padding:"5px 8px",textAlign:"right",fontWeight:600,color:C.textMid}}>
-                  {fmtK(yrBenefits.reduce((s,_,y) => {
-                    const trancheYr = y - t.yearOffset;
-                    let pct = 0;
-                    if (trancheYr >= 0 && trancheYr < ramp3.length) pct = ramp3[trancheYr];
-                    else if (trancheYr >= ramp3.length) pct = 1.0;
-                    return s + Math.round(r.annualWithReimbursement * t.bedPct * pct);
-                  }, 0))}
-                </td>)}
-                <td style={{padding:"5px 8px",textAlign:"right",fontWeight:800,color:C.accent}}>{fmtK(yrBenefits.reduce((a,b) => a+b, 0))}</td>
-                <td style={{padding:"5px 8px",textAlign:"right",fontWeight:700,color:cumBenefits[totalYrs]>=0?C.green:"#993535"}}>{fmtK(cumBenefits[totalYrs])}</td>
-              </tr>
-            </tbody>
-          </table></div>
-        </div>;
-      })()}
-
-      {/* Cashable / Capacity / Avoidance split */}
-      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-        {[
-          {label:"CASHABLE",sub:"Budget reductions",value:r.cashable,color:C.green,bg:C.greenPale,
-           items:[
-             ["Legacy decommission",r.decomSave],
-             ["ABF efficiency",r.abfEfficiencyGain],
-             ["Private patient revenue",r.privateRevRecovery],
-             ...(r.isMultiHospital?[["Network consolidation",r.duplicateElimination+r.infraConsolidation]]:[]),
-           ].filter(x=>x[1]>0)},
-          {label:"CAPACITY",sub:"Non-cashable value",value:r.nonCashable,color:"#b8860b",bg:"#fef9ec",
-           items:[
-             ["Clinician time freed",r.timeSave],
-             ...(r.isAcademic?[["Teaching efficiency",r.teachingEfficiency+r.teachingOverhead],["Research system decom",r.researchDecomSave]]:[]),
-           ].filter(x=>x[1]>0)},
-          {label:"AVOIDANCE",sub:"Costs not incurred",value:r.costAvoidance,color:"#7a4f8a",bg:"#f5f0f8",
-           items:[
-             ["Excess bed days",r.excessDayCostAvoided],
-             ["Duplicate testing",r.duplicateReduction],
-             ["Medical indemnity",r.malpracticeReduction],
-           ].filter(x=>x[1]>0)},
-        ].map((cat,i) => <div key={i} style={{flex:"1 1 200px",padding:"14px 16px",background:cat.bg,borderRadius:10,border:`1px solid ${cat.color}20`}}>
-          <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:cat.color,marginBottom:2}}>{cat.label}</div>
-          <div style={{fontSize:11,color:C.textMuted,marginBottom:6}}>{cat.sub}</div>
-          <div style={{fontSize:24,fontWeight:800,color:cat.color,marginBottom:8}}>{fmtK(cat.value)}<span style={{fontSize:12,fontWeight:500}}>/yr</span></div>
-          {cat.items.map((item,j) => <div key={j} style={{display:"flex",justifyContent:"space-between",fontSize:11,color:C.textMid,padding:"2px 0",borderTop:j===0?`1px solid ${cat.color}15`:"none"}}>
-            <span>{item[0]}</span><span style={{fontWeight:600}}>{fmtK(item[1])}</span>
-          </div>)}
-        </div>)}
-      </div>
-
-      {/* Stacked bar showing proportions */}
-      <div style={{marginTop:12}}>
-        <div style={{display:"flex",height:8,borderRadius:4,overflow:"hidden"}}>
-          {r.cashable > 0 && <div style={{flex:r.cashable,background:C.green}} title={`Cashable: ${fmtK(r.cashable)}`}/>}
-          {r.nonCashable > 0 && <div style={{flex:r.nonCashable,background:"#daa520"}} title={`Capacity: ${fmtK(r.nonCashable)}`}/>}
-          {r.costAvoidance > 0 && <div style={{flex:r.costAvoidance,background:"#9b6bae"}} title={`Avoidance: ${fmtK(r.costAvoidance)}`}/>}
-        </div>
-        <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.textMuted,marginTop:4}}>
-          <span>{Math.round(r.cashable/r.annualWithReimbursement*100)}% cashable</span>
-          <span>{Math.round(r.nonCashable/r.annualWithReimbursement*100)}% capacity</span>
-          <span>{Math.round(r.costAvoidance/r.annualWithReimbursement*100)}% avoidance</span>
-        </div>
-      </div>
-    </Card>}
-
-    {/* ═══ ARCHIVING INVESTMENT CASE ═══ */}
-    {!dim && galenMigrationCost > 0 && <Card style={{background:"#f8faf9",border:`1px solid ${C.accent}40`,marginBottom:20}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <span style={{fontSize:18}}>{"🔓"}</span>
-        <h3 style={{fontSize:15,fontWeight:700,margin:0}}>Clinical archiving unlocks decommission savings</h3>
-      </div>
+    {!dim && galenMigrationCost > 0 && <ResultSection title="Archiving investment case" icon="🔓" dimmed={dim}>
       <p style={{fontSize:13,color:C.textMid,margin:"0 0 14px",lineHeight:1.5}}>
-        Without a clinical archive, legacy systems cannot be safely switched off — clinicians need continued access to historical patient records for care continuity and medico-legal compliance.
-        The Galen Clinical Archive is the enabling investment that makes <strong style={{color:C.green}}>{fmtK(r.decomSave)}/yr</strong> in decommission savings possible.
+        Without a clinical archive, legacy systems cannot be safely switched off. The Galen Clinical Archive is the enabling investment that makes <strong style={{color:C.green}}>{fmtK(r.decomSave)}/yr</strong> in decommission savings possible.
       </p>
       <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",marginBottom:12}}>
         <div style={{flex:"1 1 120px",padding:"12px 14px",background:"#fef0f0",borderRadius:8,textAlign:"center"}}>
@@ -2779,41 +2651,88 @@ function ROICalculator() {
         <div style={{flex:"1 1 120px",padding:"12px 14px",background:C.greenPale,borderRadius:8,textAlign:"center"}}>
           <div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>Unlocks (decom only)</div>
           <div style={{fontSize:20,fontWeight:800,color:C.green}}>{fmtK(r.decomSave)}/yr</div>
-          <div style={{fontSize:10,color:C.textMuted}}>cashable savings</div>
         </div>
         <div style={{fontSize:20,color:C.textMuted}}>{"="}</div>
         <div style={{flex:"1 1 120px",padding:"12px 14px",background:"#e8faf6",borderRadius:8,textAlign:"center"}}>
           <div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>Return on archive</div>
           <div style={{fontSize:20,fontWeight:800,color:C.accent}}>{(r.decomSave/Math.max(1,galenMigrationCost)).toFixed(1)}x</div>
-          <div style={{fontSize:10,color:C.textMuted}}>year 1 at full ramp</div>
         </div>
       </div>
-      <div style={{padding:"8px 12px",background:C.accent+"10",borderRadius:6,fontSize:12,color:C.textMid,lineHeight:1.5}}>
-        <strong>Without archiving = A$0 decommission savings.</strong> Legacy systems must remain operational (and funded) until an archive provides clinicians with access to historical records. Every month of delayed archiving extends the legacy cost burden by ~{fmtK(Math.round(r.decomSave/12))}.
+      <div style={{padding:"8px 12px",background:C.accent+"10",borderRadius:6,fontSize:12,color:C.textMid}}>
+        <strong>Without archiving = A$0 decommission savings.</strong> Every month of delayed archiving extends the legacy cost burden by ~{fmtK(Math.round(r.decomSave/12))}.
       </div>
-    </Card>}
+    </ResultSection>}
 
+    {!dim && trancheMode && tranches.length > 1 && <ResultSection title={"Tranche rollout timeline ("+tranches.length+" tranches)"} icon="📅" dimmed={dim}>
+      {(() => {
+        const ramp3 = [0.40, 0.80, 1.00];
+        const maxYr = Math.max(...tranches.map(t => t.yearOffset)) + 3;
+        const totalYrs = Math.max(maxYr, rampYears);
+        const yrBenefits = [];
+        for (let y = 0; y < totalYrs; y++) {
+          let yrTotal = 0;
+          tranches.forEach(t => {
+            const trancheYr = y - t.yearOffset;
+            if (trancheYr >= 0 && trancheYr < ramp3.length) yrTotal += r.annualWithReimbursement * t.bedPct * ramp3[trancheYr];
+            else if (trancheYr >= ramp3.length) yrTotal += r.annualWithReimbursement * t.bedPct;
+          });
+          yrBenefits.push(Math.round(yrTotal));
+        }
+        const cumBenefits = [galenMigrationCost > 0 ? -galenMigrationCost : 0];
+        let cum = cumBenefits[0];
+        for (let y = 0; y < totalYrs; y++) { cum += yrBenefits[y] - (galenAnnualCost || 0); cumBenefits.push(cum); }
+        const maxBen = Math.max(...yrBenefits, 1);
+        const colors = ["#2d8a6e","#4fb39a","#8fd4c0","#b8e6d8","#d0f0e6"];
+        return <div>
+          <div style={{display:"flex",gap:2,alignItems:"flex-end",height:100,marginBottom:8}}>
+            {yrBenefits.map((total,y) => {
+              const segments = tranches.map(t => {
+                const ty = y - t.yearOffset;
+                let p = ty >= 0 && ty < ramp3.length ? ramp3[ty] : ty >= ramp3.length ? 1.0 : 0;
+                return Math.round(r.annualWithReimbursement * t.bedPct * p);
+              });
+              return <div key={y} style={{flex:1,display:"flex",flexDirection:"column-reverse",height:"100%",justifyContent:"flex-start"}}>
+                {segments.map((seg,si) => seg > 0 ? <div key={si} style={{height:`${seg/maxBen*80}%`,minHeight:2,background:colors[si%5],borderRadius:si===segments.length-1?"3px 3px 0 0":"0"}} title={tranches[si].name+": "+fmtK(seg)}/> : null)}
+                <div style={{fontSize:9,textAlign:"center",color:C.textMuted,marginTop:2}}>Yr {y+1}</div>
+              </div>;
+            })}
+          </div>
+          <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:8}}>
+            {tranches.map((t,i) => <div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:C.textMid}}><div style={{width:8,height:8,borderRadius:2,background:colors[i%5]}}/>{t.name} ({Math.round(t.bedPct*100)}%, yr {t.yearOffset+1})</div>)}
+          </div>
+          <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+            <thead><tr style={{background:C.accent+"15"}}><th style={{padding:"5px 8px",textAlign:"left",fontWeight:600}}>Year</th>
+              {tranches.map((t,i) => <th key={i} style={{padding:"5px 8px",textAlign:"right",fontWeight:600}}>{t.name}</th>)}
+              <th style={{padding:"5px 8px",textAlign:"right",fontWeight:700,color:C.accent}}>Total</th>
+              <th style={{padding:"5px 8px",textAlign:"right"}}>Cumulative</th>
+            </tr></thead>
+            <tbody>{yrBenefits.map((total,y) => <tr key={y} style={{borderBottom:`1px solid ${C.borderLight}`}}>
+              <td style={{padding:"4px 8px",fontWeight:600}}>Year {y+1}</td>
+              {tranches.map((t,i) => {const ty=y-t.yearOffset;const p=ty>=0&&ty<ramp3.length?ramp3[ty]:ty>=ramp3.length?1:0;return <td key={i} style={{padding:"4px 8px",textAlign:"right",color:p===0?C.textMuted:C.textMid}}>{p===0?"—":fmtK(Math.round(r.annualWithReimbursement*t.bedPct*p))}</td>;})}
+              <td style={{padding:"4px 8px",textAlign:"right",fontWeight:700,color:C.accent}}>{fmtK(total)}</td>
+              <td style={{padding:"4px 8px",textAlign:"right",color:cumBenefits[y+1]>=0?C.green:"#993535",fontWeight:600}}>{fmtK(cumBenefits[y+1])}</td>
+            </tr>)}</tbody>
+          </table></div>
+        </div>;
+      })()}
+    </ResultSection>}
 
-    {/* Comparator benchmarks */}
-    {!dim && <Card style={{background:"#f8f9fb",border:`1px solid ${C.borderLight}`,marginBottom:20}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-        <span style={{fontSize:16}}>{"📊"}</span>
-        <h3 style={{fontSize:14,fontWeight:700,margin:0,color:C.textMid}}>Australian evidence benchmarks</h3>
-      </div>
+    {!dim && <ResultSection title="Australian evidence benchmarks" icon="📋" dimmed={dim}>
       <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
         {[
           {source:"Productivity Commission",date:"May 2024",metric:"Up to A$5.4bn/yr",desc:"national savings from better EMR data use",color:"#2d6a4f"},
           {source:"QLD DigiMat",date:"Woods et al 2024",metric:"12.9% decline",desc:"in medication complications (1.55M episodes)",color:"#e07020"},
           {source:"RCH Melbourne",date:"South et al 2022",metric:"22% decrease",desc:"in in-hospital mortality post-Epic",color:"#993535"},
           {source:"QAO 2018",date:"Princess Alexandra",metric:"37% fewer",desc:"hospital-acquired infections post-ieMR",color:"#0f4146"},
-        ].map((b,i) => <div key={i} style={{flex:"1 1 150px",minWidth:140,padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+        ].map((b,i) => <div key={i} style={{flex:"1 1 150px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
           <div style={{fontSize:18,fontWeight:800,color:b.color,marginBottom:2}}>{b.metric}</div>
           <div style={{fontSize:11,color:C.textMid,lineHeight:1.4}}>{b.desc}</div>
           <div style={{fontSize:10,color:C.textMuted,marginTop:4}}>{b.source} ({b.date})</div>
         </div>)}
       </div>
-    </Card>}
-    {/* Detailed breakdown */}
+    </ResultSection>}
+
+    {!dim && <ResultSection title="Detailed breakdown" icon="🔍" dimmed={dim}>
     <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
       <ResultCard dimmed={dim} label={`Total savings (${rampYears}-year)`} value={an?<AnimatedK value={r.total3} active={an}/>:"–"} sub={an?"Decom + clinician time x 3 years":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
       <ResultCard dimmed={dim} label="Annual recurring" value={an?<AnimatedK value={r.annual} active={an}/>:"–"} sub={an?`${fmtK(r.decomSave)} decom + ${fmtK(r.timeSave)} time`:""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
@@ -3272,7 +3191,7 @@ function ROICalculator() {
       </Card>;
     })()}
 
-    {/* Galen investment case moved to executive summary */}
+    </ResultSection>}
 
     {/* Disclaimer */}
     <div style={{marginTop:24,padding:"16px 20px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`,fontSize:11,color:C.textMuted,lineHeight:1.7}}>
