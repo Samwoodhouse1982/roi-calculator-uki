@@ -498,6 +498,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     duplicateInfraCost, infraConsolidation, standardisationSave, mergeSavings,
     annualWithReimbursement, total3WithReimbursement, yr1R, yr2R, yr3R,
     // Phase 1: Benefit categorisation
+    fteEquivalent: Math.round(hrsSaved / 1824 * 10) / 10, // 38hr week × 48 weeks = 1,824 hrs/FTE/yr
     cashable: decomSave + abfEfficiencyGain + privateRevRecovery + duplicateElimination + infraConsolidation,
     nonCashable: timeSave + (isAcademic ? teachingEfficiency + teachingOverhead + researchDecomSave : 0),
     costAvoidance: malpracticeReduction + excessDayCostAvoided + duplicateReduction,
@@ -808,6 +809,8 @@ function ROICalculator() {
   const [occupancyRate, setOccupancyRate] = useState(0.90);
   const [rampYears, setRampYears] = useState(3);
   const [galenMigrationCost, setGalenMigrationCost] = useState(0);
+  const [discountRate, setDiscountRate] = useState(0.07); // NSW Treasury default 7%
+  const [parallelRunMonths, setParallelRunMonths] = useState(0); // Months of dual-running (0 = off, user opt-in)
   const [galenAnnualCost, setGalenAnnualCost] = useState(0);
   const [mergerMode, setMergerMode] = useState(false);
   const [mergerOrgs, setMergerOrgs] = useState([]);
@@ -2357,6 +2360,35 @@ function ROICalculator() {
           </div>
         </div>
         {(galenMigrationCost > 0 || galenAnnualCost > 0) && <div style={{fontSize:11,color:C.textMuted,marginTop:6}}>The executive summary will show the archiving investment case</div>}
+      </div>
+
+      <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+          <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>Financial analysis settings</span>
+          <InfoTip text="Discount rate for NPV calculation (NSW Treasury default 7%). Parallel-run period accounts for dual-running costs during migration."/>
+        </div>
+        <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+          <div style={{flex:"1 1 120px"}}>
+            <div style={{fontSize:11,color:C.textMuted,marginBottom:4}}>Discount rate (NPV)</div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <input type="number" value={Math.round(discountRate*100)} min={0} max={15} step={0.5}
+                onChange={e => setDiscountRate(Math.max(0, Math.min(0.15, parseFloat(e.target.value)/100 || 0.07)))}
+                style={{width:60,padding:"8px 10px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,textAlign:"right"}}/>
+              <span style={{fontSize:12,color:C.textMuted}}>%</span>
+            </div>
+            <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>NSW Treasury: 7%</div>
+          </div>
+          <div style={{flex:"1 1 120px"}}>
+            <div style={{fontSize:11,color:C.textMuted,marginBottom:4}}>Parallel-run period</div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <input type="number" value={parallelRunMonths} min={0} max={36} step={3}
+                onChange={e => setParallelRunMonths(Math.max(0, Math.min(36, parseInt(e.target.value) || 0)))}
+                style={{width:60,padding:"8px 10px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,textAlign:"right"}}/>
+              <span style={{fontSize:12,color:C.textMuted}}>months</span>
+            </div>
+            <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>Dual-running legacy + new EMR</div>
+          </div>
+        </div>
         {(galenMigrationCost > 0 || galenAnnualCost > 0) && <button type="button" onClick={()=>{setGalenMigrationCost(0);setGalenAnnualCost(0);}} style={{border:"none",background:"none",color:C.textMuted,fontSize:11,cursor:"pointer",textDecoration:"underline",padding:"4px 0",marginTop:2}}>Clear costs</button>}
       </div>
     </Card></div>
@@ -2444,25 +2476,59 @@ function ROICalculator() {
       <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,color:C.accent,marginBottom:12,textTransform:"uppercase"}}>Executive Summary</div>
 
       {/* KPI cards row */}
-      <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:20}}>
-        {[
-          {label:"Total investment",value:galenMigrationCost>0?fmtK(galenMigrationCost+Math.round(galenAnnualCost*rampYears)):"–",sub:galenMigrationCost>0?`A$${(galenMigrationCost/1e6).toFixed(0)}M migration + A$${(galenAnnualCost/1e6).toFixed(1)}M/yr × ${rampYears}yr`:"Enter Galen costs above",color:"#993535",bg:"#fef0f0"},
-          {label:`${rampYears}-year gross benefit`,value:fmtK(r.total3WithReimbursement),sub:`Phased: ${rampYears===5?"20/40/60/80/100%":"40/80/100%"}`,color:C.green,bg:C.greenPale},
-          {label:`${rampYears}-year net benefit`,value:galenMigrationCost>0?fmtK(r.total3WithReimbursement-(galenMigrationCost+Math.round(galenAnnualCost*r.rampPcts.reduce((a,b)=>a+b,0)))):"–",sub:galenMigrationCost>0?"After archiving investment":"Enter Galen costs above",color:C.accent,bg:"#e8faf6"},
-          {label:"Payback period",value:galenMigrationCost>0&&r.annualWithReimbursement>galenAnnualCost?(galenMigrationCost/(r.annualWithReimbursement-galenAnnualCost)).toFixed(1)+" yrs":"–",sub:galenMigrationCost>0?"On archiving investment":"Enter Galen costs above",color:"#0f4146",bg:C.blue25},
-        ].map((kpi,i) => <div key={i} style={{flex:"1 1 140px",minWidth:130,padding:"14px 16px",background:kpi.bg,borderRadius:10,textAlign:"center"}}>
-          <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:4}}>{kpi.label}</div>
-          <div style={{fontSize:22,fontWeight:800,color:kpi.color}}>{kpi.value}</div>
-          <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>{kpi.sub}</div>
-        </div>)}
-      </div>
+      {(() => {
+        const galenTotalInvest = galenMigrationCost + Math.round(galenAnnualCost * rampYears);
+        const parallelRunCost = Math.round(r.totalEstate * (parallelRunMonths / 12) * 0.80);
+        const totalInvestment = galenTotalInvest + parallelRunCost;
+        const grossPhased = r.total3WithReimbursement;
+        const galenPhased = galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b) => a+b, 0));
+        const netBenefit = grossPhased - galenPhased - parallelRunCost;
+        // NPV calculation
+        const dr = discountRate;
+        let npvBenefit = 0, npvCost = galenMigrationCost + parallelRunCost;
+        for (let y = 0; y < r.rampPcts.length; y++) {
+          const benefit = Math.round(r.annualWithReimbursement * r.rampPcts[y]);
+          const cost = Math.round(galenAnnualCost * r.rampPcts[y]);
+          npvBenefit += (benefit - cost) / Math.pow(1 + dr, y + 1);
+        }
+        const npv = Math.round(npvBenefit - npvCost);
+        const bcr = npvCost > 0 ? (npvBenefit / npvCost) : 0;
+        const payback = galenMigrationCost > 0 && r.annualWithReimbursement > galenAnnualCost ? (galenMigrationCost / (r.annualWithReimbursement - galenAnnualCost)) : 0;
+        const hasGalen = galenMigrationCost > 0;
+        return <div>
+        <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:12}}>
+          {[
+            {label:"Total investment",value:hasGalen?fmtK(totalInvestment):"–",sub:hasGalen?(parallelRunCost>0?`Archive A$${(galenTotalInvest/1e6).toFixed(0)}M + parallel-run A$${(parallelRunCost/1e6).toFixed(0)}M`:`A$${(galenMigrationCost/1e6).toFixed(0)}M migration + A$${(galenAnnualCost/1e6).toFixed(1)}M/yr`):"Enter Galen costs",color:"#993535",bg:"#fef0f0"},
+            {label:`${rampYears}-year gross`,value:fmtK(grossPhased),sub:`Phased: ${rampYears===5?"20/40/60/80/100%":"40/80/100%"}`,color:C.green,bg:C.greenPale},
+            {label:`${rampYears}-year net`,value:hasGalen?fmtK(netBenefit):"–",sub:hasGalen?"After all investment":"Enter Galen costs",color:C.accent,bg:"#e8faf6"},
+            {label:"Payback",value:hasGalen&&payback>0?payback.toFixed(1)+" yrs":"–",sub:hasGalen?"On archive investment":"",color:"#0f4146",bg:C.blue25},
+          ].map((kpi,i) => <div key={i} style={{flex:"1 1 130px",minWidth:120,padding:"12px 14px",background:kpi.bg,borderRadius:10,textAlign:"center"}}>
+            <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:3}}>{kpi.label}</div>
+            <div style={{fontSize:20,fontWeight:800,color:kpi.color}}>{kpi.value}</div>
+            <div style={{fontSize:9,color:C.textMuted,marginTop:2}}>{kpi.sub}</div>
+          </div>)}
+        </div>
+        {hasGalen && <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
+          {[
+            {label:`NPV (${Math.round(dr*100)}% discount)`,value:fmtK(npv),color:npv>0?C.green:"#993535",bg:npv>0?C.greenPale:"#fef0f0"},
+            {label:"Benefit-cost ratio",value:bcr.toFixed(1)+":1",color:bcr>=1?C.accent:"#993535",bg:bcr>=1?"#e8faf6":"#fef0f0"},
+            {label:"FTE capacity freed",value:r.fteEquivalent.toFixed(0),sub:"clinical equivalent",color:"#b8860b",bg:"#fef9ec"},
+          ].map((kpi,i) => <div key={i} style={{flex:"1 1 100px",minWidth:95,padding:"10px 12px",background:kpi.bg,borderRadius:8,textAlign:"center"}}>
+            <div style={{fontSize:9,fontWeight:600,color:C.textMuted,marginBottom:2}}>{kpi.label}</div>
+            <div style={{fontSize:18,fontWeight:800,color:kpi.color}}>{kpi.value}</div>
+            {kpi.sub && <div style={{fontSize:9,color:C.textMuted}}>{kpi.sub}</div>}
+          </div>)}
+        </div>}
+        </div>;
+      })()}
 
       {/* Cumulative cashflow chart */}
       {galenMigrationCost > 0 && (() => {
         const yrs = r.rampPcts.length;
         const galenTotal = galenMigrationCost + r.rampPcts.reduce((a,p) => a + Math.round(galenAnnualCost * p), 0);
         const cumulative = [0];
-        let running = -galenMigrationCost;
+        const parallelRunCost = Math.round(r.totalEstate * (parallelRunMonths / 12) * 0.80);
+        let running = -(galenMigrationCost + parallelRunCost);
         cumulative.push(running);
         for (let y = 0; y < yrs; y++) {
           running += Math.round(r.annualWithReimbursement * r.rampPcts[y]) - Math.round(galenAnnualCost * r.rampPcts[y]);
@@ -2472,7 +2538,7 @@ function ROICalculator() {
         const chartH = 140, chartW = 320, barW = Math.floor(chartW / (yrs + 2));
         const zero = chartH * 0.35;
         return <div style={{marginBottom:16}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginBottom:8}}>Cumulative net position (archiving investment)</div>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginBottom:8}}>Cumulative net cashflow (incl. parallel-run costs)</div>
           <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:2,height:chartH,position:"relative"}}>
             <div style={{position:"absolute",left:0,right:0,top:zero,height:1,background:C.textMuted+"40"}}/>
             <div style={{position:"absolute",left:0,top:zero-2,fontSize:9,color:C.textMuted}}>A$0</div>
@@ -2607,12 +2673,13 @@ function ROICalculator() {
     <Card dimmed={dim}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
       <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:16}}>
-        <OverridableStat label="Clinical staff" computed={calc(calcInputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on BLS workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/admin staff per facility (20 base + 0.15/bed, capped at 120).`}/>
-        <OverridableStat label="Mins wasted / wk" computed={calc(calcInputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on AMIA 2019 workflow studies and Brigham & Women's time-motion research.`}/>
+        <OverridableStat label="Clinical staff" computed={calc(calcInputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on NSW Health workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/admin staff per facility (20 base + 0.15/bed, capped at 120).`}/>
+        <OverridableStat label="Mins wasted / wk" computed={calc(calcInputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on Westbrook et al 2010 (JAMIA) workflow interruption studies and Nuffield Trust 2020 system navigation research.`}/>
+        <Stat label="FTE equivalent" value={an?r.fteEquivalent.toFixed(0):0} sub="clinical capacity" color={"#b8860b"} info={`${fmtNum(r.hrsSaved)} hours freed ÷ 1,824 hours per FTE (38hr week × 48 working weeks) = ${r.fteEquivalent.toFixed(1)} FTE equivalent. This is not headcount reduction — it represents clinical capacity freed for patient care, equivalent to hiring ${r.fteEquivalent.toFixed(0)} additional clinicians without recruitment.`}/>
         <Stat label="Hours freed / yr" value={an?<AnimatedNum value={r.hrsSaved} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Result: ${fmtNum(r.hrsSaved)} hours per year.`}/>
-        <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at the BLS median blended rate of $95/hr (BLS median clinical compensation including benefits). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity, since not all freed time converts to measurable output. This represents capacity redirected to patient care, not a direct cash saving.`}/>
+        <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at A$65/hr blended rate (AIHW workforce data: nursing ~A$45-55/hr, medical ~A$90-120/hr, allied health ~A$40-60/hr). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity. This represents capacity redirected to patient care, not a direct cash saving. Equivalent to ~${(r.hrsSaved/1824).toFixed(0)} FTE.`}/>
       </div>
-      <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"A$"}55 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong></Callout>
+      <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"A$"}65 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong> <span style={{color:C.textMuted,fontSize:12}}>| Equivalent to ~{r.fteEquivalent.toFixed(0)} FTE of clinical capacity</span></Callout>
     </Card><LockedConnector/>
 
     {/* Clinical safety */}
@@ -2914,10 +2981,10 @@ function ROICalculator() {
         <S title="4. Clinician time savings">
           <p style={{margin:"0 0 8px"}}>Time freed when clinicians no longer switch between multiple legacy systems.</p>
           <F>corpPerOrg = min(120, 20 + bedsPerFacility {"\u00d7"} 0.15)<br/>clinicians = beds {"\u00d7"} 3.2 + facilities {"\u00d7"} corpPerOrg<br/>switchPenalty = min(max(0, systems - 1) {"\u00d7"} 0.04, 4.0)<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 50wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"A$"}95/hr {"\u00d7"} realisationRate</F>
-          <p style={{margin:"8px 0 4px"}}><strong>3.2 staff per bed</strong> {" - "} BLS Occupational Employment and Wage Statistics show 2.8-3.5 clinical full-time equivalents (FTEs) per acute bed (doctors, nurses, allied health professionals (AHPs), pharmacists). <Ev s="BLS OEWS 2023; MGMA staffing benchmarks."/></p>
+          <p style={{margin:"8px 0 4px"}}><strong>3.0 staff per bed</strong> {" - "} NSW Health SDPR EOI: 75,500 clinical staff / 25,632 beds = 2.95, rounded to 3.0. Includes doctors, nurses, allied health, pharmacists. <Ev s="NSW Health SDPR EOI (HT20037) Annexure A; AIHW workforce data."/></p>
           <p style={{margin:"4px 0"}}><strong>12 min/wk base</strong> (migration path) {" - "} Westbrook et al 2010 (JAMIA) found nurses interrupted 3-6 times/hour by system-switching. Nuffield Trust 2020 estimated 15-20 min/day lost to system navigation. Our 12 min/week is conservative (reducible portion only). Archive-only uses 5 min/wk. <Ev s="Westbrook et al 2010 (JAMIA); Nuffield Trust 2020 system navigation study."/></p>
           <p style={{margin:"4px 0"}}><strong>+4% per system</strong> {" - "} each additional legacy system adds cognitive overhead. At 42 systems (as in the benchmarked Trust), this produces ~10 min/day wasted, consistent with published studies. <Md s="First-principles switching cost model. Validated against benchmarked Trust (42 systems)."/></p>
-          <p style={{margin:"4px 0"}}><strong>{"A$"}95/hr blended rate</strong> {" - "} BLS median hourly compensation for clinical staff including benefits (OEWS 2023). RN ~$45-55/hr, physicians ~$120-180/hr, AHPs ~$35-65/hr. Blended $95/hr weighted towards nursing as the largest user group. <Ev s="BLS OEWS 2023; MGMA physician compensation report 2024."/></p>
+          <p style={{margin:"4px 0"}}><strong>{"A$"}65/hr blended rate</strong> {" - "} AIHW workforce cost data. RN ~A$45-55/hr, medical ~A$90-120/hr, allied health ~A$40-60/hr. Blended A$65/hr weighted towards nursing as the largest clinical user group (~62% of clinical FTE). <Ev s="AIHW Health Workforce data; ABS Employee Earnings and Hours; NSW Health Annual Report."/></p>
         </S>
 
         <S title="5. Support tickets & patient records request (SAR) turnaround">
