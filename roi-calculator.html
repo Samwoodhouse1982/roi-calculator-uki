@@ -442,7 +442,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const isMultiHospital = inp._providerType === "state_network" || inp._providerType === "statewide";
   const survivingSystems = legacy - decom;
   const duplicateSystems = isMultiHospital ? Math.round(survivingSystems * DUPLICATE_SYSTEM_RATE) : 0;
-  const duplicateSystemCost = isMultiHospital ? Math.round(duplicateSystems * blendedCost) : 0;
+  const duplicateSystemCost = isMultiHospital ? Math.round(duplicateSystems * depCost) : 0; // Use dep tier cost — duplicates are departmental/niche, not enterprise
   const duplicateElimination = Math.round(duplicateSystemCost * sc.decom_pct);
   const lhdCount = inp._lhdCount || Math.max(1, Math.round(inp.org_count / 15)); // LHDs/HHSs, not individual hospitals
   const duplicateInfraCost = isMultiHospital ? lhdCount * DUPLICATE_INFRA_COST_PER_FACILITY : 0;
@@ -582,7 +582,7 @@ const PROVIDER_MULTIPLIERS = {
   metropolitan:     { abf_pct: 0.70, private_pct: 0.18, complexity_boost: 1.2 },
   tertiary:         { abf_pct: 0.65, private_pct: 0.25, complexity_boost: 1.5 },
   state_network:    { abf_pct: 0.72, private_pct: 0.15, complexity_boost: 1.3 },
-  statewide:        { abf_pct: 0.70, private_pct: 0.18, complexity_boost: 1.5 },
+  statewide:        { abf_pct: 0.70, private_pct: 0.12, complexity_boost: 1.5 },
 };
 
 // ABF model multipliers
@@ -2564,15 +2564,15 @@ function ROICalculator() {
         npvBenefit += (benefit - cost) / Math.pow(1 + dr, y + 1);
       }
       const npv = Math.round(npvBenefit - npvCost);
-      const bcr = npvCost > 0 ? (npvBenefit / npvCost) : 0;
-      const payback = hasGalen && r.annualWithReimbursement > galenAnnualCost ? (galenMigrationCost / (r.annualWithReimbursement - galenAnnualCost)) : 0;
+      const bcr = galenMigrationCost > 0 ? (r.decomSave / galenMigrationCost) : 0; // Archive BCR: decom savings unlocked per A$ of archive investment
+      const payback = hasGalen && r.decomSave > galenAnnualCost ? (galenMigrationCost / (r.decomSave - galenAnnualCost)) : 0; // Archive payback: when archive investment is recovered from decom savings
       return <Card style={{background:"linear-gradient(135deg, #f0f7f5 0%, #e8f4f0 100%)",border:`2px solid ${C.accent}`,marginBottom:16}}>
         {/* Row 1: The four numbers that matter */}
         <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:12}}>
           {[
             {label:"Combined annual",value:fmtK(r.annualWithReimbursement)+"/yr",color:C.green,bg:C.greenPale},
             {label:rampYears+"-year net benefit",value:hasGalen?fmtK(netBenefit):"Enter Galen costs",color:hasGalen?C.accent:C.textMuted,bg:hasGalen?"#e8faf6":"#f5f5f5"},
-            {label:"Payback",value:hasGalen&&payback>0?payback.toFixed(1)+" yrs":"—",color:"#0f4146",bg:C.blue25},
+            {label:"Archive payback",value:hasGalen&&payback>0?payback.toFixed(1)+" yrs":"—",color:"#0f4146",bg:C.blue25},
             {label:"FTE capacity freed",value:r.fteEquivalent.toFixed(0)+" FTE",color:"#b8860b",bg:"#fef9ec"},
           ].map((kpi,i) => <div key={i} style={{flex:"1 1 130px",minWidth:120,padding:"12px 14px",background:kpi.bg,borderRadius:10,textAlign:"center"}}>
             <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:3}}>{kpi.label}</div>
@@ -2612,7 +2612,7 @@ function ROICalculator() {
           npvBenefit += (Math.round(r.annualWithReimbursement * r.rampPcts[y]) - Math.round(galenAnnualCost * r.rampPcts[y])) / Math.pow(1 + dr, y + 1);
         }
         const npv = Math.round(npvBenefit - npvCost);
-        const bcr = npvCost > 0 ? (npvBenefit / npvCost) : 0;
+        const bcr = galenMigrationCost > 0 ? (r.decomSave / galenMigrationCost) : 0;
         return <div>
           {hasGalen && <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
             {[
