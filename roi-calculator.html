@@ -320,6 +320,8 @@ const SCENARIO = {
   CONSERVATIVE: { decom_pct: 0.85, realisation: 0.20, safety: 0.15 },
   EXPECTED:     { decom_pct: 1.00, realisation: 0.30, safety: 0.25 },
   STRETCH:      { decom_pct: 1.10, realisation: 0.40, safety: 0.35 },
+  DELAYED:      { decom_pct: 0.70, realisation: 0.15, safety: 0.10 }, // 12-month programme delay
+  PARTIAL:      { decom_pct: 0.50, realisation: 0.20, safety: 0.15 }, // Only 50% of systems retired
 };
 const CX = { LOW: 0.7, TYPICAL: 1.0, HIGH: 1.45 };
 const DQ = { CLEAN: 0.75, MIXED: 1.0, POOR: 1.4 };
@@ -1132,7 +1134,9 @@ function ROICalculator() {
   const rCon=useMemo(()=>calc(calcInputs,"CONSERVATIVE",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
   const rExp=useMemo(()=>calc(calcInputs,"EXPECTED",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
   const rStr=useMemo(()=>calc(calcInputs,"STRETCH",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
-  const r=am==="CONSERVATIVE"?rCon:am==="STRETCH"?rStr:rExp;
+  const rDel=useMemo(()=>calc(calcInputs,"DELAYED",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
+  const rPar=useMemo(()=>calc(calcInputs,"PARTIAL",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
+  const r=am==="CONSERVATIVE"?rCon:am==="STRETCH"?rStr:am==="DELAYED"?rDel:am==="PARTIAL"?rPar:rExp;
   const isArchiveOnly = inputs.journey === "HAVE_EPR";
 
   // ── Data layer: exposes all values for external PDF engines / integrations ──
@@ -2440,15 +2444,27 @@ function ROICalculator() {
         {dim&&<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:24,height:24,borderRadius:"50%",background:C.accent,color:"#fff",fontSize:12,fontWeight:800}}>1</span>}
         {dim ? "Choose scenario to unlock results" : "Scenario"}
       </div>
-      <div style={{display:"flex",gap:8}}>
+      <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:6,letterSpacing:0.5}}>BENEFIT SCENARIOS</div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>
         {[
             { k: "CONSERVATIVE", l: "Conservative", s: "Lower-bound", e: "\ud83d\udee1\ufe0f" },
             { k: "EXPECTED", l: "Expected", s: "Best estimate", e: "\ud83d\udcca" },
             { k: "STRETCH", l: "Stretch", s: "Upside", e: "\ud83d\ude80" },
-          ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:90,padding:"14px 10px",textAlign:"center",border:scenarioMode===s.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode===s.k?C.accentPale:"#fff"}}>
-          <div style={{fontSize:20,marginBottom:4}}>{s.e}</div>
-          <div style={{fontSize:15,fontWeight:scenarioMode===s.k?700:500,color:scenarioMode===s.k?C.accent:C.textMid}}>{s.l}</div>
-          <div style={{fontSize:11,color:C.textMuted}}>{s.s}</div>
+          ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:80,padding:"12px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode===s.k?C.accentPale:"#fff"}}>
+          <div style={{fontSize:18,marginBottom:2}}>{s.e}</div>
+          <div style={{fontSize:13,fontWeight:scenarioMode===s.k?700:500,color:scenarioMode===s.k?C.accent:C.textMid}}>{s.l}</div>
+          <div style={{fontSize:10,color:C.textMuted}}>{s.s}</div>
+        </button>)}
+      </div>
+      <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:6,letterSpacing:0.5}}>RISK SCENARIOS</div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        {[
+            { k: "DELAYED", l: "12-month delay", s: "Programme slips 1 year", e: "\u23f3" },
+            { k: "PARTIAL", l: "Partial decom", s: "Only 50% systems retired", e: "\u26a0\ufe0f" },
+          ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:100,padding:"10px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid #993535`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode===s.k?"#fef0f0":"#fff"}}>
+          <div style={{fontSize:16,marginBottom:2}}>{s.e}</div>
+          <div style={{fontSize:12,fontWeight:scenarioMode===s.k?700:500,color:scenarioMode===s.k?"#993535":C.textMid}}>{s.l}</div>
+          <div style={{fontSize:10,color:C.textMuted}}>{s.s}</div>
         </button>)}
       </div>
     </Card>
@@ -2638,6 +2654,26 @@ function ROICalculator() {
       </div>
     </Card>}
 
+
+    {/* Comparator benchmarks */}
+    {!dim && <Card style={{background:"#f8f9fb",border:`1px solid ${C.borderLight}`,marginBottom:20}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+        <span style={{fontSize:16}}>{"📊"}</span>
+        <h3 style={{fontSize:14,fontWeight:700,margin:0,color:C.textMid}}>Australian evidence benchmarks</h3>
+      </div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+        {[
+          {source:"Productivity Commission",date:"May 2024",metric:"Up to A$5.4bn/yr",desc:"national savings from better EMR data use",color:"#2d6a4f"},
+          {source:"QLD DigiMat",date:"Woods et al 2024",metric:"12.9% decline",desc:"in medication complications (1.55M episodes)",color:"#e07020"},
+          {source:"RCH Melbourne",date:"South et al 2022",metric:"22% decrease",desc:"in in-hospital mortality post-Epic",color:"#993535"},
+          {source:"QAO 2018",date:"Princess Alexandra",metric:"37% fewer",desc:"hospital-acquired infections post-ieMR",color:"#0f4146"},
+        ].map((b,i) => <div key={i} style={{flex:"1 1 150px",minWidth:140,padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+          <div style={{fontSize:18,fontWeight:800,color:b.color,marginBottom:2}}>{b.metric}</div>
+          <div style={{fontSize:11,color:C.textMid,lineHeight:1.4}}>{b.desc}</div>
+          <div style={{fontSize:10,color:C.textMuted,marginTop:4}}>{b.source} ({b.date})</div>
+        </div>)}
+      </div>
+    </Card>}
     {/* Detailed breakdown */}
     <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
       <ResultCard dimmed={dim} label={`Total savings (${rampYears}-year)`} value={an?<AnimatedK value={r.total3} active={an}/>:"–"} sub={an?"Decom + clinician time x 3 years":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
@@ -2714,35 +2750,66 @@ function ROICalculator() {
     {/* ABF efficiency & revenue impact */}
     <Card dimmed={dim}>
       <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>ABF efficiency & revenue impact</h3>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Estimated annual impact from ABF efficiency gains, private patient revenue uplift, and quality improvements. These are modelled estimates attributed to EMR consolidation as a contributing factor, not sole cause. Actual outcomes will depend on your implementation scope and existing infrastructure.</p>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Cashable benefits from improved ABF coding efficiency and private patient billing accuracy, attributed to EMR consolidation as a contributing factor.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>ABF efficiency gain</div>
-          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.abfEfficiencyGain + r.privateRevRecovery):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>ABF efficiency: {fmtK(r.abfEfficiencyGain)} + Private revenue: {fmtK(r.privateRevRecovery)}</div>
+          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.abfEfficiencyGain):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>15% of legacy estate admin overhead addressable through consolidation</div>
         </div>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Indemnity + excess bed days</div>
-          <div style={{fontSize:28,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.malpracticeReduction + r.excessDayCostAvoided):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>Indemnity: {fmtK(r.malpracticeReduction)} + Bed days: {fmtK(r.excessDayCostAvoided)}</div>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Private patient revenue uplift</div>
+          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.privateRevRecovery):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>30% recovery of leaked private episodes (15% leakage, VAGO 2019)</div>
         </div>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.blue25,borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Quality & safety savings</div>
-          <div style={{fontSize:28,fontWeight:800,color:"#0f4146",margin:"6px 0"}}>{an?fmtK(r.qualitySavings):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>Duplicates: {fmtK(r.duplicateReduction)} + Indemnity: {fmtK(r.malpracticeReduction)} + Bed days: {fmtK(r.excessDayCostAvoided)}</div>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate testing reduction</div>
+          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.duplicateReduction):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>50% of 22% duplicate rate addressable (Banker et al 2024)</div>
         </div>
       </div>
 
       <Callout bg={C.greenPale} border="#c3ddd3">
-        <strong style={{color:C.green}}>Total reimbursement & quality impact:</strong>{" "}
-        {fmtK(r.reimbursementImpact + r.qualitySavings)}/yr
-        <span style={{margin:"0 8px",color:C.textMuted}}>|</span>
-        Combined total: <strong style={{color:C.accent}}>{fmtK(r.annualWithReimbursement)}/yr</strong>
+        <strong style={{color:C.green}}>Total ABF & revenue impact:</strong>{" "}
+        {fmtK(r.abfEfficiencyGain + r.privateRevRecovery + r.duplicateReduction)}/yr (cashable)
       </Callout>
 
       <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
         <strong>Methodology:</strong> ABF efficiency modelled at 15% of legacy estate cost addressable through consolidation. NSW SDPR benchmark: estimated legacy estate cost A$225-385M/yr (modelled from QLD Health proxy and NSW programme data); Epic replacement contract A$969M/10yr (~A$97M/yr); implied gross saving A$130-290M/yr. Private patient revenue uplift modelled at 30% recovery of leaked episodes (15% leakage rate, VAGO 2019). Medical indemnity reduction at 3% of A$20,000/bed (VMIA 2025-26). Excess bed days: 35% fragmentation attribution of preventable AEs (ACSQHC). All figures are scenario-adjusted estimates.<br/><br/><strong>Confidence key:</strong> Legacy system count (24 core): CONFIRMED (NSW Health Oct 2023). Hospital count (228): CONFIRMED. Epic contract (A$969M): CONFIRMED. Legacy estate cost (A$225-385M): ESTIMATE (QLD proxy + programme data). Galen archive (A$83M): CONFIRMED (IDM Magazine Dec 2024). Full estate (30-40+ systems): ESTIMATE (Microsoft ODS case study: 34+ systems).
+      </div>
+    </Card><LockedConnector/>
+
+
+    {/* Avoidable cost of harm */}
+    <Card dimmed={dim} style={{border:"1px solid #d4c4df",background:"#faf7fc"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+        <span style={{fontSize:18}}>{"⚠️"}</span>
+        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Avoidable cost of harm</h3>
+      </div>
+      <p style={{fontSize:13,color:C.textMid,margin:"0 0 14px",lineHeight:1.5}}>
+        These are <strong>costs not incurred</strong> when fragmentation-related adverse events are prevented. They are not budget reductions {" \u2014 "} they represent the financial burden of preventable harm that would be reduced through consolidated clinical information. Classified as cost avoidance, not cashable savings.
+      </p>
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:14}}>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#f5f0f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Excess bed days avoided</div>
+          <div style={{fontSize:28,fontWeight:800,color:"#7a4f8a",margin:"6px 0"}}>{an?fmtK(r.excessDayCostAvoided):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>{an?fmtNum(r.excessDaysAvoided):0} days at A$3,100/day (IHACPA)</div>
+          <div style={{fontSize:10,color:"#7a4f8a",marginTop:4}}>35% fragmentation attribution (ACSQHC)</div>
+        </div>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#f5f0f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Medical indemnity reduction</div>
+          <div style={{fontSize:28,fontWeight:800,color:"#7a4f8a",margin:"6px 0"}}>{an?fmtK(r.malpracticeReduction):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>3% of A$20,000/bed institutional premium</div>
+          <div style={{fontSize:10,color:"#7a4f8a",marginTop:4}}>VMIA 2025-26 benchmark</div>
+        </div>
+      </div>
+      <Callout bg="#f5f0f8" border="#d4c4df">
+        <strong style={{color:"#7a4f8a"}}>Total avoidable cost of harm:</strong>{" "}
+        {fmtK(r.costAvoidance)}/yr (cost avoidance, not budget reduction)
+      </Callout>
+      <div style={{marginTop:10,padding:"8px 12px",background:"#fef9ec",borderRadius:6,fontSize:11,color:"#7a6520",lineHeight:1.6}}>
+        <strong>Important:</strong> These figures represent the estimated financial burden of preventable adverse events attributable to information fragmentation. They will not appear as line items in your budget {" \u2014 "} they represent costs that are avoided when adverse events do not occur. Include in business cases as {"\""}cost avoidance{"\""} category, separate from cashable savings.
       </div>
     </Card><LockedConnector/>
 
