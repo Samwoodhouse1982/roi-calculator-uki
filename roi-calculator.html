@@ -885,9 +885,9 @@ function ROICalculator() {
   const [leadError, setLeadError] = useState(null);
 
   // ── Integration config (developer: replace these values) ──
-  const HUBSPOT_PORTAL_ID = "";   // Set US portal ID
-  const HUBSPOT_FORM_GUID = "";   // Set US form GUID
-  const HUBSPOT_REGION = "na1";  // US data centre
+  const HUBSPOT_PORTAL_ID = "";   // Set portal ID
+  const HUBSPOT_FORM_GUID = "";   // Set form GUID
+  const HUBSPOT_REGION = "na1";  // Data centre region
   const EMAIL_ENDPOINT = "";      // e.g. "https://your-worker.your-domain.workers.dev/send-report"
 
   // ── PDF branding ──
@@ -1306,7 +1306,7 @@ function ROICalculator() {
       conservative_total3: fmtK(rCon.total3),
       stretch_annual: fmtK(rStr.annual),
       stretch_total3: fmtK(rStr.total3),
-      date: new Date().toLocaleDateString("en-US",{day:"numeric",month:"long",year:"numeric"}),
+      date: new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"}),
     },
   }), [r, rCon, rExp, rStr, inputs, flagships, leadForm, am, isArchiveOnly]);
 
@@ -1357,7 +1357,7 @@ function ROICalculator() {
     const pw = 210, ph = 297, ml = 16, mr = 16, mt = 16, cw = pw - ml - mr;
     let y = 0;
     const scenarioLabel = am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected";
-    const dateStr = new Date().toLocaleDateString("en-US",{day:"numeric",month:"long",year:"numeric"});
+    const dateStr = new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"});
 
     // Colours
     const TEAL = [15,65,70], WHITE = [255,255,255], SEAFOAM = [190,250,240];
@@ -2082,7 +2082,7 @@ function ROICalculator() {
         Legacy systems
         <span style={{marginLeft:"auto",display:"inline-flex",alignItems:"center",justifyContent:"center",minWidth:36,height:24,borderRadius:12,padding:"0 10px",background:C.accent,color:"#fff",fontSize:14,fontWeight:800,lineHeight:1}}>{totalSystems + flagships.length + portfolioImpact.addSystems}</span>
       </div>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 12px"}}>How many legacy systems in each tier? Default costs are US benchmarks scaled to your bed count. <strong style={{color:C.textMid}}>Click any tier cost to override it</strong>, add named high-cost systems below, or switch to {"\u201c"}I know my spend{"\u201d"} if you have your total.</p>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 12px"}}>How many legacy systems in each tier? Default costs are modelled from Australian state contract data, scaled to your bed count. <strong style={{color:C.textMid}}>Click any tier cost to override it</strong>, add named high-cost systems below, or switch to {"\u201c"}I know my spend{"\u201d"} if you have your total.</p>
 
       {/* Cost input mode */}
       <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
@@ -3113,7 +3113,7 @@ function ROICalculator() {
 
         <S title="4. Clinician time savings">
           <p style={{margin:"0 0 8px"}}>Time freed when clinicians no longer switch between multiple legacy systems.</p>
-          <F>corpPerOrg = min(120, 20 + bedsPerFacility {"\u00d7"} 0.15)<br/>clinicians = beds {"\u00d7"} 3.2 + facilities {"\u00d7"} corpPerOrg<br/>switchPenalty = min(max(0, systems - 1) {"\u00d7"} 0.04, 4.0)<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 50wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"A$"}95/hr {"\u00d7"} realisationRate</F>
+          <F>corpPerOrg = min(120, 20 + bedsPerFacility {"\u00d7"} 0.15)<br/>clinicians = beds {"\u00d7"} 3.0 + facilities {"\u00d7"} corpPerOrg<br/>switchPenalty = min(max(0, systems - 1) {"\u00d7"} 0.04, 4.0)<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 48wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"A$"}65/hr {"\u00d7"} realisationRate</F>
           <p style={{margin:"8px 0 4px"}}><strong>3.0 staff per bed</strong> {" - "} NSW Health SDPR EOI: 75,500 clinical staff / 25,632 beds = 2.95, rounded to 3.0. Includes doctors, nurses, allied health, pharmacists. <Ev s="NSW Health SDPR EOI (HT20037) Annexure A; AIHW workforce data."/></p>
           <p style={{margin:"4px 0"}}><strong>12 min/wk base</strong> (migration path) {" - "} Westbrook et al 2010 (JAMIA) found nurses interrupted 3-6 times/hour by system-switching. Nuffield Trust 2020 estimated 15-20 min/day lost to system navigation. Our 12 min/week is conservative (reducible portion only). Archive-only uses 5 min/wk. <Ev s="Westbrook et al 2010 (JAMIA); Nuffield Trust 2020 system navigation study."/></p>
           <p style={{margin:"4px 0"}}><strong>+4% per system</strong> {" - "} each additional legacy system adds cognitive overhead. At 42 systems (as in the benchmarked Trust), this produces ~10 min/day wasted, consistent with published studies. <Md s="First-principles switching cost model. Validated against benchmarked Trust (42 systems)."/></p>
@@ -3121,7 +3121,7 @@ function ROICalculator() {
         </S>
 
         <S title="5. Support tickets & patient records request (SAR) turnaround">
-          <p style={{margin:"0 0 8px"}}><strong>Tickets:</strong> 2.5 per system/month baseline (IT Infrastructure Library / ITIL service desk metrics). Surviving systems generate 40% fewer tickets due to consolidated support. <Bm s="ITIL service desk reporting in US health systems; 0.6 factor is a modelled estimate."/></p>
+          <p style={{margin:"0 0 8px"}}><strong>Tickets:</strong> 2.5 per system/month baseline (IT Infrastructure Library / ITIL service desk metrics). Surviving systems generate 40% fewer tickets due to consolidated support. <Bm s="ITIL service desk benchmarks; 0.6 surviving-system factor is a modelled estimate."/></p>
           <p style={{margin:"4px 0"}}><strong>Patient records request turnaround:</strong> 3-day base (cross-LHD coordination, redaction, QA) + 0.8 days per core system (before), 0.15 days per surviving system (after). NSW public health organisations must respond to records requests within a reasonable timeframe (no explicit statutory maximum for public sector; HRIP Act 2002 applies to private health). Turnaround scales with core clinical systems searched (capped at 20) {" - "} consistent with reports from health systems with fragmented EMR estates. <Md s="Capped at 20 core clinical systems. Based on Australian HIM department workflow data."/></p>
         </S>
 
@@ -3175,7 +3175,7 @@ function ROICalculator() {
               <tr><td style={{padding:"6px 10px",fontWeight:600}}>Data quality</td><td style={{padding:"6px 10px",textAlign:"center"}}>0.75</td><td style={{padding:"6px 10px",textAlign:"center"}}>1.00</td><td style={{padding:"6px 10px",textAlign:"center"}}>1.40</td><td style={{padding:"6px 10px"}}>Minutes wasted, tickets, SAR time</td></tr>
             </tbody>
           </table></div>
-          <p style={{margin:"8px 0 4px"}}><strong>Complexity</strong> reflects how bespoke and integrated your legacy systems are. Low means off-the-shelf with simple interfaces. High means heavily customised systems with deep integrations and complex data models. Higher complexity increases both per-system costs (more expensive to run) and clinician time wasted (harder to navigate). <Md s="Designed to produce approximately +/-30% variation around baseline, consistent with observed range across US health systems."/></p>
+          <p style={{margin:"8px 0 4px"}}><strong>Complexity</strong> reflects how bespoke and integrated your legacy systems are. Low means off-the-shelf with simple interfaces. High means heavily customised systems with deep integrations and complex data models. Higher complexity increases both per-system costs (more expensive to run) and clinician time wasted (harder to navigate). <Md s="Designed to produce approximately +/-30% variation around baseline, consistent with observed range across health system application estates."/></p>
           <p style={{margin:"4px 0"}}><strong>Data quality</strong> affects how long clinicians spend searching for information. Clean data means well-structured records with consistent coding. Poor data means duplicate records, missing fields, and inconsistent formats. Poor quality roughly doubles the effort of finding information compared to clean data. <Md s="Modelled estimate. Poor data approximately doubles effort vs clean data."/></p>
         </S>
 
