@@ -828,7 +828,7 @@ function ROICalculator() {
   const [parallelRunMonths, setParallelRunMonths] = useState(0); // Months of dual-running (0 = off, user opt-in)
   const [trancheMode, setTrancheMode] = useState(false);
   const [showFacilities, setShowFacilities] = useState(false);
-  const [portfolioOv, setPortfolioOv] = useState({systems:null, staff:null, cost:null});
+  const [portfolioOv, setPortfolioOv] = useState({systems:null, cost:null});
   const [tranches, setTranches] = useState([
     { name: "Tranche A", bedPct: 0.16, yearOffset: 0 },
     { name: "Tranche B", bedPct: 0.32, yearOffset: 1 },
@@ -1148,7 +1148,7 @@ function ROICalculator() {
       _lhdCount: providerType === "statewide" ? 17 : (providerType === "state_network" ? Math.max(1, inputs.org_count) : 0),
       _privatePct: PROVIDER_MULTIPLIERS[providerType]?.private_pct || 0.15,
       _portfolioSystems: portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems,
-      _portfolioStaff: portfolioOv.staff != null ? portfolioOv.staff : portfolioImpact.addStaff,
+      _portfolioStaff: portfolioImpact.addStaff,
       _portfolioCost: portfolioOv.cost != null ? portfolioOv.cost : portfolioImpact.addCost,
     };
   }, [inputs, providerType, reimbursementModel, medicareDrgRevenue, rampYears, occupancyRate, portfolioOv, portfolioImpact]);
@@ -2078,21 +2078,15 @@ function ROICalculator() {
 
       {portfolioImpact.addSystems > 0 && <div style={{marginBottom:14,padding:"14px 16px",background:C.greenPale,borderRadius:10,border:`1px solid ${C.green}25`}}>
         <div style={{fontSize:11,fontWeight:700,letterSpacing:0.5,color:C.green,marginBottom:8}}>FROM NON-ACUTE FACILITIES</div>
-        <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:8}}>
-          <div style={{flex:"1 1 100px"}}>
-            <div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>Legacy systems</div>
+        <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:8}}>
+          <div>
+            <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:2}}>Legacy systems</div>
             <input type="number" value={portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems} min={0} max={999}
               onChange={e=>setPortfolioOv(p=>({...p,systems:Math.max(0,parseInt(e.target.value)||0)}))}
               style={{width:60,fontSize:18,fontWeight:800,color:C.green,border:`1px solid ${C.borderLight}`,borderRadius:6,padding:"4px 6px",background:"#fff",fontFamily:"inherit"}}/>
           </div>
-          <div style={{flex:"1 1 100px"}}>
-            <div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>Additional staff</div>
-            <input type="number" value={portfolioOv.staff != null ? portfolioOv.staff : portfolioImpact.addStaff} min={0} max={999999} step={100}
-              onChange={e=>setPortfolioOv(p=>({...p,staff:Math.max(0,parseInt(e.target.value)||0)}))}
-              style={{width:80,fontSize:18,fontWeight:800,color:C.green,border:`1px solid ${C.borderLight}`,borderRadius:6,padding:"4px 6px",background:"#fff",fontFamily:"inherit"}}/>
-          </div>
-          <div style={{flex:"1 1 100px"}}>
-            <div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>Estate cost/yr</div>
+          <div>
+            <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:2}}>Estate cost/yr</div>
             <div style={{display:"flex",alignItems:"center",gap:4}}>
               <span style={{fontSize:12,color:C.textMuted}}>A$</span>
               <input type="number" value={portfolioOv.cost != null ? portfolioOv.cost : portfolioImpact.addCost} min={0} max={99999999} step={10000}
@@ -2103,8 +2097,8 @@ function ROICalculator() {
         </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <span style={{fontSize:11,color:C.textMuted}}>Calculated from {portfolioImpact.addSites} non-acute sites configured above</span>
-          {(portfolioOv.systems != null || portfolioOv.staff != null || portfolioOv.cost != null) &&
-            <button type="button" onClick={()=>setPortfolioOv({systems:null,staff:null,cost:null})} style={{border:"none",background:"none",color:C.accent,fontSize:11,cursor:"pointer",textDecoration:"underline"}}>Reset to calculated</button>}
+          {(portfolioOv.systems != null || portfolioOv.cost != null) &&
+            <button type="button" onClick={()=>setPortfolioOv({systems:null,cost:null})} style={{border:"none",background:"none",color:C.accent,fontSize:11,cursor:"pointer",textDecoration:"underline"}}>Reset to calculated</button>}
         </div>
       </div>}
       {/* Cost input mode */}
