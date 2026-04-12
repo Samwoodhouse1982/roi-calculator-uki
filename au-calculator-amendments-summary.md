@@ -3,7 +3,7 @@
 
 **Version:** 12 April 2026
 
-This document traces the full development history of the ROI calculator — from its original UK NHS version, through the US market expansion, to the comprehensive Australian localisation. Each stage involved rebuilding the financial model, evidence base, and user experience for the target market. The Australian version is not a re-skinned US or UK tool — it has been systematically reconstructed with Australian evidence, pricing, terminology, and regulatory context.
+This document traces the full development history of the ROI calculator, from its original UK NHS version, through the US market expansion, to the comprehensive Australian localisation. Each stage involved rebuilding the financial model, evidence base, and user experience for the target market. The Australian version is not a re-skinned US or UK tool. It has been systematically reconstructed with Australian evidence, pricing, terminology, and regulatory context.
 
 ---
 
@@ -35,7 +35,7 @@ The US expansion was a fundamental rebuild of the financial model to reflect the
 
 **What we did:** Added a provider type selector with five categories (Critical Access, Community, Regional, Academic Medical Center, Multi-Hospital System), each with calibrated multipliers for Medicare percentage, denial factors, and penalty exposure. Critical Access Hospitals were correctly exempted from HRRP, HAC, and VBP penalties.
 
-**Why:** US hospitals vary enormously. A 25-bed Critical Access Hospital in rural Montana has completely different economics from a 2,500-bed academic system in Boston. The UK model treated all Trusts as roughly comparable — the US version needed to differentiate.
+**Why:** US hospitals vary enormously. A 25-bed Critical Access Hospital in rural Montana has completely different economics from a 2,500-bed academic system in Boston. The UK model treated all Trusts as roughly comparable. The US version needed to differentiate.
 
 ## 2.3 Expanding the organisation model
 
@@ -53,7 +53,7 @@ The US expansion was a fundamental rebuild of the financial model to reflect the
 
 **What we did:** Replaced every UK evidence citation with US sources: JAMA 2025 (Pattar et al, 116 RCTs), JAMIA 2019 (Vest et al, single-vendor consolidation), HHS OIG 2022, CRICO 2016, NYU Langone (Wang et al, 33% mortality reduction), and the VA Oracle Health cautionary example (826 major incidents, 149 veterans harmed).
 
-**Why:** US executives need to see evidence from institutions they recognise — JAMA, AHRQ, CMS, and named US health systems.
+**Why:** US executives need to see evidence from institutions they recognise: JAMA, AHRQ, CMS, and named US health systems.
 
 ## 2.6 Adding academic and M&A modules
 
@@ -125,7 +125,7 @@ The Australian version required a third fundamental rebuild. Australia's health 
 
 **What we did:** Added a "Statewide Programme" provider type as the primary option, pre-loaded with NSW-scale defaults (25,000 beds, 228 hospitals, 17 Local Health Districts).
 
-**Why:** The most likely Australian use case is a state-level EMR consolidation programme (NSW SDPR, QLD DigiMat, SA EPAS). These involve hundreds of hospitals and thousands of community sites — fundamentally different from the single-hospital or health-system scenarios the UK and US versions were designed for.
+**Why:** The most likely Australian use case is a state-level EMR consolidation programme (NSW SDPR, QLD DigiMat, SA EPAS). These involve hundreds of hospitals and thousands of community sites, fundamentally different from the single-hospital or health-system scenarios the UK and US versions were designed for.
 
 **What this includes:**
 - Six provider types: Rural/Remote, Regional, Metropolitan/Tertiary, Tertiary Referral, LHD/Health Service, and Statewide Programme
@@ -140,13 +140,13 @@ The Australian version required a third fundamental rebuild. Australia's health 
 **Why:** Generic assumptions would not withstand scrutiny from a NSW Health audience. By anchoring to published programme data, the outputs become credible starting points for discussion.
 
 **Key data points integrated:**
-- 24 confirmed core legacy systems (9 EMR, 10 PAS, 5 LIMS) — NSW Health October 2023
-- 228 hospitals and 450+ facilities — SDPR EOI Annexure A
-- 25,632 bed capacity and 75,500+ clinical EMR users — EOI Table 6
+- 24 confirmed core legacy systems (9 EMR, 10 PAS, 5 LIMS), sourced from NSW Health October 2023
+- 228 hospitals and 450+ facilities, from SDPR EOI Annexure A
+- 25,632 bed capacity and 75,500+ clinical EMR users, from EOI Table 6
 - Enterprise system costs calibrated against QLD Health Cerner contract data
-- Legacy estate cost range A$225-385M/yr — modelled from QLD proxy and NSW programme documents
-- Epic replacement contract A$969M/10yr — confirmed from NSW Health announcements
-- Galen clinical archive contract A$83M/10yr — confirmed from IDM Magazine December 2024
+- Legacy estate cost range A$225-385M/yr, modelled from QLD proxy and NSW programme documents
+- Epic replacement contract A$969M/10yr, confirmed from NSW Health announcements
+- Galen clinical archive contract A$83M/10yr, confirmed from IDM Magazine December 2024
 
 **Confidence labelling:** Every anchor figure in the methodology section is labelled as either CONFIRMED (from published sources) or ESTIMATE (modelled from proxy data).
 
@@ -162,7 +162,7 @@ The Australian version required a third fundamental rebuild. Australia's health 
 
 **What we did:** Added a 35% attribution factor so that only 35% of preventable adverse event bed days are attributed to information fragmentation, rather than 100%.
 
-**Why:** Adverse events happen for many reasons — staffing, fatigue, training, equipment. The ACSQHC reports that approximately 35% of clinical incidents involve communication or information failure. Applying this factor reduced excess bed day savings from ~A$150M/yr to ~A$91M/yr at statewide scale — still significant, but grounded in evidence and clearly classified as cost avoidance rather than cashable savings.
+**Why:** Adverse events happen for many reasons, including staffing, fatigue, training, equipment. The ACSQHC reports that approximately 35% of clinical incidents involve communication or information failure. Applying this factor reduced excess bed day savings from ~A$150M/yr to ~A$91M/yr at statewide scale. Still significant, but grounded in evidence and clearly classified as cost avoidance rather than cashable savings.
 
 ## 3.8 Internal audit and accuracy corrections
 
@@ -178,13 +178,13 @@ The Australian version required a third fundamental rebuild. Australia's health 
 - BCR scoped to archive investment vs decommission savings only (was 91:1, now 10.5:1)
 - Payback scoped to archive investment vs decommission savings (was 0.0yr, now 0.1yr)
 - Statewide private patient rate reduced from 18% to 12% (rural hospitals have near-zero private patients)
-- System counts calibrated to ~204 total (enterprise 24, departmental 80, niche 80, non-acute 20) — down from ~520
+- System counts calibrated to ~204 total (enterprise 24, departmental 80, niche 80, non-acute 20), down from ~520
 
-**Net impact:** Combined annual benefits reduced from A$775M/yr to A$551M/yr — a 29% reduction producing a more credible and defensible output.
+**Net impact:** Combined annual benefits reduced from A$775M/yr to A$551M/yr, a 29% reduction producing a more credible and defensible output.
 
 ## 3.9 Removing all US and American references
 
-**What we did:** Conducted multiple sweeps to identify and replace every remaining US reference — in user-facing text, methodology sections, formula displays, source citations, date formatting, and configuration.
+**What we did:** Conducted multiple sweeps to identify and replace every remaining US reference, across user-facing text, methodology sections, formula displays, source citations, date formatting, and configuration.
 
 **Why:** A single reference to "US benchmarks," "$95/hr," or "en-US" date formatting would undermine the credibility of the entire localisation.
 
@@ -198,11 +198,11 @@ The Australian version required a third fundamental rebuild. Australia's health 
 
 **Input changes:** Non-acute facility portfolio collapsed behind an optional toggle; facility system counts integrated inline with tier sliders showing combined totals; merger question hidden for statewide (redundant); reimbursement defaults to "Public (ABF-funded)"; migration/archive costs left blank for optional entry.
 
-**Results changes:** Level 1 shows 4 KPI cards and a proportion bar without scrolling. Level 2 provides collapsible sections (executive detail, archiving investment, tranche timeline, evidence benchmarks, detailed breakdown) — all closed by default. Every piece of content preserved, just reorganised behind progressive disclosure.
+**Results changes:** Level 1 shows 4 KPI cards and a proportion bar without scrolling. Level 2 provides collapsible sections (executive detail, archiving investment, tranche timeline, evidence benchmarks, detailed breakdown), all closed by default. Every piece of content preserved, just reorganised behind progressive disclosure.
 
 ## 3.11 Expanding all acronyms
 
-**What we did:** Ensured every acronym is spelled out on first user-facing occurrence — 22 acronyms in total including EMR, ABF, NPV, BCR, FTE, LHD, NWAU, SDPR, ACSQHC, AIHW, IHACPA, VMIA, and others.
+**What we did:** Ensured every acronym is spelled out on first user-facing occurrence, covering 22 acronyms in total including EMR, ABF, NPV, BCR, FTE, LHD, NWAU, SDPR, ACSQHC, AIHW, IHACPA, VMIA, and others.
 
 **Why:** An executive unfamiliar with health informatics terminology should not have to guess what NWAU or IHACPA means. First-use expansion is standard practice in government business cases.
 
