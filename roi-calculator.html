@@ -497,6 +497,10 @@ function calc(inp, mode, ov = {}, flagships = []) {
     isMultiHospital, duplicateSystems, duplicateSystemCost, duplicateElimination,
     duplicateInfraCost, infraConsolidation, standardisationSave, mergeSavings,
     annualWithReimbursement, total3WithReimbursement, yr1R, yr2R, yr3R,
+    // Phase 1: Benefit categorisation
+    cashable: decomSave + abfEfficiencyGain + privateRevRecovery + duplicateElimination + infraConsolidation,
+    nonCashable: timeSave + (isAcademic ? teachingEfficiency + teachingOverhead + researchDecomSave : 0),
+    costAvoidance: malpracticeReduction + excessDayCostAvoided + duplicateReduction,
   };
 }
 
@@ -2333,7 +2337,7 @@ function ROICalculator() {
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
           <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>Galen Clinical Archive costs (optional)</span>
-          <InfoTip text="If you have indicative costs for the Galen migration and ongoing archive, enter them here. The results page will show net savings after Galen costs."/>
+          <InfoTip text="Enter indicative costs for the Galen Clinical Archive. The executive summary will show how the archiving investment unlocks decommission savings — without archiving, legacy systems cannot be safely decommissioned."/>
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -2352,7 +2356,7 @@ function ROICalculator() {
             <span style={{fontSize:11,color:C.textMuted}}>/yr</span>
           </div>
         </div>
-        {(galenMigrationCost > 0 || galenAnnualCost > 0) && <div style={{fontSize:11,color:C.textMuted,marginTop:6}}>Net savings after Galen costs will be shown on the results page</div>}
+        {(galenMigrationCost > 0 || galenAnnualCost > 0) && <div style={{fontSize:11,color:C.textMuted,marginTop:6}}>The executive summary will show the archiving investment case</div>}
         {(galenMigrationCost > 0 || galenAnnualCost > 0) && <button type="button" onClick={()=>{setGalenMigrationCost(0);setGalenAnnualCost(0);}} style={{border:"none",background:"none",color:C.textMuted,fontSize:11,cursor:"pointer",textDecoration:"underline",padding:"4px 0",marginTop:2}}>Clear costs</button>}
       </div>
     </Card></div>
@@ -2434,7 +2438,141 @@ function ROICalculator() {
       </div>
     )}
 
-    {/* Headline cards */}
+
+    {/* ═══ EXECUTIVE SUMMARY ═══ */}
+    {!dim && <Card style={{background:"linear-gradient(135deg, #f0f7f5 0%, #e8f4f0 100%)",border:`2px solid ${C.accent}`,marginBottom:20}}>
+      <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,color:C.accent,marginBottom:12,textTransform:"uppercase"}}>Executive Summary</div>
+
+      {/* KPI cards row */}
+      <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:20}}>
+        {[
+          {label:"Total investment",value:galenMigrationCost>0?fmtK(galenMigrationCost+Math.round(galenAnnualCost*rampYears)):"–",sub:galenMigrationCost>0?`A$${(galenMigrationCost/1e6).toFixed(0)}M migration + A$${(galenAnnualCost/1e6).toFixed(1)}M/yr × ${rampYears}yr`:"Enter Galen costs above",color:"#993535",bg:"#fef0f0"},
+          {label:`${rampYears}-year gross benefit`,value:fmtK(r.total3WithReimbursement),sub:`Phased: ${rampYears===5?"20/40/60/80/100%":"40/80/100%"}`,color:C.green,bg:C.greenPale},
+          {label:`${rampYears}-year net benefit`,value:galenMigrationCost>0?fmtK(r.total3WithReimbursement-(galenMigrationCost+Math.round(galenAnnualCost*r.rampPcts.reduce((a,b)=>a+b,0)))):"–",sub:galenMigrationCost>0?"After archiving investment":"Enter Galen costs above",color:C.accent,bg:"#e8faf6"},
+          {label:"Payback period",value:galenMigrationCost>0&&r.annualWithReimbursement>galenAnnualCost?(galenMigrationCost/(r.annualWithReimbursement-galenAnnualCost)).toFixed(1)+" yrs":"–",sub:galenMigrationCost>0?"On archiving investment":"Enter Galen costs above",color:"#0f4146",bg:C.blue25},
+        ].map((kpi,i) => <div key={i} style={{flex:"1 1 140px",minWidth:130,padding:"14px 16px",background:kpi.bg,borderRadius:10,textAlign:"center"}}>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:4}}>{kpi.label}</div>
+          <div style={{fontSize:22,fontWeight:800,color:kpi.color}}>{kpi.value}</div>
+          <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>{kpi.sub}</div>
+        </div>)}
+      </div>
+
+      {/* Cumulative cashflow chart */}
+      {galenMigrationCost > 0 && (() => {
+        const yrs = r.rampPcts.length;
+        const galenTotal = galenMigrationCost + r.rampPcts.reduce((a,p) => a + Math.round(galenAnnualCost * p), 0);
+        const cumulative = [0];
+        let running = -galenMigrationCost;
+        cumulative.push(running);
+        for (let y = 0; y < yrs; y++) {
+          running += Math.round(r.annualWithReimbursement * r.rampPcts[y]) - Math.round(galenAnnualCost * r.rampPcts[y]);
+          cumulative.push(running);
+        }
+        const maxVal = Math.max(...cumulative.map(Math.abs), 1);
+        const chartH = 140, chartW = 320, barW = Math.floor(chartW / (yrs + 2));
+        const zero = chartH * 0.35;
+        return <div style={{marginBottom:16}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginBottom:8}}>Cumulative net position (archiving investment)</div>
+          <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:2,height:chartH,position:"relative"}}>
+            <div style={{position:"absolute",left:0,right:0,top:zero,height:1,background:C.textMuted+"40"}}/>
+            <div style={{position:"absolute",left:0,top:zero-2,fontSize:9,color:C.textMuted}}>A$0</div>
+            {cumulative.map((val,i) => {
+              const isNeg = val < 0;
+              const h = Math.max(2, Math.abs(val) / maxVal * (chartH * 0.6));
+              return <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",width:barW,flexShrink:0}}>
+                {!isNeg && <div style={{height:zero-h,flexShrink:0}}/>}
+                {!isNeg && <div style={{fontSize:9,fontWeight:600,color:C.green,marginBottom:2}}>{val>0?fmtK(val):""}</div>}
+                <div style={{width:barW-4,height:h,background:isNeg?"#e87c7c":C.green,borderRadius:3,opacity:0.85}}/>
+                {isNeg && <div style={{fontSize:9,fontWeight:600,color:"#993535",marginTop:2}}>{fmtK(val)}</div>}
+                {isNeg && <div style={{height:Math.max(0,chartH-zero-h-16)}}/>}
+                <div style={{fontSize:10,color:C.textMuted,marginTop:4}}>{"Yr "+i}</div>
+              </div>;
+            })}
+          </div>
+        </div>;
+      })()}
+
+      {/* Cashable / Capacity / Avoidance split */}
+      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+        {[
+          {label:"CASHABLE",sub:"Budget reductions",value:r.cashable,color:C.green,bg:C.greenPale,
+           items:[
+             ["Legacy decommission",r.decomSave],
+             ["ABF efficiency",r.abfEfficiencyGain],
+             ["Private patient revenue",r.privateRevRecovery],
+             ...(r.isMultiHospital?[["Network consolidation",r.duplicateElimination+r.infraConsolidation]]:[]),
+           ].filter(x=>x[1]>0)},
+          {label:"CAPACITY",sub:"Non-cashable value",value:r.nonCashable,color:"#b8860b",bg:"#fef9ec",
+           items:[
+             ["Clinician time freed",r.timeSave],
+             ...(r.isAcademic?[["Teaching efficiency",r.teachingEfficiency+r.teachingOverhead],["Research system decom",r.researchDecomSave]]:[]),
+           ].filter(x=>x[1]>0)},
+          {label:"AVOIDANCE",sub:"Costs not incurred",value:r.costAvoidance,color:"#7a4f8a",bg:"#f5f0f8",
+           items:[
+             ["Excess bed days",r.excessDayCostAvoided],
+             ["Duplicate testing",r.duplicateReduction],
+             ["Medical indemnity",r.malpracticeReduction],
+           ].filter(x=>x[1]>0)},
+        ].map((cat,i) => <div key={i} style={{flex:"1 1 200px",padding:"14px 16px",background:cat.bg,borderRadius:10,border:`1px solid ${cat.color}20`}}>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:cat.color,marginBottom:2}}>{cat.label}</div>
+          <div style={{fontSize:11,color:C.textMuted,marginBottom:6}}>{cat.sub}</div>
+          <div style={{fontSize:24,fontWeight:800,color:cat.color,marginBottom:8}}>{fmtK(cat.value)}<span style={{fontSize:12,fontWeight:500}}>/yr</span></div>
+          {cat.items.map((item,j) => <div key={j} style={{display:"flex",justifyContent:"space-between",fontSize:11,color:C.textMid,padding:"2px 0",borderTop:j===0?`1px solid ${cat.color}15`:"none"}}>
+            <span>{item[0]}</span><span style={{fontWeight:600}}>{fmtK(item[1])}</span>
+          </div>)}
+        </div>)}
+      </div>
+
+      {/* Stacked bar showing proportions */}
+      <div style={{marginTop:12}}>
+        <div style={{display:"flex",height:8,borderRadius:4,overflow:"hidden"}}>
+          {r.cashable > 0 && <div style={{flex:r.cashable,background:C.green}} title={`Cashable: ${fmtK(r.cashable)}`}/>}
+          {r.nonCashable > 0 && <div style={{flex:r.nonCashable,background:"#daa520"}} title={`Capacity: ${fmtK(r.nonCashable)}`}/>}
+          {r.costAvoidance > 0 && <div style={{flex:r.costAvoidance,background:"#9b6bae"}} title={`Avoidance: ${fmtK(r.costAvoidance)}`}/>}
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.textMuted,marginTop:4}}>
+          <span>{Math.round(r.cashable/r.annualWithReimbursement*100)}% cashable</span>
+          <span>{Math.round(r.nonCashable/r.annualWithReimbursement*100)}% capacity</span>
+          <span>{Math.round(r.costAvoidance/r.annualWithReimbursement*100)}% avoidance</span>
+        </div>
+      </div>
+    </Card>}
+
+    {/* ═══ ARCHIVING INVESTMENT CASE ═══ */}
+    {!dim && galenMigrationCost > 0 && <Card style={{background:"#f8faf9",border:`1px solid ${C.accent}40`,marginBottom:20}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+        <span style={{fontSize:18}}>{"🔓"}</span>
+        <h3 style={{fontSize:15,fontWeight:700,margin:0}}>Clinical archiving unlocks decommission savings</h3>
+      </div>
+      <p style={{fontSize:13,color:C.textMid,margin:"0 0 14px",lineHeight:1.5}}>
+        Without a clinical archive, legacy systems cannot be safely switched off — clinicians need continued access to historical patient records for care continuity and medico-legal compliance.
+        The Galen Clinical Archive is the enabling investment that makes <strong style={{color:C.green}}>{fmtK(r.decomSave)}/yr</strong> in decommission savings possible.
+      </p>
+      <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",marginBottom:12}}>
+        <div style={{flex:"1 1 120px",padding:"12px 14px",background:"#fef0f0",borderRadius:8,textAlign:"center"}}>
+          <div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>Archiving investment</div>
+          <div style={{fontSize:20,fontWeight:800,color:"#993535"}}>{fmtK(galenMigrationCost)}</div>
+          <div style={{fontSize:10,color:C.textMuted}}>migration</div>
+        </div>
+        <div style={{fontSize:20,color:C.textMuted}}>{"→"}</div>
+        <div style={{flex:"1 1 120px",padding:"12px 14px",background:C.greenPale,borderRadius:8,textAlign:"center"}}>
+          <div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>Unlocks (decom only)</div>
+          <div style={{fontSize:20,fontWeight:800,color:C.green}}>{fmtK(r.decomSave)}/yr</div>
+          <div style={{fontSize:10,color:C.textMuted}}>cashable savings</div>
+        </div>
+        <div style={{fontSize:20,color:C.textMuted}}>{"="}</div>
+        <div style={{flex:"1 1 120px",padding:"12px 14px",background:"#e8faf6",borderRadius:8,textAlign:"center"}}>
+          <div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>Return on archive</div>
+          <div style={{fontSize:20,fontWeight:800,color:C.accent}}>{(r.decomSave/Math.max(1,galenMigrationCost)).toFixed(1)}x</div>
+          <div style={{fontSize:10,color:C.textMuted}}>year 1 at full ramp</div>
+        </div>
+      </div>
+      <div style={{padding:"8px 12px",background:C.accent+"10",borderRadius:6,fontSize:12,color:C.textMid,lineHeight:1.5}}>
+        <strong>Without archiving = A$0 decommission savings.</strong> Legacy systems must remain operational (and funded) until an archive provides clinicians with access to historical records. Every month of delayed archiving extends the legacy cost burden by ~{fmtK(Math.round(r.decomSave/12))}.
+      </div>
+    </Card>}
+
+    {/* Detailed breakdown */}
     <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
       <ResultCard dimmed={dim} label={`Total savings (${rampYears}-year)`} value={an?<AnimatedK value={r.total3} active={an}/>:"–"} sub={an?"Decom + clinician time x 3 years":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
       <ResultCard dimmed={dim} label="Annual recurring" value={an?<AnimatedK value={r.annual} active={an}/>:"–"} sub={an?`${fmtK(r.decomSave)} decom + ${fmtK(r.timeSave)} time`:""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
@@ -2861,34 +2999,7 @@ function ROICalculator() {
       </Card>;
     })()}
 
-    {/* Net savings after Galen costs */}
-    {(galenMigrationCost > 0 || galenAnnualCost > 0) && <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Net savings after Galen costs</h3>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 12px"}}>Gross savings from legacy decommission, minus the cost of Galen Clinical Archive migration and ongoing annual fees.</p>
-      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:12}}>
-        <div style={{flex:"1 1 160px",padding:"16px 18px",background:C.greenPale,borderRadius:10,textAlign:"center"}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>{rampYears}-year gross savings</div>
-          <div style={{fontSize:22,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement):"–"}</div>
-          <div style={{fontSize:11,color:C.textMuted}}>{rampYears === 5 ? "Phased: 20/40/60/80/100%" : "Phased: 40/80/100%"}</div>
-        </div>
-        <div style={{flex:"1 1 160px",padding:"16px 18px",background:"#fef0f0",borderRadius:10,textAlign:"center"}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Galen migration</div>
-          <div style={{fontSize:22,fontWeight:800,color:"#993535",margin:"6px 0"}}>{fmtK(galenMigrationCost)}</div>
-          <div style={{fontSize:11,color:C.textMuted}}>One-time</div>
-        </div>
-        <div style={{flex:"1 1 160px",padding:"16px 18px",background:"#fef0f0",borderRadius:10,textAlign:"center"}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Galen annual (3yr)</div>
-          <div style={{fontSize:22,fontWeight:800,color:"#993535",margin:"6px 0"}}>{fmtK(Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))}</div>
-          <div style={{fontSize:11,color:C.textMuted}}>{fmtK(galenAnnualCost)}/yr phased</div>
-        </div>
-        <div style={{flex:"1 1 160px",padding:"16px 18px",background:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b) => a+b, 0)))) > 0 ? C.greenPale : "#fef0f0",borderRadius:10,textAlign:"center"}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>{rampYears}-year net savings</div>
-          <div style={{fontSize:22,fontWeight:800,color:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b) => a+b, 0)))) > 0 ? C.green : "#993535",margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b) => a+b, 0)))):"–"}</div>
-          <div style={{fontSize:11,color:C.textMuted}}>Payback: ~{an && r.annualWithReimbursement > galenAnnualCost ? (galenMigrationCost / (r.annualWithReimbursement - galenAnnualCost)).toFixed(1) : "–"} years</div>
-        </div>
-      </div>
-    </Card>}
-    {(galenMigrationCost > 0 || galenAnnualCost > 0) && <LockedConnector/>}
+    {/* Galen investment case moved to executive summary */}
 
     {/* Disclaimer */}
     <div style={{marginTop:24,padding:"16px 20px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`,fontSize:11,color:C.textMuted,lineHeight:1.7}}>
