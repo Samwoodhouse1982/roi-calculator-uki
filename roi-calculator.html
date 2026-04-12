@@ -1901,7 +1901,7 @@ function ROICalculator() {
       {/* Merger question - hidden for statewide (already handled by preset) */}
       {providerType !== "statewide" && <div style={{marginBottom:20,padding:"14px 18px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-          <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Are you consolidating across multiple facilities or LHDs?</span>
+          <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Are you merging with or acquiring another health service?</span>
           <div style={{display:"flex",gap:6}}>
             <button type="button" onClick={()=>setMergerMode(true)} style={{padding:"6px 16px",borderRadius:999,fontSize:12,fontWeight:700,cursor:"pointer",border:mergerMode===true?`2px solid ${C.accent}`:`1px solid ${C.border}`,background:mergerMode===true?C.accentPale:"#fff",color:mergerMode===true?C.accent:C.textMid}}>Yes</button>
             <button type="button" onClick={()=>{setMergerMode(false);setMergerOrgs([]);}} style={{padding:"6px 16px",borderRadius:999,fontSize:12,fontWeight:700,cursor:"pointer",border:mergerMode===false?`2px solid ${C.accent}`:`1px solid ${C.border}`,background:mergerMode===false?C.accentPale:"#fff",color:mergerMode===false?C.accent:C.textMid}}>No</button>
@@ -1910,7 +1910,7 @@ function ROICalculator() {
 
         {mergerMode === true && (
           <div style={{marginTop:14}}>
-            <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Select facilities in scope for consolidation</div>
+            <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Add the facilities being merged or acquired</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:12}}>
               {MERGER_ORG_OPTIONS.map(opt => (
                 <button type="button" key={opt.key} onClick={()=>addMergerOrg(opt)} className="roi-preset" style={{width:"100%",padding:"8px 10px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:10,background:"#fff",cursor:"pointer"}}>
@@ -1922,7 +1922,7 @@ function ROICalculator() {
 
             {mergerOrgs.length > 0 && (
               <div style={{marginBottom:12}}>
-                <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginBottom:6}}>Your future health system</div>
+                <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginBottom:6}}>Combined health system after merger</div>
                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
                   {mergerOrgs.map((org) => (
                     <div key={org.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:C.surface,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
@@ -1947,7 +1947,7 @@ function ROICalculator() {
                   <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>LIKELY DUPLICATES</div><div style={{fontSize:20,fontWeight:800,color:"#993535"}}>{mergerSummary.dupTotal}</div></div>
                 </div>
                 <div style={{fontSize:11,color:C.textMid,lineHeight:1.6,marginBottom:10}}>
-                  Combining {mergerOrgs.length} organizations creates an estimated <strong>{mergerSummary.dupTotal} duplicate systems</strong> ({mergerSummary.dupEnt} enterprise, {mergerSummary.dupDep} departmental) that are candidates for immediate decommission post-merger.
+                  Merging {mergerOrgs.length} organisations creates an estimated <strong>{mergerSummary.dupTotal} duplicate systems</strong> ({mergerSummary.dupEnt} enterprise, {mergerSummary.dupDep} departmental) that are candidates for decommission after the merged entity consolidates onto a single EMR.
                 </div>
                 <button type="button" onClick={applyMerger} className="roi-cta" style={{width:"100%",padding:"12px",background:C.accent,color:"#fff",border:"none",borderRadius:999,fontSize:14,fontWeight:700,cursor:"pointer"}}>
                   Apply to calculator {"\u2192"}
