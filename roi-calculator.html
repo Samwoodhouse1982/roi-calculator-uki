@@ -500,7 +500,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     duplicateInfraCost, infraConsolidation, standardisationSave, mergeSavings,
     annualWithReimbursement, total3WithReimbursement, yr1R, yr2R, yr3R,
     // Phase 1: Benefit categorisation
-    fteEquivalent: Math.round(hrsSaved / 1824 * 10) / 10, // 38hr week × 48 weeks = 1,824 hrs/FTE/yr
+    fteEquivalent: Math.round(hrsSaved * sc.realisation / 1824 * 10) / 10, // Realised FTE: hrs × realisation / 1,824 (38hr × 48wk)
     cashable: decomSave + abfEfficiencyGain + privateRevRecovery + duplicateElimination + infraConsolidation,
     nonCashable: timeSave + (isAcademic ? teachingEfficiency + teachingOverhead + researchDecomSave : 0),
     costAvoidance: malpracticeReduction + excessDayCostAvoided + duplicateReduction,
@@ -2537,7 +2537,7 @@ function ROICalculator() {
         {[
             { k: "DELAYED", l: "12-month delay", s: "Programme slips 1 year", e: "\u23f3" },
             { k: "PARTIAL", l: "Partial decom", s: "Only 50% systems retired", e: "\u26a0\ufe0f" },
-          ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:100,padding:"10px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid #993535`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode===s.k?"#fef0f0":"#fff"}}>
+          ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(scenarioMode===s.k?"EXPECTED":s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:100,padding:"10px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid #993535`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode===s.k?"#fef0f0":"#fff"}}>
           <div style={{fontSize:16,marginBottom:2}}>{s.e}</div>
           <div style={{fontSize:12,fontWeight:scenarioMode===s.k?700:500,color:scenarioMode===s.k?"#993535":C.textMid}}>{s.l}</div>
           <div style={{fontSize:10,color:C.textMuted}}>{s.s}</div>
