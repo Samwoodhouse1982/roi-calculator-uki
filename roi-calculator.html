@@ -2353,18 +2353,17 @@ function ROICalculator() {
       </div>
 
       <AnimatedSlider label={<span>Decommission target<InfoTip text="What % of legacy systems do you plan to retire? 60-80% is typical as most programmes retain a few for standalone or long-retention use."/></span>} value={inputs.decom_retire_rate} min={0} max={1} step={0.05} display={`${Math.round(inputs.decom_retire_rate*100)}%`} onChange={v=>{update("decom_retire_rate",v);touch(3);}} suffix=""/>
-      <div style={{marginBottom:16,padding:"14px 18px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-          <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Projection period</span>
-          <div style={{display:"flex",gap:6}}>
-            <button type="button" onClick={()=>setRampYears(3)} style={{padding:"6px 16px",borderRadius:999,fontSize:12,fontWeight:700,cursor:"pointer",border:rampYears===3?`2px solid ${C.accent}`:`1px solid ${C.border}`,background:rampYears===3?C.accentPale:"#fff",color:rampYears===3?C.accent:C.textMid}}>3 years</button>
-            <button type="button" onClick={()=>setRampYears(5)} style={{padding:"6px 16px",borderRadius:999,fontSize:12,fontWeight:700,cursor:"pointer",border:rampYears===5?`2px solid ${C.accent}`:`1px solid ${C.border}`,background:rampYears===5?C.accentPale:"#fff",color:rampYears===5?C.accent:C.textMid}}>5 years</button>
-          </div>
-        </div>
-        <div style={{fontSize:11,color:C.textMuted,marginTop:6}}>
-          {rampYears === 3
-            ? "3-year phased ramp: 40% / 80% / 100% of steady-state savings."
-            : "5-year phased ramp: 20% / 40% / 60% / 80% / 100%. Recommended for state-wide programmes."}
+      <div style={{marginBottom:16}}>
+        <div style={{fontSize:13,fontWeight:600,color:C.textMid,marginBottom:8}}>Projection period</div>
+        <div style={{display:"flex",gap:10}}>
+          {[
+            {yr:3, label:"3-year", ramp:"40% / 80% / 100%", desc:"Single hospital or LHD programmes"},
+            {yr:5, label:"5-year", ramp:"20% / 40% / 60% / 80% / 100%", desc:"Recommended for statewide programmes"},
+          ].map(opt => <button type="button" key={opt.yr} onClick={()=>setRampYears(opt.yr)} style={{flex:1,padding:"16px 18px",textAlign:"left",cursor:"pointer",borderRadius:12,border:rampYears===opt.yr?`2px solid ${C.accent}`:`1px solid ${C.borderLight}`,background:rampYears===opt.yr?C.accentPale:"#fff",transition:"all .15s"}}>
+            <div style={{fontSize:20,fontWeight:800,color:rampYears===opt.yr?C.accent:C.textMid,marginBottom:4}}>{opt.label}</div>
+            <div style={{fontSize:12,fontWeight:600,color:rampYears===opt.yr?C.accent:C.textMuted,marginBottom:4}}>Phased ramp: {opt.ramp}</div>
+            <div style={{fontSize:11,color:C.textMuted}}>{opt.desc}</div>
+          </button>)}
         </div>
       </div>
 
