@@ -259,6 +259,21 @@ The Australian version required a third fundamental rebuild. Australia's health 
 **Why:** The same principle applies across all markets: the calculator produces modelled approximations that should be independently validated before being used to support investment decisions.
 
 
+## 3.17 UX refinements and calculation corrections (12 April 2026) `Additional to scope`
+
+**Projection period redesigned as prominent card selector.** The 3-year and 5-year options were previously small pill buttons on a single line, easily overlooked. Replaced with two large side-by-side cards, each showing the period name, phased ramp percentages (40/80/100 vs 20/40/60/80/100), and a context line explaining which programme type each suits ("Single hospital or LHD" vs "Recommended for statewide programmes"). This ensures users make a conscious choice about their projection period rather than defaulting to 3-year without realising 5-year is available.
+
+**Risk scenarios made toggleable.** Clicking a selected risk scenario (12-month delay or partial decommission) now deselects it and returns to the Expected benefit scenario. Previously there was no way to deselect a risk scenario without clicking one of the three benefit scenario buttons, which was confusing.
+
+**FTE calculation corrected to reflect scenario realisation rate.** The FTE (full-time equivalent) capacity freed was previously calculated from raw hours (hrsSaved / 1,824) and showed 4,993 FTE regardless of which scenario was selected. However, the dollar value of clinician time (timeSave) already applied the scenario's realisation rate (30% for Expected, 15% for Delayed, 20% for Partial). This meant the FTE headline stayed fixed while the financial value moved, which was inconsistent. FTE is now calculated as hrsSaved multiplied by the realisation rate, divided by 1,824 hours per FTE. At Expected scenario this gives 1,498 FTE (A$178M), which is a smaller number but a more honest one: it represents the capacity that actually materialises, not the theoretical maximum. At 12-month delay: 749 FTE (A$89M). At partial decommission: 999 FTE (A$118M).
+
+**Non-acute facility systems integrated inline with tier sliders.** The portfolio summary card was removed from step 3 and the system counts now appear as a fourth row in the step 4 tier list (Enterprise, Departmental, Standalone, Non-acute facilities), with editable fields and combined totals. This eliminates the disconnect between configuring facilities in one step and seeing their system impact in a separate step.
+
+**Migration and archive costs left blank by default.** The statewide preset was auto-loading A$15M migration and A$6.8M/yr from the NSW Galen contract. Now defaults to zero so users can enter their own costs or view a benefits-only output. The executive summary, BCR, payback, and archiving investment sections only render when costs are entered.
+
+**Tranche toggle replaced with sliding switch.** The on/off button for tranche-based rollout modelling was replaced with an iOS-style toggle switch for clearer visual state.
+
+
 ---
 
 ## Current calculator output (NSW SDPR, expected scenario)
@@ -273,7 +288,7 @@ At statewide scale with default inputs:
 | Private patient revenue uplift | A$34M | |
 | Network consolidation | A$18M | |
 | **Capacity** | A$178M/yr | 32% |
-| Clinician time freed | A$178M (4,993 FTE equivalent) | |
+| Clinician time freed | A$178M (1,498 realised FTE equivalent) | |
 | **Cost avoidance** | A$128M/yr | 23% |
 | Excess bed days avoided | A$91M | |
 | Duplicate testing reduction | A$33M | |
