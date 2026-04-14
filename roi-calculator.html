@@ -593,6 +593,11 @@ const REIMBURSE_MULTIPLIERS = {
 };
 
 // ── Known EPR/PAS systems (UK & Ireland) ──
+const TIER_TYPE_MAP = {
+  enterprise: ["EMR","EMR/PAS","PAS","Clinical"],
+  departmental: ["Theatre","Radiology","LIMS","Pharmacy","Maternity","Integration","eMeds","Dictation","ED"],
+  niche: ["ECM","Incident"],
+};
 const KNOWN_SYSTEMS = [
   { label: "Oracle Health (Cerner Millennium)", baseCost: 2000000, perBed: 5500, type: "EMR" },
   { label: "Epic", baseCost: 3000000, perBed: 6000, type: "EMR" },
@@ -858,8 +863,8 @@ function ROICalculator() {
 
   // Flagship systems (named high-cost outliers outside the tiers)
   const [flagships, setFlagships] = useState([]);
-  const addFlagship = useCallback((sys) => { const s = sys || {}; const sc = s.baseCost ? systemCost(s, inputs.bed_count) : (s.cost || 250000); setFlagships(p => [...p, {name:s.label||"", cost:sc, retire:true, known:s.label||"", items:defaultLineItems(sc), showItems:false}]); }, [inputs.bed_count]);
-  const removeFlagship = useCallback(i => setFlagships(p => p.filter((_,j)=>j!==i)), []);
+  const addFlagship = useCallback((sys, tier) => { const s = sys || {}; const sc = s.baseCost ? systemCost(s, inputs.bed_count) : (s.cost || 250000); setFlagships(p => [...p, {name:s.label||"", cost:sc, retire:true, known:s.label||"", items:defaultLineItems(sc), showItems:false, tier:tier||null}]); if (tier) { updateTier(tier, Math.max(0, inputs.tiers[tier] - 1)); } }, [inputs.bed_count, inputs.tiers]);
+  const removeFlagship = useCallback((i) => { setFlagships(p => { const f = p[i]; if (f && f.tier) { updateTier(f.tier, (inputs.tiers[f.tier]||0) + 1); } return p.filter((_,j)=>j!==i); }); }, [inputs.tiers]);
   const updateFlagship = useCallback((i, k, v) => { setFlagships(p => p.map((f,j)=>j===i?{...f,[k]:v}:f)); setActivePreset(null); }, []);
   const updateLineItem = useCallback((i, key, val) => {
     setFlagships(p => p.map((f,j) => {
@@ -2060,9 +2065,9 @@ function ROICalculator() {
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:step>=1?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>4</span>
         Legacy systems
-        <span style={{marginLeft:"auto",display:"inline-flex",alignItems:"center",justifyContent:"center",minWidth:36,height:24,borderRadius:12,padding:"0 10px",background:C.accent,color:"#fff",fontSize:14,fontWeight:800,lineHeight:1}}>{totalSystems + flagships.length + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)}</span>
+        <span style={{marginLeft:"auto",display:"inline-flex",alignItems:"center",justifyContent:"center",minWidth:36,height:24,borderRadius:12,padding:"0 10px",background:C.accent,color:"#fff",fontSize:14,fontWeight:800,lineHeight:1}}>{totalSystems + flagships.filter(f=>!f.tier).length + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)}</span>
       </div>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 12px"}}>How many legacy systems in each tier? Default costs are modelled from Australian state contract data, scaled to your bed count. <strong style={{color:C.textMid}}>Click any tier cost to override it</strong>, add named high-cost systems below, or switch to {"\u201c"}I know my spend{"\u201d"} if you have your total.</p>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 12px"}}>How many legacy systems in each tier? Default costs are modelled from Australian state contract data, scaled to your bed count. <strong style={{color:C.textMid}}>Click any tier cost to override it</strong>, name specific systems within a tier, or switch to {"\u201c"}I know my spend{"\u201d"} if you have your total.</p>
 
 
       {/* Cost input mode */}
@@ -2086,9 +2091,9 @@ function ROICalculator() {
               style={{flex:"1 1 200px",maxWidth:260,padding:"12px 14px",border:`2px solid ${C.accent}`,borderRadius:999,fontSize:18,fontWeight:700,fontFamily:"inherit"}}/>
             <span style={{fontSize:13,color:C.textMid}}>/yr across all legacy systems</span>
           </div>
-          {knownAnnualSpend > 0 && (totalSystems + flagships.length) > 0 && (
+          {knownAnnualSpend > 0 && (totalSystems + flagships.filter(f=>!f.tier).length) > 0 && (
             <div style={{marginTop:12,fontSize:13,color:C.textMid,lineHeight:1.6}}>
-              {fmtK(knownAnnualSpend)}/yr will be distributed across your {totalSystems + flagships.length} systems
+              {fmtK(knownAnnualSpend)}/yr will be distributed across your {totalSystems + flagships.filter(f=>!f.tier).length} systems
               {flagships.length > 0 ? ` (${fmtK(flagships.reduce((s,f)=>s+(f.cost||0),0))} in named systems, remainder by tier)` : ""}
               . Costs are weighted 5:2:1 across tiers. Click any tier cost below to override.
             </div>
@@ -2133,6 +2138,32 @@ function ROICalculator() {
                 )}
               </div>
               <AnimatedSlider value={inputs.tiers[t.tier]} min={0} max={t.max} step={1} onChange={v=>{updateTier(t.tier,v);touch(2);}} hideRange label={<span style={{fontSize:12,color:C.textMuted}}>{t.hint}</span>}/>
+
+              {/* Named systems for this tier */}
+              {flagships.filter(f=>f.tier===t.tier).length > 0 && <div style={{marginTop:8}}>
+                {flagships.map((f,fi) => f.tier===t.tier ? <div key={fi} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",background:"#fff",borderRadius:6,border:`1px solid ${C.borderLight}`,marginBottom:4}}>
+                  <span style={{fontSize:11,fontWeight:600,color:t.color,flex:1}}>{f.name||"Custom system"}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:t.color}}>{fmtK(f.cost)}/yr</span>
+                  <button type="button" onClick={()=>removeFlagship(fi)} style={{border:"none",background:"none",color:C.textMuted,cursor:"pointer",fontSize:12,padding:"2px 4px"}}>{"×"}</button>
+                </div> : null)}
+              </div>}
+
+              {/* Add named system button */}
+              {(() => {
+                const tierTypes = TIER_TYPE_MAP[t.tier] || [];
+                const tierSystems = KNOWN_SYSTEMS.filter(s => tierTypes.includes(s.type));
+                return tierSystems.length > 0 && <details style={{marginTop:6}}>
+                  <summary style={{fontSize:11,color:C.accent,cursor:"pointer",fontWeight:600,listStyle:"none",display:"flex",alignItems:"center",gap:4}}>
+                    <span style={{fontSize:9}}>{"+"}</span> Name a specific system
+                  </summary>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:6}}>
+                    {tierSystems.map(sys => <button type="button" key={sys.label} onClick={()=>{addFlagship(sys,t.tier);touch(2);}} style={{padding:"5px 10px",fontSize:10,fontWeight:600,border:`1px solid ${C.borderLight}`,borderRadius:6,background:"#fff",cursor:"pointer",color:C.textMid}}>
+                      {sys.label} <span style={{color:C.textMuted}}>({fmtK(systemCost(sys,inputs.bed_count))})</span>
+                    </button>)}
+                  </div>
+                </details>;
+              })()}
+
             </div>})}
 
           {/* Non-acute facility systems */}
@@ -2194,14 +2225,14 @@ function ROICalculator() {
           <div style={{marginTop:12,padding:"10px 14px",background:C.accentPale,borderRadius:8,display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
             <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Totals:</span>
             <span style={{fontSize:13,color:C.textMid}}>{inputs.tiers.enterprise} enterprise, {inputs.tiers.departmental} departmental, {inputs.tiers.niche} standalone{(portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems) > 0 ? `, +${(portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)} non-acute` : ""}</span>
-            <span style={{fontSize:20,fontWeight:800,color:C.accent,marginLeft:"auto"}}>{totalSystems + flagships.length + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)}</span>
+            <span style={{fontSize:20,fontWeight:800,color:C.accent,marginLeft:"auto"}}>{totalSystems + flagships.filter(f=>!f.tier).length + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)}</span>
           </div>
         </div>
       )}
 
 
 
-      {(totalSystems + flagships.length) > 0 && (() => {
+      {(totalSystems + flagships.filter(f=>!f.tier).length) > 0 && (() => {
         const estEstate = costMode === "known" && knownAnnualSpend > 0 ? knownAnnualSpend :
           inputs.tiers.enterprise * (tierCostEdits.enterprise != null ? tierCostEdits.enterprise : tierCost("enterprise",inputs.bed_count,CX[inputs.complexity_level]))
           + inputs.tiers.departmental * (tierCostEdits.departmental != null ? tierCostEdits.departmental : tierCost("departmental",inputs.bed_count,CX[inputs.complexity_level]))
@@ -2211,28 +2242,28 @@ function ROICalculator() {
         return <>
           <div style={{marginTop:16,padding:"14px 18px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <div style={{fontSize:34,fontWeight:800,color:C.accent,lineHeight:1}}>{totalSystems + flagships.length + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)}</div>
-              <div style={{fontSize:14,fontWeight:700,color:C.text}}>legacy systems{flagships.length > 0 ? ` (incl. ${flagships.length} named)` : ""}</div>
+              <div style={{fontSize:34,fontWeight:800,color:C.accent,lineHeight:1}}>{totalSystems + flagships.filter(f=>!f.tier).length + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)}</div>
+              <div style={{fontSize:14,fontWeight:700,color:C.text}}>legacy systems{flagships.filter(f=>!f.tier).length > 0 ? ` (+ ${flagships.filter(f=>!f.tier).length} additional)` : ""}{flagships.filter(f=>f.tier).length > 0 ? ` (${flagships.filter(f=>f.tier).length} named in tiers)` : ""}</div>
             </div>
             <div style={{fontSize:12,color:C.textMuted,marginTop:4}}>
               Estate: ~{fmtK(estEstate + (portfolioOv.cost != null ? portfolioOv.cost : portfolioImpact.addCost))}/yr {hasCustomCost ? "" : "(modelled estimate) "}running costs
             </div>
           </div>
           {!hasCustomCost && costMode === "estimate" && <div style={{marginTop:8,padding:"12px 16px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:13,color:"#7a6520",lineHeight:1.6}}>
-            <strong>Know your actual costs?</strong> Click any tier cost above to override, switch to {'"'}I know my spend{'"'}, or add named high-cost systems. Real contract values give the most accurate ROI.
+            <strong>Know your actual costs?</strong> Click any tier cost above to override, switch to {'"'}I know my spend{'"'}, or name specific systems within each tier. Real contract values give the most accurate ROI.
           </div>}
         </>;
       })()}
     </Card></div>
 
-    {step<2?<ContinuePrompt onClick={()=>goTo(2,refFlag)} label="Next: named systems"/>:<LockedConnector/>}
+    {step<2?<ContinuePrompt onClick={()=>goTo(2,refFlag)} label="Next: additional systems (optional)"/>:<LockedConnector/>}
 
     {/* STEP 3 - Named high-cost systems */}
     <div ref={refFlag} style={{animation:step>=2?"fade-in .4s ease":"none"}}><Card dimmed={step<2}>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:step>=2?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>5</span>
-        Named high-cost systems
-        {flagships.length > 0 && <span style={{marginLeft:"auto",display:"inline-flex",alignItems:"center",justifyContent:"center",minWidth:24,height:24,borderRadius:12,padding:"0 8px",background:C.accent,color:"#fff",fontSize:13,fontWeight:800,lineHeight:1}}>{flagships.length}</span>}
+        Additional systems (optional)
+        {flagships.filter(f=>!f.tier).length > 0 && <span style={{marginLeft:"auto",display:"inline-flex",alignItems:"center",justifyContent:"center",minWidth:24,height:24,borderRadius:12,padding:"0 8px",background:C.accent,color:"#fff",fontSize:13,fontWeight:800,lineHeight:1}}>{flagships.filter(f=>!f.tier).length}</span>}
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Do you know the specific legacy systems you plan to archive or decommission? Adding them with actual contract values gives a more accurate estimate.</p>
 
@@ -2262,11 +2293,11 @@ function ROICalculator() {
         </button>
       </div>
 
-      {flagships.length > 0 && (
+      {flagships.filter(f=>!f.tier).length > 0 && (
         <div>
-          <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>Your named systems</div>
+          <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>Your additional systems</div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {flagships.map((f, i) => (
+            {flagships.map((f, i) => f.tier ? null : (
               <div key={i} className="roi-flag" style={{padding:"14px 16px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                   {f.known ? (
@@ -2314,15 +2345,15 @@ function ROICalculator() {
             ))}
           </div>
           <div style={{marginTop:12,padding:"10px 14px",background:C.bg,borderRadius:8,fontSize:12,color:C.textMuted,lineHeight:1.5}}>
-            {flagships.length} named system{flagships.length !== 1 ? "s" : ""} totalling {fmtK(flagships.reduce((s,f)=>s+(f.cost||0),0))}/yr.
-            {" "}{flagships.filter(f=>f.retire).length} flagged for retirement.
+            {flagships.filter(f=>!f.tier).length} additional system{flagships.filter(f=>!f.tier).length !== 1 ? "s" : ""} totalling {fmtK(flagships.filter(f=>!f.tier).reduce((s,f)=>s+(f.cost||0),0))}/yr.
+            {" "}{flagships.filter(f=>!f.tier&&f.retire).length} flagged for retirement.
           </div>
         </div>
       )}
 
-      {flagships.length === 0 && (
+      {flagships.filter(f=>!f.tier).length === 0 && (
         <div style={{padding:"20px",textAlign:"center",color:C.textMuted,fontSize:13,background:C.bg,borderRadius:8}}>
-          No named systems added yet. Select from the list above, add a custom system, or skip this step to use tier estimates only.
+          No additional systems added. You can skip this step if all your systems are already covered by the tier counts and named systems above.
         </div>
       )}
     </Card></div>
