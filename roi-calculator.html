@@ -626,7 +626,12 @@ const KNOWN_SYSTEMS = [
   { label: "Cerner eMeds", baseCost: 300000, perBed: 600, type: "eMeds" },
   { label: "CorePAS", baseCost: 200000, perBed: 400, type: "PAS" },
 ]
-function systemCost(sys, beds) { return Math.round(((sys.baseCost || 250000) + (sys.perBed || 0) * beds) / 1000) * 1000; }
+function systemCost(sys, beds) {
+  const raw = Math.round(((sys.baseCost || 250000) + (sys.perBed || 0) * beds) / 1000) * 1000;
+  const tierTypes = { EMR:8000000, 'EMR/PAS':8000000, PAS:8000000, Clinical:3000000, Theatre:500000, Radiology:500000, LIMS:500000, Pharmacy:500000, Maternity:500000, Integration:500000, eMeds:500000, Dictation:200000, ECM:200000, Incident:200000 };
+  const cap = tierTypes[sys.type] || 8000000;
+  return Math.min(raw, cap);
+}
 // ── Cost line item helpers ──
 const COST_CATEGORIES = [
   { key: "licensing", label: "Licensing / subscription", pct: 0.35 },
