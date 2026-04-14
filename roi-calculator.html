@@ -829,7 +829,6 @@ function ROICalculator() {
   const [trancheMode, setTrancheMode] = useState(false);
   const [showFacilities, setShowFacilities] = useState(null);
   const [showBedDetail, setShowBedDetail] = useState(false);
-  const avgBedsPerHospital = inputs.org_count > 0 ? Math.round(inputs.bed_count / inputs.org_count) : 0;
   const [portfolioOv, setPortfolioOv] = useState({systems:null, cost:null});
   const [tranches, setTranches] = useState([
     { name: "Tranche A", bedPct: 0.16, yearOffset: 0 },
@@ -843,6 +842,7 @@ function ROICalculator() {
   const [facilityPortfolio, setFacilityPortfolio] = useState({}); // User can enter or we estimate
 
   const [inputs, setInputs] = useState({...PRESETS.TYPICAL.data, data_types:{...PRESETS.TYPICAL.data.data_types}, tiers:{...PRESETS.TYPICAL.data.tiers}});
+  const avgBedsPerHospital = inputs.org_count > 0 ? Math.round(inputs.bed_count / inputs.org_count) : 0;
   const [activePreset, setActivePreset] = useState(null);
   const [scenarioMode, setScenarioMode] = useState(null);
   const [page, setPage] = useState("inputs");
