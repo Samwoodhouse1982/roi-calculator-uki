@@ -1968,10 +1968,25 @@ function ROICalculator() {
               style={{width:"100%",fontSize:18,fontWeight:800,color:t.color,border:"none",background:"transparent",fontFamily:"inherit",padding:0}}/>
           </div>)}
         </div>
-        <div style={{fontSize:11,color:C.textMuted,marginTop:6}}>
-          Total: {inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)} systems
-          {portfolioImpact.addSystems > 0 ? ` (incl. ${portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems} from non-acute facilities)` : ""}
-        </div>
+        {(() => {
+          const pSys = portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems;
+          const pCost = portfolioOv.cost != null ? portfolioOv.cost : portfolioImpact.addCost;
+          const totalSys = inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche + pSys;
+          const cx = CX[inputs.complexity_level];
+          const estEstate = inputs.tiers.enterprise * tierCost("enterprise",inputs.bed_count,cx)
+            + inputs.tiers.departmental * tierCost("departmental",inputs.bed_count,cx)
+            + inputs.tiers.niche * tierCost("niche",inputs.bed_count,cx) + pCost;
+          return <div style={{marginTop:10,padding:"12px 16px",background:"#fff",borderRadius:10,border:`1px solid ${C.borderLight}`,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+            <div style={{fontSize:28,fontWeight:800,color:C.accent,lineHeight:1}}>{totalSys}</div>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:C.text}}>legacy systems</div>
+              <div style={{fontSize:11,color:C.textMuted}}>
+                Estate: ~{fmtK(estEstate)}/yr running costs
+                {pSys > 0 ? ` (incl. ${pSys} from non-acute facilities)` : ""}
+              </div>
+            </div>
+          </div>;
+        })()}
       </div>
 
       {Object.values(facilityPortfolio).some(v=>v>0) && <div style={{marginBottom:16}}>
