@@ -839,6 +839,7 @@ function ROICalculator() {
   const [trancheMode, setTrancheMode] = useState(false);
   const [showFacilities, setShowFacilities] = useState(null);
   const [showBedDetail, setShowBedDetail] = useState(false);
+  const [modelMode, setModelMode] = useState(null); // null, "template", "custom"
   const [portfolioOv, setPortfolioOv] = useState({systems:null, cost:null});
   const [tranches, setTranches] = useState([
     { name: "Tranche A", bedPct: 0.16, yearOffset: 0 },
@@ -1893,7 +1894,7 @@ function ROICalculator() {
         {[
           {k:"HAVE_EPR",icon:"✅",title:"We have an enterprise EMR",desc:"Already on Epic, Oracle Health or similar, and looking to archive and decommission legacy systems.",focus:"Archiving + decommission savings"},
           {k:"EVALUATING",icon:"🔍",title:"We’re evaluating enterprise EMRs",desc:"Assessing migration to a single EMR platform and need the full case for migration and archiving.",focus:"Migration safety + archiving savings"},
-        ].map(j=><button type="button" key={j.k} onClick={()=>{update("journey",j.k);touch(0);setTimeout(()=>scrollTo(ref1),200);}} className="roi-btn" style={{
+        ].map(j=><button type="button" key={j.k} onClick={()=>{update("journey",j.k);touch(0);if(modelMode){setTimeout(()=>scrollTo(ref1),200);}}} className="roi-btn" style={{
           flex:"1 1 240px",minWidth:0,padding:"18px 20px",textAlign:"left",cursor:"pointer",
           border:inputs.journey===j.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:12,
           background:inputs.journey===j.k?C.accentPale:"#fff",transition:"all .15s"
@@ -1907,6 +1908,118 @@ function ROICalculator() {
     </Card>
     <LockedConnector/>
 
+    {/* FORK: Template vs Custom */}
+    {step >= 0 && !modelMode && <div style={{animation:"fade-in .4s ease"}}>
+      <div style={{display:"flex",gap:10,margin:"0 0 8px"}}>
+        <button type="button" onClick={()=>{setModelMode("template");touch(0);touch(1);touch(2);touch(3);}} className="roi-btn" style={{flex:1,padding:"20px 18px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:12,background:"#fff",cursor:"pointer"}}>
+          <div style={{fontSize:20,marginBottom:6}}>{"⚡"}</div>
+          <div style={{fontSize:15,fontWeight:700,color:C.accent,marginBottom:4}}>Use template defaults</div>
+          <div style={{fontSize:12,color:C.textMuted,lineHeight:1.5}}>Pre-configured model based on Australian benchmarks. Review the numbers and calculate immediately.</div>
+        </button>
+        <button type="button" onClick={()=>{setModelMode("custom");}} className="roi-btn" style={{flex:1,padding:"20px 18px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:12,background:"#fff",cursor:"pointer"}}>
+          <div style={{fontSize:20,marginBottom:6}}>{"🔧"}</div>
+          <div style={{fontSize:15,fontWeight:700,color:C.textMid,marginBottom:4}}>Customise your model</div>
+          <div style={{fontSize:12,color:C.textMuted,lineHeight:1.5}}>Step through each section to configure hospitals, facilities, legacy systems, and cost assumptions.</div>
+        </button>
+      </div>
+    </div>}
+
+    {/* TEMPLATE SUMMARY */}
+    {modelMode === "template" && <div style={{animation:"fade-in .4s ease"}}><Card style={{border:`2px solid ${C.accent}`,background:"linear-gradient(135deg, #f0f7f5 0%, #e8f4f0 100%)"}}>
+      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+        <span style={{width:24,height:24,borderRadius:"50%",background:C.accent,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>{"⚡"}</span>
+        Template summary
+        <button type="button" onClick={()=>setModelMode("custom")} style={{marginLeft:"auto",border:"none",background:"none",color:C.accent,fontSize:12,fontWeight:600,cursor:"pointer",textDecoration:"underline"}}>Switch to full editor</button>
+      </div>
+
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
+        {[
+          {label:"Hospitals",value:inputs.org_count,key:"org_count",tip:"Acute care hospital facilities in scope"},
+          {label:"Total beds",value:inputs.bed_count,key:"bed_count",tip:"Total staffed acute beds across all hospitals"},
+        ].map(item => <div key={item.key} style={{flex:"1 1 120px",padding:"12px 14px",background:"#fff",borderRadius:10,border:`1px solid ${C.borderLight}`}}>
+          <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}>
+            <span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>{item.label}</span>
+            <InfoTip text={item.tip}/>
+          </div>
+          <input type="number" value={item.value} min={1} max={item.key==="bed_count"?50000:500} step={item.key==="bed_count"?100:1}
+            onChange={e=>{update(item.key,Math.max(1,parseInt(e.target.value)||1));}}
+            style={{width:"100%",fontSize:22,fontWeight:800,color:C.accent,border:"none",background:"transparent",fontFamily:"inherit",padding:0}}/>
+        </div>)}
+      </div>
+
+      <div style={{marginBottom:16}}>
+        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+          <span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>LEGACY SYSTEMS</span>
+          <InfoTip text="Enterprise: major EMR/PAS platforms. Departmental: theatres, radiology, LIMS, pharmacy. Standalone: document stores, small tools."/>
+        </div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {[
+            {label:"Enterprise",value:inputs.tiers.enterprise,tier:"enterprise",color:C.accent,tip:"Large clinical platforms (EMR, PAS, clinical suites). High per-system cost."},
+            {label:"Departmental",value:inputs.tiers.departmental,tier:"departmental",color:"#1a7a7a",tip:"Mid-tier systems (theatres, radiology, LIMS, pharmacy). Moderate cost."},
+            {label:"Standalone",value:inputs.tiers.niche,tier:"niche",color:"#3d8a8a",tip:"Small tools (document stores, scanned notes, specialty databases). Low individual cost."},
+          ].map(t => <div key={t.tier} style={{flex:"1 1 90px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+            <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:2}}>
+              <span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>{t.label}</span>
+              <InfoTip text={t.tip}/>
+            </div>
+            <input type="number" value={t.value} min={0} max={200} step={1}
+              onChange={e=>{updateTier(t.tier,Math.max(0,parseInt(e.target.value)||0));}}
+              style={{width:"100%",fontSize:18,fontWeight:800,color:t.color,border:"none",background:"transparent",fontFamily:"inherit",padding:0}}/>
+          </div>)}
+        </div>
+        <div style={{fontSize:11,color:C.textMuted,marginTop:6}}>
+          Total: {inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)} systems
+          {portfolioImpact.addSystems > 0 ? ` (incl. ${portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems} from non-acute facilities)` : ""}
+        </div>
+      </div>
+
+      {Object.values(facilityPortfolio).some(v=>v>0) && <div style={{marginBottom:16}}>
+        <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:6}}>NON-ACUTE FACILITIES INCLUDED</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+          {FACILITY_TYPES.filter(ft=>(facilityPortfolio[ft.key]||0)>0).map(ft => <span key={ft.key} style={{padding:"4px 10px",background:"#fff",borderRadius:6,border:`1px solid ${C.green}30`,fontSize:11,color:C.green,fontWeight:600}}>
+            {ft.label} <span style={{fontWeight:700}}>{facilityPortfolio[ft.key]}</span>
+          </span>)}
+        </div>
+      </div>}
+
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
+        {[
+          {label:"Complexity",value:inputs.complexity_level,options:["LOW","TYPICAL","HIGH"],tip:"How bespoke are your legacy systems?"},
+          {label:"Data quality",value:inputs.data_quality_level,options:["CLEAN","MIXED","POOR"],tip:"How clean is your legacy data?"},
+        ].map(s => <div key={s.label} style={{flex:"1 1 120px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+          <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}>
+            <span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>{s.label}</span>
+            <InfoTip text={s.tip}/>
+          </div>
+          <select value={s.value} onChange={e=>update(s.label==="Complexity"?"complexity_level":"data_quality_level",e.target.value)}
+            style={{width:"100%",padding:"4px 6px",fontSize:13,fontWeight:700,border:`1px solid ${C.borderLight}`,borderRadius:6,fontFamily:"inherit",color:C.accent,background:"#fff"}}>{s.options.map(o=><option key={o} value={o}>{o.charAt(0)+o.slice(1).toLowerCase()}</option>)}</select>
+        </div>)}
+        <div style={{flex:"1 1 120px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+          <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}>
+            <span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>Decom target</span>
+            <InfoTip text="What % of legacy systems do you plan to retire? 60-80% is typical."/>
+          </div>
+          <div style={{fontSize:18,fontWeight:800,color:C.accent}}>{Math.round(inputs.decom_retire_rate*100)}%</div>
+        </div>
+      </div>
+
+      <button type="button" className="roi-cta" onClick={() => {
+          setPage("calculating"); setCalcStep(0); setScenarioMode(null);
+          scrollToTop();
+          setTimeout(() => setCalcStep(1), 400);
+          setTimeout(() => setCalcStep(2), 1100);
+          setTimeout(() => setCalcStep(3), 1800);
+          setTimeout(() => { setPage("results"); scrollToTop(); }, 2400);
+        }} style={{
+          width:"100%",padding:"16px",background:`linear-gradient(135deg, ${C.accent}, ${C.teal})`,color:"#fff",border:"none",borderRadius:999,fontSize:16,fontWeight:700,cursor:"pointer",marginBottom:8
+        }}>
+        Calculate ROI estimate {"→"}
+      </button>
+      <div style={{textAlign:"center",fontSize:11,color:C.textMuted}}>All numbers above are adjustable. Click any value to change it.</div>
+    </Card></div>}
+
+
+    <div style={{display:modelMode==="template"?"none":undefined}}>
     {/* STEP 1 – Org scale + presets */}
     <div ref={ref1} style={{animation:"fade-in .4s ease"}}><Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
@@ -2263,7 +2376,7 @@ function ROICalculator() {
 
     {step<2?<ContinuePrompt onClick={()=>goTo(2,refFlag)} label="Next: additional systems (optional)"/>:<LockedConnector/>}
 
-    {/* STEP 3 - Named high-cost systems */}
+    {/* STEP 3 - Additional systems */}
     <div ref={refFlag} style={{animation:step>=2?"fade-in .4s ease":"none"}}><Card dimmed={step<2}>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:step>=2?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>5</span>
@@ -2516,6 +2629,7 @@ function ROICalculator() {
           Calculate ROI {"\u2192"}
         </button>
     </div>
+    </div>{/* end steps wrapper */}
   </div>;
 
   /* ── RESULTS PAGE ───────────────────────────────────────── */
