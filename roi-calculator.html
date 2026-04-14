@@ -517,7 +517,7 @@ const PRESETS = {
   TYPICAL: { label:"Regional Hospital", desc:"~200 beds · 1 facility · 15 systems", data:{ bed_count:250, org_count:1, journey:"EVALUATING", tiers:{enterprise:1,departmental:5,niche:9}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:1,RAD_REPORTS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   LARGE: { label:"Metropolitan / Tertiary", desc:"~500 beds · 1 facility · 25 systems", data:{ bed_count:600, org_count:1, journey:"EVALUATING", tiers:{enterprise:2,departmental:8,niche:15}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:2,RAD_REPORTS:1,DOC_ECM:2,SCANNED_NOTES:1,MATERNITY:1,COMMUNITY:1}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   REGIONAL: { label:"Local Health District (LHD) / Hospital and Health Service (HHS)", desc:"~3000 beds · 12 hospitals · 80+ systems", data:{ bed_count:3000, org_count:12, journey:"EVALUATING", tiers:{enterprise:4,departmental:28,niche:50}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
-  STATEWIDE: { label:"Statewide Programme", desc:"~25000 beds · 228 hospitals · 600+ community · 60 labs · 200+ collection · 17 LHDs", data:{ bed_count:25000, org_count:228, journey:"EVALUATING", tiers:{enterprise:24,departmental:80,niche:80}, data_types:{...emptyDt(),EPR_PAS:8,ED:6,THEATRES:5,LAB:8,RAD_REPORTS:6,DOC_ECM:8,SCANNED_NOTES:6,MATERNITY:5,COMMUNITY:6,MENTAL_HEALTH:4,REFERRALS:3,OTHER:4}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.65 }},
+  STATEWIDE: { label:"Statewide Programme", desc:"~20000 beds · 200 hospitals · 15+ districts", data:{ bed_count:20000, org_count:200, journey:"EVALUATING", tiers:{enterprise:24,departmental:80,niche:80}, data_types:{...emptyDt(),EPR_PAS:8,ED:6,THEATRES:5,LAB:8,RAD_REPORTS:6,DOC_ECM:8,SCANNED_NOTES:6,MATERNITY:5,COMMUNITY:6,MENTAL_HEALTH:4,REFERRALS:3,OTHER:4}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.65 }},
 };
 
 // ── Model constants ──
@@ -996,10 +996,10 @@ function ROICalculator() {
   // Facility types beyond acute care
   // Statewide portfolio defaults (based on NSW SDPR scope)
   const STATEWIDE_PORTFOLIO = {
-    community_health: 600, outpatient: 200, oral_health: 80,
-    pathology_lab: 60, pathology_collection: 200,
-    multipurpose: 50, mental_health_inpatient: 40,
-    community_mental: 80, rehab: 30, aged_care: 25,
+    community_health: 500, outpatient: 150, oral_health: 60,
+    pathology_lab: 50, pathology_collection: 150,
+    multipurpose: 40, mental_health_inpatient: 35,
+    community_mental: 60, rehab: 25, aged_care: 20,
   };
 
   // Facility types: shared + perSite (AU)
@@ -1081,7 +1081,7 @@ function ROICalculator() {
     const d = PRESETS[key].data;
     setInputs({...d,data_types:{...d.data_types},tiers:{...d.tiers}});
     setActivePreset(key);resetOv();setThinking(true);
-    if (key === 'STATEWIDE') { setFacilityPortfolio({...STATEWIDE_PORTFOLIO}); setGalenMigrationCost(0); setGalenAnnualCost(0); setTrancheMode(true); setMergerMode(false); setMergerOrgs([]); setReimbursementModel('public');  setTranches([{name:'Tranche A (HNE + Justice)',bedPct:0.16,yearOffset:0},{name:'Tranche B (Metro LHDs)',bedPct:0.32,yearOffset:1},{name:'Tranche C (Remaining)',bedPct:0.52,yearOffset:2}]); } else { setFacilityPortfolio({}); }
+    if (key === 'STATEWIDE') { setFacilityPortfolio({...STATEWIDE_PORTFOLIO}); setGalenMigrationCost(0); setGalenAnnualCost(0); setTrancheMode(true); setMergerMode(false); setMergerOrgs([]); setReimbursementModel('public');  setTranches([{name:'Tranche A (early adopters)',bedPct:0.20,yearOffset:0},{name:'Tranche B (metro districts)',bedPct:0.35,yearOffset:1},{name:'Tranche C (remaining)',bedPct:0.45,yearOffset:2}]); } else { setFacilityPortfolio({}); }
     setPerOrgBeds(false); setPerOrgSystems(false); setFlagships([]); setTierCostEdits({enterprise:null,departmental:null,niche:null}); setEditingTierCost(null); setCostMode("estimate"); setKnownAnnualSpend(null);
     // Size per-org arrays to match org count, split evenly
     const n = d.org_count;
@@ -1835,11 +1835,11 @@ function ROICalculator() {
     <Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:C.accent,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>1</span>
-        What type of organization are you?
+        What type of organisation are you?
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20}}>
         {[
-          {k:"statewide",l:"Statewide Programme",d:"25,000 beds · 228 hospitals · 17 LHDs",e:"🏥"},
+          {k:"statewide",l:"Statewide Programme",d:"All districts, 200+ hospitals, single EMR",e:"🏥"},
           {k:"state_network",l:"LHD / Health Service",d:"Single district, multiple facilities",e:"🏢"},
           {k:"tertiary",l:"Tertiary Referral / Teaching",d:"Major teaching hospital, research",e:"🎓"},
           {k:"metropolitan",l:"Metropolitan Hospital",d:"300-600 beds, complex integrations",e:"🏥"},
@@ -1869,7 +1869,7 @@ function ROICalculator() {
         {providerType === "regional" && "Metropolitan hospitals have complex legacy estates. The consolidation case includes cost reduction and improved clinical data continuity."}
         {providerType === "academic" && "Tertiary referral centres carry the highest system complexity (40-200+ applications). The ROI case includes research system rationalisation alongside operational savings."}
         {providerType === "state_network" && "LHDs and Health Services typically have 2-3x the legacy system count across their facilities. Consolidation eliminates duplicate infrastructure across the district."}
-        {providerType === "statewide" && "Statewide programmes replace the entire state legacy estate with a single EMR. NSW SDPR (Single Digital Patient Record) benchmark: 24 core systems (9 EMR, 10 PAS, 5 LIMS) from 5 vendors across 228 hospitals, 600+ community sites, 60 path labs, 17 LHDs. Legacy estate est. A$225-385M/yr; Epic contract A$969M/10yr; Galen archive A$83M/10yr. 30-40+ systems in full scope (Microsoft ODS: 34+ systems statewide)."}
+        {providerType === "statewide" && "Statewide programmes replace the entire state legacy estate with a single EMR. Typical state profile: 20-30 core legacy systems across 150-250 hospitals, 500+ community sites, and 15-20 health districts. Legacy estate typically A$150-400M/yr depending on state size. Australian benchmark: NSW SDPR identified 24 core systems across 228 hospitals and 17 LHDs."}
       </div>
     </Card>
     <LockedConnector/>
@@ -1900,7 +1900,7 @@ function ROICalculator() {
     {/* STEP 1 – Org scale + presets */}
     <div ref={ref1} style={{animation:"fade-in .4s ease"}}><Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
-        <span style={{width:24,height:24,borderRadius:"50%",background:step>=0?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>3</span>        Organization scale
+        <span style={{width:24,height:24,borderRadius:"50%",background:step>=0?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>3</span>        Organisation scale
       </div>
       {/* Merger question - hidden for statewide (already handled by preset) */}
       {providerType !== "statewide" && <div style={{marginBottom:20,padding:"14px 18px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
@@ -1961,7 +1961,7 @@ function ROICalculator() {
 
             {mergerOrgs.length === 0 && (
               <div style={{padding:"12px",textAlign:"center",color:C.textMuted,fontSize:12}}>
-                Select organizations above to build your future merged system
+                Select organisations above to build your future merged system
               </div>
             )}
           </div>
@@ -2429,7 +2429,7 @@ function ROICalculator() {
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>Tranche-based rollout</span>
-            <InfoTip text="Model the programme as phased tranches with different go-live dates. Each tranche starts its own benefit ramp from its go-live year. Default: 3 tranches matching NSW SDPR rollout."/>
+            <InfoTip text="Model the programme as phased tranches with different go-live dates. Each tranche starts its own benefit ramp from its go-live year. Default: 3 tranches for a typical statewide rollout."/>
           </div>
           <div onClick={()=>setTrancheMode(!trancheMode)} style={{width:40,height:22,borderRadius:11,background:trancheMode?C.accent:"#ccc",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0}}><div style={{width:18,height:18,borderRadius:9,background:"#fff",position:"absolute",top:2,left:trancheMode?20:2,transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)"}}/></div>
         </div>
@@ -2576,8 +2576,8 @@ function ROICalculator() {
         <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:12}}>
           {[
             {label:"Combined annual",value:fmtK(r.annualWithReimbursement)+"/yr",color:C.green,bg:C.greenPale},
-            {label:rampYears+"-year net benefit",value:hasGalen?fmtK(netBenefit):"Enter Galen costs",color:hasGalen?C.accent:C.textMuted,bg:hasGalen?"#e8faf6":"#f5f5f5"},
-            {label:"Archive payback",value:hasGalen&&payback>0?payback.toFixed(1)+" yrs":"—",color:"#0f4146",bg:C.blue25},
+            ...(hasGalen ? [{label:rampYears+"-year net benefit",value:fmtK(netBenefit),color:C.accent,bg:"#e8faf6"},
+            {label:"Archive payback",value:payback>0?payback.toFixed(1)+" yrs":"—",color:"#0f4146",bg:C.blue25}] : []),
             {label:"FTE (full-time equivalent) capacity freed",value:r.fteEquivalent.toFixed(0)+" FTE",color:"#b8860b",bg:"#fef9ec"},
           ].map((kpi,i) => <div key={i} style={{flex:"1 1 130px",minWidth:120,padding:"12px 14px",background:kpi.bg,borderRadius:10,textAlign:"center"}}>
             <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:3}}>{kpi.label}</div>
@@ -2780,7 +2780,7 @@ function ROICalculator() {
     <Card dimmed={dim}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
       <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:16}}>
-        <OverridableStat label="Clinical staff" computed={calc(calcInputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on NSW Health workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/admin staff per facility (20 base + 0.15/bed, capped at 120).`}/>
+        <OverridableStat label="Clinical staff" computed={calc(calcInputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on Australian health workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/admin staff per facility (20 base + 0.15/bed, capped at 120).`}/>
         <OverridableStat label="Mins wasted / wk" computed={calc(calcInputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on Westbrook et al 2010 (JAMIA) workflow interruption studies and Nuffield Trust 2020 system navigation research.`}/>
         <Stat label="FTE equivalent" value={an?r.fteEquivalent.toFixed(0):0} sub="clinical capacity" color={"#b8860b"} info={`${fmtNum(r.hrsSaved)} hours freed ÷ 1,824 hours per FTE (38hr week × 48 working weeks) = ${r.fteEquivalent.toFixed(1)} FTE equivalent. This is not headcount reduction — it represents clinical capacity freed for patient care, equivalent to hiring ${r.fteEquivalent.toFixed(0)} additional clinicians without recruitment.`}/>
         <Stat label="Hours freed / yr" value={an?<AnimatedNum value={r.hrsSaved} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Result: ${fmtNum(r.hrsSaved)} hours per year.`}/>
@@ -2945,7 +2945,7 @@ function ROICalculator() {
       </Callout>
 
       <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
-        <strong>Note:</strong> Assumes 35% of legacy systems are duplicated across facilities (modelled from NSW SDPR: overlapping vendor coverage across LHDs). Infrastructure savings at A$350k/LHD for duplicate data centre, network, and service desk costs.
+        <strong>Note:</strong> Assumes 35% of legacy systems are duplicated across facilities (based on analysis of overlapping vendor coverage across Australian health districts). Infrastructure savings at A$350k per district for duplicate data centre, network, and service desk costs.
       </div>
     </Card>}
     {r.isMultiHospital && <LockedConnector/>}
