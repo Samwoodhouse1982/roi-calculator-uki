@@ -827,7 +827,9 @@ function ROICalculator() {
   const [discountRate, setDiscountRate] = useState(0.07); // NSW Treasury default 7%
   const [parallelRunMonths, setParallelRunMonths] = useState(0); // Months of dual-running (0 = off, user opt-in)
   const [trancheMode, setTrancheMode] = useState(false);
-  const [showFacilities, setShowFacilities] = useState(false);
+  const [showFacilities, setShowFacilities] = useState(null);
+  const [showBedDetail, setShowBedDetail] = useState(false);
+  const avgBedsPerHospital = inputs.org_count > 0 ? Math.round(inputs.bed_count / inputs.org_count) : 0;
   const [portfolioOv, setPortfolioOv] = useState({systems:null, cost:null});
   const [tranches, setTranches] = useState([
     { name: "Tranche A", bedPct: 0.16, yearOffset: 0 },
@@ -1079,7 +1081,7 @@ function ROICalculator() {
     const d = PRESETS[key].data;
     setInputs({...d,data_types:{...d.data_types},tiers:{...d.tiers}});
     setActivePreset(key);resetOv();setThinking(true);
-    if (key === 'STATEWIDE') { setFacilityPortfolio({...STATEWIDE_PORTFOLIO}); setGalenMigrationCost(0); setGalenAnnualCost(0); setTrancheMode(true); setMergerMode(false); setMergerOrgs([]); setReimbursementModel('public'); setShowFacilities(true); setTranches([{name:'Tranche A (HNE + Justice)',bedPct:0.16,yearOffset:0},{name:'Tranche B (Metro LHDs)',bedPct:0.32,yearOffset:1},{name:'Tranche C (Remaining)',bedPct:0.52,yearOffset:2}]); } else { setFacilityPortfolio({}); }
+    if (key === 'STATEWIDE') { setFacilityPortfolio({...STATEWIDE_PORTFOLIO}); setGalenMigrationCost(0); setGalenAnnualCost(0); setTrancheMode(true); setMergerMode(false); setMergerOrgs([]); setReimbursementModel('public');  setTranches([{name:'Tranche A (HNE + Justice)',bedPct:0.16,yearOffset:0},{name:'Tranche B (Metro LHDs)',bedPct:0.32,yearOffset:1},{name:'Tranche C (Remaining)',bedPct:0.52,yearOffset:2}]); } else { setFacilityPortfolio({}); }
     setPerOrgBeds(false); setPerOrgSystems(false); setFlagships([]); setTierCostEdits({enterprise:null,departmental:null,niche:null}); setEditingTierCost(null); setCostMode("estimate"); setKnownAnnualSpend(null);
     // Size per-org arrays to match org count, split evenly
     const n = d.org_count;
@@ -1966,103 +1968,90 @@ function ROICalculator() {
         )}
       </div>}
 
-      {/* ── Hospitals ── */}
-      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:4}}>Hospitals</div>
-      <AnimatedSlider label={<span>Acute care hospitals<InfoTip text="Number of hospitals (inpatient facilities). Drives bed count, clinical staff, enterprise system costs, and safety metrics."/></span>} value={inputs.org_count} min={1} max={300} step={1} onChange={v=>handleOrgCountChange(v)}/>
+      {/* ── Acute care hospitals ── */}
+      <div style={{marginBottom:16}}>
+        <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Acute care hospitals</div>
+        <AnimatedSlider label={<span>Number of hospitals<InfoTip text="Inpatient hospital facilities in scope. Drives enterprise system count, infrastructure consolidation, and network complexity."/></span>} value={inputs.org_count} min={1} max={300} step={1} onChange={v=>handleOrgCountChange(v)}/>
 
-      <div style={{marginTop:12}}>
-        {inputs.org_count > 1 && (
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-            <label style={{fontSize:13,fontWeight:600,color:C.textMid}}>Acute beds</label>
-            <TogglePill active={perOrgBeds?"byorg":"combined"} onToggle={v=>{if((v==="byorg")!==perOrgBeds)togglePerOrgBeds();}} labelA="combined" labelB="byorg" labelAText="Combined total" labelBText="By hospital"/>
-          </div>
-        )}
-        {!perOrgBeds ? (
-          <div>
-            <AnimatedSlider label={inputs.org_count <= 1 ? <span>Total acute beds<InfoTip text="Total staffed beds across all hospitals. Scales clinical staff (3.0 per bed), system costs, revenue estimates, and safety metrics."/></span> : null} value={inputs.bed_count} min={0} max={Math.max(40000, inputs.bed_count + 500)} step={10} onChange={v=>{update("bed_count",v);touch(1);}}/>
-          </div>
-        ) : (
-          <div>
-            <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              {orgBedsList.map((beds, i) => (
-                <div key={i} className="roi-org" style={{display:"flex",alignItems:"center",gap:12,padding:"8px 14px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
-                  <span style={{fontSize:13,fontWeight:600,color:C.textMid,minWidth:72}}>Hospital {i+1}</span>
-                  <input type="range" min={0} max={Math.max(4000, beds + 500)} step={10} value={beds}
-                    onChange={e => setOrgBeds(i, +e.target.value)}
-                    style={{flex:1,cursor:"pointer",accentColor:C.accent}} />
-                  <span style={{fontSize:16,fontWeight:800,color:C.accent,minWidth:55,textAlign:"right"}}>{fmtNum(beds)}</span>
-                </div>
-              ))}
+        {/* Bed count as sub-detail */}
+        <div style={{marginTop:8,padding:"10px 14px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}} onClick={()=>setShowBedDetail(!showBedDetail)}>
+            <div>
+              <span style={{fontSize:12,color:C.textMid}}>Total acute beds: </span>
+              <span style={{fontSize:14,fontWeight:700,color:C.accent}}>{fmtNum(inputs.bed_count)}</span>
+              <span style={{fontSize:11,color:C.textMuted,marginLeft:8}}>({avgBedsPerHospital} avg per hospital)</span>
             </div>
-            <div style={{marginTop:10,padding:"10px 14px",background:C.accentPale,borderRadius:8,display:"flex",alignItems:"baseline",gap:8}}>
-              <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Total:</span>
-              <span style={{fontSize:22,fontWeight:800,color:C.accent}}>{fmtNum(inputs.bed_count)} beds</span>
-            </div>
+            <span style={{fontSize:10,color:C.textMuted}}>{showBedDetail ? "hide" : "adjust"}</span>
           </div>
-        )}
-      </div>
-      {inputs.bed_count===0&&<div style={{marginTop:10,padding:"8px 14px",background:C.accentPale,borderRadius:6,fontSize:13,color:C.accent}}>Community provider {"\u2013"} model still works.</div>}
-
-      {/* ── Ambulatory sites ── */}
-      <button type="button" onClick={()=>setShowFacilities(!showFacilities)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"12px 16px",marginTop:20,background:showFacilities?C.accentPale:"#fff",border:`1px solid ${showFacilities?C.accent+"30":C.borderLight}`,borderRadius:10,cursor:"pointer",fontSize:13,fontWeight:600,color:showFacilities?C.accent:C.textMid}}>
-        <span style={{fontSize:11,transition:"transform .2s",transform:showFacilities?"rotate(90deg)":"rotate(0)"}}>{"▶"}</span>
-        Non-acute facility portfolio <span style={{fontWeight:400,color:C.textMuted,fontSize:11}}>(optional)</span>
-      </button>
-      {showFacilities && <><div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:16}}>Community, outpatient and pathology</div>
-      <div style={{display:"flex",flexDirection:"column",gap:4}}>
-        {FACILITY_TYPES.filter(ft => ["community_health","outpatient","oral_health","pathology_lab","pathology_collection","multipurpose"].includes(ft.key)).map(ft => (
-          <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
-              <div style={{fontSize:10,color:C.textMuted}}>{ft.shared.ent + ft.shared.dep + ft.shared.nic} shared legacy systems{(ft.perSite.ent + ft.perSite.dep + ft.perSite.nic) > 0 ? ` + ${(ft.perSite.ent + ft.perSite.dep + ft.perSite.nic).toFixed(1)}/site` : ""}</div>
+          {showBedDetail && <div style={{marginTop:10}}>
+            <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:8}}>
+              <div style={{flex:"1 1 140px"}}>
+                <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:4}}>Average beds per hospital</div>
+                <input type="number" value={avgBedsPerHospital} min={1} max={2000} step={10}
+                  onChange={e=>{const avg=Math.max(1,parseInt(e.target.value)||1);update("bed_count",avg*inputs.org_count);touch(1);}}
+                  style={{width:80,padding:"6px 8px",fontSize:14,fontWeight:700,border:`1px solid ${C.borderLight}`,borderRadius:6,fontFamily:"inherit",color:C.accent}}/>
+              </div>
+              <div style={{flex:"1 1 140px"}}>
+                <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:4}}>Or set total beds directly</div>
+                <input type="number" value={inputs.bed_count} min={0} max={50000} step={100}
+                  onChange={e=>{update("bed_count",Math.max(0,parseInt(e.target.value)||0));touch(1);}}
+                  style={{width:100,padding:"6px 8px",fontSize:14,fontWeight:700,border:`1px solid ${C.borderLight}`,borderRadius:6,fontFamily:"inherit",color:C.accent}}/>
+              </div>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,(p[ft.key]||0)-1)}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>-</button>
-              <input type="number" value={facilityPortfolio[ft.key] || 0} min={0} max={999} onChange={e=>{const v=Math.max(0,parseInt(e.target.value)||0);setFacilityPortfolio(p=>({...p,[ft.key]:v}));touch(1);}} style={{width:56,fontSize:14,fontWeight:800,color:C.accent,textAlign:"center",border:`1px solid ${C.borderLight}`,borderRadius:6,padding:"4px 2px",background:"#fff",fontFamily:"inherit",MozAppearance:"textfield",WebkitAppearance:"none"}}/>
-              <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:(p[ft.key]||0)+1}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
-            </div>
-          </div>
-        ))}
+            <div style={{fontSize:10,color:C.textMuted}}>Bed count drives staffing (3.0 per bed), admissions, revenue estimates, and safety metrics.</div>
+          </div>}
+        </div>
       </div>
 
-      {/* ── Post-acute ── */}
-      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:24}}>Mental health and rehabilitation</div>
-      <div style={{display:"flex",flexDirection:"column",gap:4}}>
-        {FACILITY_TYPES.filter(ft => ["mental_health_inpatient","community_mental","rehab"].includes(ft.key)).map(ft => (
-          <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
-              <div style={{fontSize:10,color:C.textMuted}}>{ft.shared.ent + ft.shared.dep + ft.shared.nic} shared + {ft.perSite.ent + ft.perSite.dep + ft.perSite.nic}/{ft.unit === "agencies" ? "agency" : "site"}</div>
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,(p[ft.key]||0)-1)}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>-</button>
-              <input type="number" value={facilityPortfolio[ft.key] || 0} min={0} max={999} onChange={e=>{const v=Math.max(0,parseInt(e.target.value)||0);setFacilityPortfolio(p=>({...p,[ft.key]:v}));touch(1);}} style={{width:56,fontSize:14,fontWeight:800,color:C.accent,textAlign:"center",border:`1px solid ${C.borderLight}`,borderRadius:6,padding:"4px 2px",background:"#fff",fontFamily:"inherit",MozAppearance:"textfield",WebkitAppearance:"none"}}/>
-              <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:(p[ft.key]||0)+1}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
-            </div>
-          </div>
-        ))}
+      {/* ── Non-acute facility portfolio ── */}
+      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:10,marginTop:20}}>Non-acute facilities</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
+        {FACILITY_TYPES.map(ft => {
+          const count = facilityPortfolio[ft.key] || 0;
+          const isIncluded = count > 0;
+          const sharedSys = ft.shared.ent + ft.shared.dep + ft.shared.nic;
+          return <button type="button" key={ft.key} onClick={()=>{
+            if (!isIncluded) { setFacilityPortfolio(p=>({...p,[ft.key]:1})); }
+            setShowFacilities(showFacilities === ft.key ? null : ft.key);
+            touch(1);
+          }} style={{
+            padding:"8px 12px",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:600,
+            border:showFacilities===ft.key?`2px solid ${C.accent}`:isIncluded?`1px solid ${C.green}40`:`1px solid ${C.borderLight}`,
+            background:isIncluded?C.greenPale:"#fff",
+            color:isIncluded?C.green:C.textMid,
+            display:"flex",alignItems:"center",gap:6,
+          }}>
+            {isIncluded && <span style={{width:6,height:6,borderRadius:3,background:C.green,flexShrink:0}}/>}
+            {ft.label}
+            {isIncluded && <span style={{fontSize:10,fontWeight:700,color:C.green,background:C.green+"15",padding:"1px 6px",borderRadius:10}}>{count}</span>}
+          </button>;
+        })}
       </div>
 
-      {/* ── Ancillary ── */}
-      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:24}}>Aged and sub-acute care</div>
-      <div style={{display:"flex",flexDirection:"column",gap:4}}>
-        {FACILITY_TYPES.filter(ft => ["aged_care"].includes(ft.key)).map(ft => (
-          <div key={ft.key} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12,fontWeight:600,color:C.text}}>{ft.label}</div>
-              <div style={{fontSize:10,color:C.textMuted}}>{ft.shared.ent + ft.shared.dep + ft.shared.nic} shared legacy systems{(ft.perSite.ent + ft.perSite.dep + ft.perSite.nic) > 0 ? ` + ${(ft.perSite.ent + ft.perSite.dep + ft.perSite.nic).toFixed(1)}/site` : ""}</div>
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,(p[ft.key]||0)-1)}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>-</button>
-              <input type="number" value={facilityPortfolio[ft.key] || 0} min={0} max={999} onChange={e=>{const v=Math.max(0,parseInt(e.target.value)||0);setFacilityPortfolio(p=>({...p,[ft.key]:v}));touch(1);}} style={{width:56,fontSize:14,fontWeight:800,color:C.accent,textAlign:"center",border:`1px solid ${C.borderLight}`,borderRadius:6,padding:"4px 2px",background:"#fff",fontFamily:"inherit",MozAppearance:"textfield",WebkitAppearance:"none"}}/>
-              <button type="button" onClick={()=>{setFacilityPortfolio(p=>({...p,[ft.key]:(p[ft.key]||0)+1}));touch(1);}} style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${C.border}`,background:"#fff",cursor:"pointer",fontSize:14,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
+      {/* Expanded facility detail */}
+      {showFacilities && FACILITY_TYPES.filter(ft=>ft.key===showFacilities).map(ft => {
+        const count = facilityPortfolio[ft.key] || 0;
+        const sharedSys = ft.shared.ent + ft.shared.dep + ft.shared.nic;
+        const perSiteSys = ft.perSite.ent + ft.perSite.dep + ft.perSite.nic;
+        return <div key={ft.key} style={{padding:"14px 16px",background:C.greenPale,borderRadius:10,border:`1px solid ${C.green}25`,marginBottom:8}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.green,marginBottom:8}}>{ft.label}</div>
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:4}}>Number of {ft.unit}</div>
+            <input type="range" min={0} max={Math.max(100, count*2, 800)} step={1} value={count}
+              onChange={e=>{setFacilityPortfolio(p=>({...p,[ft.key]:parseInt(e.target.value)||0}));touch(1);}}
+              style={{width:"100%",accentColor:C.green}}/>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
+              <input type="number" value={count} min={0} max={9999}
+                onChange={e=>{setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,parseInt(e.target.value)||0)}));touch(1);}}
+                style={{width:60,fontSize:16,fontWeight:800,color:C.green,border:`1px solid ${C.borderLight}`,borderRadius:6,padding:"4px 6px",background:"#fff",fontFamily:"inherit",textAlign:"center"}}/>
+              <span style={{fontSize:11,color:C.textMuted}}>{sharedSys} shared legacy system{sharedSys!==1?"s":""}{perSiteSys > 0 ? ` + ${perSiteSys.toFixed(1)} per ${ft.unit.replace(/s$/,"")}` : ""}</span>
             </div>
           </div>
-        ))}
-      </div>
+        </div>;
+      })}
 
+      {inputs.bed_count===0&&<div style={{marginTop:10,padding:"8px 14px",background:C.accentPale,borderRadius:6,fontSize:13,color:C.accent}}>Community provider {"–"} model still works.</div>}
 
-      </>}
     </Card></div>
     {step<1?<ContinuePrompt onClick={()=>goTo(1,ref2)} label="Next: legacy systems"/>:<LockedConnector/>}
 
