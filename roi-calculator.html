@@ -2774,7 +2774,7 @@ function ROICalculator() {
 
     {/* ═══ LEVEL 2: EXPANDABLE DETAIL ═══ */}
 
-    {!dim && <ResultSection title="Executive detail" icon="📊" dimmed={dim}>
+    {!dim && <ResultSection defaultOpen={true} title="Executive detail" icon="📊" dimmed={dim}>
       {(() => {
         const hasGalen = galenMigrationCost > 0;
         const galenTotalInvest = galenMigrationCost + Math.round(galenAnnualCost * rampYears);
@@ -2818,7 +2818,7 @@ function ROICalculator() {
       })()}
     </ResultSection>}
 
-    {!dim && galenMigrationCost > 0 && <ResultSection title="Archiving investment case" icon="🔓" dimmed={dim}>
+    {!dim && galenMigrationCost > 0 && <ResultSection defaultOpen={true} title="Archiving investment case" icon="🔓" dimmed={dim}>
       <p style={{fontSize:13,color:C.textMid,margin:"0 0 14px",lineHeight:1.5}}>
         Without a clinical archive, legacy systems cannot be safely switched off. The Galen Clinical Archive is the enabling investment that makes <strong style={{color:C.green}}>{fmtK(r.decomSave)}/yr</strong> in decommission savings possible.
       </p>
@@ -2844,7 +2844,7 @@ function ROICalculator() {
       </div>
     </ResultSection>}
 
-    {!dim && trancheMode && tranches.length > 1 && <ResultSection title={"Tranche rollout timeline ("+tranches.length+" tranches)"} icon="📅" dimmed={dim}>
+    {!dim && trancheMode && tranches.length > 1 && <ResultSection defaultOpen={true} title={"Tranche rollout timeline ("+tranches.length+" tranches)"} icon="📅" dimmed={dim}>
       {(() => {
         const ramp3 = [0.40, 0.80, 1.00];
         const maxYr = Math.max(...tranches.map(t => t.yearOffset)) + 3;
@@ -2898,7 +2898,7 @@ function ROICalculator() {
       })()}
     </ResultSection>}
 
-    {!dim && <ResultSection title="Australian evidence benchmarks" icon="📋" dimmed={dim}>
+    {!dim && <ResultSection defaultOpen={true} title="Australian evidence benchmarks" icon="📋" dimmed={dim}>
       <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
         {[
           {source:"Productivity Commission",date:"May 2024",metric:"Up to A$5.4bn/yr",desc:"national savings from better EMR data use",color:"#2d6a4f"},
@@ -2913,7 +2913,7 @@ function ROICalculator() {
       </div>
     </ResultSection>}
 
-    {!dim && <ResultSection title="Detailed breakdown" icon="🔍" dimmed={dim}>
+    {!dim && <ResultSection defaultOpen={true} title="Detailed breakdown" icon="🔍" dimmed={dim}>
     <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
       <ResultCard dimmed={dim} label={`Total savings (${rampYears}-year)`} value={an?<AnimatedK value={r.total3} active={an}/>:"–"} sub={an?"Decom + clinician time x 3 years":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
       <ResultCard dimmed={dim} label="Annual recurring" value={an?<AnimatedK value={r.annual} active={an}/>:"–"} sub={an?`${fmtK(r.decomSave)} decom + ${fmtK(r.timeSave)} time`:""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
