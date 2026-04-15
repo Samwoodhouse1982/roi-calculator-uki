@@ -2043,7 +2043,7 @@ function ROICalculator() {
         <span style={{width:24,height:24,borderRadius:"50%",background:step>=0?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>3</span>        Organisation scale
       </div>
       {/* Merger question - hidden for statewide (already handled by preset) */}
-      {providerType !== "statewide" && <div style={{marginBottom:20,padding:"14px 18px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
+      {false && providerType !== "statewide" && <div style={{marginBottom:20,padding:"14px 18px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
           <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Are you merging with or acquiring another health service?</span>
           <div style={{display:"flex",gap:6}}>
@@ -2164,6 +2164,7 @@ function ROICalculator() {
             {isIncluded && <span style={{width:6,height:6,borderRadius:3,background:C.green,flexShrink:0}}/>}
             {ft.label}
             {isIncluded && <span style={{fontSize:10,fontWeight:700,color:C.green,background:C.green+"15",padding:"1px 6px",borderRadius:10}}>{count}</span>}
+            {isIncluded && sharedSys > 0 && <span style={{fontSize:9,color:C.textMuted}}>{sharedSys} shared sys</span>}
           </button>;
         })}
       </div>
@@ -2177,14 +2178,14 @@ function ROICalculator() {
           <div style={{fontSize:13,fontWeight:700,color:C.green,marginBottom:8}}>{ft.label}</div>
           <div style={{marginBottom:10}}>
             <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:4}}>Number of {ft.unit}</div>
-            <input type="range" min={0} max={Math.max(100, count*2, 800)} step={1} value={count}
+            <input type="range" min={0} max={Math.min(Math.max(50, Math.ceil(count*1.5/10)*10), 1000)} step={1} value={count}
               onChange={e=>{setFacilityPortfolio(p=>({...p,[ft.key]:parseInt(e.target.value)||0}));touch(1);}}
               style={{width:"100%",accentColor:C.green}}/>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
               <input type="number" value={count} min={0} max={9999}
                 onChange={e=>{setFacilityPortfolio(p=>({...p,[ft.key]:Math.max(0,parseInt(e.target.value)||0)}));touch(1);}}
                 style={{width:60,fontSize:16,fontWeight:800,color:C.green,border:`1px solid ${C.borderLight}`,borderRadius:6,padding:"4px 6px",background:"#fff",fontFamily:"inherit",textAlign:"center"}}/>
-              <span style={{fontSize:11,color:C.textMuted}}>{sharedSys} shared legacy system{sharedSys!==1?"s":""}{perSiteSys > 0 ? ` + ${perSiteSys.toFixed(1)} per ${ft.unit.replace(/s$/,"")}` : ""}</span>
+              <span style={{fontSize:11,color:C.textMuted}}>{sharedSys} shared platform{sharedSys!==1?"s":""} (exists once, regardless of site count){perSiteSys > 0 ? `, plus ${perSiteSys.toFixed(1)} additional system per ${ft.unit.replace(/s$/,"")}` : ""}</span>
             </div>
           </div>
         </div>;
