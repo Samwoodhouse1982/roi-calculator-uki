@@ -346,10 +346,10 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const nicCost = ov.nicCost != null ? ov.nicCost : tierCost("niche", inp.bed_count, cx);
   const tieredEstate = ent * entCost + dep * depCost + nic * nicCost;
   // Flagships
-  const flagshipTotal = flagships.reduce((s,f) => s + (f.cost || 0), 0);
-  const flagshipDecomSave = flagships.filter(f => f.retire).reduce((s,f) => s + (f.cost || 0), 0);
-  const flagshipCount = flagships.length;
-  const flagshipRetireCount = flagships.filter(f => f.retire).length;
+  const flagshipTotal = flagships.reduce((s,f) => s + (f.cost || 0), 0); // All flagships affect estate cost
+  const flagshipDecomSave = flagships.filter(f => f.retire).reduce((s,f) => s + (f.cost || 0), 0); // All retiring flagships contribute savings
+  const flagshipCount = flagships.filter(f => f.tier).length; // Only tier-assigned flagships count (they offset the tier decrement)
+  const flagshipRetireCount = flagships.filter(f => f.tier && f.retire).length;
   const portfolioSystems = inp._portfolioSystems || 0;
   const legacy = tieredLegacy + flagshipCount + portfolioSystems;
   const totalEstate = tieredEstate + flagshipTotal + (inp._portfolioCost || 0);
