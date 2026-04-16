@@ -1158,8 +1158,8 @@ function ROICalculator() {
       _occupancy: occupancyRate,
       _rampYears: rampYears,
       _providerType: providerType,
-      _lhdCount: providerType === "statewide" ? 17 : (providerType === "state_network" ? Math.max(1, inputs.org_count) : 0),
-      _privatePct: PROVIDER_MULTIPLIERS[providerType]?.private_pct || 0.15,
+      _lhdCount: providerType === "statewide" ? Math.max(1, Math.round(inputs.org_count / 13)) : (providerType === "state_network" ? Math.max(1, inputs.org_count) : 0),
+      _privatePct: reimbursementModel === "public" ? 0 : (PROVIDER_MULTIPLIERS[providerType]?.private_pct || 0.15),
       _portfolioSystems: portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems,
       _portfolioStaff: portfolioImpact.addStaff,
       _portfolioCost: portfolioOv.cost != null ? portfolioOv.cost : portfolioImpact.addCost,
@@ -1462,7 +1462,7 @@ function ROICalculator() {
     const cards = [
       { label: r.rampN + "-YEAR COMBINED", value: fmtK(r.total3WithReimbursement), sub: "All savings incl. ABF and quality", bg: LTBG },
       { label: "ANNUAL RECURRING", value: fmtK(r.annual), sub: fmtK(r.decomSave) + " decom + " + fmtK(r.timeSave) + " time", bg: TEALBG },
-      { label: "ABF & QUALITY / YR", value: fmtK(r.reimbursementImpact + r.qualitySavings), sub: "ABF efficiency + private revenue + quality", bg: [254,249,236] },
+      { label: "ABF & QUALITY / YR", value: fmtK(r.reimbursementImpact + r.qualitySavings), sub: r.privateRevRecovery > 0 ? "ABF efficiency + private revenue + quality" : "ABF efficiency + quality", bg: [254,249,236] },
       { label: "HOURS FREED / YR", value: fmtNum(r.hrsSaved), sub: Math.round(r.realisation*100) + "% realisation", bg: [230,248,252] },
     ];
     const cardW = (cw - 12) / 4;
@@ -2523,7 +2523,7 @@ function ROICalculator() {
         </div>
       </div>
 
-      <AnimatedSlider label={<span>Bed occupancy rate<InfoTip text="Average bed occupancy. National average is ~90% (OECD 2023, AMA). Rural/remote hospitals may be 60-80%; metropolitan and tertiary hospitals 92-98%. AMA reports occupancy is well above the recommended 85% threshold. This drives admission volume, revenue estimates, and ADE calculations."/></span>} value={occupancyRate} min={0.30} max={0.95} step={0.01} display={`${Math.round(occupancyRate*100)}%`} onChange={v=>{setOccupancyRate(v);touch(3);}} suffix=""/>
+      <AnimatedSlider label={<span>Bed occupancy rate<InfoTip text="Average bed occupancy. National average is ~90% (OECD 2023, AMA). Rural/remote hospitals may be 60-80%; metropolitan and tertiary hospitals 92-98%. AMA reports occupancy is well above the recommended 85% threshold. This drives admission volume, revenue estimates, and ADE calculations."/></span>} value={occupancyRate} min={0.30} max={1.00} step={0.01} display={`${Math.round(occupancyRate*100)}%`} onChange={v=>{setOccupancyRate(v);touch(3);}} suffix=""/>
 
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
@@ -2803,7 +2803,7 @@ function ROICalculator() {
           <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
             {[
               {label:"CASHABLE",sub:"Budget reductions",value:r.cashable,color:C.green,bg:C.greenPale,
-               items:[["Legacy decommission",r.decomSave],["ABF efficiency",r.abfEfficiencyGain],["Private patient revenue",r.privateRevRecovery],...(r.isMultiHospital?[["Network consolidation",r.duplicateElimination+r.infraConsolidation]]:[])].filter(x=>x[1]>0)},
+               items:[["Legacy decommission",r.decomSave],["ABF efficiency",r.abfEfficiencyGain],...(r.privateRevRecovery > 0 ? [["Private patient revenue",r.privateRevRecovery]] : []),...(r.isMultiHospital?[["Network consolidation",r.duplicateElimination+r.infraConsolidation]]:[])].filter(x=>x[1]>0)},
               {label:"CAPACITY",sub:"Non-cashable value",value:r.nonCashable,color:"#b8860b",bg:"#fef9ec",
                items:[["Clinician time freed",r.timeSave],...(r.isAcademic?[["Teaching efficiency",r.teachingEfficiency+r.teachingOverhead]]:[])].filter(x=>x[1]>0)},
               {label:"AVOIDANCE",sub:"Costs not incurred",value:r.costAvoidance,color:"#7a4f8a",bg:"#f5f0f8",
@@ -2918,7 +2918,7 @@ function ROICalculator() {
       <ResultCard dimmed={dim} label={`Total savings (${rampYears}-year)`} value={an?<AnimatedK value={r.total3} active={an}/>:"–"} sub={an?"Decom + clinician time x 3 years":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
       <ResultCard dimmed={dim} label="Annual recurring" value={an?<AnimatedK value={r.annual} active={an}/>:"–"} sub={an?`${fmtK(r.decomSave)} decom + ${fmtK(r.timeSave)} time`:""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
       <ResultCard dimmed={dim} label="Clinician time (annual)" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={an?<span>{fmtNum(r.hrsSaved)} hrs/yr, {Math.round(r.realisation*100)}% realisation</span>:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
-      <ResultCard dimmed={dim} label="ABF efficiency & quality" value={an?<AnimatedK value={r.reimbursementImpact + r.qualitySavings} active={an}/>:"–"} sub={an?"ABF efficiency + private revenue + quality":""} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
+      <ResultCard dimmed={dim} label={r.privateRevRecovery > 0 ? "ABF efficiency & quality" : "ABF efficiency & quality"} value={an?<AnimatedK value={r.reimbursementImpact + r.qualitySavings} active={an}/>:"–"} sub={an?(r.privateRevRecovery > 0 ? "ABF efficiency + private revenue + quality" : "ABF efficiency + quality"):""} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
     </div>
 
     {/* Decom – tiered breakdown */}
@@ -2988,7 +2988,7 @@ function ROICalculator() {
 
     {/* ABF (Activity Based Funding) efficiency & revenue impact */}
     <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>ABF efficiency & revenue impact</h3>
+      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{r.privateRevRecovery > 0 ? "ABF efficiency & revenue impact" : "ABF efficiency impact"}</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Cashable benefits from improved ABF coding efficiency and private patient billing accuracy, attributed to EMR consolidation as a contributing factor.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
