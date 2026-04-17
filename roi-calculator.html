@@ -836,6 +836,8 @@ function ROICalculator() {
   const [page, setPage] = useState("inputs");
   const [calcStep, setCalcStep] = useState(0);
   const [step, setStep] = useState(0);
+  const [kioskStep, setKioskStep] = useState(0);
+  const KIOSK_STEPS = ["Programme scope","EMR journey","Organisation scale","Legacy systems","Named systems","Fine-tune"];
   const [thinking, setThinking] = useState(false);
 
   // Per-org breakdowns (optional, for multi-org)
@@ -1838,8 +1840,8 @@ function ROICalculator() {
     )}
 
 
-    {/* STEP 0 - Provider profile */}
-    <Card>
+    {kioskStep === 0 && <div style={{flex:1,display:"flex",flexDirection:"column"}}>
+    <Card style={{flex:1,display:"flex",flexDirection:"column"}}>
       <div style={{fontSize:16,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".08em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:32,height:32,borderRadius:"50%",background:C.accent,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>1</span>
         What type of organization are you?
@@ -1877,9 +1879,9 @@ function ROICalculator() {
         {providerType === "multi_hospital" && "Multi-hospital systems post-M&A typically have 2-3x the normal legacy system count. Consolidation eliminates duplicate infrastructure across facilities."}
       </div>
     </Card>
-    <LockedConnector/>
+    </div>}
 
-    {/* STEP 1 – Journey stage */}
+    {kioskStep === 1 && <div style={{flex:1,display:"flex",flexDirection:"column"}}>
     <Card>
       <div style={{fontSize:16,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".08em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:32,height:32,borderRadius:"50%",background:C.accent,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>2</span>        Where are you on your EHR journey?
@@ -1900,10 +1902,10 @@ function ROICalculator() {
         </button>)}
       </div>
     </Card>
-    <LockedConnector/>
+    </div>}
 
-    {/* STEP 1 – Org scale + presets */}
-    <div ref={ref1} style={{animation:"fade-in .4s ease"}}><Card>
+    {kioskStep === 2 && <div style={{flex:1,display:"flex",flexDirection:"column",overflowY:"auto",padding:"0 0 16px"}}>
+    <Card>
       <div style={{fontSize:16,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".08em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:32,height:32,borderRadius:"50%",background:step>=0?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>3</span>        Organization scale
       </div>
@@ -2075,11 +2077,12 @@ function ROICalculator() {
           </div>
         </div>
       )}
-    </Card></div>
-    {step<1?<ContinuePrompt onClick={()=>goTo(1,ref2)} label="Next: legacy systems"/>:<LockedConnector/>}
+    </Card>
+    </div>}
 
-    {/* STEP 2 – Tiered legacy systems */}
-    <div ref={ref2} style={{animation:step>=1?"fade-in .4s ease":"none"}}><Card dimmed={step<1}>
+    {kioskStep === 3 && <div style={{flex:1,display:"flex",flexDirection:"column",overflowY:"auto",padding:"0 0 16px"}}>
+    {/* Tiered legacy systems */}
+    <Card>
       <div style={{fontSize:16,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".08em",marginBottom:4,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:32,height:32,borderRadius:"50%",background:step>=1?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>4</span>
         Legacy systems
@@ -2220,11 +2223,12 @@ function ROICalculator() {
           </div>}
         </>;
       })()}
-    </Card></div>
-    {step<2?<ContinuePrompt onClick={()=>goTo(2,refFlag)} label="Next: named systems"/>:<LockedConnector/>}
+    </Card>
+    </div>}
 
-    {/* STEP 3 - Named high-cost systems */}
-    <div ref={refFlag} style={{animation:step>=2?"fade-in .4s ease":"none"}}><Card dimmed={step<2}>
+    {kioskStep === 4 && <div style={{flex:1,display:"flex",flexDirection:"column",overflowY:"auto",padding:"0 0 16px"}}>
+    {/* Named systems */}
+    <Card>
       <div style={{fontSize:16,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".08em",marginBottom:4,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:32,height:32,borderRadius:"50%",background:step>=2?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>5</span>
         Named high-cost systems
@@ -2321,11 +2325,12 @@ function ROICalculator() {
           No named systems added yet. Select from the list above, add a custom system, or skip this step to use tier estimates only.
         </div>
       )}
-    </Card></div>
-    {step<3?<ContinuePrompt onClick={()=>goTo(3,ref3)} label="Next: fine-tune"/>:<LockedConnector/>}
+    </Card>
+    </div>}
 
-    {/* STEP 4 - Fine-tune */}
-    <div ref={ref3} style={{animation:step>=3?"fade-in .4s ease":"none"}}><Card dimmed={step<3}>
+    {kioskStep === 5 && <div style={{flex:1,display:"flex",flexDirection:"column",overflowY:"auto",padding:"0 0 16px"}}>
+    {/* Fine-tune */}
+    <Card>
       <div style={{fontSize:16,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".08em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:32,height:32,borderRadius:"50%",background:step>=3?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>6</span>
         Fine-tune
@@ -2379,11 +2384,9 @@ function ROICalculator() {
         {(galenMigrationCost > 0 || galenAnnualCost > 0) && <div style={{fontSize:11,color:C.textMuted,marginTop:6}}>Net savings after Galen costs will be shown on the results page</div>}
         {(galenMigrationCost > 0 || galenAnnualCost > 0) && <button type="button" onClick={()=>{setGalenMigrationCost(0);setGalenAnnualCost(0);}} style={{border:"none",background:"none",color:C.textMuted,fontSize:11,cursor:"pointer",textDecoration:"underline",padding:"4px 0",marginTop:2}}>Clear costs</button>}
       </div>
-    </Card></div>
-    <LockedConnector/>
-
-    {/* CTA */}
-    <div ref={refCta} style={{animation:step>=3?"fade-in .4s ease":"none",opacity:step<3?0.3:1,pointerEvents:step<3?"none":"auto",transition:"opacity .4s"}}>
+    </Card>
+    </div>}
+    <div style={{display:"none"}}>
       <button type="button" className="roi-cta" onClick={() => {
           setPage("calculating"); setCalcStep(0); setScenarioMode(null);
           scrollToTop();
@@ -2487,7 +2490,7 @@ function ROICalculator() {
         <span style={{margin:"0 8px",color:C.textMuted}}>|</span>
         Estate {fmtK(r.totalEstate)}/yr {"→"} {Math.round(r.decomSave/Math.max(1,r.totalEstate)*100)}% reduction
       </Callout>
-    </Card><LockedConnector/>
+    </Card>
 
     {/* Clinician time */}
     <Card dimmed={dim}><h3 style={{fontSize:18,fontWeight:700,margin:"0 0 6px"}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3>
@@ -2499,7 +2502,7 @@ function ROICalculator() {
         <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at the BLS median blended rate of $95/hr (BLS median clinical compensation including benefits). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity, since not all freed time converts to measurable output. This represents capacity redirected to patient care, not a direct cash saving.`}/>
       </div>
       <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"$"}55 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong></Callout>
-    </Card><LockedConnector/>
+    </Card>
 
     {/* Clinical safety */}
     {r.hasClinicalScope && <div>
@@ -2527,7 +2530,7 @@ function ROICalculator() {
         <strong style={{color:C.text}}>Evidence & litigation context</strong><br/>
         AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data: over 250,000 adverse events at care transitions annually (AHRQ), with EHR fragmentation a contributing factor in 40% of cases. US health systems face an estimated <strong>{"$"}55bn/yr</strong> in malpractice liability costs (Coverys/PIAA). Malpractice premiums are directly influenced by claims history {"\u2013"} fewer adverse events means fewer malpractice claims, lower premiums, and better CMS quality scores. Every patient harmed by fragmented records is a potential malpractice claim and CMS penalty event.
       </div>
-    </Card><LockedConnector/>
+    </Card>
     </div>}
 
     {/* Reimbursement & compliance impact */}
@@ -2563,7 +2566,7 @@ function ROICalculator() {
       <div style={{marginTop:12,padding:"10px 14px",background:"#1a1a10",borderRadius:8,border:"1px solid #4a4020",fontSize:12,color:"#d0a040",lineHeight:1.6}}>
         <strong>Methodology:</strong> CMS penalty rates are verified (HRRP 3% cap, HAC 1%, VBP 2%). Improvement attribution is modelled: Pattar et al (JAMA 2025, 116 RCTs) found 17% readmission reduction from EHR-based interventions broadly; Vest et al (JAMIA 2019) found 0.8pp from single-vendor EHR specifically. This model uses scenario-adjusted fractions (15-35%) as an upper bound for the combined effect of consolidation, archiving, and workflow simplification. Denial recovery assumes partial attribution only (20% of 4.8% revenue loss).
       </div>
-    </Card><LockedConnector/>
+    </Card>
 
     {/* Academic module - conditional */}
     {r.isAcademic && <Card dimmed={dim}>
@@ -2597,7 +2600,7 @@ function ROICalculator() {
         <strong>Note:</strong> Research system count estimated at 3.5 per 100 beds (IRB, CTMS, biobank, research repositories, specialty registries). GME efficiency assumes 25% reduction in compliance overhead from unified reporting. All figures are modelled estimates.
       </div>
     </Card>}
-    {r.isAcademic && <LockedConnector/>}
+    
 
     {/* M&A module - conditional */}
     {r.isMultiHospital && <Card dimmed={dim}>
@@ -2631,7 +2634,7 @@ function ROICalculator() {
         <strong>Note:</strong> Assumes 35% of legacy systems are duplicated across facilities (Becker{"'"}s: only 35% of acquired hospitals switch to acquirer{"'"}s EHR). Infrastructure savings at $250k/facility for duplicate data center, network, and support desk costs. Standardization covers formulary, order set, and protocol harmonization.
       </div>
     </Card>}
-    {r.isMultiHospital && <LockedConnector/>}
+    
 
     {/* KPIs */}
     <Card dimmed={dim} style={{background:C.surface,border:`1px solid ${C.border}`}}>
@@ -2660,7 +2663,7 @@ function ROICalculator() {
           <div style={{fontSize:20,fontWeight:800,color:C.accent}}>{"↓"} {an?<AnimatedNum value={r.sarReductionPct} active={an}/>:0}%</div>
         </div>
       </div>
-    </Card><LockedConnector/>
+    </Card>
 
     {/* Year-by-year */}
     <Card dimmed={dim}>
@@ -2914,7 +2917,7 @@ function ROICalculator() {
         </div>
       </div>
     </Card>}
-    {(galenMigrationCost > 0 || galenAnnualCost > 0) && <LockedConnector/>}
+    
 
     {/* Disclaimer */}
     <div style={{marginTop:24,padding:"16px 20px",background:C.surface,borderRadius:10,border:`1px solid ${C.border}`,fontSize:12,color:C.textMuted,lineHeight:1.7}}>
@@ -2962,37 +2965,42 @@ function ROICalculator() {
 
   return <div style={{fontFamily:fontBody,background:C.bg,minHeight:"100vh",color:C.text,lineHeight:1.55,fontWeight:400,overflow:"hidden",display:"flex"}}>
     {/* LEFT PANEL - INPUTS */}
-    <div style={{flex:"0 0 58%",height:"100vh",overflowY:"auto",padding:"32px 40px",borderRight:`1px solid ${C.border}`}}>
-    <div style={{maxWidth:800,margin:"0 auto"}}>
-    <div style={{display:"flex",gap:4,marginBottom:20}}>
-      {[
-        { k: "inputs", l: "Your programme", n: "1" },
-        { k: "results", l: "ROI estimate", n: "2" },
-      ].map(p => {
-        const isCurrent = page === p.k || (page === "calculating" && p.k === "results");
-        return (
-          <button type="button" key={p.k} className="roi-tab"
-            onClick={() => page !== "calculating" && setPage(p.k)}
-            style={{
-              flex: 1, padding: "11px 8px", border: "none",
-              borderBottom: isCurrent ? `3px solid ${C.accent}` : "3px solid transparent",
-              background: isCurrent ? C.surface : "transparent",
-              cursor: page === "calculating" ? "default" : "pointer",
-              fontFamily: fontBody, fontSize: 14, fontWeight: isCurrent ? 700 : 500,
-              color: isCurrent ? C.accent : C.textMuted, borderRadius: "8px 8px 0 0",
-            }}>
-            <span style={{
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: 22, height: 22, borderRadius: "50%",
-              background: isCurrent ? C.accent : C.border, color: "#fff",
-              fontSize: 11, fontWeight: 700, marginRight: 6,
-            }}>{p.n}</span>
-            {p.l}
-          </button>
-        );
+    <div style={{flex:"0 0 58%",height:"100vh",overflow:"hidden",padding:"0",display:"flex",flexDirection:"column",borderRight:`1px solid ${C.border}`}}>
+    <div style={{maxWidth:800,margin:"0 auto",flex:1,display:"flex",flexDirection:"column",padding:"32px 40px 0"}}>
+    {/* Kiosk step indicator */}
+    <div style={{display:"flex",gap:4,marginBottom:24,padding:"0 4px"}}>
+      {KIOSK_STEPS.map((label, i) => {
+        const active = kioskStep === i;
+        const done = kioskStep > i;
+        return <div key={i} style={{flex:1,cursor:"pointer"}} onClick={()=>{if(done)setKioskStep(i);}}>
+          <div style={{height:4,borderRadius:2,background:active?C.accent:done?C.accent+"60":C.border,marginBottom:6,transition:"background .3s"}}/>
+          <div style={{fontSize:10,fontWeight:active?700:500,color:active?C.accent:done?C.textMid:C.textMuted,textAlign:"center",transition:"color .3s"}}>{label}</div>
+        </div>;
       })}
     </div>
-    <div style={{padding:"0 16px 80px"}}>{page==="inputs"?inputPage:page==="calculating"?calculatingPage:resultsPage}</div>
+    {/* Navigation buttons */}
+    <div style={{padding:"16px 40px 24px",borderTop:`1px solid ${C.border}`,display:"flex",gap:12,alignItems:"center"}}>
+      {kioskStep > 0 && <button type="button" onClick={()=>setKioskStep(p=>p-1)} style={{padding:"16px 32px",borderRadius:12,border:`1px solid ${C.border}`,background:C.surface,color:C.textMid,fontSize:16,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+        {"←"} Back
+      </button>}
+      <div style={{flex:1}}/>
+      {kioskStep < 5 ? (
+        <button type="button" onClick={()=>{setKioskStep(p=>p+1);touch(kioskStep);}} style={{padding:"16px 48px",borderRadius:12,border:"none",background:C.accent,color:"#0a0f1a",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+          Next {"→"}
+        </button>
+      ) : (
+        <button type="button" className="roi-cta" onClick={() => {
+          setPage("calculating"); setCalcStep(0); setScenarioMode(null);
+          setTimeout(() => setCalcStep(1), 400);
+          setTimeout(() => setCalcStep(2), 1100);
+          setTimeout(() => setCalcStep(3), 1800);
+          setTimeout(() => { setPage("results"); }, 2400);
+        }} style={{padding:"16px 48px",borderRadius:12,border:"none",background:`linear-gradient(135deg, ${C.accent}, #00ffc8)`,color:"#0a0f1a",fontSize:18,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 20px rgba(0,212,170,0.4)"}}>
+          Calculate ROI {"→"}
+        </button>
+      )}
+    </div>
+    <div style={{padding:"0 40px 20px",display:page==="inputs"?"none":undefined}}>{page==="calculating"?calculatingPage:page==="results"?resultsPage:null}</div>
     </div></div>
     {/* RIGHT PANEL - LIVE RESULTS */}
     <div style={{flex:"0 0 42%",height:"100vh",overflowY:"auto",background:C.surface,padding:"32px 36px"}}>
