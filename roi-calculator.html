@@ -3,10 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EHR Migration and Archiving - ROI Calculator</title>
+  <title>EHR Migration & Archiving — ROI Calculator (Kiosk)</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background: transparent; overflow-x: hidden; }
+    input[type=range] { -webkit-appearance: none; height: 12px; border-radius: 6px; background: #1e2840; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 32px; height: 32px; border-radius: 50%; background: #00d4aa; cursor: pointer; border: 3px solid #0a0f1a; box-shadow: 0 2px 8px rgba(0,212,170,0.4); }
+    input[type=range]::-moz-range-thumb { width: 32px; height: 32px; border-radius: 50%; background: #00d4aa; cursor: pointer; border: 3px solid #0a0f1a; }
+    select { background: #141b2d !important; color: #e8edf5 !important; border-color: #2a3548 !important; }
+    input[type=number] { background: #141b2d; color: #00d4aa; border-color: #2a3548; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0f1a; }
+    ::-webkit-scrollbar-thumb { background: #2a3548; border-radius: 3px; }
+    body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background: #0a0f1a; overflow: hidden; }
 
 /* ═══════════════════════════════════════════════════════════════
    ROI Calculator — Animations & Interactions
@@ -658,17 +666,17 @@ const fmtNum = n => Math.round(n).toLocaleString("en-US");
    ═══════════════════════════════════════════════════════════════════════ */
 
 const C = {
-  bg:"#FFFFFF",surface:"#ffffff",border:"#d4e0dd",borderLight:"#e8efec",
-  text:"#0F4146",textMid:"#3d5a5e",textMuted:"#6e8a8e",
-  accent:"#0F4146",accentLight:"#EEF7F1",accentPale:"#f6fbf8",
-  green:"#0F4146",greenPale:"#EEF7F1",
-  amber:"#2a6e6e",amberLight:"#e8f5f3",
-  teal:"#0F4146",tealLight:"#BEFAF0",tealPale:"#e8faf6",
-  navy:"#0F4146",navyMid:"#1a5459",
-  rose:"#8a2e4a",rosePale:"#faf0f4",
-  seafoam:"#80F8E4",seafoamLight:"#BEFAF0",
-  blue:"#73D2E1",blue75:"rgba(115,210,225,0.75)",blue50:"rgba(115,210,225,0.5)",blue25:"rgba(115,210,225,0.25)",
-  override:"#1a6b5a",overridePale:"#f0faf6"
+  bg:"#0a0f1a",surface:"#141b2d",border:"#2a3548",borderLight:"#1e2840",
+  text:"#e8edf5",textMid:"#a0b0c0",textMuted:"#607080",
+  accent:"#00d4aa",accentLight:"#003328",accentPale:"#0a2520",
+  green:"#00d4aa",greenPale:"#0a2520",
+  amber:"#f0a040",amberLight:"#2a2010",
+  teal:"#00d4aa",tealLight:"#00ffc8",tealPale:"#0a2a22",
+  navy:"#0a0f1a",navyMid:"#141b2d",
+  rose:"#ff4f7a",rosePale:"#2a1020",
+  seafoam:"#00ffc8",seafoamLight:"#00d4aa",
+  blue:"#40b0ff",blue75:"rgba(64,176,255,0.75)",blue50:"rgba(64,176,255,0.5)",blue25:"rgba(64,176,255,0.25)",
+  override:"#00d4aa",overridePale:"#0a2520"
 };
 
 function Card({children,style,dimmed,className}){return <div className={className||"roi-card"} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"24px 28px 20px",marginBottom:0,opacity:dimmed?0.3:1,pointerEvents:dimmed?"none":"auto",filter:dimmed?"grayscale(.5)":"none",transition:"opacity .4s,filter .4s",...style}}>{children}</div>;}
@@ -2952,8 +2960,11 @@ function ROICalculator() {
   const fontHead = "'FK Grotesk Neue','FK Grotesk','Inter','Helvetica Neue',Helvetica,sans-serif";
   const fontBody = "'FK Grotesk Neue','FK Grotesk','Inter','Helvetica Neue',Helvetica,sans-serif";
 
-  return <div style={{fontFamily:fontBody,background:C.bg,minHeight:"100vh",color:C.text,lineHeight:1.55,fontWeight:400,border:"1px solid #f7faf9",borderRadius:20,overflow:"hidden"}}>
-    <div style={{maxWidth:900,margin:"0 auto",padding:"16px 24px 0"}}><div style={{display:"flex",gap:4,marginBottom:20}}>
+  return <div style={{fontFamily:fontBody,background:C.bg,minHeight:"100vh",color:C.text,lineHeight:1.55,fontWeight:400,overflow:"hidden",display:"flex"}}>
+    {/* LEFT PANEL - INPUTS */}
+    <div style={{flex:"0 0 58%",height:"100vh",overflowY:"auto",padding:"32px 40px",borderRight:`1px solid ${C.border}`}}>
+    <div style={{maxWidth:800,margin:"0 auto"}}>
+    <div style={{display:"flex",gap:4,marginBottom:20}}>
       {[
         { k: "inputs", l: "Your programme", n: "1" },
         { k: "results", l: "ROI estimate", n: "2" },
@@ -2980,8 +2991,71 @@ function ROICalculator() {
           </button>
         );
       })}
+    </div>
+    <div style={{padding:"0 16px 80px"}}>{page==="inputs"?inputPage:page==="calculating"?calculatingPage:resultsPage}</div>
     </div></div>
-    <div style={{maxWidth:900,margin:"0 auto",padding:"0 16px 80px"}}>{page==="inputs"?inputPage:page==="calculating"?calculatingPage:resultsPage}</div>
+    {/* RIGHT PANEL - LIVE RESULTS */}
+    <div style={{flex:"0 0 42%",height:"100vh",overflowY:"auto",background:C.surface,padding:"32px 36px"}}>
+      <div style={{position:"sticky",top:0}}>
+        <div style={{fontSize:11,fontWeight:700,letterSpacing:2,color:C.textMuted,textTransform:"uppercase",marginBottom:20}}>Live estimate</div>
+        {(() => {
+          const s = r || rExp;
+          if (!s) return <div style={{color:C.textMuted,fontSize:14}}>Configure your inputs to see results</div>;
+          const hasGalen = galenMigrationCost > 0;
+          return <div>
+            <div style={{marginBottom:28}}>
+              <div style={{fontSize:13,color:C.textMuted,marginBottom:4}}>Combined annual savings</div>
+              <div style={{fontSize:56,fontWeight:800,color:C.accent,lineHeight:1,letterSpacing:"-2px"}}>{fmtK(s.annual)}</div>
+              <div style={{fontSize:14,color:C.textMid,marginTop:4}}>per year at steady state</div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:28}}>
+              <div style={{padding:"16px 18px",background:C.accentPale,borderRadius:12,border:`1px solid ${C.accent}30`}}>
+                <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Cashable</div>
+                <div style={{fontSize:24,fontWeight:800,color:C.accent}}>{fmtK(s.cashable)}</div>
+              </div>
+              <div style={{padding:"16px 18px",background:"#1a1a30",borderRadius:12,border:"1px solid #2a2a48"}}>
+                <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Capacity</div>
+                <div style={{fontSize:24,fontWeight:800,color:"#40b0ff"}}>{fmtK(s.timeSave)}</div>
+              </div>
+              <div style={{padding:"16px 18px",background:"#1a1525",borderRadius:12,border:"1px solid #3a2a48"}}>
+                <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Cost avoidance</div>
+                <div style={{fontSize:24,fontWeight:800,color:"#c090f0"}}>{fmtK(s.costAvoidance)}</div>
+              </div>
+              <div style={{padding:"16px 18px",background:C.bg,borderRadius:12,border:`1px solid ${C.border}`}}>
+                <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>FTE freed</div>
+                <div style={{fontSize:24,fontWeight:800,color:"#f0a040"}}>{s.fteEquivalent ? s.fteEquivalent.toFixed(0) : "–"}</div>
+              </div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:28}}>
+              <div style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",background:C.bg,borderRadius:8}}>
+                <span style={{fontSize:13,color:C.textMid}}>Legacy systems</span>
+                <span style={{fontSize:15,fontWeight:800,color:C.accent}}>{s.legacy}</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",background:C.bg,borderRadius:8}}>
+                <span style={{fontSize:13,color:C.textMid}}>Estate cost</span>
+                <span style={{fontSize:15,fontWeight:800,color:C.accent}}>{fmtK(s.totalEstate)}/yr</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",background:C.bg,borderRadius:8}}>
+                <span style={{fontSize:13,color:C.textMid}}>Systems decommissioned</span>
+                <span style={{fontSize:15,fontWeight:800,color:C.green}}>{s.decom}</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",background:C.bg,borderRadius:8}}>
+                <span style={{fontSize:13,color:C.textMid}}>{rampYears}-year projection</span>
+                <span style={{fontSize:15,fontWeight:800,color:C.accent}}>{fmtK(s.yrValues ? s.yrValues.reduce((a,b)=>a+b,0) : s.total3)}</span>
+              </div>
+              {hasGalen && <div style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",background:"#0a2520",borderRadius:8,border:"1px solid #00d4aa30"}}>
+                <span style={{fontSize:13,color:C.textMid}}>Payback</span>
+                <span style={{fontSize:15,fontWeight:800,color:C.accent}}>{(galenMigrationCost / Math.max(1, s.decomSave - galenAnnualCost)).toFixed(1)} yrs</span>
+              </div>}
+            </div>
+            <div style={{padding:"20px",background:`linear-gradient(135deg, ${C.accent}15, ${C.accent}05)`,borderRadius:12,border:`1px solid ${C.accent}30`,textAlign:"center"}}>
+              <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginBottom:4}}>Galen Clinical Archive</div>
+              <div style={{fontSize:13,color:C.textMuted}}>Enables safe decommission of {s.decom} legacy systems, unlocking {fmtK(s.decomSave)}/yr in savings</div>
+            </div>
+          </div>;
+        })()}
+      </div>
+    </div>
   </div>;
 }
 
