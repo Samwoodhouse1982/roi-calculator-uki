@@ -25,7 +25,7 @@ export function ProviderStep({ providerType, onSelect }) {
 export function JourneyStep({ journey, onSelect }) {
   return <div>
     <SectionTitle number="2">Where are you on your EHR journey?</SectionTitle>
-    <div style={{ display: "flex", gap: 16 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {[
         { key: "HAVE_EPR", label: "We have an enterprise EHR", desc: "Already on Epic, Oracle Health or similar. Looking to archive and decommission legacy systems.", icon: "✅", focus: "Archiving + decommission savings" },
         { key: "EVALUATING", label: "We're evaluating enterprise EHRs", desc: "Assessing migration to a single EHR platform. Need the full case for migration and archiving.", icon: "🔍", focus: "Migration safety + archiving savings" },
