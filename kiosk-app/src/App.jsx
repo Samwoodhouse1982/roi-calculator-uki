@@ -3,13 +3,26 @@ import { C, F, W, H, KIOSK_STEPS } from './theme';
 import { calc } from './calc/engine';
 import { PRESETS, PROVIDER_PRESET_MAP, PROVIDER_MULTIPLIERS, REIMBURSE_MULTIPLIERS } from './calc/presets';
 import { systemCost } from './calc/vendors';
+
+const IDN_FACILITIES = {
+  ambulatory_surgery: 6,
+  physician_practices: 20,
+  urgent_care: 4,
+  imaging_centers: 3,
+  dialysis: 2,
+  snf: 3,
+  home_health: 2,
+  behavioral: 1,
+  rehab: 1,
+  ltach: 0,
+};
 import { StepIndicator, NavButtons, PageTransition } from './components';
 import { ProviderStep, JourneyStep, FacilitiesStep, SystemsStep, FineTuneStep } from './steps';
 import { ResultsPage } from './results/ResultsPage';
 
 function CalibratingScreen({ onDone }) {
   const [step, setStep] = useState(0);
-  const steps = ["Mapping your legacy estate", "Modelling decommission savings", "Estimating clinical capacity impact", "Calculating reimbursement recovery"];
+  const steps = ["Mapping your legacy estate", "Modeling decommission savings", "Estimating clinical capacity impact", "Calculating reimbursement recovery"];
   useEffect(() => {
     const timers = [
       setTimeout(() => setStep(1), 600),
@@ -57,7 +70,7 @@ export default function App() {
   const updateTier = useCallback((tier, val) => setInputs(p => ({ ...p, tiers: { ...p.tiers, [tier]: val } })), []);
   const setFacility = useCallback((key, val) => setFacilitiesState(p => ({ ...p, [key]: val })), []);
   const applyPreset = useCallback((key) => { const p = PRESETS[key]; if (!p) return; setInputs({ ...p.data, data_types: { ...p.data.data_types }, tiers: { ...p.data.tiers } }); setFlagships([]); setFacilitiesState({}); }, []);
-  const selectProvider = useCallback((key) => { setProviderType(key); const pk = PROVIDER_PRESET_MAP[key]; if (pk) applyPreset(pk); }, [applyPreset]);
+  const selectProvider = useCallback((key) => { setProviderType(key); const pk = PROVIDER_PRESET_MAP[key]; if (pk) applyPreset(pk); setFacilitiesState(key === 'multi_hospital' ? { ...IDN_FACILITIES } : {}); }, [applyPreset]);
 
   const addFlagship = useCallback((sys, tier) => {
     const cost = sys.baseCost ? systemCost(sys, inputs.bed_count) : (sys.cost || 250000);

@@ -3,6 +3,7 @@ export const PRESETS = {
   SMALL: { label:"Critical Access Hospital", desc:"~50 beds · 1 facility · 6 systems", data:{ bed_count:50, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:2,niche:3}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1,RAD_REPORTS:1}, complexity_level:"LOW", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   TYPICAL: { label:"Community Hospital", desc:"~250 beds · 1 facility · 15 systems", data:{ bed_count:250, org_count:1, journey:"EVALUATING", tiers:{enterprise:1,departmental:5,niche:9}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:1,RAD_REPORTS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   LARGE: { label:"Regional Medical Center", desc:"~600 beds · 1 facility · 25 systems", data:{ bed_count:600, org_count:1, journey:"EVALUATING", tiers:{enterprise:2,departmental:8,niche:15}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:2,RAD_REPORTS:1,DOC_ECM:2,SCANNED_NOTES:1,MATERNITY:1,COMMUNITY:1}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
+  IDN: { label:"IDN / Community Health System", desc:"~1000 beds · 4 hospitals · 40+ facilities · 55+ systems", data:{ bed_count:1000, org_count:4, journey:"EVALUATING", tiers:{enterprise:3,departmental:15,niche:35}, data_types:{...emptyDt(),EPR_PAS:2,ED:2,THEATRES:2,LAB:2,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:1,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.70 }},
   REGIONAL: { label:"Multi-Hospital System", desc:"~2500 beds · 5 facilities · 70+ systems", data:{ bed_count:2500, org_count:5, journey:"EVALUATING", tiers:{enterprise:5,departmental:22,niche:45}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
 };
 
@@ -24,7 +25,7 @@ export const EXCESS_BED_DAYS_PER_BED = 0.32;  // Bates/Classen: 1.74-3.15 excess
 
 
 // ── US Reimbursement & Compliance Constants ──
-// CMS Penalty Programmes (verified from CMS programme pages, FY2025/2026)
+// CMS Penalty Programs (verified from CMS program pages, FY2025/2026)
 export const CMS_HRRP_MAX_PENALTY = 0.03;          // 3% max HRRP penalty (Section 1886(q) SSA)
 export const CMS_HRRP_AVG_PENALTY = 0.0033;        // 0.33% average penalty (Advisory Board FY2025)
 export const CMS_HAC_PENALTY = 0.01;               // 1% HAC Reduction Program (bottom quartile)
@@ -75,16 +76,16 @@ export const TEACHING_OVERHEAD_PCT = 0.12;             // 12% additional system 
 // ── M&A / Multi-Hospital Constants ──
 export const DUPLICATE_SYSTEM_RATE = 0.35;             // 35% of systems are duplicated across facilities post-M&A
 export const DUPLICATE_INFRA_COST_PER_FACILITY = 250000; // Per-facility duplicate infrastructure (data center, network, help desk)
-export const CROSS_FACILITY_STANDARDISATION_PCT = 0.15; // 15% of operational costs addressable through standardisation
+export const CROSS_FACILITY_STANDARDISATION_PCT = 0.15; // 15% of operational costs addressable through standardization
 
-// Provider type multipliers (modelled assumptions, clearly labelled)
+// Provider type multipliers (modeled assumptions, clearly labelled)
 
 export const PROVIDER_PRESET_MAP = {
   critical_access: "SMALL",
   community: "TYPICAL",
   regional: "LARGE",
   academic: "LARGE",
-  multi_hospital: "REGIONAL",
+  multi_hospital: "IDN",
 };
 export const PROVIDER_MULTIPLIERS = {
   critical_access:  { medicare_pct: 0.60, denial_factor: 0.7, penalty_exposure: 0.0, complexity_boost: 0.8 },  // CAHs exempt from HRRP, HAC, VBP

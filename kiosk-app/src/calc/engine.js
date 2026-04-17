@@ -16,7 +16,7 @@ export const EXCESS_BED_DAYS_PER_BED = 0.32;  // Bates/Classen: 1.74-3.15 excess
 
 
 // ── US Reimbursement & Compliance Constants ──
-// CMS Penalty Programmes (verified from CMS programme pages, FY2025/2026)
+// CMS Penalty Programs (verified from CMS program pages, FY2025/2026)
 export const CMS_HRRP_MAX_PENALTY = 0.03;          // 3% max HRRP penalty (Section 1886(q) SSA)
 export const CMS_HRRP_AVG_PENALTY = 0.0033;        // 0.33% average penalty (Advisory Board FY2025)
 export const CMS_HAC_PENALTY = 0.01;               // 1% HAC Reduction Program (bottom quartile)
@@ -67,13 +67,13 @@ export const TEACHING_OVERHEAD_PCT = 0.12;             // 12% additional system 
 // ── M&A / Multi-Hospital Constants ──
 export const DUPLICATE_SYSTEM_RATE = 0.35;             // 35% of systems are duplicated across facilities post-M&A
 export const DUPLICATE_INFRA_COST_PER_FACILITY = 250000; // Per-facility duplicate infrastructure (data center, network, help desk)
-export const CROSS_FACILITY_STANDARDISATION_PCT = 0.15; // 15% of operational costs addressable through standardisation
+export const CROSS_FACILITY_STANDARDISATION_PCT = 0.15; // 15% of operational costs addressable through standardization
 
 // ROI Calculator Engine
 export const SCENARIO = {
-  CONSERVATIVE: { decom_pct: 0.85, realisation: 0.20, safety: 0.15 },
-  EXPECTED:     { decom_pct: 1.00, realisation: 0.30, safety: 0.25 },
-  STRETCH:      { decom_pct: 1.10, realisation: 0.40, safety: 0.35 },
+  CONSERVATIVE: { decom_pct: 0.85, realization: 0.20, safety: 0.15 },
+  EXPECTED:     { decom_pct: 1.00, realization: 0.30, safety: 0.25 },
+  STRETCH:      { decom_pct: 1.10, realization: 0.40, safety: 0.35 },
 };
 export const CX = { LOW: 0.7, TYPICAL: 1.0, HIGH: 1.45 };
 export const DQ = { CLEAN: 0.75, MIXED: 1.0, POOR: 1.4 };
@@ -120,7 +120,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * (1 + cappedPenalty));
   const residual = isArchiveOnly ? 1 : 2;
   const hrsSaved = Math.round((clinicians * Math.max(0, minsWasted - residual) * WORKING_WEEKS) / 60);
-  const timeSave = Math.round(hrsSaved * BLENDED_HOURLY_RATE * sc.realisation);
+  const timeSave = Math.round(hrsSaved * BLENDED_HOURLY_RATE * sc.realization);
   const ticketsBaselineMonthly = ov.ticketsBaseline != null ? ov.ticketsBaseline : Math.round(legacy * TICKETS_PER_SYSTEM * dq);
   const ticketsAfter = Math.min(Math.round((legacy - decom) * TICKETS_PER_SYSTEM * dq * SURVIVING_SYSTEM_TICKET_FACTOR), ticketsBaselineMonthly);
   const ticketsReductionPct = Math.round((ticketsBaselineMonthly - ticketsAfter) / Math.max(1, ticketsBaselineMonthly) * 100);
@@ -164,7 +164,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const denialBaseline = estAnnualRevenue * DENIAL_NET_REVENUE_LOSS;
   const denialRecovery = Math.round(denialBaseline * 0.20 * sc.decom_pct * (inp._denialWeight || 1.0));
 
-  // Malpractice premium reduction (modelled assumption)
+  // Malpractice premium reduction (modeled assumption)
   const malpracticePremium = inp.bed_count * MALPRACTICE_AVG_PREMIUM_PER_BED;
   const malpracticeReduction = Math.round(malpracticePremium * 0.05 * sc.safety); // 5% reduction — conservative (CRICO: 30% of claims involve comms failure)
 
@@ -195,11 +195,11 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const duplicateElimination = Math.round(duplicateSystemCost * sc.decom_pct);
   const duplicateInfraCost = isMultiHospital ? inp.org_count * DUPLICATE_INFRA_COST_PER_FACILITY : 0;
   const infraConsolidation = Math.round(duplicateInfraCost * 0.60 * sc.decom_pct); // 60% consolidatable
-  const standardisationSave = isMultiHospital ? Math.round(totalEstate * CROSS_FACILITY_STANDARDISATION_PCT * sc.decom_pct) : 0;
+  const standardizationSave = isMultiHospital ? Math.round(totalEstate * CROSS_FACILITY_STANDARDISATION_PCT * sc.decom_pct) : 0;
 
   // Module totals
   const academicSavings = researchDecomSave + gmeEfficiency + teachingOverhead;
-  const mergeSavings = duplicateElimination + infraConsolidation + standardisationSave;
+  const mergeSavings = duplicateElimination + infraConsolidation + standardizationSave;
 
   // Total reimbursement impact
   const reimbursementImpact = hrrpReduction + hacReduction + vbpImprovement + denialRecovery;
@@ -225,7 +225,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
-    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realisation: sc.realisation, isArchiveOnly,
+    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realization: sc.realization, isArchiveOnly,
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
     flagshipCount, flagshipRetireCount,
     // Reimbursement & compliance
@@ -240,7 +240,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
     gmeComplianceCost, gmeEfficiency, teachingOverhead, academicSavings,
     // M&A module
     isMultiHospital, duplicateSystems, duplicateSystemCost, duplicateElimination,
-    duplicateInfraCost, infraConsolidation, standardisationSave, mergeSavings,
+    duplicateInfraCost, infraConsolidation, standardizationSave, mergeSavings,
     annualWithReimbursement, total3WithReimbursement, yr1R, yr2R, yr3R,
   };
 }

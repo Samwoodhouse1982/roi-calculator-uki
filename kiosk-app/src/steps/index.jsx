@@ -4,7 +4,7 @@ import { Card, BigChoice, SectionTitle, TouchSlider, Stepper, SegmentedControl, 
 import { KNOWN_SYSTEMS, systemCost } from '../calc/vendors';
 
 const TIER_TYPES = {
-  enterprise: ["EMR","EMR/PAS","PAS","Clinical"],
+  enterprise: ["EHR","EHR/PAS","PAS","Clinical"],
   departmental: ["Theatre","Radiology","LIMS","Pharmacy","Maternity","Integration","eMeds","Dictation","ED"],
   niche: ["ECM","Incident"],
 };
@@ -12,13 +12,13 @@ const TIER_TYPES = {
 // STEP 1: Scope + Reimbursement
 export function ProviderStep({ providerType, onSelect, reimbursementModel, setReimbursementModel }) {
   return <div>
-    <SectionTitle number="1">Select your programme scope</SectionTitle>
+    <SectionTitle number="1">Select your program scope</SectionTitle>
     <BigChoice options={[
       { key: "critical_access", label: "Critical Access / Rural", desc: "≤25 beds, limited legacy estate", icon: "🏥" },
       { key: "community", label: "Community Hospital", desc: "100-400 beds, moderate complexity", icon: "🏨" },
       { key: "regional", label: "Regional Medical Center", desc: "400-1,000 beds, multiple service lines", icon: "🏗️" },
       { key: "academic", label: "Academic Medical Center", desc: "Teaching hospital, research systems", icon: "🎓" },
-      { key: "multi_hospital", label: "Multi-Hospital System / IDN", desc: "Post-M&A, multiple facilities", icon: "🏢" },
+      { key: "multi_hospital", label: "IDN / Community Health System", desc: "3-5 hospitals, 800-1,500 beds, ambulatory and post-acute sites", icon: "🏢" },
     ]} value={providerType} onChange={onSelect} />
     <div style={{ marginTop: 28 }}>
       <SegmentedControl label="Reimbursement model" value={reimbursementModel} onChange={setReimbursementModel} options={[
@@ -104,7 +104,7 @@ export function FacilitiesStep({ inputs, update, facilities, setFacility }) {
 export function SystemsStep({ inputs, updateTier, flagships, addFlagship, removeFlagship, costMode, setCostMode, knownSpend, setKnownSpend }) {
   const [openTier, setOpenTier] = useState(null);
   const tiers = [
-    { key: "enterprise", label: "Enterprise", color: C.accent, hint: "EMR, PAS, large clinical suites", max: Math.max(10, inputs.tiers.enterprise + 3) },
+    { key: "enterprise", label: "Enterprise", color: C.accent, hint: "EHR, PAS, large clinical suites", max: Math.max(10, inputs.tiers.enterprise + 3) },
     { key: "departmental", label: "Departmental", color: C.blue, hint: "Theatres, lab, ED, maternity, radiology", max: Math.max(30, inputs.tiers.departmental + 5) },
     { key: "niche", label: "Standalone", color: C.purple, hint: "Document stores, scanned notes", max: Math.max(100, inputs.tiers.niche + 10) },
   ];

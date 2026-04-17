@@ -1,5 +1,5 @@
 export const KNOWN_SYSTEMS = [
-  // Cost = baseCost + (perBed * bed_count). Sources: KLAS 2025, Becker's, EMR Guides
+  // Cost = baseCost + (perBed * bed_count). Sources: KLAS 2025, Becker's, EHR Guides
   { label: "Epic", baseCost: 1500000, perBed: 7500, type: "EHR", cat: "enterprise" },
   { label: "Oracle Health (Cerner) Millennium", baseCost: 1000000, perBed: 5000, type: "EHR", cat: "enterprise" },
   { label: "MEDITECH Expanse", baseCost: 400000, perBed: 1800, type: "EHR", cat: "enterprise" },

@@ -18,7 +18,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust }
   const cashable = r.decomSave + (r.reimbursementImpact || 0) + (r.duplicateElimination || 0) + (r.infraConsolidation || 0);
   const capacity = r.timeSave || 0;
   const reimbursement = r.reimbursementImpact || 0;
-  const fte = r.hrsSaved ? Math.round(r.hrsSaved * (r.realisation || 0.3) / 1824) : 0;
+  const fte = r.hrsSaved ? Math.round(r.hrsSaved * (r.realization || 0.3) / 1824) : 0;
   const hasGalen = galenMigrationCost > 0;
   const payback = hasGalen ? galenMigrationCost / Math.max(1, r.decomSave - galenAnnualCost) : 0;
 
@@ -48,7 +48,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust }
       <Row label="Annual savings" value={fmtK(r.decomSave) + "/yr"} accent />
       <Row label="Legacy estate" value={fmtK(r.totalEstate) + "/yr"} />
       <Methodology>
-        <strong>Method:</strong> Each legacy system is classified into enterprise, departmental, or standalone tiers with bed-scaled annual costs. The decommission target ({Math.round(r.decom / Math.max(1, r.legacy) * 100)}% of {r.legacy} systems) determines how many are retired. Savings = sum of annual costs of retired systems. Costs are modelled from US health system contract benchmarks (KLAS 2025, Becker's Hospital Review) scaled to your bed count and complexity.
+        <strong>Method:</strong> Each legacy system is classified into enterprise, departmental, or standalone tiers with bed-scaled annual costs. The decommission target ({Math.round(r.decom / Math.max(1, r.legacy) * 100)}% of {r.legacy} systems) determines how many are retired. Savings = sum of annual costs of retired systems. Costs are modeled from US health system contract benchmarks (KLAS 2025, Becker's Hospital Review) scaled to your bed count and complexity.
       </Methodology>
     </Card>
 
@@ -59,7 +59,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust }
       <Row label="FTE equivalent" value={fmtNum(fte)} accent />
       <Row label="Capacity value" value={fmtK(capacity) + "/yr"} accent />
       <Methodology>
-        <strong>Method:</strong> Clinical staff ({fmtNum(r.clinicians)}) lose time each week navigating between {r.legacy} legacy systems. Base time wasted is scaled by data quality and complexity, plus a 4% overhead per additional system. Hours freed are valued at the blended hourly rate ($95) with a {Math.round((r.realisation || 0.3) * 100)}% realisation rate. This is capacity freed for patient care, not headcount reduction. Based on Westbrook et al (JAMIA 2010) workflow studies.
+        <strong>Method:</strong> Clinical staff ({fmtNum(r.clinicians)}) lose time each week navigating between {r.legacy} legacy systems. Base time wasted is scaled by data quality and complexity, plus a 4% overhead per additional system. Hours freed are valued at the blended hourly rate ($95) with a {Math.round((r.realization || 0.3) * 100)}% realization rate. This is capacity freed for patient care, not headcount reduction. Based on Westbrook et al (JAMIA 2010) workflow studies.
       </Methodology>
     </Card>
 
@@ -72,7 +72,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust }
       {r.denialRecovery > 0 && <Row label="Denial recovery" value={fmtK(r.denialRecovery)} />}
       <Row label="Total impact" value={fmtK(reimbursement) + "/yr"} accent />
       <Methodology>
-        <strong>Method:</strong> CMS penalty programmes (HRRP 3% max, HAC 1% bottom quartile, VBP 2% withhold pool) modelled from CMS programme data FY2025. Penalty exposure derived from Medicare revenue and provider-type multipliers. Denial recovery modelled at 4.8% net revenue loss (HFMA 2024), with EHR consolidation improving documentation quality. Malpractice: $8,500/bed (Mello et al, Health Affairs). Evidence: Pattar et al JAMA 2025 (116 RCTs), Vest et al JAMIA 2019.
+        <strong>Method:</strong> CMS penalty programs (HRRP 3% max, HAC 1% bottom quartile, VBP 2% withhold pool) modeled from CMS program data FY2025. Penalty exposure derived from Medicare revenue and provider-type multipliers. Denial recovery modeled at 4.8% net revenue loss (HFMA 2024), with EHR consolidation improving documentation quality. Malpractice: $8,500/bed (Mello et al, Health Affairs). Evidence: Pattar et al JAMA 2025 (116 RCTs), Vest et al JAMIA 2019.
       </Methodology>
     </Card>}
 
