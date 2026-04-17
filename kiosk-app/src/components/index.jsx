@@ -31,8 +31,14 @@ export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate }) {
 }
 
 export function PageTransition({ children, step }) {
-  return <div key={step} style={{ animation: "kfade .3s ease-out" }}>
-    <style>{`@keyframes kfade { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }`}</style>
+  return <div key={step} style={{ animation: "kSlideUp .4s cubic-bezier(0.16, 1, 0.3, 1)" }}>
+    <style>{`
+      @keyframes kSlideUp {
+        0% { opacity: 0; transform: translateY(40px) scale(0.97); filter: blur(4px); }
+        60% { opacity: 1; filter: blur(0); }
+        100% { transform: translateY(0) scale(1); }
+      }
+    `}</style>
     {children}
   </div>;
 }

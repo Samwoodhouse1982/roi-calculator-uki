@@ -3,53 +3,63 @@ import { C, F, W, H, KIOSK_STEPS } from './theme';
 import { calc } from './calc/engine';
 import { PRESETS, PROVIDER_PRESET_MAP, PROVIDER_MULTIPLIERS, REIMBURSE_MULTIPLIERS } from './calc/presets';
 import { systemCost } from './calc/vendors';
-
-const IDN_FACILITIES = {
-  ambulatory_surgery: 6,
-  physician_practices: 20,
-  urgent_care: 4,
-  imaging_centers: 3,
-  dialysis: 2,
-  snf: 3,
-  home_health: 2,
-  behavioral: 1,
-  rehab: 1,
-  ltach: 0,
-};
 import { StepIndicator, NavButtons, PageTransition } from './components';
 import { ProviderStep, JourneyStep, FacilitiesStep, SystemsStep, FineTuneStep } from './steps';
 import { ResultsPage } from './results/ResultsPage';
 
+const IDN_FACILITIES = {
+  ambulatory_surgery: 6, physician_practices: 20, urgent_care: 4,
+  imaging_centers: 3, dialysis: 2, snf: 3, home_health: 2,
+  behavioral: 1, rehab: 1, ltach: 0,
+};
+
 function CalibratingScreen({ onDone }) {
   const [step, setStep] = useState(0);
-  const steps = ["Mapping your legacy estate", "Modeling decommission savings", "Estimating clinical capacity impact", "Calculating reimbursement recovery"];
+  const [barW, setBarW] = useState(0);
+  const steps = ['Mapping your legacy estate', 'Modeling decommission savings', 'Estimating clinical capacity impact', 'Calculating reimbursement recovery'];
   useEffect(() => {
-    const timers = [
-      setTimeout(() => setStep(1), 600),
-      setTimeout(() => setStep(2), 1400),
-      setTimeout(() => setStep(3), 2200),
-      setTimeout(onDone, 3000),
+    const t = [
+      setTimeout(() => { setStep(1); setBarW(25); }, 600),
+      setTimeout(() => { setStep(2); setBarW(50); }, 1400),
+      setTimeout(() => { setStep(3); setBarW(75); }, 2200),
+      setTimeout(() => setBarW(100), 2800),
+      setTimeout(onDone, 3200),
     ];
-    return () => timers.forEach(clearTimeout);
+    return () => t.forEach(clearTimeout);
   }, [onDone]);
 
-  return <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: "0 60px" }}>
-    <style>{`@keyframes spin { to { transform: rotate(360deg); } }
-      @keyframes pulse { 0%,100% { opacity:.6; } 50% { opacity:1; } }`}</style>
-    <div style={{ width: 80, height: 80, border: `4px solid ${C.border}`, borderTopColor: C.accent, borderRadius: "50%", animation: "spin 1s linear infinite", marginBottom: 40 }} />
-    <div style={{ fontSize: F.h2, fontWeight: 700, color: C.accent, marginBottom: 32, animation: "pulse 1.5s ease-in-out infinite" }}>Calibrating your model</div>
-    <div style={{ display: "flex", flexDirection: "column", gap: 14, width: "100%", maxWidth: 500 }}>
-      {steps.map((label, i) => {
-        const done = step > i, active = step === i;
-        return <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, opacity: done ? 1 : active ? 0.8 : 0.25, transition: "opacity .4s" }}>
-          <div style={{ width: 28, height: 28, borderRadius: "50%", background: done ? C.accent : active ? C.accent + "40" : C.border, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {done && <span style={{ color: "#0a0f1a", fontSize: 16, fontWeight: 800 }}>✓</span>}
-          </div>
-          <span style={{ fontSize: F.body, fontWeight: active ? 700 : 400, color: done ? C.accent : C.textMid }}>{label}</span>
-        </div>;
-      })}
+  return (
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <style>{`
+        @keyframes calSpin { to { transform: rotate(360deg); } }
+        @keyframes calPulse { 0%,100% { opacity:.5; transform:scale(1); } 50% { opacity:1; transform:scale(1.02); } }
+      `}</style>
+      <div style={{ position: 'relative', width: 100, height: 100, marginBottom: 48 }}>
+        <div style={{ position: 'absolute', inset: 0, border: '4px solid ' + C.border, borderRadius: '50%' }} />
+        <div style={{ position: 'absolute', inset: 0, border: '4px solid transparent', borderTopColor: C.accent, borderRightColor: C.accent, borderRadius: '50%', animation: 'calSpin .8s linear infinite' }} />
+        <div style={{ position: 'absolute', inset: 16, border: '3px solid transparent', borderTopColor: C.tealLight, borderRadius: '50%', animation: 'calSpin 1.4s linear infinite reverse' }} />
+      </div>
+      <div style={{ fontSize: F.h1, fontWeight: 800, color: C.accent, marginBottom: 12, animation: 'calPulse 2s ease-in-out infinite', textAlign: 'center' }}>Calibrating your model</div>
+      <div style={{ fontSize: F.body, color: C.textMuted, marginBottom: 44, textAlign: 'center' }}>{'Analyzing ' + (step < 2 ? 'inputs' : 'clinical impact') + '...'}</div>
+      <div style={{ width: 420, maxWidth: '80%', height: 6, background: C.border, borderRadius: 3, marginBottom: 40, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: barW + '%', background: 'linear-gradient(90deg, ' + C.accent + ', ' + C.tealLight + ')', borderRadius: 3, transition: 'width .5s ease-out' }} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 420, maxWidth: '80%' }}>
+        {steps.map((label, i) => {
+          const done = step > i, active = step === i;
+          return (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, opacity: done ? 1 : active ? 0.9 : 0.2, transform: done || active ? 'translateX(0)' : 'translateX(-8px)', transition: 'all .4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: done ? C.accent : active ? C.accent + '30' : C.border, border: active ? '2px solid ' + C.accent : '2px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .3s' }}>
+                {done && <span style={{ color: '#0a0f1a', fontSize: 18, fontWeight: 800 }}>{'✓'}</span>}
+                {active && <div style={{ width: 8, height: 8, borderRadius: 4, background: C.accent }} />}
+              </div>
+              <span style={{ fontSize: F.body, fontWeight: active ? 700 : 400, color: done ? C.accent : active ? C.text : C.textMuted, transition: 'all .3s' }}>{label}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
-  </div>;
+  );
 }
 
 export default function App() {
@@ -90,9 +100,9 @@ export default function App() {
 
   const r = useMemo(() => calc(calcInputs, "EXPECTED", {}, flagships), [calcInputs, flagships]);
 
-  const handleCalculate = useCallback(() => { setCalibrating(true); }, []);
+  const handleCalculate = useCallback(() => setCalibrating(true), []);
   const handleCalibrationDone = useCallback(() => { setCalibrating(false); setKioskStep(KIOSK_STEPS.length - 1); }, []);
-  const handleAdjust = useCallback(() => { setKioskStep(4); }, []); // back to fine-tune
+  const handleAdjust = useCallback(() => setKioskStep(4), []);
 
   const renderStep = () => {
     switch (kioskStep) {
@@ -107,7 +117,7 @@ export default function App() {
   };
 
   if (calibrating) {
-    return <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, height: H, color: C.text }}>
+    return <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, height: H, color: C.text, position: "relative" }}>
       <CalibratingScreen onDone={handleCalibrationDone} />
     </div>;
   }
