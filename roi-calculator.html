@@ -837,7 +837,7 @@ function ROICalculator() {
   const [calcStep, setCalcStep] = useState(0);
   const [step, setStep] = useState(0);
   const [kioskStep, setKioskStep] = useState(0);
-  const KIOSK_STEPS = ["Programme scope","EMR journey","Organisation scale","Legacy systems","Named systems","Fine-tune"];
+  const KIOSK_STEPS = ["Programme scope","EMR journey","Organisation scale","Legacy systems","Named systems","Fine-tune","Results"];
   const [thinking, setThinking] = useState(false);
 
   // Per-org breakdowns (optional, for multi-org)
@@ -906,6 +906,7 @@ function ROICalculator() {
   const update=useCallback((k,v)=>{setInputs(p=>({...p,[k]:v}));setActivePreset(null);},[]);
   const updateTier=useCallback((tier,v)=>{setInputs(p=>({...p,tiers:{...p.tiers,[tier]:v}}));setActivePreset(null);},[]);
   const touch=useCallback(s=>setStep(p=>Math.max(p,s)),[]);
+  useEffect(() => { setStep(Math.max(kioskStep - 2, 0)); }, [kioskStep]);
 
   // When org_count changes, resize per-org arrays
   const handleOrgCountChange = useCallback((v) => {
@@ -2978,8 +2979,12 @@ function ROICalculator() {
         </div>;
       })}
     </div>
+    {/* Content area */}
+    <div style={{flex:1,overflowY:"auto",padding:"0 0 16px"}}>
+      {page==="inputs"?inputPage:page==="calculating"?calculatingPage:page==="results"?resultsPage:null}
+    </div>
     {/* Navigation buttons */}
-    <div style={{padding:"16px 40px 24px",borderTop:`1px solid ${C.border}`,display:"flex",gap:12,alignItems:"center"}}>
+    <div style={{padding:"16px 40px 24px",borderTop:`1px solid ${C.border}`,display:kioskStep===6?"none":"flex",gap:12,alignItems:"center"}}>
       {kioskStep > 0 && <button type="button" onClick={()=>setKioskStep(p=>p-1)} style={{padding:"16px 32px",borderRadius:12,border:`1px solid ${C.border}`,background:C.surface,color:C.textMid,fontSize:16,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
         {"←"} Back
       </button>}
@@ -2988,9 +2993,10 @@ function ROICalculator() {
         <button type="button" onClick={()=>{setKioskStep(p=>p+1);touch(kioskStep);}} style={{padding:"16px 48px",borderRadius:12,border:"none",background:C.accent,color:"#0a0f1a",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
           Next {"→"}
         </button>
-      ) : (
+      ) : kioskStep === 5 ? (
         <button type="button" className="roi-cta" onClick={() => {
           setPage("calculating"); setCalcStep(0); setScenarioMode(null);
+          setKioskStep(6);
           setTimeout(() => setCalcStep(1), 400);
           setTimeout(() => setCalcStep(2), 1100);
           setTimeout(() => setCalcStep(3), 1800);
@@ -2998,9 +3004,9 @@ function ROICalculator() {
         }} style={{padding:"16px 48px",borderRadius:12,border:"none",background:`linear-gradient(135deg, ${C.accent}, #00ffc8)`,color:"#0a0f1a",fontSize:18,fontWeight:800,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 20px rgba(0,212,170,0.4)"}}>
           Calculate ROI {"→"}
         </button>
-      )}
+      ) : null}
     </div>
-    <div style={{padding:"0 40px 20px",display:page==="inputs"?"none":undefined}}>{page==="calculating"?calculatingPage:page==="results"?resultsPage:null}</div>
+
     </div></div>
     {/* RIGHT PANEL - LIVE RESULTS */}
     <div style={{flex:"0 0 42%",height:"100vh",overflowY:"auto",background:C.surface,padding:"32px 36px"}}>
