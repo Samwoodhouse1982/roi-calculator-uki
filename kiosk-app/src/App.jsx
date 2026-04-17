@@ -95,7 +95,7 @@ export default function App() {
   const calcInputs = useMemo(() => {
     const pm = PROVIDER_MULTIPLIERS[providerType] || PROVIDER_MULTIPLIERS.community;
     const rm = REIMBURSE_MULTIPLIERS[reimbursementModel] || REIMBURSE_MULTIPLIERS.mixed;
-    return { ...inputs, _abfPct: pm.abf_pct || 0.72, _privateWeight: rm.private_weight || 1.0, _efficiencyWeight: rm.efficiency_weight || 1.0, _medicareDrgRevenue: 0, _occupancy: occupancyRate, _providerType: providerType, _lhdCount: 0, _privatePct: pm.private_pct || 0.15, _portfolioSystems: 0, _portfolioStaff: 0, _portfolioCost: 0 };
+    return { ...inputs, _medicareDrgRevenue: 0, _occupancy: occupancyRate, _providerType: providerType, _medicarePct: pm.medicare_pct || 0.42, _penaltyWeight: rm.penalty_weight || 1.0, _denialWeight: rm.denial_weight || 1.0, _qualityBonus: rm.quality_bonus || 0.5, _portfolioSystems: 0, _portfolioStaff: 0, _portfolioCost: 0 };
   }, [inputs, providerType, reimbursementModel, occupancyRate]);
 
   const r = useMemo(() => calc(calcInputs, "EXPECTED", {}, flagships), [calcInputs, flagships]);
@@ -117,13 +117,13 @@ export default function App() {
   };
 
   if (calibrating) {
-    return <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, height: H, color: C.text, position: "relative" }}>
+    return <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, height: '100vh', color: C.text, position: "relative" }}>
       <CalibratingScreen onDone={handleCalibrationDone} />
     </div>;
   }
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, height: H, color: C.text, lineHeight: 1.55, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, color: C.text, lineHeight: 1.55, display: "flex", flexDirection: "column" }}>
       <div style={{ padding: "48px 56px 0" }}>
         <StepIndicator steps={KIOSK_STEPS} current={kioskStep} onJump={setKioskStep} />
       </div>
