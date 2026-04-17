@@ -1,4 +1,4 @@
-// Dark kiosk theme
+// Dark kiosk theme — optimised for large touchscreen
 export const C = {
   bg: "#0a0f1a", surface: "#141b2d", border: "#2a3548", borderLight: "#1e2840",
   text: "#e8edf5", textMid: "#a0b0c0", textMuted: "#607080",
@@ -11,13 +11,18 @@ export const C = {
   purple: "#c090f0",
 };
 
+// Kiosk font sizes
+export const F = {
+  hero: 80, h1: 32, h2: 22, h3: 18, body: 16, small: 14, tiny: 12, label: 13,
+};
+
 export const fmt = n => typeof n === "number" ? n.toLocaleString("en-US") : n;
-export const fmtK = n => n >= 1e6 ? `$${(n/1e6).toFixed(1)}m` : n >= 1000 ? `$${Math.round(n/1000).toLocaleString("en-US")}k` : fmt(n);
+export const fmtK = n => n >= 1e6 ? `$${(n/1e6).toFixed(1)}m` : n >= 1000 ? `$${Math.round(n/1000).toLocaleString("en-US")}k` : `$${fmt(n)}`;
 export const fmtNum = n => typeof n === "number" ? n.toLocaleString("en-US") : n;
 
 export const KIOSK_STEPS = [
   "Programme scope",
-  "EHR journey", 
+  "EHR journey",
   "Organisation scale",
   "Legacy systems",
   "Fine-tune",
