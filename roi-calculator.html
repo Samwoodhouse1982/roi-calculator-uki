@@ -354,8 +354,10 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const nicDecom = clamp(Math.min(Math.round(rawDecom), tieredLegacy) - entDecom - depDecom, 0, nic);
   const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * sc.decom_pct);
   const corpPerOrg = Math.min(80, Math.round(CORPORATE_STAFF_BASE + (inp.bed_count / Math.max(1, inp.org_count)) * CORPORATE_STAFF_PER_BED));
-  const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * corpPerOrg);
-  const switchPenalty = Math.min(Math.max(0, legacy - 1) * SWITCH_PENALTY_PER_SYSTEM, 4.0); // Cap: max ~60 min/wk
+  const totalStaff = Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * corpPerOrg);
+  const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(totalStaff * ACTIVE_USER_PCT);
+  const systemsPerUser = Math.max(2, Math.round(legacy * SYSTEM_EXPOSURE_PCT));
+  const switchPenalty = Math.min(Math.max(0, systemsPerUser - 1) * SWITCH_PENALTY_PER_SYSTEM, 4.0);
   const baseMin = isArchiveOnly ? 5 : 12;
   const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * (1 + switchPenalty));
   const residual = isArchiveOnly ? 1 : 2;
@@ -388,7 +390,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
   return {
     legacy, ent, dep, nic, entCost, depCost, nicCost, blendedCost, totalEstate,
     decom, entDecom, depDecom, nicDecom, decomSave,
-    clinicians, minsWasted, hrsSaved, timeSave, baseMin,
+    totalStaff, clinicians, systemsPerUser, minsWasted, hrsSaved, timeSave, baseMin,
     ticketsBaselineMonthly, ticketsAfter, ticketsReductionPct,
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
@@ -423,6 +425,10 @@ const SURVIVING_SYSTEM_TICKET_FACTOR = 0.6;
 const SAR_BASE_DAYS = 1.5;
 const SAR_DAYS_PER_SYSTEM_BEFORE = 0.4;
 const SAR_DAYS_PER_SYSTEM_AFTER = 0.15;
+
+// Clinical engagement factors
+const ACTIVE_USER_PCT = 0.65;           // 65% of total staff are regular EPR/system users
+const SYSTEM_EXPOSURE_PCT = 0.35;       // Average clinician interacts with ~35% of legacy systems
 const MED_ERRORS_PER_BED = 18;
 const PATIENTS_HARMED_PER_BED = 0.315;
 const EXCESS_BED_DAYS_PER_BED = 0.365;
@@ -2019,7 +2025,7 @@ function ROICalculator() {
 
         <S title="4. Clinician time savings">
           <p style={{margin:"0 0 8px"}}>Time freed when clinicians no longer switch between multiple legacy systems.</p>
-          <F>corpPerOrg = min(80, 20 + bedsPerOrg {"\u00d7"} 0.12)<br/>clinicians = beds {"\u00d7"} 2.8 + orgs {"\u00d7"} corpPerOrg<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>switchPenalty = min(max(0, systems - 1) {"\u00d7"} 0.04, 4.0)<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 48wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"\u00a3"}55/hr {"\u00d7"} realisationRate</F>
+          <F>corpPerOrg = min(80, 20 + bedsPerOrg {"\u00d7"} 0.12)<br/>totalStaff = beds {"\u00d7"} 2.8 + orgs {"\u00d7"} corpPerOrg<br/>clinicians = totalStaff {"\u00d7"} 65% (active system users)<br/>systemsPerUser = legacy {"\u00d7"} 35% (exposure per clinician)<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>switchPenalty = min(max(0, systemsPerUser - 1) {"\u00d7"} 0.04, 4.0)<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 48wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"\u00a3"}55/hr {"\u00d7"} realisationRate</F>
           <p style={{margin:"8px 0 4px"}}><strong>2.8 staff per bed</strong> {" - "} NHS workforce stats 2023/24 show 2.6-3.0 clinical full-time equivalents (FTEs) per acute bed (doctors, nurses, allied health professionals (AHPs), pharmacists). <Ev s="NHS Digital workforce statistics 2023/24; Lord Carter operational productivity review."/></p>
           <p style={{margin:"4px 0"}}><strong>12 min/wk base</strong> (migration path) {" - "} Westbrook et al 2010 (JAMIA) found nurses interrupted 3-6 times/hour by system-switching. Nuffield Trust 2020 estimated 15-20 min/day lost to system navigation. Our 12 min/week is conservative (reducible portion only). Archive-only uses 5 min/wk. <Ev s="Westbrook et al 2010 (JAMIA); Nuffield Trust 2020 system navigation study."/></p>
           <p style={{margin:"4px 0"}}><strong>+4% per system</strong> {" - "} each additional legacy system adds cognitive overhead. At 42 systems (as in the benchmarked Trust), this produces ~10 min/day wasted, consistent with published studies. <Md s="First-principles switching cost model. Validated against benchmarked Trust (42 systems)."/></p>
