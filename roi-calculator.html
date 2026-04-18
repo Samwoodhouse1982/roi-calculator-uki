@@ -362,8 +362,10 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const nicDecom = clamp(Math.min(Math.round(rawDecom), tieredLegacy) - entDecom - depDecom, 0, nic);
   const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * sc.decom_pct);
   const corpPerOrg = Math.min(100, Math.round(CORPORATE_STAFF_BASE + (inp.bed_count / Math.max(1, inp.org_count)) * CORPORATE_STAFF_PER_BED));
-  const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * corpPerOrg + (inp._portfolioStaff || 0));
-  const switchPenalty = Math.max(0, legacy - 1) * SWITCH_PENALTY_PER_SYSTEM;
+  const totalStaff = Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * corpPerOrg + (inp._portfolioStaff || 0));
+  const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(totalStaff * ACTIVE_USER_PCT);
+  const systemsPerUser = Math.max(2, Math.round(legacy * SYSTEM_EXPOSURE_PCT));
+  const switchPenalty = Math.max(0, systemsPerUser - 1) * SWITCH_PENALTY_PER_SYSTEM;
   const baseMin = isArchiveOnly ? 5 : 12;
   const cappedPenalty = Math.min(switchPenalty, 4.0); // Cap: prevents >60 min/wk at extreme system counts
   const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * (1 + cappedPenalty));
@@ -475,7 +477,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
   return {
     legacy, ent, dep, nic, entCost, depCost, nicCost, blendedCost, totalEstate,
     decom, entDecom, depDecom, nicDecom, decomSave,
-    clinicians, minsWasted, hrsSaved, timeSave, baseMin,
+    totalStaff, clinicians, systemsPerUser, minsWasted, hrsSaved, timeSave, baseMin,
     ticketsBaselineMonthly, ticketsAfter, ticketsReductionPct,
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
@@ -532,6 +534,10 @@ const SURVIVING_SYSTEM_TICKET_FACTOR = 0.6;
 const SAR_BASE_DAYS = 3.0;              // Base coordination overhead (cross-LHD, redaction, quality review)
 const SAR_DAYS_PER_SYSTEM_BEFORE = 0.8;  // Per-system search, extraction, reconciliation
 const SAR_DAYS_PER_SYSTEM_AFTER = 0.15;
+
+// Clinical engagement factors
+const ACTIVE_USER_PCT = 0.65;           // 65% of total staff are regular EMR/system users
+const SYSTEM_EXPOSURE_PCT = 0.35;       // Average clinician interacts with ~35% of legacy systems
 const MED_ERRORS_PER_BED = 14;  // ACSQHC sentinel event data
 const PATIENTS_HARMED_PER_BED = 3.2;   // AIHW admin data: 5.4% of separations; ~60 seps/bed at ALOS 5.5 * 5.4% = 3.2
 const EXCESS_BED_DAYS_PER_BED = 8.0;   // QAHCS (Quality in Australian Health Care Study)/AIHW: AEs account for ~8% of bed days; ~50% preventable
