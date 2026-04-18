@@ -10,6 +10,15 @@ export const SURVIVING_SYSTEM_TICKET_FACTOR = 0.6;
 export const SAR_BASE_DAYS = 1.5;
 export const SAR_DAYS_PER_SYSTEM_BEFORE = 0.4;
 export const SAR_DAYS_PER_SYSTEM_AFTER = 0.15;
+
+// Clinical engagement factors
+export const ACTIVE_USER_PCT = 0.65;           // 65% of total staff are regular EHR/system users
+                                                // Remainder: porters, HCAs, casual/bank, non-clinical support
+                                                // Evidence: HIMSS analytics ~60-70% active EHR users in typical US hospital
+export const SYSTEM_EXPOSURE_PCT = 0.35;       // Average clinician interacts with ~35% of legacy systems
+                                                // An oncologist uses 4-5 of 15 systems, not all 15
+                                                // Nurses touch more (40-50%), specialists fewer (20-30%)
+                                                // 35% is the blended average across roles
 export const MED_ERRORS_PER_BED = 15;  // AHRQ PSI data; IOM estimates 6.5 medication errors per 100 admissions
 export const PATIENTS_HARMED_PER_BED = 0.28;  // HHS OIG 2022: 25% of Medicare patients experience adverse events
 export const EXCESS_BED_DAYS_PER_BED = 0.32;  // Bates/Classen: 1.74-3.15 excess days per ADE; Zhan & Miller JAMA 2003
@@ -112,11 +121,20 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const depDecom = Math.min(Math.round(dep * decomFrac), dep);
   const nicDecom = clamp(Math.min(Math.round(rawDecom), tieredLegacy) - entDecom - depDecom, 0, nic);
   const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * sc.decom_pct);
+  // Clinical capacity — staff count
   const corpPerOrg = Math.min(120, Math.round(CORPORATE_STAFF_BASE + (inp.bed_count / Math.max(1, inp.org_count)) * CORPORATE_STAFF_PER_BED));
-  const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * corpPerOrg + (inp._portfolioStaff || 0));
-  const switchPenalty = Math.max(0, legacy - 1) * SWITCH_PENALTY_PER_SYSTEM;
+  const totalStaff = Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * corpPerOrg + (inp._portfolioStaff || 0));
+  const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(totalStaff * ACTIVE_USER_PCT);
+  // ^ Only 65% of total staff are regular system users
+  //   Remainder: porters, HCAs, casual/bank, non-clinical support
+
+  // System navigation overhead — based on systems each clinician actually touches
+  const systemsPerUser = Math.max(2, Math.round(legacy * SYSTEM_EXPOSURE_PCT));
+  // ^ Average clinician interacts with ~35% of legacy estate
+  //   Oncologist uses 4-5 of 15, not all 15. Nurse uses more.
+  const switchPenalty = Math.max(0, systemsPerUser - 1) * SWITCH_PENALTY_PER_SYSTEM;
   const baseMin = isArchiveOnly ? 5 : 12;
-  const cappedPenalty = Math.min(switchPenalty, 4.0); // Cap: prevents >60 min/wk at extreme system counts
+  const cappedPenalty = Math.min(switchPenalty, 4.0);
   const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * (1 + cappedPenalty));
   const residual = isArchiveOnly ? 1 : 2;
   const hrsSaved = Math.round((clinicians * Math.max(0, minsWasted - residual) * WORKING_WEEKS) / 60);
@@ -220,7 +238,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   return {
     legacy, ent, dep, nic, entCost, depCost, nicCost, blendedCost, totalEstate,
     decom, entDecom, depDecom, nicDecom, decomSave,
-    clinicians, minsWasted, hrsSaved, timeSave, baseMin,
+    totalStaff, clinicians, systemsPerUser, minsWasted, hrsSaved, timeSave, baseMin,
     ticketsBaselineMonthly, ticketsAfter, ticketsReductionPct,
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,

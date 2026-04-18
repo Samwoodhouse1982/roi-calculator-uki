@@ -59,7 +59,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust }
       <Row label="FTE equivalent" value={fmtNum(fte)} accent />
       <Row label="Capacity value" value={fmtK(capacity) + "/yr"} accent />
       <Methodology>
-        <strong>Method:</strong> Clinical staff ({fmtNum(r.clinicians)}) lose time each week navigating between {r.legacy} legacy systems. Base time wasted is scaled by data quality and complexity, plus a 4% overhead per additional system. Hours freed are valued at the blended hourly rate ($95) with a {Math.round((r.realization || 0.3) * 100)}% realization rate. This is capacity freed for patient care, not headcount reduction. Based on Westbrook et al (JAMIA 2010) workflow studies.
+        <strong>Method:</strong> Of {fmtNum(r.totalStaff)} total staff, {fmtNum(r.clinicians)} ({Math.round(r.clinicians / Math.max(1, r.totalStaff) * 100)}%) are regular system users — the remainder (porters, HCAs, casual/bank, non-clinical) rarely interact with clinical systems. Each active user navigates ~{r.systemsPerUser} of your {r.legacy} legacy systems on average (35% exposure — an oncologist uses 4-5 systems, not all {r.legacy}). The 4% per-system overhead applies only to these touched systems, giving {r.minsWasted} mins/week wasted per person. Hours freed are valued at $95/hr blended rate with a {Math.round((r.realization || 0.3) * 100)}% realization discount — freed time doesn't fully convert to measurable output. This is capacity value, not headcount reduction. Evidence: HIMSS analytics (60-70% active users), Westbrook et al JAMIA 2010 (workflow studies), IHI productive ward (20-40% realization).
       </Methodology>
     </Card>
 
