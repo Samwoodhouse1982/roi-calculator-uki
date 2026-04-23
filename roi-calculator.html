@@ -676,10 +676,20 @@ const REIMBURSE_MULTIPLIERS = {
 };
 
 // ── Known EPR/PAS systems (UK & Ireland) ──
-const TIER_TYPE_MAP = {
+const TIER_TYPE_MAP_HOSPITAL = {
   enterprise: ["EMR","EMR/PAS","PAS","Clinical"],
   departmental: ["Theatre","Radiology","LIMS","Pharmacy","Maternity","Integration","eMeds","Dictation","ED"],
   niche: ["ECM","Incident"],
+};
+const TIER_TYPE_MAP_AC = {
+  enterprise: ["Clinical"],
+  departmental: ["Medication","Rostering"],
+  niche: ["Compliance"],
+};
+const TIER_TYPE_MAP_NDIS = {
+  enterprise: ["Client Mgmt","Clinical/Allied"],
+  departmental: ["Rostering"],
+  niche: ["Billing"],
 };
 const KNOWN_SYSTEMS = [
   { label: "Oracle Health (Cerner Millennium)", baseCost: 2000000, perBed: 5500, type: "EMR" },
@@ -744,8 +754,8 @@ const NDIS_KNOWN_SYSTEMS = [
 
 function systemCost(sys, beds) {
   const raw = Math.round(((sys.baseCost || 250000) + (sys.perBed || 0) * beds) / 1000) * 1000;
-  const tierTypes = { EMR:20000000, 'EMR/PAS':20000000, PAS:15000000, Clinical:3000000, Theatre:500000, Radiology:500000, LIMS:500000, Pharmacy:500000, Maternity:500000, Integration:500000, eMeds:500000, Dictation:200000, ECM:200000, Incident:200000 };
-  const cap = tierTypes[sys.type] || 8000000;
+  const tierTypeCaps = { EMR:20000000, 'EMR/PAS':20000000, PAS:15000000, Clinical:3000000, Theatre:500000, Radiology:500000, LIMS:500000, Pharmacy:500000, Maternity:500000, Integration:500000, eMeds:500000, Dictation:200000, ECM:200000, Incident:200000 };
+  const cap = tierTypeCaps[sys.type] || 8000000;
   return Math.min(raw, cap);
 }
 // ── Cost line item helpers ──
@@ -2369,9 +2379,9 @@ function ROICalculator() {
         <div>
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
             {[
-              {tier:"enterprise",label:"Enterprise systems",color:C.accent,bg:C.accentPale,br:C.border,hint:"e.g. legacy EMR, PAS, large clinical suites",max:Math.max(10, inputs.tiers.enterprise + 2),tip:"Large clinical platforms, e.g. legacy EMR/PAS, major departmental suites. High per-system cost."},
-              {tier:"departmental",label:"Departmental systems",color:"#1a7a7a",bg:"#eef9f7",br:"#c0e8e2",hint:"e.g. theatres, lab, ED, maternity, radiology",max:Math.max(30, inputs.tiers.departmental + 5),tip:"Mid-tier clinical systems serving one department or specialty. Moderate running costs."},
-              {tier:"niche",label:"Standalone systems",color:"#3d8a8a",bg:C.tealPale,br:`${C.teal}22`,hint:"e.g. document stores, scanned notes, specialty databases",max:Math.max(100, inputs.tiers.niche + 10),tip:"Small self-contained tools, e.g. single-function databases, document stores, scanned notes. Low individual cost but they add up."},
+              {tier:"enterprise",label:sector==="aged_care"?"Care management platforms":sector==="ndis"?"Client management systems":"Enterprise systems",color:C.accent,bg:C.accentPale,br:C.border,hint:sector==="aged_care"?"e.g. Leecare, iCare, eCase, AlayaCare":sector==="ndis"?"e.g. ShiftCare, SupportAbility, Lumary":"e.g. legacy EMR, PAS, large clinical suites",max:Math.max(10, inputs.tiers.enterprise + 2),tip:sector==="aged_care"?"Primary resident care platforms. Highest per-system cost.":sector==="ndis"?"Primary participant/client management platforms.":"Large clinical platforms, e.g. legacy EMR/PAS, major departmental suites. High per-system cost."},
+              {tier:"departmental",label:sector==="aged_care"?"Medication & rostering":sector==="ndis"?"Rostering & scheduling":"Departmental systems",color:"#1a7a7a",bg:"#eef9f7",br:"#c0e8e2",hint:sector==="aged_care"?"e.g. MPS Connect, WebsterCare, Humanforce, Deputy":sector==="ndis"?"e.g. RotaWiz, Deputy, Humanforce":"e.g. theatres, lab, ED, maternity, radiology",max:Math.max(30, inputs.tiers.departmental + 5),tip:sector==="aged_care"?"Medication management, rostering, and scheduling systems.":sector==="ndis"?"Staff rostering, scheduling, and travel planning systems.":"Mid-tier clinical systems serving one department or specialty. Moderate running costs."},
+              {tier:"niche",label:sector==="aged_care"?"Compliance & admin":sector==="ndis"?"Billing & compliance":"Standalone systems",color:"#3d8a8a",bg:C.tealPale,br:`${C.teal}22`,hint:sector==="aged_care"?"e.g. QI reporting, SIRS, audit tools, finance":sector==="ndis"?"e.g. NDIA claims, incident reporting, worker screening":"e.g. document stores, scanned notes, specialty databases",max:Math.max(100, inputs.tiers.niche + 10),tip:sector==="aged_care"?"Compliance, quality indicator reporting, finance, and admin tools.":sector==="ndis"?"NDIA billing/claims, incident reporting, worker screening, finance.":"Small self-contained tools, e.g. single-function databases, document stores, scanned notes. Low individual cost but they add up."},
             ].map(t=>{
               const computedCost = tierCost(t.tier,inputs.bed_count,CX[inputs.complexity_level]);
               const editKey = t.tier;
@@ -2414,7 +2424,8 @@ function ROICalculator() {
 
               {/* Add named system button */}
               {(() => {
-                const tierTypes = TIER_TYPE_MAP[t.tier] || [];
+                const _ttm = sector === "aged_care" ? TIER_TYPE_MAP_AC : sector === "ndis" ? TIER_TYPE_MAP_NDIS : TIER_TYPE_MAP_HOSPITAL;
+                const tierTypes = _ttm[t.tier] || [];
                 const tierSystems = knownSystems.filter(s => tierTypes.includes(s.type));
                 return tierSystems.length > 0 && <details style={{marginTop:6}}>
                   <summary style={{fontSize:11,color:C.accent,cursor:"pointer",fontWeight:600,listStyle:"none",display:"flex",alignItems:"center",gap:4}}>
