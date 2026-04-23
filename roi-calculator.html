@@ -337,8 +337,8 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function calc(inp, mode, ov = {}, flagships = []) {
   const sc = SCENARIO[mode], cx = CX[inp.complexity_level], dq = DQ[inp.data_quality_level];
   const isArchiveOnly = inp.journey === "HAVE_EPR";
-  const sector = (inp._providerType || "").startsWith("aged_care") ? "aged_care"
-               : (inp._providerType || "").startsWith("ndis") ? "ndis" : "hospital";
+  const sector = (inp._providerType || "") === "aged_care" ? "aged_care"
+               : (inp._providerType || "") === "ndis_provider" ? "ndis" : "hospital";
   const isAgedCare = sector === "aged_care";
   const isNDIS = sector === "ndis";
   const ent = ov.enterprise != null ? ov.enterprise : inp.tiers.enterprise;
@@ -653,14 +653,8 @@ const PROVIDER_PRESET_MAP = {
   tertiary: "LARGE",
   state_network: "REGIONAL",
   statewide: "STATEWIDE",
-  aged_care_single: "AC_SINGLE",
-  aged_care_small: "AC_SMALL",
-  aged_care_mid: "AC_MID",
-  aged_care_large: "AC_LARGE",
-  ndis_small: "NDIS_SMALL",
-  ndis_therapy: "NDIS_THERAPY",
-  ndis_mid: "NDIS_MID",
-  ndis_large: "NDIS_LARGE",
+  aged_care: "AC_MID",
+  ndis_provider: "NDIS_MID",
 };
 const PROVIDER_MULTIPLIERS = {
   rural_remote:     { abf_pct: 0.80, private_pct: 0.05, complexity_boost: 0.7 },
@@ -669,16 +663,9 @@ const PROVIDER_MULTIPLIERS = {
   tertiary:         { abf_pct: 0.65, private_pct: 0.25, complexity_boost: 1.5 },
   state_network:    { abf_pct: 0.72, private_pct: 0.15, complexity_boost: 1.3 },
   statewide:        { abf_pct: 0.70, private_pct: 0.12, complexity_boost: 1.5 },
-  // Aged Care
-  aged_care_single: { abf_pct: 0, private_pct: 0, complexity_boost: 0.7 },
-  aged_care_small:  { abf_pct: 0, private_pct: 0, complexity_boost: 0.9 },
-  aged_care_mid:    { abf_pct: 0, private_pct: 0, complexity_boost: 1.0 },
-  aged_care_large:  { abf_pct: 0, private_pct: 0, complexity_boost: 1.2 },
-  // NDIS
-  ndis_small:       { abf_pct: 0, private_pct: 0, complexity_boost: 0.7 },
-  ndis_therapy:     { abf_pct: 0, private_pct: 0, complexity_boost: 0.8 },
-  ndis_mid:         { abf_pct: 0, private_pct: 0, complexity_boost: 1.0 },
-  ndis_large:       { abf_pct: 0, private_pct: 0, complexity_boost: 1.2 },
+  // Aged Care & NDIS
+  aged_care:        { abf_pct: 0, private_pct: 0, complexity_boost: 1.0 },
+  ndis_provider:    { abf_pct: 0, private_pct: 0, complexity_boost: 1.0 },
 };
 
 // ABF model multipliers
@@ -1294,8 +1281,8 @@ function ROICalculator() {
       _portfolioCost: portfolioOv.cost != null ? portfolioOv.cost : portfolioImpact.addCost,
     };
   }, [inputs, providerType, reimbursementModel, medicareDrgRevenue, rampYears, occupancyRate, portfolioOv, portfolioImpact]);
-  const sector = (providerType || "").startsWith("aged_care") ? "aged_care"
-               : (providerType || "").startsWith("ndis") ? "ndis" : "hospital";
+  const sector = (providerType || "") === "aged_care" ? "aged_care"
+               : (providerType || "") === "ndis_provider" ? "ndis" : "hospital";
   const unitLabel = sector === "aged_care" ? "places" : sector === "ndis" ? "active participants" : "beds";
   const unitLabelCap = sector === "aged_care" ? "Places" : sector === "ndis" ? "Active Participants" : "Beds";
   const facilityLabel = sector === "aged_care" ? "facilities" : sector === "ndis" ? "service locations" : "hospitals";
@@ -1626,7 +1613,7 @@ function ROICalculator() {
       styles: { fontSize: 9, cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 55 }, 1: { halign: "right" } },
       body: [
-        ["Provider type", ({"rural_remote":"Rural / Remote","regional":"Regional Hospital","metropolitan":"Metropolitan Hospital","tertiary":"Tertiary Referral","state_network":"LHD / Health Service","statewide":"Statewide Programme","aged_care_single":"Aged Care (Single)","aged_care_small":"Aged Care (Small Group)","aged_care_mid":"Aged Care (Mid-Range)","aged_care_large":"Aged Care (Large)","ndis_small":"NDIS (Small)","ndis_therapy":"NDIS (Therapy)","ndis_mid":"NDIS (Mid-Range)","ndis_large":"NDIS (Large)"})[providerType] || providerType],
+        ["Provider type", ({"rural_remote":"Rural / Remote","regional":"Regional Hospital","metropolitan":"Metropolitan Hospital","tertiary":"Tertiary Referral","state_network":"LHD / Health Service","statewide":"Statewide Programme","aged_care":"Residential Aged Care","ndis_provider":"NDIS Provider"})[providerType] || providerType],
         ["Funding model", ({"public":"Public (ABF-funded)","mixed":"Public + Private","private":"Predominantly Private"})[reimbursementModel] || reimbursementModel],
         ["Journey", isArchiveOnly ? "Have enterprise EMR" : "Evaluating EMRs"],
         ["Beds", fmtNum(inputs.bed_count)],
@@ -1988,39 +1975,35 @@ function ROICalculator() {
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20}}>
         {[
           {k:"statewide",l:"Statewide Programme",d:"All districts, 200+ hospitals, single EMR",e:"🏥"},
-          {k:"aged_care_single",l:"Aged Care — Single Facility",d:"~90 places, 1 facility",e:"🏠"},
-          {k:"aged_care_small",l:"Aged Care — Small Group",d:"~350 places, 4 facilities",e:"🏠"},
-          {k:"aged_care_mid",l:"Aged Care — Mid-Range",d:"~1,000 places, 12 facilities",e:"🏠"},
-          {k:"aged_care_large",l:"Aged Care — Large Provider",d:"~3,500+ places, 35+ facilities",e:"🏠"},
-          {k:"ndis_small",l:"NDIS — Small Provider",d:"~50 participants, 12 staff",e:"♿"},
-          {k:"ndis_therapy",l:"NDIS — Therapy Practice",d:"~150 participants, 20 staff",e:"♿"},
-          {k:"ndis_mid",l:"NDIS — Community Provider",d:"~500 participants, 100 staff",e:"♿"},
-          {k:"ndis_large",l:"NDIS — Large Multi-Service",d:"~2,000+ participants, 400+ staff",e:"♿"},
+          {k:"aged_care",l:"Residential Aged Care",d:"Aged care homes with residential places",e:"🏠"},
+          {k:"ndis_provider",l:"NDIS Provider",d:"Disability support with active participants",e:"♿"},
           {k:"state_network",l:"LHD / Health Service",d:"Single district, multiple facilities",e:"🏢"},
           {k:"tertiary",l:"Tertiary Referral / Teaching",d:"Major teaching hospital, research",e:"🎓"},
           {k:"metropolitan",l:"Metropolitan Hospital",d:"300-600 beds, complex integrations",e:"🏥"},
           {k:"regional",l:"Regional Hospital",d:"100-300 beds, district systems",e:"🏥"},
           {k:"rural_remote",l:"Rural / Remote Hospital",d:"Small facility, standalone systems",e:"🏥"},
-        ].map(p=><button type="button" key={p.k} onClick={()=>{setProviderType(p.k);const pk=PROVIDER_PRESET_MAP[p.k];if(pk)applyPreset(pk);}} className="roi-preset" style={{width:"100%",padding:"12px 14px",textAlign:"left",border:providerType===p.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:providerType===p.k?C.accentPale:"#fff",cursor:"pointer"}}>
+        ].map(p=><button type="button" key={p.k} onClick={()=>{setProviderType(p.k);const pk=PROVIDER_PRESET_MAP[p.k];if(pk)applyPreset(pk);if(p.k==="aged_care")setOccupancyRate(0.92);else if(p.k==="ndis_provider")setOccupancyRate(0.70);else setOccupancyRate(0.90);}} className="roi-preset" style={{width:"100%",padding:"12px 14px",textAlign:"left",border:providerType===p.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:providerType===p.k?C.accentPale:"#fff",cursor:"pointer"}}>
           <div style={{fontSize:13,fontWeight:700,color:providerType===p.k?C.accent:C.text}}>{p.e} {p.l}</div>
           <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{p.d}</div>
         </button>)}
       </div>
 
-      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Primary reimbursement model</div>
+      {sector === "hospital" && <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Primary reimbursement model</div>}
       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
         {[
           {k:"public",l:"Public (ABF-funded)",d:"Standard public hospital ABF model"},
           {k:"mixed",l:"Public + Private",d:"Public hospital with significant private patient revenue"},
           {k:"private",l:"Predominantly Private",d:"Private hospital or PPP model"},
         ].map(r=><button type="button" key={r.k} onClick={()=>setReimbursementModel(r.k)} className="roi-btn" style={{flex:"1 1 140px",padding:"12px 14px",textAlign:"left",border:reimbursementModel===r.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,background:reimbursementModel===r.k?C.accentPale:"#fff",cursor:"pointer"}}>
-          <div style={{fontSize:13,fontWeight:700,color:reimbursementModel===r.k?C.accent:C.text}}>{r.l}</div>
+          <div style={{fontSize:13,fontWeight:700,color:reimbursementModel===r.k?C.accent:C.text}}>{r.l}</div>}
           <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{r.d}</div>
         </button>)}
       </div>
 
       <div style={{padding:"12px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`,fontSize:12,color:C.textMuted,lineHeight:1.6}}>
         {providerType === "critical_access" && "Rural and remote hospitals often run standalone legacy systems. Consolidation improves care coordination and reduces per-site IT costs."}
+        {providerType === "aged_care" && "Aged care providers typically run 5-12 separate systems across clinical, medication, rostering, compliance, and billing functions. Consolidating onto a unified platform reduces duplication, improves care documentation quality, and supports AN-ACC funding optimisation."}
+        {providerType === "ndis_provider" && "NDIS providers manage fragmented systems for client management, rostering, billing, incident reporting, and compliance. Consolidation improves claims accuracy, staff utilisation, and reduces the admin burden that drives 27.5% annual staff turnover."}
         {providerType === "community" && "Regional hospitals serve as district hubs. EMR consolidation yields strong ROI through decommission savings and improved data sharing."}
         {providerType === "regional" && "Metropolitan hospitals have complex legacy estates. The consolidation case includes cost reduction and improved clinical data continuity."}
         {providerType === "academic" && "Tertiary referral centres carry the highest system complexity (40-200+ applications). The ROI case includes research system rationalisation alongside operational savings."}
@@ -2064,7 +2047,7 @@ function ROICalculator() {
         <button type="button" onClick={()=>{setModelMode("custom");}} className="roi-btn" style={{flex:1,padding:"20px 18px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:12,background:"#fff",cursor:"pointer"}}>
           <div style={{fontSize:20,marginBottom:6}}>{"🔧"}</div>
           <div style={{fontSize:15,fontWeight:700,color:C.textMid,marginBottom:4}}>Customise your model</div>
-          <div style={{fontSize:12,color:C.textMuted,lineHeight:1.5}}>Step through each section to configure hospitals, facilities, legacy systems, and cost assumptions.</div>
+          <div style={{fontSize:12,color:C.textMuted,lineHeight:1.5}}>{sector === "aged_care" ? "Step through each section to configure your facilities, residential places, legacy systems, and cost assumptions." : sector === "ndis" ? "Step through each section to configure your service locations, active participants, legacy systems, and cost assumptions." : "Step through each section to configure hospitals, facilities, legacy systems, and cost assumptions."}</div>
         </button>
       </div>
     </div>}
@@ -2255,14 +2238,14 @@ function ROICalculator() {
 
       {/* ── Acute care hospitals ── */}
       <div style={{marginBottom:16}}>
-        <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Acute care hospitals</div>
-        <AnimatedSlider label={<span>Number of hospitals<InfoTip text="Inpatient hospital facilities in scope. Drives enterprise system count, infrastructure consolidation, and network complexity."/></span>} value={inputs.org_count} min={1} max={300} step={1} onChange={v=>handleOrgCountChange(v)}/>
+        <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>{sector === "aged_care" ? "Residential aged care" : sector === "ndis" ? "Service delivery" : "Acute care hospitals"}</div>
+        <AnimatedSlider label={<span>{sector === "aged_care" ? "Number of facilities" : sector === "ndis" ? "Number of service locations" : "Number of hospitals"}<InfoTip text="Inpatient hospital facilities in scope. Drives enterprise system count, infrastructure consolidation, and network complexity."/></span>} value={inputs.org_count} min={1} max={300} step={1} onChange={v=>handleOrgCountChange(v)}/>
 
         {/* Bed count as sub-detail */}
         <div style={{marginTop:8,padding:"10px 14px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}} onClick={()=>setShowBedDetail(!showBedDetail)}>
             <div>
-              <span style={{fontSize:12,color:C.textMid}}>Total acute beds: </span>
+              <span style={{fontSize:12,color:C.textMid}}>{sector === "aged_care" ? "Total places: " : sector === "ndis" ? "Active participants: " : "Total acute beds: "}</span>
               <span style={{fontSize:14,fontWeight:700,color:C.accent}}>{fmtNum(inputs.bed_count)}</span>
               <span style={{fontSize:11,color:C.textMuted,marginLeft:8}}>({avgBedsPerHospital} avg per hospital)</span>
             </div>
@@ -2271,13 +2254,13 @@ function ROICalculator() {
           {showBedDetail && <div style={{marginTop:10}}>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:8}}>
               <div style={{flex:"1 1 140px"}}>
-                <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:4}}>Average beds per hospital</div>
+                <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:4}}>{sector === "aged_care" ? "Average places per facility" : sector === "ndis" ? "Participants per location" : "Average beds per hospital"}</div>
                 <input type="number" value={avgBedsPerHospital} min={1} max={2000} step={10}
                   onChange={e=>{const avg=Math.max(1,parseInt(e.target.value)||1);update("bed_count",avg*inputs.org_count);touch(1);}}
                   style={{width:80,padding:"6px 8px",fontSize:14,fontWeight:700,border:`1px solid ${C.borderLight}`,borderRadius:6,fontFamily:"inherit",color:C.accent}}/>
               </div>
               <div style={{flex:"1 1 140px"}}>
-                <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:4}}>Or set total beds directly</div>
+                <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:4}}>{sector === "aged_care" ? "Or set total places directly" : sector === "ndis" ? "Or set total participants directly" : "Or set total beds directly"}</div>
                 <input type="number" value={inputs.bed_count} min={0} max={50000} step={100}
                   onChange={e=>{update("bed_count",Math.max(0,parseInt(e.target.value)||0));touch(1);}}
                   style={{width:100,padding:"6px 8px",fontSize:14,fontWeight:700,border:`1px solid ${C.borderLight}`,borderRadius:6,fontFamily:"inherit",color:C.accent}}/>
@@ -2479,7 +2462,7 @@ function ROICalculator() {
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             {orgTiersList.map((org, oi) => (
               <div key={oi} className="roi-org" style={{padding:"12px 16px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
-                <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>Org {oi+1}{orgBedsList[oi] != null ? ` (${fmtNum(orgBedsList[oi])} beds)` : ""}</div>
+                <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>Org {oi+1}{orgBedsList[oi] != null ? ` (${fmtNum(orgBedsList[oi])} ${unitLabel})` : ""}</div>
                 <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                   {[
                     {tier:"enterprise",label:"Enterprise",color:C.accent,max:Math.max(5, org.enterprise + 2)},
@@ -2668,7 +2651,7 @@ function ROICalculator() {
         </div>
       </div>
 
-      <AnimatedSlider label={<span>Bed occupancy rate<InfoTip text="Average bed occupancy. National average is ~90% (OECD 2023, AMA). Rural/remote hospitals may be 60-80%; metropolitan and tertiary hospitals 92-98%. AMA reports occupancy is well above the recommended 85% threshold. This drives admission volume, revenue estimates, and ADE calculations."/></span>} value={occupancyRate} min={0.30} max={1.00} step={0.01} display={`${Math.round(occupancyRate*100)}%`} onChange={v=>{setOccupancyRate(v);touch(3);}} suffix=""/>
+      <AnimatedSlider label={<span>{sector === "aged_care" ? "Occupancy rate" : sector === "ndis" ? "Utilisation rate" : "Bed occupancy rate"}<InfoTip text={sector === "aged_care" ? "Average occupancy across your residential places. Typical 90-95%. Drives revenue and staffing estimates." : sector === "ndis" ? "Proportion of available staff hours that are billable. Typical 65-75%. Drives revenue and utilisation uplift estimates." : "Average bed occupancy. National average is ~90% (OECD 2023, AMA). This drives admission volume, revenue estimates, and ADE calculations."}/></span>} value={occupancyRate} min={0.30} max={1.00} step={0.01} display={`${Math.round(occupancyRate*100)}%`} onChange={v=>{setOccupancyRate(v);touch(3);}} suffix=""/>
 
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
@@ -3659,4 +3642,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(<ROICalculator />);
     })();
   </script>
 </body>
-</html>
+</html{sector === "hospital" && >
