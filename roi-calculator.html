@@ -2049,7 +2049,7 @@ function ROICalculator() {
     {/* FORK: Template vs Custom */}
     {step >= 0 && !modelMode && <div style={{animation:"fade-in .4s ease"}}>
       <div style={{display:"flex",gap:10,margin:"0 0 8px"}}>
-        <button type="button" onClick={()=>{setModelMode("template");touch(0);touch(1);touch(2);touch(3);}} className="roi-btn" style={{flex:1,padding:"20px 18px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:12,background:"#fff",cursor:"pointer"}}>
+        <button type="button" onClick={()=>{setModelMode("template");touch(0);touch(1);touch(2);touch(3);setPage("calculating");setCalcStep(0);setScenarioMode(null);setTimeout(()=>setCalcStep(1),600);setTimeout(()=>setCalcStep(2),1400);setTimeout(()=>setCalcStep(3),2200);setTimeout(()=>setPage("results"),2800);}} className="roi-btn" style={{flex:1,padding:"20px 18px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:12,background:"#fff",cursor:"pointer"}}>
           <div style={{fontSize:20,marginBottom:6}}>{"⚡"}</div>
           <div style={{fontSize:15,fontWeight:700,color:C.accent,marginBottom:4}}>Use template defaults</div>
           <div style={{fontSize:12,color:C.textMuted,lineHeight:1.5}}>Pre-configured model based on Australian benchmarks. Review the numbers and calculate immediately.</div>
@@ -3564,7 +3564,15 @@ function ROICalculator() {
 
   /* ── CALCULATING PAGE ──────────────────────────────────── */
 
-  const calcSteps = [
+  const calcSteps = sector === "aged_care" ? [
+    {label:"Mapping your care system landscape"},
+    {label:"Modelling decommission and AN-ACC impact"},
+    {label:"Estimating workforce and compliance savings"},
+  ] : sector === "ndis" ? [
+    {label:"Mapping your service delivery systems"},
+    {label:"Modelling decommission and claims impact"},
+    {label:"Estimating utilisation and retention savings"},
+  ] : [
     {label:"Analysing your legacy estate"},
     {label:"Modelling decommission savings"},
     {label:"Estimating clinician time impact"},
@@ -3573,8 +3581,8 @@ function ROICalculator() {
   const calculatingPage = <div ref={calcPageRef} style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"55vh"}}>
     <div style={{width:"100%",maxWidth:400,textAlign:"center"}}>
       <div style={{width:44,height:44,margin:"0 auto 20px",border:`3px solid ${C.borderLight}`,borderTopColor:C.accent,borderRadius:"50%",animation:"calc-spin .8s linear infinite"}}/>
-      <h2 style={{fontSize:20,fontWeight:700,color:C.text,marginBottom:4}}>Calculating your ROI</h2>
-      <p style={{fontSize:14,color:C.textMuted,marginBottom:28}}>Building a bespoke model from your inputs...</p>
+      <h2 style={{fontSize:20,fontWeight:700,color:C.text,marginBottom:4}}>Calibrating your model</h2>
+      <p style={{fontSize:14,color:C.textMuted,marginBottom:28}}>{sector === "aged_care" ? "Building your aged care ROI model..." : sector === "ndis" ? "Building your NDIS ROI model..." : "Building a bespoke model from your inputs..."}</p>
       <div style={{textAlign:"left",display:"flex",flexDirection:"column",gap:12}}>
         {calcSteps.map((s,i)=>{
           const done = calcStep > i, active = calcStep === i;
