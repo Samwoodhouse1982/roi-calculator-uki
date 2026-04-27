@@ -2049,7 +2049,7 @@ function ROICalculator() {
     {/* FORK: Template vs Custom */}
     {step >= 0 && !modelMode && <div style={{animation:"fade-in .4s ease"}}>
       <div style={{display:"flex",gap:10,margin:"0 0 8px"}}>
-        <button type="button" onClick={()=>{setModelMode("template");touch(0);touch(1);touch(2);touch(3);setPage("calculating");setCalcStep(0);setScenarioMode(null);setTimeout(()=>setCalcStep(1),600);setTimeout(()=>setCalcStep(2),1400);setTimeout(()=>setCalcStep(3),2200);setTimeout(()=>setPage("results"),2800);}} className="roi-btn" style={{flex:1,padding:"20px 18px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:12,background:"#fff",cursor:"pointer"}}>
+        <button type="button" onClick={()=>{setModelMode("template");touch(0);touch(1);touch(2);touch(3);}} className="roi-btn" style={{flex:1,padding:"20px 18px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:12,background:"#fff",cursor:"pointer"}}>
           <div style={{fontSize:20,marginBottom:6}}>{"⚡"}</div>
           <div style={{fontSize:15,fontWeight:700,color:C.accent,marginBottom:4}}>Use template defaults</div>
           <div style={{fontSize:12,color:C.textMuted,lineHeight:1.5}}>Pre-configured model based on Australian benchmarks. Review the numbers and calculate immediately.</div>
