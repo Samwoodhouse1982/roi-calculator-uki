@@ -163,14 +163,16 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
               {yrs.map((y, yi) => {
                 const h = Math.round(barH * y.pct);
                 return <div key={y.yr} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ width: "100%", height: h, borderRadius: "10px 10px 4px 4px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                  <div style={{ width: "100%", height: h, display: "flex", flexDirection: "column", position: "relative" }}>
                     {segments.map((s, si) => <div key={s.key}
                       onClick={() => setTappedBar(tappedBar === yi+"-"+si ? null : yi+"-"+si)}
-                      style={{ flex: s.val, background: s.color, minHeight: 2, cursor: "pointer", position: "relative", opacity: tappedBar && tappedBar !== yi+"-"+si ? 0.4 : 1, transition: "opacity .2s" }}>
+                      style={{ flex: s.val, background: s.color, minHeight: 2, cursor: "pointer", position: "relative", opacity: tappedBar && tappedBar !== yi+"-"+si ? 0.4 : 1, transition: "opacity .2s",
+                        borderRadius: si === 0 ? "10px 10px 0 0" : si === segments.length - 1 ? "0 0 4px 4px" : 0, overflow: "visible" }}>
                       {tappedBar === yi+"-"+si && <div style={{
-                        position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%)", marginBottom: 4,
-                        padding: "6px 10px", background: "#222", borderRadius: 8, whiteSpace: "nowrap", zIndex: 10,
-                        fontSize: 11, fontWeight: 700, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.4)"
+                        position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
+                        padding: "8px 14px", background: "#222", borderRadius: 10, whiteSpace: "nowrap", zIndex: 20,
+                        fontSize: 12, fontWeight: 700, color: "#fff", boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+                        pointerEvents: "none"
                       }}>{s.key}: {fmtK(Math.round(s.val * y.pct))}</div>}
                     </div>)}
                   </div>
