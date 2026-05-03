@@ -74,12 +74,12 @@ export default function App() {
   const [facilities, setFacilitiesState] = useState({});
   const [costMode, setCostMode] = useState("estimate");
   const [knownSpend, setKnownSpend] = useState(0);
-  const [inputs, setInputs] = useState({ ...PRESETS.TYPICAL.data, data_types: { ...PRESETS.TYPICAL.data.data_types }, tiers: { ...PRESETS.TYPICAL.data.tiers } });
+  const [inputs, setInputs] = useState({ ...PRESETS.TYPICAL.data, tiers: { ...PRESETS.TYPICAL.data.tiers } });
 
   const update = useCallback((key, val) => setInputs(p => ({ ...p, [key]: val })), []);
   const updateTier = useCallback((tier, val) => setInputs(p => ({ ...p, tiers: { ...p.tiers, [tier]: val } })), []);
   const setFacility = useCallback((key, val) => setFacilitiesState(p => ({ ...p, [key]: val })), []);
-  const applyPreset = useCallback((key) => { const p = PRESETS[key]; if (!p) return; setInputs({ ...p.data, data_types: { ...p.data.data_types }, tiers: { ...p.data.tiers } }); setFlagships([]); setFacilitiesState({}); }, []);
+  const applyPreset = useCallback((key) => { const p = PRESETS[key]; if (!p) return; setInputs({ ...p.data, tiers: { ...p.data.tiers } }); setFlagships([]); setFacilitiesState({}); }, []);
   const selectProvider = useCallback((key) => { setProviderType(key); const pk = PROVIDER_PRESET_MAP[key]; if (pk) applyPreset(pk); setFacilitiesState(key === 'multi_hospital' ? { ...IDN_FACILITIES } : {}); }, [applyPreset]);
 
   const addFlagship = useCallback((sys, tier) => {
@@ -159,7 +159,7 @@ export default function App() {
     setFacilitiesState({});
     setCostMode("estimate");
     setKnownSpend(0);
-    setInputs({ ...PRESETS.TYPICAL.data, data_types: { ...PRESETS.TYPICAL.data.data_types }, tiers: { ...PRESETS.TYPICAL.data.tiers } });
+    setInputs({ ...PRESETS.TYPICAL.data, tiers: { ...PRESETS.TYPICAL.data.tiers } });
   }, []);
 
   const renderStep = () => {

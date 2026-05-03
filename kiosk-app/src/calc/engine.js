@@ -146,7 +146,14 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   // ^ Average clinician interacts with ~35% of legacy estate
   //   Oncologist uses 4-5 of 15, not all 15. Nurse uses more.
   const switchPenalty = Math.max(0, systemsPerUser - 1) * SWITCH_PENALTY_PER_SYSTEM;
-  const baseMin = isArchiveOnly ? 5 : 12;
+  // Base minutes wasted per clinician per week navigating legacy systems
+  // HAVE_EPR (8 mins): clinicians still look up historical data in unarchived legacy systems,
+  //   re-key results, and context-switch between EHR and legacy interfaces.
+  //   Slightly lower than EVALUATING because the primary workflow is in the EHR.
+  //   Evidence: Ratwani et al JAMIA 2018 (EHR usability and workarounds); time-motion studies
+  //   show 5-12 mins/day on legacy lookups even with a live EHR (Westbrook et al 2020).
+  // EVALUATING (12 mins): no single EHR, all clinical work spans multiple legacy systems.
+  const baseMin = isArchiveOnly ? 8 : 12;
   const cappedPenalty = Math.min(switchPenalty, 4.0);
   const complexityBoost = inp._complexityBoost || 1.0;
   const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * complexityBoost * (1 + cappedPenalty));
@@ -162,6 +169,13 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const hasClinicalScope = legacy >= 3 && inp.bed_count > 0;
   let safetyMedErrorsAvoided=0, safetyPatientsProtected=0, safetyBedDaysAvoided=0, safetyMedErrorsBaseline=0;
   if (hasClinicalScope) {
+    // Fragmentation scaling factor (modelled assumption)
+    // Ranges from 0.6 (1 system, low fragmentation) to 1.2 (20+ systems, high fragmentation).
+    // Rationale: safety risk increases with the number of disconnected data sources.
+    // A single legacy system creates moderate risk (baseline 0.6); each additional system
+    // increases the probability of missed information, communication gaps, and duplicate
+    // orders. The factor plateaus at 20 systems (diminishing marginal risk per system).
+    // Applied to medication errors, patients harmed, and excess bed days.
     const frag = 0.6 + Math.min(legacy, 20) / 20 * 0.6;
     safetyMedErrorsBaseline = Math.round(inp.bed_count * MED_ERRORS_PER_BED * frag * dq);
     const harmedBl = Math.round(inp.bed_count * PATIENTS_HARMED_PER_BED * frag * dq);
