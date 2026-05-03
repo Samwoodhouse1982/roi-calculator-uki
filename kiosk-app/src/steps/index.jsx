@@ -6,8 +6,8 @@ import { KNOWN_SYSTEMS, systemCost } from '../calc/vendors';
 
 const TIER_TYPES = {
   enterprise: ["EHR","Legacy EHR","EHR/Integration","Ambulatory EHR","Ambulatory EHR/RCM","Revenue Cycle"],
-  departmental: ["Pharmacy/Dispensing","OB/Perinatal","Oncology","ICU/Critical Care","Behavioral Health","Post-Acute/Rehab"],
-  niche: ["Document Management","Integration Engine","CDI/Coding","Clinical Documentation","Dictation/Transcription","Laboratory","Legacy PACS","Clinical Communication","Incident/Risk","Infection Control","Workforce/Scheduling","Data Warehouse"],
+  departmental: ["Pharmacy/Dispensing","Pharmacy","OB/Perinatal","Oncology","ICU/Critical Care","Behavioral Health","Post-Acute/Rehab","Laboratory","PACS","Radiology/RIS","Cardiology/CVIS"],
+  niche: ["Document Management","Integration Engine","CDI/Coding","Clinical Documentation","Dictation/Transcription","Clinical Communication","Incident/Risk","Infection Control","Workforce/Scheduling","Data Warehouse"],
 };
 
 // STEP 1: Scope + Reimbursement
