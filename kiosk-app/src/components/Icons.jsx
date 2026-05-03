@@ -8,25 +8,34 @@ const I = ({ d, size = 24, stroke = "currentColor", sw = 1.8, viewBox = "0 0 24 
 );
 
 // ── Provider types ──
+// Critical Access / Rural — small single-story clinic with pitched roof and cross
 export const IconHospital = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <rect x="3" y="7" width="18" height="14" rx="2" />
-  <path d="M12 7V3M9 3h6" />
-  <path d="M12 11v4M10 13h4" />
+  <path d="M2 21h20" />
+  <rect x="4" y="11" width="16" height="10" rx="1" />
+  <path d="M4 11l8-7 8 7" />
+  <path d="M12 14v4M10 16h4" />
 </I>;
 
+// Community Hospital — two-storey building with cross and entrance
 export const IconCommunity = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <rect x="4" y="6" width="16" height="15" rx="2" />
-  <path d="M12 2v4M9 2h6" />
-  <path d="M12 10v4M10 12h4" />
-  <path d="M4 17h16" />
+  <path d="M2 21h20" />
+  <rect x="3" y="8" width="18" height="13" rx="1" />
+  <path d="M3 14h18" />
+  <path d="M12 3v5M10 5.5h4" />
+  <path d="M7 11h2M15 11h2" />
+  <path d="M7 17h2M15 17h2" />
+  <rect x="10" y="16" width="4" height="5" rx="0.5" />
 </I>;
 
+// Regional Medical Center — tall central tower with two lower wings
 export const IconRegional = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <rect x="2" y="8" width="20" height="13" rx="2" />
-  <path d="M7 8V5a2 2 0 012-2h6a2 2 0 012 2v3" />
-  <path d="M12 12v3M10 13.5h4" />
-  <path d="M6 17h12" />
-  <path d="M2 13h3M19 13h3" />
+  <path d="M2 21h20" />
+  <rect x="7" y="4" width="10" height="17" rx="1" />
+  <rect x="2" y="10" width="5" height="11" rx="1" />
+  <rect x="17" y="10" width="5" height="11" rx="1" />
+  <path d="M12 7v4M10.5 9h3" />
+  <path d="M10 14h4M10 17h4" />
+  <path d="M4 14h1M4 17h1M19 14h1M19 17h1" />
 </I>;
 
 export const IconAcademic = ({ size, stroke }) => <I size={size} stroke={stroke}>
@@ -35,13 +44,16 @@ export const IconAcademic = ({ size, stroke }) => <I size={size} stroke={stroke}
   <path d="M20 9v7" />
 </I>;
 
+// IDN — three separate hospital buildings each with a cross, connected by lines
 export const IconIDN = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <rect x="2" y="10" width="7" height="11" rx="1" />
-  <rect x="15" y="10" width="7" height="11" rx="1" />
-  <rect x="8" y="4" width="8" height="17" rx="1" />
-  <path d="M12 8v3M11 9.5h2" />
-  <path d="M5.5 14v2" />
-  <path d="M18.5 14v2" />
+  <path d="M1 21h22" />
+  <rect x="1" y="12" width="6" height="9" rx="1" />
+  <path d="M4 15v2M3 16h2" />
+  <rect x="9" y="6" width="6" height="15" rx="1" />
+  <path d="M12 9v2.5M11 10.25h2" />
+  <rect x="17" y="12" width="6" height="9" rx="1" />
+  <path d="M20 15v2M19 16h2" />
+  <path d="M7 16h2M15 16h2" />
 </I>;
 
 // ── Facility types ──
