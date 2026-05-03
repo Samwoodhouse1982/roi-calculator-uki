@@ -130,7 +130,7 @@ export default function App() {
       _providerType: providerType,
       // Issue 5: Apply complexity_boost and denial_factor from provider multipliers
       _medicarePct: pm.medicare_pct || 0.42,
-      _penaltyWeight: rm.penalty_weight || 1.0,
+      _penaltyWeight: (rm.penalty_weight || 1.0) * (pm.penalty_exposure ?? 1.0),
       _denialWeight: (rm.denial_weight || 1.0) * (pm.denial_factor || 1.0),
       _qualityBonus: rm.quality_bonus || 0.5,
       _complexityBoost: pm.complexity_boost || 1.0,

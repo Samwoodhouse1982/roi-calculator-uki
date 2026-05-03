@@ -98,9 +98,9 @@ export const READMIT_FRAGMENTATION_ATTRIBUTION = 0.30;  // 30% of excess readmis
                                                          // fragmentation across legacy systems (care transitions,
                                                          // incomplete discharge summaries, missed follow-ups).
                                                          // Remaining 70%: patient acuity, social determinants,
-                                                         // medication non-adherence.           // Each legacy system contributes ~4% to breach probability
-                                                         // Based on: 70% of hospitals breached over 3 years, legacy
-                                                         // systems on unsupported OS are primary attack vectors              // ~$8,500 per bed in lab/imaging spend // Per-facility duplicate infrastructure (data center, network, help desk)
+                                                         // medication non-adherence.
+
+// ── M&A / Multi-Hospital Constants ──
 export const CROSS_FACILITY_STANDARDISATION_PCT = 0.15; // 15% of operational costs addressable through standardization
 
 // ROI Calculator Engine
@@ -208,17 +208,17 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const admissionsPerYear = Math.round(inp.bed_count * (365 / US_AVG_ALOS) * occupancy);
   const estAnnualRevenueCalc = admissionsPerYear * US_AVG_REVENUE_PER_ADMISSION;
   // Medicare DRG revenue estimate (if not provided by user)
-  const estMedicareDrgRevenue = Math.round(estAnnualRevenueCalc * (inp._medicarePct || 0.42));
+  const estMedicareDrgRevenue = Math.round(estAnnualRevenueCalc * (inp._medicarePct ?? 0.42));
   const medicareDrg = inp._medicareDrgRevenue > 0 ? inp._medicareDrgRevenue : estMedicareDrgRevenue;
 
   // HRRP penalty exposure
   const hrrpExposure = medicareDrg * CMS_HRRP_AVG_PENALTY;
-  const hrrpReduction = Math.round(hrrpExposure * sc.safety * (inp._penaltyWeight || 1.0));
+  const hrrpReduction = Math.round(hrrpExposure * sc.safety * (inp._penaltyWeight ?? 1.0));
 
   // Readmission cost avoidance
   // Vest JAMIA 2019: 0.8pp absolute reduction in 30-day readmissions from single-vendor EHR
   // This is separate from HRRP penalty: HRRP = CMS penalty %, readmission avoidance = actual care costs
-  const medicareAdmissions = Math.round(admissionsPerYear * (inp._medicarePct || 0.42));
+  const medicareAdmissions = Math.round(admissionsPerYear * (inp._medicarePct ?? 0.42));
   const currentReadmissions = Math.round(medicareAdmissions * READMISSION_RATE_MEDICARE);
   const readmissionsAvoided = Math.round(medicareAdmissions * READMIT_REDUCTION_EHR * READMIT_FRAGMENTATION_ATTRIBUTION * sc.safety);
   // Only count readmission cost avoidance under VBC/mixed (FFS readmissions = revenue, not cost)
@@ -227,16 +227,16 @@ export function calc(inp, mode, ov = {}, flagships = []) {
 
   // HAC penalty exposure (bottom quartile = 1% of all Medicare payments)
   const hacExposure = medicareDrg * CMS_HAC_PENALTY * 0.25; // 25% probability of being in bottom quartile
-  const hacReduction = Math.round(hacExposure * sc.safety * (inp._penaltyWeight || 1.0));
+  const hacReduction = Math.round(hacExposure * sc.safety * (inp._penaltyWeight ?? 1.0));
 
   // VBP improvement potential
   const vbpPool = medicareDrg * CMS_VBP_WITHHOLD;
-  const vbpImprovement = Math.round(vbpPool * 0.15 * sc.safety * (inp._qualityBonus || 0.5));
+  const vbpImprovement = Math.round(vbpPool * 0.15 * sc.safety * (inp._qualityBonus ?? 0.5) * (inp._penaltyWeight ?? 1.0));
 
   // Denial rate reduction (FFS pathway)
   const estAnnualRevenue = estAnnualRevenueCalc; // from admissions-based model above
   const denialBaseline = estAnnualRevenue * DENIAL_NET_REVENUE_LOSS;
-  const denialRecovery = Math.round(denialBaseline * 0.20 * DENIAL_FRAGMENTATION_ATTRIBUTION * sc.decom_pct * (inp._denialWeight || 1.0));
+  const denialRecovery = Math.round(denialBaseline * 0.20 * DENIAL_FRAGMENTATION_ATTRIBUTION * sc.decom_pct * (inp._denialWeight ?? 1.0));
 
   // Malpractice premium reduction (modeled assumption)
   const malpracticePremium = inp.bed_count * MALPRACTICE_AVG_PREMIUM_PER_BED;
@@ -300,7 +300,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const yr3R = Math.round(annualWithReimbursement * y3Pct);
   const total3WithReimbursement = yr1R + yr2R + yr3R;
   return {
-    legacy, ent, dep, nic, entCost, depCost, nicCost, blendedCost, totalEstate,
+    legacy, org_count: inp.org_count, ent, dep, nic, entCost, depCost, nicCost, blendedCost, totalEstate,
     decom, entDecom, depDecom, nicDecom, decomSave,
     totalStaff, clinicians, systemsPerUser, minsWasted, hrsSaved, timeSave, baseMin,
     ticketsBaselineMonthly, ticketsAfter, ticketsReductionPct,
