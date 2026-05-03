@@ -103,6 +103,19 @@ export default function App() {
   const handleCalculate = useCallback(() => setCalibrating(true), []);
   const handleCalibrationDone = useCallback(() => { setCalibrating(false); setKioskStep(KIOSK_STEPS.length - 1); }, []);
   const handleAdjust = useCallback(() => setKioskStep(4), []);
+  const handleStartOver = useCallback(() => {
+    setKioskStep(0);
+    setProviderType("community");
+    setReimbursementModel("mixed");
+    setOccupancyRate(0.65);
+    setGalenMigrationCost(0);
+    setGalenAnnualCost(0);
+    setFlagships([]);
+    setFacilitiesState({});
+    setCostMode("estimate");
+    setKnownSpend(0);
+    setInputs({ ...PRESETS.TYPICAL.data, data_types: { ...PRESETS.TYPICAL.data.data_types }, tiers: { ...PRESETS.TYPICAL.data.tiers } });
+  }, []);
 
   const renderStep = () => {
     switch (kioskStep) {
@@ -111,7 +124,7 @@ export default function App() {
       case 2: return <FacilitiesStep inputs={inputs} update={update} facilities={facilities} setFacility={setFacility} />;
       case 3: return <SystemsStep inputs={inputs} updateTier={updateTier} flagships={flagships} addFlagship={addFlagship} removeFlagship={removeFlagship} costMode={costMode} setCostMode={setCostMode} knownSpend={knownSpend} setKnownSpend={setKnownSpend} />;
       case 4: return <FineTuneStep inputs={inputs} update={update} galenMigrationCost={galenMigrationCost} setGalenMigrationCost={setGalenMigrationCost} galenAnnualCost={galenAnnualCost} setGalenAnnualCost={setGalenAnnualCost} occupancyRate={occupancyRate} setOccupancyRate={setOccupancyRate} />;
-      case 5: return <ResultsPage r={r} galenMigrationCost={galenMigrationCost} galenAnnualCost={galenAnnualCost} onAdjust={handleAdjust} />;
+      case 5: return <ResultsPage r={r} galenMigrationCost={galenMigrationCost} galenAnnualCost={galenAnnualCost} onAdjust={handleAdjust} onStartOver={handleStartOver} />;
       default: return null;
     }
   };

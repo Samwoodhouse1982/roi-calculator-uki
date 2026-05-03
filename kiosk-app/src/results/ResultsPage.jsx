@@ -12,7 +12,7 @@ function Methodology({ title, children }) {
   </div>;
 }
 
-export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust }) {
+export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, onStartOver }) {
   if (!r) return null;
   const combinedAnnual = (r.annualWithReimbursement || r.annual) + (r.qualitySavings || 0);
   const cashable = r.decomSave + (r.reimbursementImpact || 0) + (r.duplicateElimination || 0) + (r.infraConsolidation || 0);
@@ -117,10 +117,15 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust }
     {/* Actions */}
     <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "16px 0 24px" }}>
       <button onClick={onAdjust} style={{
-        padding: "22px 52px", borderRadius: 18, border: `2px solid ${C.accent}`,
+        padding: "22px 44px", borderRadius: 18, border: `2px solid ${C.accent}`,
         background: "transparent", color: C.accent, fontSize: F.body, fontWeight: 700,
         cursor: "pointer", fontFamily: "inherit"
       }}>← Adjust inputs</button>
+      <button onClick={onStartOver} style={{
+        padding: "22px 44px", borderRadius: 18, border: `1px solid ${C.border}`,
+        background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600,
+        cursor: "pointer", fontFamily: "inherit"
+      }}>New case ↻</button>
     </div>
   </div>;
 }
