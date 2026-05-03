@@ -30,7 +30,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
   const projRef = useRef(null);
   const scrollTo = ref => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  // Use the engine's comprehensive total — all components sum exactly to this
+  // Use the engine's comprehensive total - all components sum exactly to this
   const totalAnnual = r.annualWithReimbursement || 0;
   // Non-overlapping segments that sum to totalAnnual
   const seg = {
@@ -58,7 +58,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>per year at steady state</div>
     </div>
 
-    {/* Composition bar — every segment sums exactly to the topline */}
+    {/* Composition bar - every segment sums exactly to the topline */}
     <div style={{ marginBottom: 32, padding: "0 12px" }}>
       <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", marginBottom: 12 }}>
         {seg.decom > 0 && <div style={{ flex: seg.decom, background: C.accent }} />}
@@ -78,7 +78,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       </div>
     </div>
 
-    {/* KPI grid — each card maps to a segment above, tappable to jump to detail */}
+    {/* KPI grid - each card maps to a segment above, tappable to jump to detail */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
       <KpiCard label="Legacy decommission" value={fmtK(seg.decom)} sub={`${r.decom} of ${r.legacy} systems retired`} color={C.accent} iconKey="unlock" onClick={() => scrollTo(decomRef)} />
       <KpiCard label="Clinical capacity" value={`${fmtFte(fte)} FTE freed`} sub={`${fmtK(seg.capacity)}/yr value`} color={C.amber} iconKey="clock" onClick={() => scrollTo(capacityRef)} />
@@ -92,7 +92,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     {/* ═══ DETAIL SECTIONS ═══ */}
 
-    {/* Year-by-year projection — first section */}
+    {/* Year-by-year projection - first section */}
     <div ref={projRef}>
       <Card style={{ marginBottom: 18 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
@@ -189,7 +189,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         })()}
 
         <Methodology>
-          <strong>Method:</strong> {projYears}-year phased ramp: Year 1 at 40%, Year 2 at 80%, Years 3{projYears === 5 ? "–5" : ""} at 100%. Reflects progressive legacy system retirement — data is migrated and interfaces decommissioned over time. {projYears === 5 ? "Years 4 and 5 represent steady-state savings with all targeted systems fully retired." : ""} Each savings category scales proportionally.
+          <strong>Method:</strong> {projYears}-year phased ramp: Year 1 at 40%, Year 2 at 80%, Years 3{projYears === 5 ? " to 5" : ""} at 100%. Reflects progressive legacy system retirement. Data is migrated and interfaces decommissioned over time. {projYears === 5 ? "Years 4 and 5 represent steady-state savings with all targeted systems fully retired." : ""} Each savings category scales proportionally.
         </Methodology>
       </Card>
     </div>
@@ -250,7 +250,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         {r.malpracticeReduction > 0 && <Row label="Malpractice reduction" value={fmtK(r.malpracticeReduction) + "/yr"} />}
         {(r.qualitySavings || 0) > 0 && <Row label="Total cost avoidance" value={fmtK(r.qualitySavings) + "/yr"} accent />}
         <div style={{ marginTop: 12, padding: "12px 16px", background: C.bg, borderRadius: 12, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.6 }}>
-          These are cost avoidance figures — they represent harm that doesn't occur, not direct budget reductions. They contribute to the total ROI through reduced length of stay, fewer readmissions, and lower liability exposure.
+          These are cost avoidance figures. They represent harm that doesn't occur, not direct budget reductions. They contribute to the total ROI through reduced length of stay, fewer readmissions, and lower liability exposure.
         </div>
         <Methodology>
           <strong>Method:</strong> ADE rates from AHRQ PSI data and HHS OIG 2022 (25% of Medicare patients experience adverse events). Excess bed day cost: $3,132/day (KFF/AHA 2023). Medication errors: Bates et al (1.8 preventable ADEs per 100 admissions). Communication failures: 30% of malpractice claims (CRICO 2016).
@@ -258,7 +258,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       </Card>
     </div>
 
-    {/* Network consolidation — only for multi-hospital/IDN */}
+    {/* Network consolidation - only for multi-hospital/IDN */}
     {seg.network > 0 && <div ref={networkRef}>
       <Card style={{ marginBottom: 18, borderLeft: "3px solid #8e44ad" }}>
         <CTitle iconKey="network" color="#8e44ad">Network consolidation</CTitle>
@@ -272,12 +272,12 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         {r.standardizationSave > 0 && <Row label="Cross-facility standardization" value={fmtK(r.standardizationSave)} />}
         <Row label="Total network savings" value={fmtK(seg.network) + "/yr"} accent />
         <Methodology>
-          <strong>Method:</strong> Duplicate system rate: ~30% of legacy systems are replicated across facilities in an IDN (CHIME Digital Health Survey). Infrastructure consolidation: each facility carries ~$350k/yr in duplicate hosting, interfaces, and support — 60% consolidatable. Cross-facility standardization: 15% of operational costs addressable through unified workflows. All scaled by the decommission target.
+          <strong>Method:</strong> Duplicate system rate: ~30% of legacy systems are replicated across facilities in an IDN (CHIME Digital Health Survey). Infrastructure consolidation: each facility carries ~$350k/yr in duplicate hosting, interfaces, and support, of which 60% is consolidatable. Cross-facility standardization: 15% of operational costs addressable through unified workflows. All scaled by the decommission target.
         </Methodology>
       </Card>
     </div>}
 
-    {/* Academic program — only for academic medical centers */}
+    {/* Academic program - only for academic medical centers */}
     {seg.academic > 0 && <div ref={academicRef}>
       <Card style={{ marginBottom: 18, borderLeft: "3px solid #e67e22" }}>
         <CTitle iconKey="graduation" color="#e67e22">Academic program savings</CTitle>
@@ -293,7 +293,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     {/* Galen */}
     {hasGalen && <div style={{ marginBottom: 24, padding: "32px 36px", borderRadius: 24, background: `linear-gradient(135deg, ${C.accentPale}, ${C.surface})`, border: `1px solid ${C.accent}30` }}>
-      <div style={{ fontSize: F.h3, fontWeight: 700, color: C.accent, marginBottom: 18 }}>Galen Clinical Archive — investment case</div>
+      <div style={{ fontSize: F.h3, fontWeight: 700, color: C.accent, marginBottom: 18 }}>Galen Clinical Archive: investment case</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         <Met label="Migration cost" value={fmtK(galenMigrationCost)} />
         <Met label="Annual cost" value={fmtK(galenAnnualCost) + "/yr"} />
@@ -308,7 +308,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         })()} />
       </div>
       <div style={{ marginTop: 16, padding: "12px 16px", background: C.bg, borderRadius: 12, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.6 }}>
-        Payback = migration cost ÷ (annual decom savings − annual archive cost). The {fmtK(r.decomSave)}/yr in decommission savings is only unlocked when legacy systems are safely retired — Galen enables this by providing continued access to historical data.
+        Payback = migration cost ÷ (annual decom savings minus annual archive cost). The {fmtK(r.decomSave)}/yr in decommission savings is only unlocked when legacy systems are safely retired. Galen enables this by providing continued access to historical data.
       </div>
     </div>}
 
@@ -322,11 +322,11 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <style>{`.mcard::-webkit-scrollbar { display: none; }`}</style>
 
         <MCard color={C.accent} title="System costing" num="01">
-          Each legacy system is classified into three tiers — enterprise, departmental, or standalone — with costs scaled by bed count. Enterprise systems (e.g. legacy EHR) cost $150k–$1.5m+ base plus $650–$7,500 per bed. Departmental systems run $80k–$350k plus $200–$900 per bed. Standalone tools are $50k–$200k plus $120–$620 per bed. Source: KLAS 2025 benchmarks, Becker's Hospital Review.
+          Each legacy system is classified into three tiers (enterprise, departmental, or standalone) with costs scaled by bed count. Enterprise systems (e.g. legacy EHR) cost $150k to $1.5m+ base plus $650 to $7,500 per bed. Departmental systems run $80k to $350k plus $200 to $900 per bed. Standalone tools are $50k to $200k plus $120 to $620 per bed. Source: KLAS 2025 benchmarks, Becker's Hospital Review.
         </MCard>
 
         <MCard color={C.amber} title="Clinical capacity" num="02">
-          Not all staff use all systems. We apply two evidence-based filters: 65% of staff are regular system users (HIMSS Analytics), and each user interacts with ~35% of the legacy estate. A 4% productivity penalty per system touched (Westbrook et al, JAMIA 2010) determines time wasted. Hours freed are valued at $95/hr with 30% realisation — reflecting that freed time creates capacity, not direct savings.
+          Not all staff use all systems. We apply two evidence-based filters: 65% of staff are regular system users (HIMSS Analytics), and each user interacts with ~35% of the legacy estate. A 4% productivity penalty per system touched (Westbrook et al, JAMIA 2010) determines time wasted. Hours freed are valued at $95/hr with 30% realisation, reflecting that freed time creates capacity, not direct savings.
         </MCard>
 
         <MCard color={C.blue} title="CMS reimbursement" num="03">
@@ -334,11 +334,11 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         </MCard>
 
         <MCard color={C.purple} title="Patient safety" num="04">
-          ADE rates from AHRQ Patient Safety Indicators and HHS OIG 2022 (25% of Medicare patients experience adverse events). Preventable ADEs: 1.8 per 100 admissions (Bates et al). Excess bed day cost: $3,132/day (KFF/AHA 2023). Communication failures account for 30% of malpractice claims (CRICO 2016). These are cost avoidance figures — harm that doesn't occur — not direct budget reductions.
+          ADE rates from AHRQ Patient Safety Indicators and HHS OIG 2022 (25% of Medicare patients experience adverse events). Preventable ADEs: 1.8 per 100 admissions (Bates et al). Excess bed day cost: $3,132/day (KFF/AHA 2023). Communication failures account for 30% of malpractice claims (CRICO 2016). These are cost avoidance figures: harm that doesn't occur, not direct budget reductions.
         </MCard>
 
         <MCard color="#8e44ad" title="Network savings" num="05">
-          Multi-hospital IDNs typically run duplicate instances of the same legacy system across sites — approximately 30% of the estate (CHIME Digital Health Survey). Each facility carries ~$350k/yr in duplicate hosting, interfaces, and support, of which 60% is consolidatable. Cross-facility standardisation addresses 15% of operational costs through unified workflows and data governance.
+          Multi-hospital IDNs typically run duplicate instances of the same legacy system across sites, approximately 30% of the estate (CHIME Digital Health Survey). Each facility carries ~$350k/yr in duplicate hosting, interfaces, and support (60% consolidatable). Cross-facility standardisation addresses 15% of operational costs through unified workflows and data governance.
         </MCard>
 
         <MCard color="#e67e22" title="Academic impact" num="06">
@@ -346,7 +346,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         </MCard>
 
         <MCard color={C.accent} title="Year-by-year ramp" num="07">
-          Savings are phased over three years: Year 1 at 40%, Year 2 at 80%, Year 3 at 100% of steady state. This reflects progressive legacy system retirement — data is migrated and interfaces decommissioned over time, not all at once. Galen payback is calculated as migration cost ÷ (annual decom savings − annual archive cost).
+          Savings are phased over three years: Year 1 at 40%, Year 2 at 80%, Year 3 at 100% of steady state. This reflects progressive legacy system retirement. Data is migrated and interfaces decommissioned over time, not all at once. Galen payback is calculated as migration cost ÷ (annual decom savings minus annual archive cost).
         </MCard>
 
         <MCard color={C.blue} title="Key sources" num="08">

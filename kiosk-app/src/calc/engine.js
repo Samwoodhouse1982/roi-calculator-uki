@@ -121,14 +121,14 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const depDecom = Math.min(Math.round(dep * decomFrac), dep);
   const nicDecom = clamp(Math.min(Math.round(rawDecom), tieredLegacy) - entDecom - depDecom, 0, nic);
   const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * sc.decom_pct);
-  // Clinical capacity — staff count
+  // Clinical capacity - staff count
   const corpPerOrg = Math.min(120, Math.round(CORPORATE_STAFF_BASE + (inp.bed_count / Math.max(1, inp.org_count)) * CORPORATE_STAFF_PER_BED));
   const totalStaff = Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * corpPerOrg + (inp._portfolioStaff || 0));
   const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(totalStaff * ACTIVE_USER_PCT);
   // ^ Only 65% of total staff are regular system users
   //   Remainder: porters, HCAs, casual/bank, non-clinical support
 
-  // System navigation overhead — based on systems each clinician actually touches
+  // System navigation overhead - based on systems each clinician actually touches
   const systemsPerUser = Math.max(2, Math.round(legacy * SYSTEM_EXPOSURE_PCT));
   // ^ Average clinician interacts with ~35% of legacy estate
   //   Oncologist uses 4-5 of 15, not all 15. Nurse uses more.
@@ -184,7 +184,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
 
   // Malpractice premium reduction (modeled assumption)
   const malpracticePremium = inp.bed_count * MALPRACTICE_AVG_PREMIUM_PER_BED;
-  const malpracticeReduction = Math.round(malpracticePremium * 0.05 * sc.safety); // 5% reduction — conservative (CRICO: 30% of claims involve comms failure)
+  const malpracticeReduction = Math.round(malpracticePremium * 0.05 * sc.safety); // 5% reduction - conservative (CRICO: 30% of claims involve comms failure)
 
   // Excess bed days avoided (unified with safety section)
   const preventableADEs = Math.round(admissionsPerYear / 100 * PREVENTABLE_ADE_PER_100_ADMITS);

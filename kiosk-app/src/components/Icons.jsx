@@ -1,6 +1,6 @@
 import React from 'react';
 
-// White outlined SVG icons — stroke-based, no fill
+// White outlined SVG icons - stroke-based, no fill
 const I = ({ d, size = 24, stroke = "currentColor", sw = 1.8, viewBox = "0 0 24 24", children }) => (
   <svg width={size} height={size} viewBox={viewBox} fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
     {d ? <path d={d} /> : children}
@@ -8,7 +8,7 @@ const I = ({ d, size = 24, stroke = "currentColor", sw = 1.8, viewBox = "0 0 24 
 );
 
 // ── Provider types ──
-// Critical Access / Rural — small single-story clinic with pitched roof and cross
+// Critical Access / Rural - small single-story clinic with pitched roof and cross
 export const IconHospital = ({ size, stroke }) => <I size={size} stroke={stroke}>
   <path d="M2 21h20" />
   <rect x="4" y="11" width="16" height="10" rx="1" />
@@ -16,7 +16,7 @@ export const IconHospital = ({ size, stroke }) => <I size={size} stroke={stroke}
   <path d="M12 14v4M10 16h4" />
 </I>;
 
-// Community Hospital — two-storey building with cross and entrance
+// Community Hospital - two-storey building with cross and entrance
 export const IconCommunity = ({ size, stroke }) => <I size={size} stroke={stroke}>
   <path d="M2 21h20" />
   <rect x="3" y="8" width="18" height="13" rx="1" />
@@ -27,7 +27,7 @@ export const IconCommunity = ({ size, stroke }) => <I size={size} stroke={stroke
   <rect x="10" y="16" width="4" height="5" rx="0.5" />
 </I>;
 
-// Regional Medical Center — tall central tower with two lower wings
+// Regional Medical Center - tall central tower with two lower wings
 export const IconRegional = ({ size, stroke }) => <I size={size} stroke={stroke}>
   <path d="M2 21h20" />
   <rect x="7" y="4" width="10" height="17" rx="1" />
@@ -44,7 +44,7 @@ export const IconAcademic = ({ size, stroke }) => <I size={size} stroke={stroke}
   <path d="M20 9v7" />
 </I>;
 
-// IDN — three separate hospital buildings each with a cross, connected by lines
+// IDN - three separate hospital buildings each with a cross, connected by lines
 export const IconIDN = ({ size, stroke }) => <I size={size} stroke={stroke}>
   <path d="M1 21h22" />
   <rect x="1" y="12" width="6" height="9" rx="1" />
