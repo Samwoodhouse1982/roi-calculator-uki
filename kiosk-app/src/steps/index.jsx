@@ -223,24 +223,32 @@ export function FineTuneStep({ inputs, update, galenMigrationCost, setGalenMigra
     </Card>
     <Card style={{ marginTop: 16 }}>
       <div style={{ fontSize: F.body, fontWeight: 700, color: C.textMid, marginBottom: 16 }}>Galen Clinical Archive costs <span style={{ fontWeight: 400, color: C.textMuted }}>(optional)</span></div>
-      <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 220px" }}>
-          <div style={{ fontSize: F.small, color: C.textMuted, marginBottom: 6 }}>Migration (one-time)</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: F.h3, color: C.textMuted }}>$</span>
-            <input type="number" value={galenMigrationCost || ""} placeholder="0" min={0} step={10000}
-              onChange={e => setGalenMigrationCost(parseInt(e.target.value) || 0)}
-              style={{ width: "100%", padding: "14px 16px", borderRadius: 14, border: `1px solid ${C.border}`, fontSize: F.h2, fontWeight: 700, fontFamily: "inherit", background: C.bg, color: C.accent }} />
-          </div>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <span style={{ fontSize: F.small, fontWeight: 600, color: C.textMuted }}>Migration (one-time)</span>
+          <span style={{ fontSize: F.h2, fontWeight: 800, color: C.accent }}>{fmtK(galenMigrationCost)}</span>
         </div>
-        <div style={{ flex: "1 1 220px" }}>
-          <div style={{ fontSize: F.small, color: C.textMuted, marginBottom: 6 }}>Annual archive cost</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: F.h3, color: C.textMuted }}>$</span>
-            <input type="number" value={galenAnnualCost || ""} placeholder="0" min={0} step={10000}
-              onChange={e => setGalenAnnualCost(parseInt(e.target.value) || 0)}
-              style={{ width: "100%", padding: "14px 16px", borderRadius: 14, border: `1px solid ${C.border}`, fontSize: F.h2, fontWeight: 700, fontFamily: "inherit", background: C.bg, color: C.accent }} />
-          </div>
+        <input type="range" min={0} max={3000000} step={25000} value={galenMigrationCost}
+          onChange={e => setGalenMigrationCost(Number(e.target.value))}
+          style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
+        <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 8 }}>
+          <button onClick={() => setGalenMigrationCost(Math.max(0, galenMigrationCost - 25000))} style={{ width: 48, height: 48, borderRadius: 12, border: "1px solid " + C.border, background: C.surface, color: C.textMid, fontSize: 22, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+          <div style={{ fontSize: F.tiny, color: C.textMuted, display: "flex", alignItems: "center" }}>±$25k</div>
+          <button onClick={() => setGalenMigrationCost(Math.min(3000000, galenMigrationCost + 25000))} style={{ width: 48, height: 48, borderRadius: 12, border: "1px solid " + C.border, background: C.surface, color: C.textMid, fontSize: 22, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+        </div>
+      </div>
+      <div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <span style={{ fontSize: F.small, fontWeight: 600, color: C.textMuted }}>Annual archive cost</span>
+          <span style={{ fontSize: F.h2, fontWeight: 800, color: C.accent }}>{fmtK(galenAnnualCost)}/yr</span>
+        </div>
+        <input type="range" min={0} max={500000} step={10000} value={galenAnnualCost}
+          onChange={e => setGalenAnnualCost(Number(e.target.value))}
+          style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
+        <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 8 }}>
+          <button onClick={() => setGalenAnnualCost(Math.max(0, galenAnnualCost - 10000))} style={{ width: 48, height: 48, borderRadius: 12, border: "1px solid " + C.border, background: C.surface, color: C.textMid, fontSize: 22, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+          <div style={{ fontSize: F.tiny, color: C.textMuted, display: "flex", alignItems: "center" }}>±$10k</div>
+          <button onClick={() => setGalenAnnualCost(Math.min(500000, galenAnnualCost + 10000))} style={{ width: 48, height: 48, borderRadius: 12, border: "1px solid " + C.border, background: C.surface, color: C.textMid, fontSize: 22, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
         </div>
       </div>
     </Card>
