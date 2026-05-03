@@ -123,7 +123,8 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const totalEstate = inp._knownSpend > 0 ? inp._knownSpend : estimatedEstate;
   const blendedCost = legacy > 0 ? Math.round(totalEstate / legacy) : 0;
   const rawDecom = tieredLegacy * inp.decom_retire_rate * sc.decom_pct;
-  const decom = Math.min(Math.round(rawDecom), tieredLegacy) + flagshipRetireCount;
+  const portfolioDecom = Math.round(portfolioSystems * inp.decom_retire_rate * sc.decom_pct);
+  const decom = Math.min(Math.round(rawDecom), tieredLegacy) + flagshipRetireCount + portfolioDecom;
   const decomFrac = tieredLegacy > 0 ? Math.min(Math.round(rawDecom), tieredLegacy) / tieredLegacy : 0;
   const entDecom = Math.min(Math.round(ent * decomFrac), ent);
   const depDecom = Math.min(Math.round(dep * decomFrac), dep);
@@ -131,7 +132,8 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const tieredDecomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost;
   // Issue 1: If knownSpend provided, scale decom savings proportionally
   const spendScale = inp._knownSpend > 0 && estimatedEstate > 0 ? inp._knownSpend / estimatedEstate : 1.0;
-  const decomSave = Math.round(tieredDecomSave * spendScale) + Math.round(flagshipDecomSave * sc.decom_pct);
+  const portfolioDecomSave = Math.round((inp._portfolioCost || 0) * inp.decom_retire_rate * sc.decom_pct);
+  const decomSave = Math.round(tieredDecomSave * spendScale) + Math.round(flagshipDecomSave * sc.decom_pct) + portfolioDecomSave;
   // Clinical capacity - staff count
   const corpPerOrg = Math.min(120, Math.round(CORPORATE_STAFF_BASE + (inp.bed_count / Math.max(1, inp.org_count)) * CORPORATE_STAFF_PER_BED));
   const totalStaff = Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * corpPerOrg + (inp._portfolioStaff || 0));
