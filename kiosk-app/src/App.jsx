@@ -97,8 +97,34 @@ export default function App() {
   const calcInputs = useMemo(() => {
     const pm = PROVIDER_MULTIPLIERS[providerType] || PROVIDER_MULTIPLIERS.community;
     const rm = REIMBURSE_MULTIPLIERS[reimbursementModel] || REIMBURSE_MULTIPLIERS.mixed;
-    return { ...inputs, _medicareDrgRevenue: 0, _occupancy: occupancyRate, _providerType: providerType, _medicarePct: pm.medicare_pct || 0.42, _penaltyWeight: rm.penalty_weight || 1.0, _denialWeight: rm.denial_weight || 1.0, _qualityBonus: rm.quality_bonus || 0.5, _portfolioSystems: 0, _portfolioStaff: 0, _portfolioCost: 0 };
-  }, [inputs, providerType, reimbursementModel, occupancyRate]);
+
+    // Issue 2: Translate facility counts into portfolio inputs
+    // Each non-acute facility adds ~2 legacy systems and ~8 staff on average
+    const facKeys = Object.keys(facilities).filter(k => k !== "hospitals");
+    const facCount = facKeys.reduce((s, k) => s + (facilities[k] || 0), 0);
+    const portfolioSystems = Math.round(facCount * 2);
+    const portfolioStaff = Math.round(facCount * 8);
+    const portfolioCost = Math.round(facCount * 45000); // ~$45k/yr avg system cost for non-acute
+
+    return {
+      ...inputs,
+      _medicareDrgRevenue: 0,
+      _occupancy: occupancyRate,
+      _providerType: providerType,
+      // Issue 5: Apply complexity_boost and denial_factor from provider multipliers
+      _medicarePct: pm.medicare_pct || 0.42,
+      _penaltyWeight: rm.penalty_weight || 1.0,
+      _denialWeight: (rm.denial_weight || 1.0) * (pm.denial_factor || 1.0),
+      _qualityBonus: rm.quality_bonus || 0.5,
+      _complexityBoost: pm.complexity_boost || 1.0,
+      // Issue 2: Non-acute facility portfolio
+      _portfolioSystems: portfolioSystems,
+      _portfolioStaff: portfolioStaff,
+      _portfolioCost: portfolioCost,
+      // Issue 1: Known spend override
+      _knownSpend: costMode === "known" && knownSpend > 0 ? knownSpend : 0,
+    };
+  }, [inputs, providerType, reimbursementModel, occupancyRate, facilities, costMode, knownSpend]);
 
   const r = useMemo(() => calc(calcInputs, "EXPECTED", {}, flagships), [calcInputs, flagships]);
 

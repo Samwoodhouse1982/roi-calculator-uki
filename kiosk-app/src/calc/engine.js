@@ -52,7 +52,7 @@ export const READMIT_REDUCTION_META = 0.17;         // 17% relative reduction, E
 export const COST_PER_EXCESS_BED_DAY = 3132;
 export const US_AVG_ALOS = 4.7;                      // Average length of stay, days (AHA 2023)
 export const US_AVG_REVENUE_PER_ADMISSION = 15200;    // Average inpatient revenue per admission (AHA/HCUP 2023)
-export const DEFAULT_OCCUPANCY = 0.65;                // 65% national average (AHA 2023)        // $3,132 national average (KFF/AHA 2023)
+export const DEFAULT_OCCUPANCY = 0.65;                // 65% national average (AHA 2023)
 export const EXCESS_DAYS_PER_ADE = 2.2;             // 1.74-3.15 range, midpoint (Bates/Classen/Hug)
 export const PREVENTABLE_ADE_PER_100_ADMITS = 1.8;  // Bates et al ADE Prevention Study
 
@@ -75,7 +75,14 @@ export const TEACHING_OVERHEAD_PCT = 0.12;             // 12% additional system 
 
 // ── M&A / Multi-Hospital Constants ──
 export const DUPLICATE_SYSTEM_RATE = 0.35;             // 35% of systems are duplicated across facilities post-M&A
-export const DUPLICATE_INFRA_COST_PER_FACILITY = 250000; // Per-facility duplicate infrastructure (data center, network, help desk)
+export const DUPLICATE_INFRA_COST_PER_FACILITY = 250000;
+
+// Fragmentation attribution factors
+export const DENIAL_FRAGMENTATION_ATTRIBUTION = 0.35;  // 35% of denials attributable to legacy system fragmentation
+                                                         // Remaining 65%: coding errors, clinical documentation, payer rules
+                                                         // Advisory Board 2024: documentation gaps from fragmented systems
+                                                         // are the #2 root cause of denials after authorization issues
+export const PATHOLOGY_COST_PER_BED = 8500;              // ~$8,500 per bed in lab/imaging spend // Per-facility duplicate infrastructure (data center, network, help desk)
 export const CROSS_FACILITY_STANDARDISATION_PCT = 0.15; // 15% of operational costs addressable through standardization
 
 // ROI Calculator Engine
@@ -112,7 +119,8 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const flagshipRetireCount = flagships.filter(f => f.retire).length;
   const portfolioSystems = inp._portfolioSystems || 0;
   const legacy = tieredLegacy + flagshipCount + portfolioSystems;
-  const totalEstate = tieredEstate + flagshipTotal + (inp._portfolioCost || 0);
+  const estimatedEstate = tieredEstate + flagshipTotal + (inp._portfolioCost || 0);
+  const totalEstate = inp._knownSpend > 0 ? inp._knownSpend : estimatedEstate;
   const blendedCost = legacy > 0 ? Math.round(totalEstate / legacy) : 0;
   const rawDecom = tieredLegacy * inp.decom_retire_rate * sc.decom_pct;
   const decom = Math.min(Math.round(rawDecom), tieredLegacy) + flagshipRetireCount;
@@ -120,7 +128,10 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const entDecom = Math.min(Math.round(ent * decomFrac), ent);
   const depDecom = Math.min(Math.round(dep * decomFrac), dep);
   const nicDecom = clamp(Math.min(Math.round(rawDecom), tieredLegacy) - entDecom - depDecom, 0, nic);
-  const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * sc.decom_pct);
+  const tieredDecomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost;
+  // Issue 1: If knownSpend provided, scale decom savings proportionally
+  const spendScale = inp._knownSpend > 0 && estimatedEstate > 0 ? inp._knownSpend / estimatedEstate : 1.0;
+  const decomSave = Math.round(tieredDecomSave * spendScale) + Math.round(flagshipDecomSave * sc.decom_pct);
   // Clinical capacity - staff count
   const corpPerOrg = Math.min(120, Math.round(CORPORATE_STAFF_BASE + (inp.bed_count / Math.max(1, inp.org_count)) * CORPORATE_STAFF_PER_BED));
   const totalStaff = Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * corpPerOrg + (inp._portfolioStaff || 0));
@@ -135,7 +146,8 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const switchPenalty = Math.max(0, systemsPerUser - 1) * SWITCH_PENALTY_PER_SYSTEM;
   const baseMin = isArchiveOnly ? 5 : 12;
   const cappedPenalty = Math.min(switchPenalty, 4.0);
-  const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * (1 + cappedPenalty));
+  const complexityBoost = inp._complexityBoost || 1.0;
+  const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * complexityBoost * (1 + cappedPenalty));
   const residual = isArchiveOnly ? 1 : 2;
   const hrsSaved = Math.round((clinicians * Math.max(0, minsWasted - residual) * WORKING_WEEKS) / 60);
   const timeSave = Math.round(hrsSaved * BLENDED_HOURLY_RATE * sc.realization);
@@ -180,7 +192,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   // Denial rate reduction (FFS pathway)
   const estAnnualRevenue = estAnnualRevenueCalc; // from admissions-based model above
   const denialBaseline = estAnnualRevenue * DENIAL_NET_REVENUE_LOSS;
-  const denialRecovery = Math.round(denialBaseline * 0.20 * sc.decom_pct * (inp._denialWeight || 1.0));
+  const denialRecovery = Math.round(denialBaseline * 0.20 * DENIAL_FRAGMENTATION_ATTRIBUTION * sc.decom_pct * (inp._denialWeight || 1.0));
 
   // Malpractice premium reduction (modeled assumption)
   const malpracticePremium = inp.bed_count * MALPRACTICE_AVG_PREMIUM_PER_BED;
@@ -193,7 +205,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const excessDayCostAvoided = Math.round(excessDaysAvoided * COST_PER_EXCESS_BED_DAY);
 
   // Duplicate testing reduction
-  const estLabSpend = inp.bed_count * 8500; // ~$8,500 per bed in lab/imaging spend
+  const estLabSpend = inp.bed_count * PATHOLOGY_COST_PER_BED; // ~$8,500 per bed in lab/imaging spend
   const duplicateWaste = estLabSpend * DUPLICATE_TEST_RATE;
   const duplicateReduction = Math.round(duplicateWaste * 0.50 * sc.decom_pct); // 50% of duplicates addressable
 
