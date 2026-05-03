@@ -260,6 +260,31 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       </Card>
     </div>
 
+    {/* Operational efficiency */}
+    <Card style={{ marginBottom: 18, borderLeft: "3px solid #2ecc71" }}>
+      <CTitle iconKey="clock" color="#2ecc71">Operational efficiency</CTitle>
+      <div style={{ display: "flex", gap: 14, marginBottom: 16 }}>
+        <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
+          <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>Service desk tickets</div>
+          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#2ecc71" }}>{r.ticketsReductionPct}%</div>
+          <div style={{ fontSize: F.tiny, color: C.textMuted }}>reduction</div>
+          <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 8 }}>{r.ticketsBaselineMonthly}/mo → {r.ticketsAfter}/mo</div>
+        </div>
+        <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
+          <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>Records request turnaround</div>
+          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#2ecc71" }}>{r.sarReductionPct}%</div>
+          <div style={{ fontSize: F.tiny, color: C.textMuted }}>faster</div>
+          <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 8 }}>{r.sarDaysBefore} days → {r.sarDaysAfter} days</div>
+        </div>
+      </div>
+      <div style={{ fontSize: F.tiny, color: C.textMid, lineHeight: 1.6 }}>
+        Each legacy system generates ~2.5 service desk tickets per month. Retiring systems eliminates their ticket load entirely; remaining systems see a 40% reduction through simplified interfaces. Medical records requests (HIPAA right of access) are faster when data is consolidated into a single archive rather than scattered across {r.legacy} separate systems.
+      </div>
+      <Methodology>
+        <strong>Method:</strong> Ticket baseline: {r.legacy} systems x 2.5 tickets/system/month, adjusted for data quality. Surviving systems generate 60% of baseline tickets (simplified support model). Records request turnaround: base 1.5 days + 0.4 days per system (before) vs 0.15 days per surviving system (after). Based on AHIMA benchmarks for multi-source record assembly and HIPAA-compliant release timelines.
+      </Methodology>
+    </Card>
+
     {/* Network consolidation - only for multi-hospital/IDN */}
     {seg.network > 0 && <div ref={networkRef}>
       <Card style={{ marginBottom: 18, borderLeft: "3px solid #8e44ad" }}>
