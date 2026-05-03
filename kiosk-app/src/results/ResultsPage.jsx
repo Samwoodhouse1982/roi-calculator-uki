@@ -83,7 +83,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       <KpiCard label="Legacy decommission" value={fmtK(seg.decom)} sub={`${r.decom} of ${r.legacy} systems retired`} color={C.accent} iconKey="unlock" onClick={() => scrollTo(decomRef)} />
       <KpiCard label="Clinical capacity" value={`${fmtFte(fte)} FTE freed`} sub={`${fmtK(seg.capacity)}/yr value`} color={C.amber} iconKey="clock" onClick={() => scrollTo(capacityRef)} />
       {seg.reimb > 0 && <KpiCard label="Reimbursement impact" value={fmtK(seg.reimb)} sub="CMS penalties + denial recovery" color={C.blue} iconKey="dollar" onClick={() => scrollTo(reimbRef)} />}
-      {seg.safety > 0 && <KpiCard label="Patient safety" value={fmtK(seg.safety)} sub={`${fmtNum(r.safetyPatientsProtected)} patients protected`} color={C.purple} iconKey="shield" onClick={() => scrollTo(safetyRef)} />}
+      {seg.safety > 0 && <KpiCard label="Patient safety" value={fmtK(seg.safety)} sub={`${fmtNum(r.safetyPatientsProtected)} patients protected${r.readmissionsAvoided > 0 ? ", " + r.readmissionsAvoided + " readmissions avoided" : ""}`} color={C.purple} iconKey="shield" onClick={() => scrollTo(safetyRef)} />}
       {seg.network > 0 && <KpiCard label="Network consolidation" value={fmtK(seg.network)} sub={`${r.duplicateSystems} duplicate systems across ${r.org_count || ""} facilities`} color="#8e44ad" iconKey="network" onClick={() => scrollTo(networkRef)} />}
       {seg.academic > 0 && <KpiCard label="Academic program" value={fmtK(seg.academic)} sub="Research + GME + teaching" color="#e67e22" iconKey="graduation" onClick={() => scrollTo(academicRef)} />}
     </div>
@@ -249,6 +249,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Row label="Medication errors avoided" value={fmtNum(r.safetyMedErrorsAvoided)} />
         <Row label="Patients protected from harm" value={fmtNum(r.safetyPatientsProtected)} />
         <Row label="Excess bed days avoided" value={fmtNum(r.safetyBedDaysAvoided)} />
+        {r.readmissionsAvoided > 0 && <Row label={"Readmissions avoided (" + r.readmissionsAvoided + " patients)"} value={fmtK(r.readmissionCostAvoidance) + "/yr"} />}
         {r.malpracticeReduction > 0 && <Row label="Malpractice reduction" value={fmtK(r.malpracticeReduction) + "/yr"} />}
         {(r.qualitySavings || 0) > 0 && <Row label="Total cost avoidance" value={fmtK(r.qualitySavings) + "/yr"} accent />}
         <div style={{ marginTop: 12, padding: "12px 16px", background: C.bg, borderRadius: 12, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.6 }}>
@@ -384,7 +385,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         </MCard>
 
         <MCard color={C.purple} title="Patient safety" num="04">
-          ADE rates from AHRQ Patient Safety Indicators and HHS OIG 2022 (25% of Medicare patients experience adverse events). Preventable ADEs: 1.8 per 100 admissions (Bates et al). Excess bed day cost: $3,132/day (KFF/AHA 2023). Communication failures account for 30% of malpractice claims (CRICO 2016). These are cost avoidance figures: harm that doesn't occur, not direct budget reductions.
+          ADE rates from AHRQ Patient Safety Indicators and HHS OIG 2022 (25% of Medicare patients experience adverse events). Preventable ADEs: 1.8 per 100 admissions (Bates et al). Excess bed day cost: $3,132/day (KFF/AHA 2023). Readmission avoidance: Vest et al JAMIA 2019 found 0.8pp absolute reduction in 30-day readmissions from single-vendor EHR consolidation; we apply 30% fragmentation attribution. Communication failures account for 30% of malpractice claims (CRICO 2016). These are cost avoidance figures: harm that doesn't occur, not direct budget reductions.
         </MCard>
 
         <MCard color="#8e44ad" title="Network savings" num="05">

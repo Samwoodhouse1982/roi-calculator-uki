@@ -90,7 +90,15 @@ export const EDISCOVERY_HRS_PER_CASE_BEFORE = 28;      // 3.5 days x 8 hrs: sear
 export const EDISCOVERY_HRS_PER_CASE_AFTER = 6;        // 0.75 days x 8 hrs: single archive search
 export const EDISCOVERY_HOURLY_RATE = 55;               // HIM / legal records staff blended rate
 export const CYBER_BREACH_AVG_COST = 10930000;          // $10.93m avg healthcare breach (IBM/Ponemon 2023)
-export const CYBER_LEGACY_RISK_FACTOR = 0.04;           // Each legacy system contributes ~4% to breach probability
+export const CYBER_LEGACY_RISK_FACTOR = 0.04;
+
+// Readmission cost avoidance (Vest et al JAMIA 2019; Pattar et al JAMA 2025)
+export const READMIT_COST_PER_ADMISSION = 15200;       // Average cost of a readmission (AHA/HCUP 2023)
+export const READMIT_FRAGMENTATION_ATTRIBUTION = 0.30;  // 30% of excess readmissions attributable to information
+                                                         // fragmentation across legacy systems (care transitions,
+                                                         // incomplete discharge summaries, missed follow-ups).
+                                                         // Remaining 70%: patient acuity, social determinants,
+                                                         // medication non-adherence.           // Each legacy system contributes ~4% to breach probability
                                                          // Based on: 70% of hospitals breached over 3 years, legacy
                                                          // systems on unsupported OS are primary attack vectors              // ~$8,500 per bed in lab/imaging spend // Per-facility duplicate infrastructure (data center, network, help desk)
 export const CROSS_FACILITY_STANDARDISATION_PCT = 0.15; // 15% of operational costs addressable through standardization
@@ -207,6 +215,14 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const hrrpExposure = medicareDrg * CMS_HRRP_AVG_PENALTY;
   const hrrpReduction = Math.round(hrrpExposure * sc.safety * (inp._penaltyWeight || 1.0));
 
+  // Readmission cost avoidance
+  // Vest JAMIA 2019: 0.8pp absolute reduction in 30-day readmissions from single-vendor EHR
+  // This is separate from HRRP penalty: HRRP = CMS penalty %, readmission avoidance = actual care costs
+  const medicareAdmissions = Math.round(admissionsPerYear * (inp._medicarePct || 0.42));
+  const currentReadmissions = Math.round(medicareAdmissions * READMISSION_RATE_MEDICARE);
+  const readmissionsAvoided = Math.round(medicareAdmissions * READMIT_REDUCTION_EHR * READMIT_FRAGMENTATION_ATTRIBUTION * sc.safety);
+  const readmissionCostAvoidance = Math.round(readmissionsAvoided * READMIT_COST_PER_ADMISSION);
+
   // HAC penalty exposure (bottom quartile = 1% of all Medicare payments)
   const hacExposure = medicareDrg * CMS_HAC_PENALTY * 0.25; // 25% probability of being in bottom quartile
   const hacReduction = Math.round(hacExposure * sc.safety * (inp._penaltyWeight || 1.0));
@@ -267,7 +283,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
 
   // Total reimbursement impact
   const reimbursementImpact = hrrpReduction + hacReduction + vbpImprovement + denialRecovery;
-  const qualitySavings = malpracticeReduction + excessDayCostAvoided + duplicateReduction + ediscoverySaving;
+  const qualitySavings = malpracticeReduction + excessDayCostAvoided + duplicateReduction + ediscoverySaving + readmissionCostAvoidance;
 
   const annual = decomSave + timeSave;
   const annualWithReimbursement = annual + reimbursementImpact + qualitySavings + academicSavings + mergeSavings;
@@ -300,6 +316,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
     duplicateWaste, duplicateReduction,
     reimbursementImpact, qualitySavings,
     litigationCases, ediscoverySaving, cyberSystemsRetired, cyberRiskReduction,
+    medicareAdmissions, currentReadmissions, readmissionsAvoided, readmissionCostAvoidance,
     // Academic module
     isAcademic, researchSystems, researchSystemCost, researchDecomSave,
     gmeComplianceCost, gmeEfficiency, teachingOverhead, academicSavings,
