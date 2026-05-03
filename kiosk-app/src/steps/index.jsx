@@ -64,7 +64,11 @@ export function FacilitiesStep({ inputs, update, facilities, setFacility }) {
           <div style={{ fontSize: F.small, color: C.textMuted }}>Acute inpatient facilities</div>
         </div>
       </div>
-      <Stepper label="Hospital count" value={inputs.org_count} min={1} max={50} onChange={v => update("org_count", v)} />
+      <Stepper label="Hospital count" value={inputs.org_count} min={1} max={50} onChange={v => {
+        const avgBeds = Math.round(inputs.bed_count / Math.max(1, inputs.org_count));
+        update("org_count", v);
+        update("bed_count", avgBeds * v);
+      }} />
       <TouchSlider label="Total acute beds" value={inputs.bed_count} min={10} max={Math.max(5000, inputs.bed_count + 500)} step={10} onChange={v => update("bed_count", v)} format={fmtNum}
         tip="Total staffed beds across all hospitals. Drives staffing, revenue, and safety metrics." />
       <div style={{ fontSize: F.small, color: C.textMuted, background: C.bg, padding: "10px 14px", borderRadius: 10 }}>
