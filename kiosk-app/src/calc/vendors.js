@@ -29,5 +29,23 @@ export const KNOWN_SYSTEMS = [
   { label: "Hyland OnBase", baseCost: 120000, perBed: 360, type: "Document Management", cat: "standalone" },
   { label: "InterSystems TrakCare", baseCost: 500000, perBed: 1600, type: "EHR/Integration", cat: "enterprise" },
   { label: "Rhapsody / Corepoint", baseCost: 80000, perBed: 190, type: "Integration Engine", cat: "standalone" },
+  // Additional standalone systems common in US hospitals
+  { label: "Hyland NilRead", baseCost: 60000, perBed: 150, type: "Document Management", cat: "standalone" },
+  { label: "LaserFiche", baseCost: 50000, perBed: 120, type: "Document Management", cat: "standalone" },
+  { label: "OpenText", baseCost: 80000, perBed: 200, type: "Document Management", cat: "standalone" },
+  { label: "MModal Fluency / 3M", baseCost: 100000, perBed: 300, type: "Dictation/Transcription", cat: "standalone" },
+  { label: "Dragon Medical (legacy)", baseCost: 60000, perBed: 180, type: "Dictation/Transcription", cat: "standalone" },
+  { label: "Sunquest Lab", baseCost: 200000, perBed: 500, type: "Laboratory", cat: "standalone" },
+  { label: "Orchard Harvest LIS", baseCost: 80000, perBed: 220, type: "Laboratory", cat: "standalone" },
+  { label: "GE Centricity PACS (legacy)", baseCost: 150000, perBed: 380, type: "Legacy PACS", cat: "standalone" },
+  { label: "Fujifilm Synapse PACS", baseCost: 180000, perBed: 420, type: "Legacy PACS", cat: "standalone" },
+  { label: "Vocera / Stryker", baseCost: 70000, perBed: 180, type: "Clinical Communication", cat: "standalone" },
+  { label: "TigerConnect", baseCost: 50000, perBed: 120, type: "Clinical Communication", cat: "standalone" },
+  { label: "RL Solutions (Datix)", baseCost: 60000, perBed: 150, type: "Incident/Risk", cat: "standalone" },
+  { label: "Theradoc (ICNet)", baseCost: 80000, perBed: 200, type: "Infection Control", cat: "standalone" },
+  { label: "Kronos / UKG", baseCost: 100000, perBed: 250, type: "Workforce/Scheduling", cat: "standalone" },
+  { label: "QGenda", baseCost: 60000, perBed: 140, type: "Workforce/Scheduling", cat: "standalone" },
+  { label: "Dimensional Insight", baseCost: 80000, perBed: 200, type: "Data Warehouse", cat: "standalone" },
+  { label: "IBM Cognos (legacy)", baseCost: 90000, perBed: 220, type: "Data Warehouse", cat: "standalone" },
 ]
 export function systemCost(sys, beds) { return Math.round(((sys.baseCost || 250000) + (sys.perBed || 0) * beds) / 1000) * 1000; }
