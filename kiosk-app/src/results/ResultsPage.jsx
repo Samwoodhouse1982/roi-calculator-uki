@@ -22,6 +22,8 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
   const capacityRef = useRef(null);
   const reimbRef = useRef(null);
   const safetyRef = useRef(null);
+  const networkRef = useRef(null);
+  const academicRef = useRef(null);
   const projRef = useRef(null);
   const scrollTo = ref => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -56,7 +58,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", marginBottom: 12 }}>
         {seg.decom > 0 && <div style={{ flex: seg.decom, background: C.accent }} />}
         {seg.capacity > 0 && <div style={{ flex: seg.capacity, background: C.amber }} />}
-        {seg.reimb > 0 && <div style={{ flex: seg.reimb, background: C.blue || "#4a90d9" }} />}
+        {seg.reimb > 0 && <div style={{ flex: seg.reimb, background: C.blue }} />}
         {seg.safety > 0 && <div style={{ flex: seg.safety, background: C.purple }} />}
         {seg.academic > 0 && <div style={{ flex: seg.academic, background: "#e67e22" }} />}
         {seg.network > 0 && <div style={{ flex: seg.network, background: "#8e44ad" }} />}
@@ -64,7 +66,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
         <CompositionItem color={C.accent} label="Decommission" value={fmtK(seg.decom)} pct={Math.round(seg.decom / Math.max(1, totalAnnual) * 100)} />
         <CompositionItem color={C.amber} label="Capacity" value={fmtK(seg.capacity)} pct={Math.round(seg.capacity / Math.max(1, totalAnnual) * 100)} />
-        {seg.reimb > 0 && <CompositionItem color={C.blue || "#4a90d9"} label="Reimbursement" value={fmtK(seg.reimb)} pct={Math.round(seg.reimb / Math.max(1, totalAnnual) * 100)} />}
+        {seg.reimb > 0 && <CompositionItem color={C.blue} label="Reimbursement" value={fmtK(seg.reimb)} pct={Math.round(seg.reimb / Math.max(1, totalAnnual) * 100)} />}
         {seg.safety > 0 && <CompositionItem color={C.purple} label="Patient safety" value={fmtK(seg.safety)} pct={Math.round(seg.safety / Math.max(1, totalAnnual) * 100)} />}
         {seg.academic > 0 && <CompositionItem color="#e67e22" label="Academic" value={fmtK(seg.academic)} pct={Math.round(seg.academic / Math.max(1, totalAnnual) * 100)} />}
         {seg.network > 0 && <CompositionItem color="#8e44ad" label="Network" value={fmtK(seg.network)} pct={Math.round(seg.network / Math.max(1, totalAnnual) * 100)} />}
@@ -75,8 +77,10 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
       <KpiCard label="Legacy decommission" value={fmtK(seg.decom)} sub={`${r.decom} of ${r.legacy} systems retired`} color={C.accent} icon="🔓" onClick={() => scrollTo(decomRef)} />
       <KpiCard label="Clinical capacity" value={`${fmtNum(fte)} FTE freed`} sub={`${fmtK(seg.capacity)}/yr value`} color={C.amber} icon="⏱️" onClick={() => scrollTo(capacityRef)} />
-      <KpiCard label="Reimbursement impact" value={fmtK(seg.reimb)} sub="CMS penalty + denial recovery" color={C.blue || "#4a90d9"} icon="💵" onClick={() => scrollTo(reimbRef)} />
-      <KpiCard label="Patient safety" value={fmtK(seg.safety)} sub={`${fmtNum(r.safetyPatientsProtected)} patients protected`} color={C.purple} icon="🛡️" onClick={() => scrollTo(safetyRef)} />
+      {seg.reimb > 0 && <KpiCard label="Reimbursement impact" value={fmtK(seg.reimb)} sub="CMS penalty + denial recovery" color={C.blue} icon="💵" onClick={() => scrollTo(reimbRef)} />}
+      {seg.safety > 0 && <KpiCard label="Patient safety" value={fmtK(seg.safety)} sub={`${fmtNum(r.safetyPatientsProtected)} patients protected`} color={C.purple} icon="🛡️" onClick={() => scrollTo(safetyRef)} />}
+      {seg.network > 0 && <KpiCard label="Network consolidation" value={fmtK(seg.network)} sub={`${r.duplicateSystems} duplicate systems across ${r.org_count || ""} facilities`} color="#8e44ad" icon="🏥" onClick={() => scrollTo(networkRef)} />}
+      {seg.academic > 0 && <KpiCard label="Academic programme" value={fmtK(seg.academic)} sub="Research + GME + teaching" color="#e67e22" icon="🎓" onClick={() => scrollTo(academicRef)} />}
     </div>
 
     {/* 3-year + Galen quick stats */}
@@ -156,6 +160,39 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         </Methodology>
       </Card>
     </div>
+
+    {/* Network consolidation — only for multi-hospital/IDN */}
+    {seg.network > 0 && <div ref={networkRef}>
+      <Card style={{ marginBottom: 18 }}>
+        <CTitle icon="🏥">Network consolidation</CTitle>
+        <div style={{ marginBottom: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>
+          Multi-facility health systems typically run duplicate instances of the same legacy system across sites. Consolidating to a single archive eliminates redundant licensing, infrastructure, and support contracts.
+        </div>
+        <Row label="Duplicate systems identified" value={fmtNum(r.duplicateSystems)} />
+        <Row label="Duplicate system cost" value={fmtK(r.duplicateSystemCost) + "/yr"} />
+        {r.duplicateElimination > 0 && <Row label="Duplicate elimination savings" value={fmtK(r.duplicateElimination)} />}
+        {r.infraConsolidation > 0 && <Row label="Infrastructure consolidation" value={fmtK(r.infraConsolidation)} />}
+        {r.standardizationSave > 0 && <Row label="Cross-facility standardisation" value={fmtK(r.standardizationSave)} />}
+        <Row label="Total network savings" value={fmtK(seg.network) + "/yr"} accent />
+        <Methodology>
+          <strong>Method:</strong> Duplicate system rate: ~30% of legacy systems are replicated across facilities in an IDN (CHIME Digital Health Survey). Infrastructure consolidation: each facility carries ~$350k/yr in duplicate hosting, interfaces, and support — 60% consolidatable. Cross-facility standardisation: 15% of operational costs addressable through unified workflows. All scaled by the decommission target.
+        </Methodology>
+      </Card>
+    </div>}
+
+    {/* Academic programme — only for academic medical centres */}
+    {seg.academic > 0 && <div ref={academicRef}>
+      <Card style={{ marginBottom: 18 }}>
+        <CTitle icon="🎓">Academic programme savings</CTitle>
+        {r.researchDecomSave > 0 && <Row label="Research system decommission" value={fmtK(r.researchDecomSave)} />}
+        {r.gmeEfficiency > 0 && <Row label="GME compliance efficiency" value={fmtK(r.gmeEfficiency)} />}
+        {r.teachingOverhead > 0 && <Row label="Teaching programme overhead" value={fmtK(r.teachingOverhead)} />}
+        <Row label="Total academic savings" value={fmtK(seg.academic) + "/yr"} accent />
+        <Methodology>
+          <strong>Method:</strong> Academic medical centres maintain additional legacy systems for research databases, GME tracking, and teaching programme administration. Decommission savings calculated at the same tier-based rates, with additional compliance efficiency from consolidated audit trails. Based on AAMC benchmarks for academic system overhead.
+        </Methodology>
+      </Card>
+    </div>}
 
     {/* Year-by-year */}
     <div ref={projRef}>
