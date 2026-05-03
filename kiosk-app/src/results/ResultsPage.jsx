@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { C, F, fmtK, fmtNum } from '../theme';
+import { Icon } from '../components/Icons';
 import { Card } from '../components';
 
 function Methodology({ children }) {
@@ -77,12 +78,12 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     {/* KPI grid — each card maps to a segment above, tappable to jump to detail */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
-      <KpiCard label="Legacy decommission" value={fmtK(seg.decom)} sub={`${r.decom} of ${r.legacy} systems retired`} color={C.accent} icon="🔓" onClick={() => scrollTo(decomRef)} />
-      <KpiCard label="Clinical capacity" value={`${fmtFte(fte)} FTE freed`} sub={`${fmtK(seg.capacity)}/yr value`} color={C.amber} icon="⏱️" onClick={() => scrollTo(capacityRef)} />
-      {seg.reimb > 0 && <KpiCard label="Reimbursement impact" value={fmtK(seg.reimb)} sub="CMS penalty + denial recovery" color={C.blue} icon="💵" onClick={() => scrollTo(reimbRef)} />}
-      {seg.safety > 0 && <KpiCard label="Patient safety" value={fmtK(seg.safety)} sub={`${fmtNum(r.safetyPatientsProtected)} patients protected`} color={C.purple} icon="🛡️" onClick={() => scrollTo(safetyRef)} />}
-      {seg.network > 0 && <KpiCard label="Network consolidation" value={fmtK(seg.network)} sub={`${r.duplicateSystems} duplicate systems across ${r.org_count || ""} facilities`} color="#8e44ad" icon="🏥" onClick={() => scrollTo(networkRef)} />}
-      {seg.academic > 0 && <KpiCard label="Academic program" value={fmtK(seg.academic)} sub="Research + GME + teaching" color="#e67e22" icon="🎓" onClick={() => scrollTo(academicRef)} />}
+      <KpiCard label="Legacy decommission" value={fmtK(seg.decom)} sub={`${r.decom} of ${r.legacy} systems retired`} color={C.accent} iconKey="unlock" onClick={() => scrollTo(decomRef)} />
+      <KpiCard label="Clinical capacity" value={`${fmtFte(fte)} FTE freed`} sub={`${fmtK(seg.capacity)}/yr value`} color={C.amber} iconKey="clock" onClick={() => scrollTo(capacityRef)} />
+      {seg.reimb > 0 && <KpiCard label="Reimbursement impact" value={fmtK(seg.reimb)} sub="CMS penalty + denial recovery" color={C.blue} iconKey="dollar" onClick={() => scrollTo(reimbRef)} />}
+      {seg.safety > 0 && <KpiCard label="Patient safety" value={fmtK(seg.safety)} sub={`${fmtNum(r.safetyPatientsProtected)} patients protected`} color={C.purple} iconKey="shield" onClick={() => scrollTo(safetyRef)} />}
+      {seg.network > 0 && <KpiCard label="Network consolidation" value={fmtK(seg.network)} sub={`${r.duplicateSystems} duplicate systems across ${r.org_count || ""} facilities`} color="#8e44ad" iconKey="network" onClick={() => scrollTo(networkRef)} />}
+      {seg.academic > 0 && <KpiCard label="Academic program" value={fmtK(seg.academic)} sub="Research + GME + teaching" color="#e67e22" iconKey="graduation" onClick={() => scrollTo(academicRef)} />}
     </div>
 
     {/* 3-year + Galen quick stats */}
@@ -102,7 +103,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {/* Decommission */}
     <div ref={decomRef}>
       <Card style={{ marginBottom: 18 }}>
-        <CTitle icon="🔓">Decommission savings</CTitle>
+        <CTitle iconKey="unlock">Decommission savings</CTitle>
         <Row label="Legacy systems in scope" value={r.legacy} />
         <Row label="Systems retired" value={r.decom} />
         <Row label="Total estate cost" value={fmtK(r.totalEstate) + "/yr"} />
@@ -116,7 +117,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {/* Capacity */}
     <div ref={capacityRef}>
       <Card style={{ marginBottom: 18 }}>
-        <CTitle icon="⏱️">Clinical capacity</CTitle>
+        <CTitle iconKey="clock">Clinical capacity</CTitle>
         <Row label="Total staff" value={fmtNum(r.totalStaff)} />
         <Row label="Active system users (65%)" value={fmtNum(r.clinicians)} />
         <Row label="Systems per user (~35% exposure)" value={r.systemsPerUser} />
@@ -133,7 +134,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {/* Reimbursement */}
     {seg.reimb > 0 && <div ref={reimbRef}>
       <Card style={{ marginBottom: 18 }}>
-        <CTitle icon="💵">Reimbursement & compliance</CTitle>
+        <CTitle iconKey="dollar">Reimbursement & compliance</CTitle>
         {r.hrrpReduction > 0 && <Row label="HRRP penalty recovery" value={fmtK(r.hrrpReduction)} />}
         {r.hacReduction > 0 && <Row label="HAC improvement" value={fmtK(r.hacReduction)} />}
         {r.vbpImprovement > 0 && <Row label="VBP opportunity" value={fmtK(r.vbpImprovement)} />}
@@ -148,7 +149,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {/* Patient safety */}
     <div ref={safetyRef}>
       <Card style={{ marginBottom: 18 }}>
-        <CTitle icon="🛡️">Patient safety impact</CTitle>
+        <CTitle iconKey="shield">Patient safety impact</CTitle>
         <Row label="Medication errors avoided" value={fmtNum(r.safetyMedErrorsAvoided)} />
         <Row label="Patients protected from harm" value={fmtNum(r.safetyPatientsProtected)} />
         <Row label="Excess bed days avoided" value={fmtNum(r.safetyBedDaysAvoided)} />
@@ -166,7 +167,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {/* Network consolidation — only for multi-hospital/IDN */}
     {seg.network > 0 && <div ref={networkRef}>
       <Card style={{ marginBottom: 18 }}>
-        <CTitle icon="🏥">Network consolidation</CTitle>
+        <CTitle iconKey="network">Network consolidation</CTitle>
         <div style={{ marginBottom: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>
           Multi-facility health systems typically run duplicate instances of the same legacy system across sites. Consolidating to a single archive eliminates redundant licensing, infrastructure, and support contracts.
         </div>
@@ -185,7 +186,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {/* Academic program — only for academic medical centers */}
     {seg.academic > 0 && <div ref={academicRef}>
       <Card style={{ marginBottom: 18 }}>
-        <CTitle icon="🎓">Academic program savings</CTitle>
+        <CTitle iconKey="graduation">Academic program savings</CTitle>
         {r.researchDecomSave > 0 && <Row label="Research system decommission" value={fmtK(r.researchDecomSave)} />}
         {r.gmeEfficiency > 0 && <Row label="Graduate Medical Education (GME) compliance" value={fmtK(r.gmeEfficiency)} />}
         {r.teachingOverhead > 0 && <Row label="Teaching program overhead" value={fmtK(r.teachingOverhead)} />}
@@ -199,7 +200,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {/* Year-by-year */}
     <div ref={projRef}>
       <Card style={{ marginBottom: 18 }}>
-        <CTitle icon="📅">Year-by-year projection</CTitle>
+        <CTitle iconKey="calendar">Year-by-year projection</CTitle>
         <div style={{ display: "flex", gap: 14, marginTop: 14 }}>
           {[
             { yr: "Year 1", val: r.yr1R || r.yr1, pct: 40 },
@@ -250,10 +251,10 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
   </div>;
 }
 
-function KpiCard({ label, value, sub, color, icon, onClick }) {
+function KpiCard({ label, value, sub, color, iconKey, onClick }) {
   return <div onClick={onClick} style={{ padding: "24px 22px", background: C.surface, borderRadius: 18, border: `1px solid ${color}25`, cursor: "pointer", transition: "border-color .2s" }}>
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-      <span style={{ fontSize: 26 }}>{icon}</span>
+      <Icon name={iconKey} size={26} stroke={color} />
       <span style={{ fontSize: F.tiny, fontWeight: 600, color: C.textMuted }}>{label}</span>
     </div>
     <div style={{ fontSize: F.h1, fontWeight: 800, color, marginBottom: 4 }}>{value}</div>
@@ -269,8 +270,8 @@ function CompositionItem({ color, label, value, pct }) {
   </div>;
 }
 
-function CTitle({ icon, children }) {
-  return <div style={{ fontSize: F.body, fontWeight: 700, color: C.textMid, marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: 24 }}>{icon}</span> {children}</div>;
+function CTitle({ iconKey, children }) {
+  return <div style={{ fontSize: F.body, fontWeight: 700, color: C.textMid, marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}><Icon name={iconKey} size={24} stroke={C.accent} /> {children}</div>;
 }
 function Row({ label, value, accent }) {
   return <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>

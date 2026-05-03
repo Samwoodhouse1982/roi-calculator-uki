@@ -14,11 +14,11 @@ export function ProviderStep({ providerType, onSelect, reimbursementModel, setRe
   return <div>
     <SectionTitle number="1">Select your program scope</SectionTitle>
     <BigChoice options={[
-      { key: "critical_access", label: "Critical Access / Rural", desc: "≤25 beds, limited legacy estate", icon: "🏥" },
-      { key: "community", label: "Community Hospital", desc: "100-400 beds, moderate complexity", icon: "🏨" },
-      { key: "regional", label: "Regional Medical Center", desc: "400-1,000 beds, multiple service lines", icon: "🏗️" },
-      { key: "academic", label: "Academic Medical Center", desc: "Teaching hospital, research systems", icon: "🎓" },
-      { key: "multi_hospital", label: "IDN / Community Health System", desc: "3-5 hospitals, 800-1,500 beds, ambulatory and post-acute sites", icon: "🏢" },
+      { key: "critical_access", label: "Critical Access / Rural", desc: "≤25 beds, limited legacy estate", iconKey: "hospital" },
+      { key: "community", label: "Community Hospital", desc: "100-400 beds, moderate complexity", iconKey: "community" },
+      { key: "regional", label: "Regional Medical Center", desc: "400-1,000 beds, multiple service lines", iconKey: "regional" },
+      { key: "academic", label: "Academic Medical Center", desc: "Teaching hospital, research systems", iconKey: "academic" },
+      { key: "multi_hospital", label: "IDN / Community Health System", desc: "3-5 hospitals, 800-1,500 beds, ambulatory and post-acute sites", iconKey: "idn" },
     ]} value={providerType} onChange={onSelect} />
     <div style={{ marginTop: 28 }}>
       <SegmentedControl label="Reimbursement model" value={reimbursementModel} onChange={setReimbursementModel} options={[
@@ -34,14 +34,14 @@ export function JourneyStep({ journey, onSelect }) {
     <SectionTitle number="2">Where are you on your EHR journey?</SectionTitle>
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {[
-        { key: "HAVE_EPR", label: "We have an enterprise EHR", desc: "Already on Epic, Oracle Health or similar. Looking to archive and decommission legacy systems.", icon: "✅", focus: "Archiving + decommission savings" },
-        { key: "EVALUATING", label: "We're evaluating enterprise EHRs", desc: "Assessing migration to a single EHR platform. Need the full case for migration and archiving.", icon: "🔍", focus: "Migration safety + archiving savings" },
+        { key: "HAVE_EPR", label: "We have an enterprise EHR", desc: "Already on Epic, Oracle Health or similar. Looking to archive and decommission legacy systems.", iconKey: "check", focus: "Archiving + decommission savings" },
+        { key: "EVALUATING", label: "We're evaluating enterprise EHRs", desc: "Assessing migration to a single EHR platform. Need the full case for migration and archiving.", iconKey: "search", focus: "Migration safety + archiving savings" },
       ].map(j => <button key={j.key} onClick={() => onSelect(j.key)} style={{
         padding: "32px 30px", textAlign: "left", cursor: "pointer",
         border: journey === j.key ? `3px solid ${C.accent}` : `1px solid ${C.border}`,
         borderRadius: 22, background: journey === j.key ? C.accentPale : C.surface, transition: "all .2s"
       }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>{j.icon}</div>
+        <div style={{ marginBottom: 12 }}><Icon name={j.iconKey} size={36} stroke={journey === j.key ? C.accent : C.textMid} /></div>
         <div style={{ fontSize: F.h3, fontWeight: 700, color: journey === j.key ? C.accent : C.text, marginBottom: 8 }}>{j.label}</div>
         <div style={{ fontSize: F.body, color: C.textMuted, lineHeight: 1.6, marginBottom: 12 }}>{j.desc}</div>
         <div style={{ fontSize: F.small, fontWeight: 600, color: journey === j.key ? C.accent : C.textMid, padding: "6px 14px", background: journey === j.key ? C.accent + "15" : C.bg, borderRadius: 8, display: "inline-block" }}>{j.focus}</div>
@@ -57,7 +57,7 @@ export function FacilitiesStep({ inputs, update, facilities, setFacility }) {
     {/* Hospitals with beds */}
     <Card style={{ marginBottom: 16 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <span style={{ fontSize: 32 }}>🏥</span>
+        <Icon name="hospital" size={32} stroke={C.textMid} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: F.h3, fontWeight: 700, color: C.text }}>Hospitals</div>
           <div style={{ fontSize: F.small, color: C.textMuted }}>Acute inpatient facilities</div>
@@ -81,7 +81,7 @@ export function FacilitiesStep({ inputs, update, facilities, setFacility }) {
           background: count > 0 ? C.accentPale : C.surface, borderRadius: 16,
           border: `1px solid ${count > 0 ? C.accent + "30" : C.border}`, transition: "all .2s"
         }}>
-          <span style={{ fontSize: 24 }}>{ft.icon}</span>
+          <Icon name={ft.iconKey} size={22} stroke={count > 0 ? C.accent : C.textMid} />
           <span style={{ flex: 1, fontSize: F.body, fontWeight: 600, color: count > 0 ? C.accent : C.textMid }}>{ft.label}</span>
           <button onClick={() => setFacility(ft.key, Math.max(0, count - 1))} style={{
             width: 48, height: 48, borderRadius: 12, border: `1px solid ${C.border}`,

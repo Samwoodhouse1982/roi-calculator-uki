@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { C, F } from '../theme';
+import { Icon } from './Icons';
 
 export function Card({ children, style }) {
   return <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, padding: "36px 40px 32px", ...style }}>{children}</div>;
@@ -35,7 +36,7 @@ export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate }) {
   const ctx = STEP_CONTEXT[step];
   return <div style={{ borderTop: `1px solid ${C.border}` }}>
     {ctx && <div style={{ margin: "20px 56px 0", padding: "16px 20px", background: `${C.accent}08`, border: `1px solid ${C.accent}20`, borderRadius: 14, display: "flex", gap: 12, alignItems: "flex-start" }}>
-      <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>💡</span>
+      <span style={{ flexShrink: 0, marginTop: 1 }}><Icon name="lightbulb" size={20} stroke={C.accent} /></span>
       <div>
         <div style={{ fontSize: F.tiny, fontWeight: 700, color: C.accent, marginBottom: 4 }}>{ctx.title}</div>
         <div style={{ fontSize: F.tiny, color: C.textMid, lineHeight: 1.6 }}>{ctx.text}</div>
@@ -110,7 +111,7 @@ export function BigChoice({ options, value, onChange }) {
       borderRadius: 22, background: value === opt.key ? C.accentPale : C.surface,
       cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", gap: 20
     }}>
-      {opt.icon && <span style={{ fontSize: 40 }}>{opt.icon}</span>}
+      {opt.iconKey ? <Icon name={opt.iconKey} size={36} stroke={value === opt.key ? C.accent : C.textMid} /> : opt.icon && <span style={{ fontSize: 40 }}>{opt.icon}</span>}
       <div>
         <div style={{ fontSize: F.h3, fontWeight: 700, color: value === opt.key ? C.accent : C.text }}>{opt.label}</div>
         <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 4, lineHeight: 1.4 }}>{opt.desc}</div>

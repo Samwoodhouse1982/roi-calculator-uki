@@ -16,15 +16,15 @@ export const fmtNum = n => typeof n === "number" ? n.toLocaleString("en-US") : n
 export const KIOSK_STEPS = ["Scope", "Journey", "Facilities", "Systems", "Fine-tune", "Results"];
 
 export const FACILITY_TYPES = [
-  { key: "hospitals", label: "Hospitals", icon: "🏥", hasBeds: true },
-  { key: "ambulatory_surgery", label: "Ambulatory Surgery Centers", icon: "🏨" },
-  { key: "physician_practices", label: "Physician Practices", icon: "👨‍⚕️" },
-  { key: "urgent_care", label: "Urgent Care Centers", icon: "🚑" },
-  { key: "imaging_centers", label: "Imaging Centers", icon: "📷" },
-  { key: "dialysis", label: "Dialysis Centers", icon: "💊" },
-  { key: "snf", label: "Skilled Nursing Facilities", icon: "🏠" },
-  { key: "home_health", label: "Home Health Agencies", icon: "🏡" },
-  { key: "behavioral", label: "Behavioral Health", icon: "🧠" },
-  { key: "rehab", label: "Rehabilitation Centers", icon: "♿" },
-  { key: "ltach", label: "Long-Term Acute Care", icon: "🛏️" },
+  { key: "hospitals", label: "Hospitals", iconKey: "hospital", hasBeds: true },
+  { key: "ambulatory_surgery", label: "Ambulatory Surgery Centers", iconKey: "surgery" },
+  { key: "physician_practices", label: "Physician Practices", iconKey: "physician" },
+  { key: "urgent_care", label: "Urgent Care Centers", iconKey: "urgentCare" },
+  { key: "imaging_centers", label: "Imaging Centers", iconKey: "imaging" },
+  { key: "dialysis", label: "Dialysis Centers", iconKey: "dialysis" },
+  { key: "snf", label: "Skilled Nursing Facilities", iconKey: "snf" },
+  { key: "home_health", label: "Home Health Agencies", iconKey: "homeHealth" },
+  { key: "behavioral", label: "Behavioral Health", iconKey: "behavioral" },
+  { key: "rehab", label: "Rehabilitation Centers", iconKey: "rehab" },
+  { key: "ltach", label: "Long-Term Acute Care", iconKey: "ltach" },
 ];
