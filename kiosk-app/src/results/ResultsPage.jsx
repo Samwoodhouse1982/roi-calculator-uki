@@ -249,7 +249,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Row label="Medication errors avoided" value={fmtNum(r.safetyMedErrorsAvoided)} />
         <Row label="Patients protected from harm" value={fmtNum(r.safetyPatientsProtected)} />
         <Row label="Excess bed days avoided" value={fmtNum(r.safetyBedDaysAvoided)} />
-        {r.readmissionsAvoided > 0 && <Row label={"Readmissions avoided (" + r.readmissionsAvoided + " patients)"} value={fmtK(r.readmissionCostAvoidance) + "/yr"} />}
+        {r.readmissionsAvoided > 0 && <Row label={"Readmissions avoided (" + r.readmissionsAvoided + " patients)"} value={r.readmissionCostAvoidance > 0 ? fmtK(r.readmissionCostAvoidance) + "/yr" : "quality metric"} />}
         {r.malpracticeReduction > 0 && <Row label="Malpractice reduction" value={fmtK(r.malpracticeReduction) + "/yr"} />}
         {(r.qualitySavings || 0) > 0 && <Row label="Total cost avoidance" value={fmtK(r.qualitySavings) + "/yr"} accent />}
         <div style={{ marginTop: 12, padding: "12px 16px", background: C.bg, borderRadius: 12, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.6 }}>

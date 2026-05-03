@@ -221,7 +221,9 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const medicareAdmissions = Math.round(admissionsPerYear * (inp._medicarePct || 0.42));
   const currentReadmissions = Math.round(medicareAdmissions * READMISSION_RATE_MEDICARE);
   const readmissionsAvoided = Math.round(medicareAdmissions * READMIT_REDUCTION_EHR * READMIT_FRAGMENTATION_ATTRIBUTION * sc.safety);
-  const readmissionCostAvoidance = Math.round(readmissionsAvoided * READMIT_COST_PER_ADMISSION);
+  // Only count readmission cost avoidance under VBC/mixed (FFS readmissions = revenue, not cost)
+  const vbcWeight = inp._qualityBonus || 0;
+  const readmissionCostAvoidance = Math.round(readmissionsAvoided * READMIT_COST_PER_ADMISSION * vbcWeight);
 
   // HAC penalty exposure (bottom quartile = 1% of all Medicare payments)
   const hacExposure = medicareDrg * CMS_HAC_PENALTY * 0.25; // 25% probability of being in bottom quartile
