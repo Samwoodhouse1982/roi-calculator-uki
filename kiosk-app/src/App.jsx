@@ -85,12 +85,11 @@ export default function App() {
   const addFlagship = useCallback((sys, tier) => {
     const cost = sys.baseCost ? systemCost(sys, inputs.bed_count) : (sys.cost || 250000);
     setFlagships(p => [...p, { name: sys.label || "", cost, retire: true, tier: tier || null }]);
-    if (tier) updateTier(tier, Math.max(0, inputs.tiers[tier] - 1));
-  }, [inputs.bed_count, inputs.tiers, updateTier]);
+  }, [inputs.bed_count]);
 
   const removeFlagship = useCallback((idx) => {
-    setFlagships(p => { const f = p[idx]; if (f?.tier) updateTier(f.tier, (inputs.tiers[f.tier] || 0) + 1); return p.filter((_, j) => j !== idx); });
-  }, [inputs.tiers, updateTier]);
+    setFlagships(p => p.filter((_, j) => j !== idx));
+  }, []);
   const updateFlagshipCost = useCallback((idx, cost) => {
     setFlagships(p => p.map((f, i) => i === idx ? { ...f, cost: Math.max(0, cost) } : f));
   }, []);
