@@ -187,7 +187,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       <Card style={{ marginBottom: 18 }}>
         <CTitle icon="🎓">Academic program savings</CTitle>
         {r.researchDecomSave > 0 && <Row label="Research system decommission" value={fmtK(r.researchDecomSave)} />}
-        {r.gmeEfficiency > 0 && <Row label="GME compliance efficiency" value={fmtK(r.gmeEfficiency)} />}
+        {r.gmeEfficiency > 0 && <Row label="Graduate Medical Education (GME) compliance" value={fmtK(r.gmeEfficiency)} />}
         {r.teachingOverhead > 0 && <Row label="Teaching program overhead" value={fmtK(r.teachingOverhead)} />}
         <Row label="Total academic savings" value={fmtK(seg.academic) + "/yr"} accent />
         <Methodology>
