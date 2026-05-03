@@ -64,14 +64,15 @@ export const IconIDN = ({ size, stroke }) => <I size={size} stroke={stroke}>
 // FACILITY TYPES
 // ══════════════════════════════════════════════
 
-// Ambulatory Surgery Center - scalpel
+// Ambulatory Surgery Center - operating light (surgical lamp from above)
 export const IconSurgery = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <path d="M7.5 4.5l10 10" />
-  <path d="M17.5 14.5c1 1 1.5 2.5.5 3.5s-2.5 .5-3.5-.5l-10-10" />
-  <path d="M4.5 7.5c-1-1-1.5-2.5-.5-3.5s2.5-.5 3.5.5" />
-  <path d="M14.5 15.5l-4 5" />
-  <path d="M12.5 18.5l3 .5" />
-  <path d="M13 17l.5 3" />
+  <path d="M12 2v4" />
+  <path d="M8 6h8" />
+  <circle cx="12" cy="11" r="5" />
+  <circle cx="12" cy="11" r="2" />
+  <path d="M12 16v2" />
+  <path d="M8 21h8" />
+  <path d="M10 18h4" />
 </I>;
 
 // Physician Practices - stethoscope (Tabler-inspired)
@@ -91,30 +92,28 @@ export const IconUrgentCare = ({ size, stroke }) => <I size={size} stroke={strok
   <path d="M19.5 7l-1 .5" />
 </I>;
 
-// Imaging Centers - CT/MRI scanner (gantry ring with patient table)
+// Imaging Centers - X-ray film on lightbox
 export const IconImaging = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <circle cx="9" cy="11" r="7" />
-  <circle cx="9" cy="11" r="3" />
-  <path d="M16 11h6" />
-  <path d="M2 20h20" />
-  <path d="M14 16h6a2 2 0 002-2v0" />
+  <rect x="3" y="2" width="18" height="20" rx="2" />
+  <rect x="6" y="5" width="12" height="14" rx="1" />
+  <path d="M12 7v5" />
+  <path d="M9 9l3 1.5L15 9" />
+  <path d="M10 12l-1 5" />
+  <path d="M14 12l1 5" />
+  <path d="M9.5 14h5" />
 </I>;
 
-// Dialysis - kidney shape
+// Dialysis - kidney bean with artery
 export const IconDialysis = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <path d="M5 8c0-3 2-5 5-5s4 2 4 4-1 4-4 4-5 2-5 5 2 5 5 5 5-2 5-5" />
-  <path d="M15 7c1.5 0 3 1 3 4s-1.5 4-3 4" />
+  <path d="M4 12c0-5 3-9 7-9 3 0 5 2 5 5s-2 4-5 4c-4 0-7 4-7 9" />
+  <path d="M20 12c0 5-3 9-7 9-3 0-5-2-5-5s2-4 5-4c4 0 7-4 7-9" />
+  <path d="M12 8v8" />
 </I>;
 
-// Skilled Nursing Facility - wheelchair (side profile)
+// Skilled Nursing Facility - healthcare cross with heart
 export const IconSNF = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <circle cx="11" cy="5" r="2" />
-  <path d="M11 7v4h5" />
-  <path d="M7 11h4" />
-  <path d="M7 11v4c0 2 1.5 4 4 4h2c2 0 3.5-1 4-3" />
-  <circle cx="8" cy="20" r="1.5" />
-  <circle cx="16" cy="20" r="1.5" />
-  <path d="M7 11l-2 9" />
+  <path d="M9 3h6v5h5v6h-5v5H9v-5H4V8h5V3z" />
+  <path d="M12 9.5c-.5-.8-1.8-1-2.2-.2s.3 1.7 2.2 3c1.9-1.3 2.5-2.2 2.2-3s-1.7-.6-2.2.2z" />
 </I>;
 
 // Home Health - house with heart inside
@@ -124,11 +123,15 @@ export const IconHomeHealth = ({ size, stroke }) => <I size={size} stroke={strok
   <path d="M12 13c-.7-1-2.2-1.2-2.8-.3-.6.9.2 2.1 2.8 3.8 2.6-1.7 3.4-2.9 2.8-3.8-.6-.9-2.1-.7-2.8.3z" />
 </I>;
 
-// Behavioral Health - side-profile head with brain outline
+// Behavioral Health - brain with two hemispheres and sulci
 export const IconBehavioral = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <path d="M12 2a9 9 0 00-6 15.8V20a2 2 0 002 2h8a2 2 0 002-2v-2.2A9 9 0 0012 2z" />
-  <path d="M8 9c1.5 0 2.5 1 4 1s2.5-1 4-1" />
-  <path d="M9 13c1 .5 2 .5 3 0s2-.5 3 0" />
+  <path d="M12 2C9 2 7 3.5 6.5 5.5c-1 0-2.5.5-3 2S3 11 4.5 12c-1 1.5-.5 3.5 1 4.5s3 .5 3.5 0c.5 1.5 2 2.5 3 2.5" />
+  <path d="M12 2c3 0 5 1.5 5.5 3.5 1 0 2.5.5 3 2s.5 3.5-1 4.5c1 1.5.5 3.5-1 4.5s-3 .5-3.5 0c-.5 1.5-2 2.5-3 2.5" />
+  <path d="M12 2v17" />
+  <path d="M7 8c1.5.5 3 .5 5-.5" />
+  <path d="M17 8c-1.5.5-3 .5-5-.5" />
+  <path d="M7.5 13c1.5-.5 3-.5 4.5.5" />
+  <path d="M16.5 13c-1.5-.5-3-.5-4.5.5" />
 </I>;
 
 // Rehabilitation - person doing arm exercise with dumbbell
@@ -143,16 +146,17 @@ export const IconRehab = ({ size, stroke }) => <I size={size} stroke={stroke}>
   <path d="M16 3v3" />
 </I>;
 
-// Long-Term Acute Care - hospital bed with IV drip
+// Long-Term Acute Care - hospital bed with raised head, side rails, monitor
 export const IconLTACH = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <path d="M3 17h14a3 3 0 003-3v-2H3" />
-  <path d="M3 12V8" />
-  <path d="M7 12V9a1.5 1.5 0 013 0v3" />
-  <circle cx="5" cy="19" r="2" />
-  <circle cx="18" cy="19" r="2" />
-  <path d="M20 3v6" />
-  <path d="M18 3h4" />
-  <path d="M20 9l-.5 2" />
+  <path d="M2 16h18" />
+  <path d="M4 16V9l5-3v10" />
+  <path d="M9 16h8" />
+  <path d="M20 16v-4a2 2 0 00-2-2H9" />
+  <circle cx="4" cy="18.5" r="1.5" />
+  <circle cx="18" cy="18.5" r="1.5" />
+  <path d="M6 10v3" />
+  <path d="M15 10v3" />
+  <path d="M22 4v4M21 4h2" />
 </I>;
 
 // ══════════════════════════════════════════════
