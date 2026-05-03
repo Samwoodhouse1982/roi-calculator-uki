@@ -100,6 +100,74 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     {/* ═══ DETAIL SECTIONS ═══ */}
 
+    {/* Year-by-year projection — first section */}
+    <div ref={projRef}>
+      <Card style={{ marginBottom: 18 }}>
+        <CTitle iconKey="calendar">Year-by-year projection</CTitle>
+
+        {/* 3-year total banner */}
+        <div style={{ textAlign: "center", padding: "16px 0 20px" }}>
+          <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>3-year cumulative savings</div>
+          <div style={{ fontSize: F.hero ? F.hero : 64, fontWeight: 800, color: C.accent, letterSpacing: "-2px" }}>{fmtK(r.total3WithReimbursement || r.total3)}</div>
+        </div>
+
+        {/* Year cards */}
+        <div style={{ display: "flex", gap: 14, marginBottom: 20 }}>
+          {[
+            { yr: "Year 1", val: r.yr1R || r.yr1, pct: 40 },
+            { yr: "Year 2", val: r.yr2R || r.yr2, pct: 80 },
+            { yr: "Year 3", val: r.yr3R || r.yr3, pct: 100 },
+          ].map(y => <div key={y.yr} style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
+            <div style={{ fontSize: F.small, color: C.textMuted, marginBottom: 6 }}>{y.yr}</div>
+            <div style={{ fontSize: F.h2, fontWeight: 800, color: C.accent }}>{fmtK(y.val)}</div>
+            <div style={{ fontSize: F.tiny, color: C.textMuted }}>{y.pct}% ramp</div>
+          </div>)}
+        </div>
+
+        {/* Stacked bar chart */}
+        {(() => {
+          const yrs = [
+            { yr: "Yr 1", pct: 0.4 },
+            { yr: "Yr 2", pct: 0.8 },
+            { yr: "Yr 3", pct: 1.0 },
+          ];
+          const maxVal = r.yr3R || r.yr3 || 1;
+          const colors = [
+            { key: "decom", color: C.accent, val: seg.decom },
+            { key: "capacity", color: C.amber, val: seg.capacity },
+            { key: "reimb", color: C.blue, val: seg.reimb },
+            { key: "safety", color: C.purple, val: seg.safety },
+            { key: "network", color: "#8e44ad", val: seg.network },
+            { key: "academic", color: "#e67e22", val: seg.academic },
+          ].filter(s => s.val > 0);
+          const barH = 160;
+          return <div style={{ marginBottom: 16 }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "flex-end", height: barH + 30, padding: "0 20px" }}>
+              {yrs.map(y => {
+                const h = Math.round(barH * y.pct);
+                return <div key={y.yr} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ width: "100%", height: h, borderRadius: "10px 10px 4px 4px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                    {colors.map(s => <div key={s.key} style={{ flex: s.val, background: s.color, minHeight: 2 }} />)}
+                  </div>
+                  <div style={{ fontSize: F.tiny, color: C.textMuted, marginTop: 6, fontWeight: 600 }}>{y.yr}</div>
+                </div>;
+              })}
+            </div>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 12 }}>
+              {colors.map(s => <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ width: 8, height: 8, borderRadius: 2, background: s.color }} />
+                <span style={{ fontSize: 10, color: C.textMuted }}>{s.key}</span>
+              </div>)}
+            </div>
+          </div>;
+        })()}
+
+        <Methodology>
+          <strong>Method:</strong> 3-year phased ramp: Year 1 at 40%, Year 2 at 80%, Year 3 at 100%. Reflects progressive legacy system retirement — data is migrated and interfaces decommissioned over time, not all at once. Each savings category scales proportionally.
+        </Methodology>
+      </Card>
+    </div>
+
     {/* Decommission */}
     <div ref={decomRef}>
       <Card style={{ marginBottom: 18 }}>
@@ -196,30 +264,6 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         </Methodology>
       </Card>
     </div>}
-
-    {/* Year-by-year */}
-    <div ref={projRef}>
-      <Card style={{ marginBottom: 18 }}>
-        <CTitle iconKey="calendar">Year-by-year projection</CTitle>
-        <div style={{ display: "flex", gap: 14, marginTop: 14 }}>
-          {[
-            { yr: "Year 1", val: r.yr1R || r.yr1, pct: 40 },
-            { yr: "Year 2", val: r.yr2R || r.yr2, pct: 80 },
-            { yr: "Year 3", val: r.yr3R || r.yr3, pct: 100 },
-          ].map(y => <div key={y.yr} style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
-            <div style={{ fontSize: F.small, color: C.textMuted, marginBottom: 6 }}>{y.yr}</div>
-            <div style={{ fontSize: F.h2, fontWeight: 800, color: C.accent }}>{fmtK(y.val)}</div>
-            <div style={{ fontSize: F.tiny, color: C.textMuted }}>{y.pct}% ramp</div>
-            <div style={{ marginTop: 6, height: 4, background: C.border, borderRadius: 2 }}>
-              <div style={{ height: "100%", width: `${y.pct}%`, background: C.accent, borderRadius: 2 }} />
-            </div>
-          </div>)}
-        </div>
-        <Methodology>
-          <strong>Method:</strong> 3-year phased ramp: Year 1 at 40%, Year 2 at 80%, Year 3 at 100%. Reflects progressive legacy system retirement — data migrated and interfaces retired over time, not all at once.
-        </Methodology>
-      </Card>
-    </div>
 
     {/* Galen */}
     {hasGalen && <div style={{ marginBottom: 24, padding: "32px 36px", borderRadius: 24, background: `linear-gradient(135deg, ${C.accentPale}, ${C.surface})`, border: `1px solid ${C.accent}30` }}>

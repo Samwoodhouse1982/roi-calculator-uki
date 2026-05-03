@@ -127,15 +127,20 @@ export function SystemsStep({ inputs, updateTier, flagships, addFlagship, remove
     </div>
 
     {costMode === "known" && <Card style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: F.body, fontWeight: 600, color: C.textMid, marginBottom: 12 }}>Total annual legacy system spend</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontSize: F.h2, color: C.textMuted }}>$</span>
-        <input type="number" value={knownSpend || ""} placeholder="e.g. 5000000" min={0} step={100000}
-          onChange={e => setKnownSpend(parseInt(e.target.value) || 0)}
-          style={{ flex: 1, padding: "16px 18px", borderRadius: 14, border: `1px solid ${C.border}`, fontSize: F.h2, fontWeight: 700, fontFamily: "inherit", background: C.bg, color: C.accent }} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>Total annual legacy system spend</span>
+        <span style={{ fontSize: F.h2, fontWeight: 800, color: C.accent }}>{fmtK(knownSpend)}/yr</span>
       </div>
-      {knownSpend > 0 && <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8 }}>
-        {fmtK(knownSpend)}/yr across {total} systems ({fmtK(Math.round(knownSpend / Math.max(1, total)))}/system avg)
+      <input type="range" min={0} max={20000000} step={100000} value={knownSpend}
+        onChange={e => setKnownSpend(Number(e.target.value))}
+        style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
+      <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 8 }}>
+        <button onClick={() => setKnownSpend(Math.max(0, knownSpend - 100000))} style={{ width: 48, height: 48, borderRadius: 12, border: "1px solid " + C.border, background: C.surface, color: C.textMid, fontSize: 22, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+        <div style={{ fontSize: F.tiny, color: C.textMuted, display: "flex", alignItems: "center" }}>±$100k</div>
+        <button onClick={() => setKnownSpend(Math.min(20000000, knownSpend + 100000))} style={{ width: 48, height: 48, borderRadius: 12, border: "1px solid " + C.border, background: C.surface, color: C.textMid, fontSize: 22, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+      </div>
+      {knownSpend > 0 && <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, textAlign: "center" }}>
+        {total} systems · {fmtK(Math.round(knownSpend / Math.max(1, total)))}/system avg
       </div>}
     </Card>}
 
