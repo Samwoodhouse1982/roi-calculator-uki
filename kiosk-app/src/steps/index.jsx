@@ -4,9 +4,9 @@ import { Card, BigChoice, SectionTitle, TouchSlider, Stepper, SegmentedControl, 
 import { KNOWN_SYSTEMS, systemCost } from '../calc/vendors';
 
 const TIER_TYPES = {
-  enterprise: ["EHR","EHR/PAS","PAS","Clinical"],
-  departmental: ["Theatre","Radiology","LIMS","Pharmacy","Maternity","Integration","eMeds","Dictation","ED"],
-  niche: ["ECM","Incident"],
+  enterprise: ["EHR","Legacy EHR","EHR/Integration","Ambulatory EHR","Ambulatory EHR/RCM","Revenue Cycle"],
+  departmental: ["Pharmacy/Dispensing","OB/Perinatal","Oncology","ICU/Critical Care","Behavioral Health","Integration Engine","CDI/Coding","Post-Acute/Rehab","Clinical Documentation"],
+  niche: ["Document Management"],
 };
 
 // STEP 1: Scope + Reimbursement
@@ -104,9 +104,9 @@ export function FacilitiesStep({ inputs, update, facilities, setFacility }) {
 export function SystemsStep({ inputs, updateTier, flagships, addFlagship, removeFlagship, costMode, setCostMode, knownSpend, setKnownSpend }) {
   const [openTier, setOpenTier] = useState(null);
   const tiers = [
-    { key: "enterprise", label: "Enterprise", color: C.accent, hint: "EHR, PAS, large clinical suites", max: Math.max(10, inputs.tiers.enterprise + 3) },
-    { key: "departmental", label: "Departmental", color: C.blue, hint: "Theatres, lab, ED, maternity, radiology", max: Math.max(30, inputs.tiers.departmental + 5) },
-    { key: "niche", label: "Standalone", color: C.purple, hint: "Document stores, scanned notes", max: Math.max(100, inputs.tiers.niche + 10) },
+    { key: "enterprise", label: "Enterprise", color: C.accent, hint: "Including legacy EHR, ERP, RCM", max: Math.max(10, inputs.tiers.enterprise + 3) },
+    { key: "departmental", label: "Departmental", color: C.blue, hint: "Including laboratory, pharmacy, perinatal, imaging/PACS, cardiology, and radiology", max: Math.max(30, inputs.tiers.departmental + 5) },
+    { key: "niche", label: "Standalone", color: C.purple, hint: "Including document stores, data warehouses, scanned notes", max: Math.max(100, inputs.tiers.niche + 10) },
   ];
   const total = inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche;
 

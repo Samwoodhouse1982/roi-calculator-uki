@@ -82,7 +82,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       {seg.reimb > 0 && <KpiCard label="Reimbursement impact" value={fmtK(seg.reimb)} sub="CMS penalty + denial recovery" color={C.blue} icon="💵" onClick={() => scrollTo(reimbRef)} />}
       {seg.safety > 0 && <KpiCard label="Patient safety" value={fmtK(seg.safety)} sub={`${fmtNum(r.safetyPatientsProtected)} patients protected`} color={C.purple} icon="🛡️" onClick={() => scrollTo(safetyRef)} />}
       {seg.network > 0 && <KpiCard label="Network consolidation" value={fmtK(seg.network)} sub={`${r.duplicateSystems} duplicate systems across ${r.org_count || ""} facilities`} color="#8e44ad" icon="🏥" onClick={() => scrollTo(networkRef)} />}
-      {seg.academic > 0 && <KpiCard label="Academic programme" value={fmtK(seg.academic)} sub="Research + GME + teaching" color="#e67e22" icon="🎓" onClick={() => scrollTo(academicRef)} />}
+      {seg.academic > 0 && <KpiCard label="Academic program" value={fmtK(seg.academic)} sub="Research + GME + teaching" color="#e67e22" icon="🎓" onClick={() => scrollTo(academicRef)} />}
     </div>
 
     {/* 3-year + Galen quick stats */}
@@ -174,24 +174,24 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Row label="Duplicate system cost" value={fmtK(r.duplicateSystemCost) + "/yr"} />
         {r.duplicateElimination > 0 && <Row label="Duplicate elimination savings" value={fmtK(r.duplicateElimination)} />}
         {r.infraConsolidation > 0 && <Row label="Infrastructure consolidation" value={fmtK(r.infraConsolidation)} />}
-        {r.standardizationSave > 0 && <Row label="Cross-facility standardisation" value={fmtK(r.standardizationSave)} />}
+        {r.standardizationSave > 0 && <Row label="Cross-facility standardization" value={fmtK(r.standardizationSave)} />}
         <Row label="Total network savings" value={fmtK(seg.network) + "/yr"} accent />
         <Methodology>
-          <strong>Method:</strong> Duplicate system rate: ~30% of legacy systems are replicated across facilities in an IDN (CHIME Digital Health Survey). Infrastructure consolidation: each facility carries ~$350k/yr in duplicate hosting, interfaces, and support — 60% consolidatable. Cross-facility standardisation: 15% of operational costs addressable through unified workflows. All scaled by the decommission target.
+          <strong>Method:</strong> Duplicate system rate: ~30% of legacy systems are replicated across facilities in an IDN (CHIME Digital Health Survey). Infrastructure consolidation: each facility carries ~$350k/yr in duplicate hosting, interfaces, and support — 60% consolidatable. Cross-facility standardization: 15% of operational costs addressable through unified workflows. All scaled by the decommission target.
         </Methodology>
       </Card>
     </div>}
 
-    {/* Academic programme — only for academic medical centres */}
+    {/* Academic program — only for academic medical centers */}
     {seg.academic > 0 && <div ref={academicRef}>
       <Card style={{ marginBottom: 18 }}>
-        <CTitle icon="🎓">Academic programme savings</CTitle>
+        <CTitle icon="🎓">Academic program savings</CTitle>
         {r.researchDecomSave > 0 && <Row label="Research system decommission" value={fmtK(r.researchDecomSave)} />}
         {r.gmeEfficiency > 0 && <Row label="GME compliance efficiency" value={fmtK(r.gmeEfficiency)} />}
-        {r.teachingOverhead > 0 && <Row label="Teaching programme overhead" value={fmtK(r.teachingOverhead)} />}
+        {r.teachingOverhead > 0 && <Row label="Teaching program overhead" value={fmtK(r.teachingOverhead)} />}
         <Row label="Total academic savings" value={fmtK(seg.academic) + "/yr"} accent />
         <Methodology>
-          <strong>Method:</strong> Academic medical centres maintain additional legacy systems for research databases, GME tracking, and teaching programme administration. Decommission savings calculated at the same tier-based rates, with additional compliance efficiency from consolidated audit trails. Based on AAMC benchmarks for academic system overhead.
+          <strong>Method:</strong> Academic medical centers maintain additional legacy systems for research databases, GME tracking, and teaching program administration. Decommission savings calculated at the same tier-based rates, with additional compliance efficiency from consolidated audit trails. Based on AAMC benchmarks for academic system overhead.
         </Methodology>
       </Card>
     </div>}
