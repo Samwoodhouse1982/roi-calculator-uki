@@ -17,16 +17,39 @@ export function StepIndicator({ steps, current, onJump }) {
   </div>;
 }
 
+const STEP_CONTEXT = [
+  // 0 - Scope
+  { title: "Why this matters", text: "Your organization type determines the staffing ratios, system complexity, and reimbursement models we use. A 500-bed IDN has a very different legacy footprint than a critical access hospital — this ensures the model fits your reality." },
+  // 1 - Journey
+  { title: "Why this matters", text: "Whether you already have an EHR changes the calculation significantly. With an EHR in place, the ROI focuses on archiving and decommissioning legacy systems. Without one, it includes the full migration case." },
+  // 2 - Facilities
+  { title: "Why this matters", text: "Bed count is the primary scaling factor — it drives staffing levels, annual admissions, revenue estimates, and patient safety metrics. More beds means more staff navigating legacy systems and more clinical encounters affected by fragmentation." },
+  // 3 - Systems
+  { title: "Why this matters", text: "Each legacy system has a real annual cost — licensing, hosting, interfaces, and support. The number and tier of systems directly determines your decommission savings and how much time clinicians waste switching between platforms." },
+  // 4 - Fine-tune
+  { title: "Why this matters", text: "These settings calibrate the model to your specific situation. Complexity and data quality affect migration effort. Occupancy drives admission volume. Galen costs let us calculate your exact payback period." },
+];
+
 export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate }) {
   if (step >= totalSteps - 1) return null;
-  return <div style={{ padding: "28px 56px 40px", borderTop: `1px solid ${C.border}`, display: "flex", gap: 20, alignItems: "center" }}>
-    {step > 0 && <button onClick={onBack} style={{ padding: "24px 44px", borderRadius: 18, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Back</button>}
-    <div style={{ flex: 1 }} />
-    {step < totalSteps - 2 ? (
-      <button onClick={onNext} style={{ padding: "24px 64px", borderRadius: 18, border: "none", background: C.accent, color: "#0a0f1a", fontSize: F.h3, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Next →</button>
-    ) : (
-      <button onClick={onCalculate} style={{ padding: "24px 64px", borderRadius: 18, border: "none", background: `linear-gradient(135deg, ${C.accent}, #00ffc8)`, color: "#0a0f1a", fontSize: F.h2, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 6px 28px rgba(0,212,170,0.4)" }}>Calculate ROI →</button>
-    )}
+  const ctx = STEP_CONTEXT[step];
+  return <div style={{ borderTop: `1px solid ${C.border}` }}>
+    {ctx && <div style={{ margin: "20px 56px 0", padding: "16px 20px", background: `${C.accent}08`, border: `1px solid ${C.accent}20`, borderRadius: 14, display: "flex", gap: 12, alignItems: "flex-start" }}>
+      <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>💡</span>
+      <div>
+        <div style={{ fontSize: F.tiny, fontWeight: 700, color: C.accent, marginBottom: 4 }}>{ctx.title}</div>
+        <div style={{ fontSize: F.tiny, color: C.textMid, lineHeight: 1.6 }}>{ctx.text}</div>
+      </div>
+    </div>}
+    <div style={{ padding: "16px 56px 40px", display: "flex", gap: 20, alignItems: "center" }}>
+      {step > 0 && <button onClick={onBack} style={{ padding: "24px 44px", borderRadius: 18, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Back</button>}
+      <div style={{ flex: 1 }} />
+      {step < totalSteps - 2 ? (
+        <button onClick={onNext} style={{ padding: "24px 64px", borderRadius: 18, border: "none", background: C.accent, color: "#0a0f1a", fontSize: F.h3, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Next →</button>
+      ) : (
+        <button onClick={onCalculate} style={{ padding: "24px 64px", borderRadius: 18, border: "none", background: `linear-gradient(135deg, ${C.accent}, #00ffc8)`, color: "#0a0f1a", fontSize: F.h2, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 6px 28px rgba(0,212,170,0.4)" }}>Calculate ROI →</button>
+      )}
+    </div>
   </div>;
 }
 
