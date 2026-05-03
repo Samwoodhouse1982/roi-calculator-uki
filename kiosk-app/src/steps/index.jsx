@@ -106,7 +106,7 @@ export function FacilitiesStep({ inputs, update, facilities, setFacility }) {
 }
 
 // STEP 4: Systems
-export function SystemsStep({ inputs, updateTier, flagships, addFlagship, removeFlagship, costMode, setCostMode, knownSpend, setKnownSpend }) {
+export function SystemsStep({ inputs, updateTier, flagships, addFlagship, removeFlagship, updateFlagshipCost, costMode, setCostMode, knownSpend, setKnownSpend }) {
   const [openTier, setOpenTier] = useState(null);
   const tiers = [
     { key: "enterprise", label: "Enterprise", color: C.accent, hint: "Including legacy EHR, ERP, RCM", max: Math.max(10, inputs.tiers.enterprise + 3) },
@@ -154,11 +154,18 @@ export function SystemsStep({ inputs, updateTier, flagships, addFlagship, remove
             onChange={e => updateTier(t.key, Number(e.target.value))}
             style={{ width: "100%", cursor: "pointer", accentColor: t.color }} />
           {tierFlagships.length > 0 && <div style={{ marginTop: 8 }}>
-            {tierFlagships.map((f, fi) => <div key={fi} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: C.bg, borderRadius: 10, marginBottom: 4 }}>
-              <span style={{ fontSize: F.tiny, fontWeight: 600, color: t.color, flex: 1 }}>{f.name}</span>
-              <span style={{ fontSize: F.tiny, fontWeight: 700, color: t.color }}>{fmtK(f.cost)}/yr</span>
-              <button onClick={() => removeFlagship(flagships.indexOf(f))} style={{ border: "none", background: "none", color: C.textMuted, cursor: "pointer", fontSize: 18, padding: "4px" }}>×</button>
-            </div>)}
+            {tierFlagships.map((f, fi) => {
+              const fIdx = flagships.indexOf(f);
+              const step = f.cost > 500000 ? 50000 : f.cost > 100000 ? 25000 : 10000;
+              return <div key={fi} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: C.bg, borderRadius: 12, marginBottom: 6 }}>
+                <span style={{ fontSize: F.tiny, fontWeight: 600, color: t.color, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
+                <button onClick={() => updateFlagshipCost(fIdx, f.cost - step)} style={{ width: 40, height: 40, borderRadius: 10, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: 20, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit", flexShrink: 0 }}>−</button>
+                <span style={{ fontSize: F.small, fontWeight: 700, color: t.color, minWidth: 70, textAlign: "center" }}>{fmtK(f.cost)}</span>
+                <button onClick={() => updateFlagshipCost(fIdx, f.cost + step)} style={{ width: 40, height: 40, borderRadius: 10, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: 20, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit", flexShrink: 0 }}>+</button>
+                <span style={{ fontSize: F.tiny, color: C.textMuted, flexShrink: 0 }}>/yr</span>
+                <button onClick={() => removeFlagship(fIdx)} style={{ width: 36, height: 36, border: "none", background: "none", color: C.textMuted, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>×</button>
+              </div>;
+            })}
           </div>}
           {tierSystems.length > 0 && <>
             <div onClick={() => setOpenTier(openTier === t.key ? null : t.key)} style={{ marginTop: 8, fontSize: F.tiny, color: C.accent, cursor: "pointer", fontWeight: 600 }}>

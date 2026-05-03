@@ -91,6 +91,9 @@ export default function App() {
   const removeFlagship = useCallback((idx) => {
     setFlagships(p => { const f = p[idx]; if (f?.tier) updateTier(f.tier, (inputs.tiers[f.tier] || 0) + 1); return p.filter((_, j) => j !== idx); });
   }, [inputs.tiers, updateTier]);
+  const updateFlagshipCost = useCallback((idx, cost) => {
+    setFlagships(p => p.map((f, i) => i === idx ? { ...f, cost: Math.max(0, cost) } : f));
+  }, []);
 
   const calcInputs = useMemo(() => {
     const pm = PROVIDER_MULTIPLIERS[providerType] || PROVIDER_MULTIPLIERS.community;
@@ -122,7 +125,7 @@ export default function App() {
       case 0: return <ProviderStep providerType={providerType} onSelect={selectProvider} reimbursementModel={reimbursementModel} setReimbursementModel={setReimbursementModel} />;
       case 1: return <JourneyStep journey={inputs.journey} onSelect={v => update("journey", v)} />;
       case 2: return <FacilitiesStep inputs={inputs} update={update} facilities={facilities} setFacility={setFacility} />;
-      case 3: return <SystemsStep inputs={inputs} updateTier={updateTier} flagships={flagships} addFlagship={addFlagship} removeFlagship={removeFlagship} costMode={costMode} setCostMode={setCostMode} knownSpend={knownSpend} setKnownSpend={setKnownSpend} />;
+      case 3: return <SystemsStep inputs={inputs} updateTier={updateTier} flagships={flagships} addFlagship={addFlagship} removeFlagship={removeFlagship} updateFlagshipCost={updateFlagshipCost} costMode={costMode} setCostMode={setCostMode} knownSpend={knownSpend} setKnownSpend={setKnownSpend} />;
       case 4: return <FineTuneStep inputs={inputs} update={update} galenMigrationCost={galenMigrationCost} setGalenMigrationCost={setGalenMigrationCost} galenAnnualCost={galenAnnualCost} setGalenAnnualCost={setGalenAnnualCost} occupancyRate={occupancyRate} setOccupancyRate={setOccupancyRate} />;
       case 5: return <ResultsPage r={r} galenMigrationCost={galenMigrationCost} galenAnnualCost={galenAnnualCost} onAdjust={handleAdjust} onStartOver={handleStartOver} />;
       default: return null;
