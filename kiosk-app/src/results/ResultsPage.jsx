@@ -19,6 +19,8 @@ function JumpLink({ label, onClick }) {
 
 export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, onStartOver }) {
   if (!r) return null;
+  const [projYears, setProjYears] = useState(3);
+  const [tappedBar, setTappedBar] = useState(null);
   const decomRef = useRef(null);
   const capacityRef = useRef(null);
   const reimbRef = useRef(null);
@@ -86,75 +88,99 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       {seg.academic > 0 && <KpiCard label="Academic program" value={fmtK(seg.academic)} sub="Research + GME + teaching" color="#e67e22" iconKey="graduation" onClick={() => scrollTo(academicRef)} />}
     </div>
 
-    {/* 3-year + Galen quick stats */}
-    <div style={{ display: "flex", gap: 16, marginBottom: 32 }}>
-      <div onClick={() => scrollTo(projRef)} style={{ flex: 1, padding: "20px 22px", background: C.surface, borderRadius: 18, border: `1px solid ${C.border}`, cursor: "pointer", textAlign: "center" }}>
-        <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>3-year projection</div>
-        <div style={{ fontSize: F.h1, fontWeight: 800, color: C.accent }}>{fmtK(r.total3WithReimbursement || r.total3)}</div>
-      </div>
-      {hasGalen && <div style={{ flex: 1, padding: "20px 22px", background: C.accentPale, borderRadius: 18, border: `1px solid ${C.accent}30`, textAlign: "center" }}>
-        <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>Galen payback</div>
-        <div style={{ fontSize: F.h1, fontWeight: 800, color: C.accent }}>{payback.toFixed(1)} yrs</div>
-      </div>}
-    </div>
+
 
     {/* ═══ DETAIL SECTIONS ═══ */}
 
     {/* Year-by-year projection — first section */}
     <div ref={projRef}>
       <Card style={{ marginBottom: 18 }}>
-        <CTitle iconKey="calendar">Year-by-year projection</CTitle>
-
-        {/* 3-year total banner */}
-        <div style={{ textAlign: "center", padding: "16px 0 20px" }}>
-          <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>3-year cumulative savings</div>
-          <div style={{ fontSize: F.hero ? F.hero : 64, fontWeight: 800, color: C.accent, letterSpacing: "-2px" }}>{fmtK(r.total3WithReimbursement || r.total3)}</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <CTitle iconKey="calendar">Savings projection</CTitle>
+          <div style={{ display: "flex", borderRadius: 10, overflow: "hidden", border: `1px solid ${C.border}` }}>
+            {[3, 5].map(n => <button key={n} onClick={() => { setProjYears(n); setTappedBar(null); }} style={{
+              padding: "8px 20px", border: "none", fontSize: F.tiny, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              background: projYears === n ? C.accent : C.surface, color: projYears === n ? "#0a0f1a" : C.textMid,
+            }}>{n}-year</button>)}
+          </div>
         </div>
 
+        {/* Cumulative total banner */}
+        {(() => {
+          const yr3Val = r.yr3R || r.yr3 || 0;
+          const yr4 = yr3Val;
+          const yr5 = yr3Val;
+          const total = projYears === 5
+            ? (r.total3WithReimbursement || r.total3 || 0) + yr4 + yr5
+            : (r.total3WithReimbursement || r.total3 || 0);
+          return <div style={{ textAlign: "center", padding: "12px 0 20px" }}>
+            <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>{projYears}-year cumulative savings</div>
+            <div style={{ fontSize: 56, fontWeight: 800, color: C.accent, letterSpacing: "-2px" }}>{fmtK(total)}</div>
+          </div>;
+        })()}
+
         {/* Year cards */}
-        <div style={{ display: "flex", gap: 14, marginBottom: 20 }}>
-          {[
+        {(() => {
+          const yr3Val = r.yr3R || r.yr3 || 0;
+          const allYrs = [
             { yr: "Year 1", val: r.yr1R || r.yr1, pct: 40 },
             { yr: "Year 2", val: r.yr2R || r.yr2, pct: 80 },
             { yr: "Year 3", val: r.yr3R || r.yr3, pct: 100 },
-          ].map(y => <div key={y.yr} style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
-            <div style={{ fontSize: F.small, color: C.textMuted, marginBottom: 6 }}>{y.yr}</div>
-            <div style={{ fontSize: F.h2, fontWeight: 800, color: C.accent }}>{fmtK(y.val)}</div>
-            <div style={{ fontSize: F.tiny, color: C.textMuted }}>{y.pct}% ramp</div>
-          </div>)}
-        </div>
+            ...(projYears === 5 ? [
+              { yr: "Year 4", val: yr3Val, pct: 100 },
+              { yr: "Year 5", val: yr3Val, pct: 100 },
+            ] : []),
+          ];
+          return <div style={{ display: "flex", gap: projYears === 5 ? 8 : 14, marginBottom: 20 }}>
+            {allYrs.map(y => <div key={y.yr} style={{ flex: 1, padding: projYears === 5 ? "14px 10px" : "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
+              <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>{y.yr}</div>
+              <div style={{ fontSize: projYears === 5 ? F.body : F.h2, fontWeight: 800, color: C.accent }}>{fmtK(y.val)}</div>
+              <div style={{ fontSize: 10, color: C.textMuted }}>{y.pct}%</div>
+            </div>)}
+          </div>;
+        })()}
 
-        {/* Stacked bar chart */}
+        {/* Interactive stacked bar chart */}
         {(() => {
+          const yr3Val = r.yr3R || r.yr3 || 0;
           const yrs = [
             { yr: "Yr 1", pct: 0.4 },
             { yr: "Yr 2", pct: 0.8 },
             { yr: "Yr 3", pct: 1.0 },
+            ...(projYears === 5 ? [{ yr: "Yr 4", pct: 1.0 }, { yr: "Yr 5", pct: 1.0 }] : []),
           ];
-          const maxVal = r.yr3R || r.yr3 || 1;
-          const colors = [
-            { key: "decom", color: C.accent, val: seg.decom },
-            { key: "capacity", color: C.amber, val: seg.capacity },
-            { key: "reimb", color: C.blue, val: seg.reimb },
-            { key: "safety", color: C.purple, val: seg.safety },
-            { key: "network", color: "#8e44ad", val: seg.network },
-            { key: "academic", color: "#e67e22", val: seg.academic },
+          const segments = [
+            { key: "Decommission", color: C.accent, val: seg.decom },
+            { key: "Capacity", color: C.amber, val: seg.capacity },
+            { key: "Reimbursement", color: C.blue, val: seg.reimb },
+            { key: "Patient safety", color: C.purple, val: seg.safety },
+            { key: "Network", color: "#8e44ad", val: seg.network },
+            { key: "Academic", color: "#e67e22", val: seg.academic },
           ].filter(s => s.val > 0);
           const barH = 160;
           return <div style={{ marginBottom: 16 }}>
-            <div style={{ display: "flex", gap: 10, alignItems: "flex-end", height: barH + 30, padding: "0 20px" }}>
-              {yrs.map(y => {
+            <div style={{ display: "flex", gap: projYears === 5 ? 6 : 10, alignItems: "flex-end", height: barH + 30, padding: "0 12px" }}>
+              {yrs.map((y, yi) => {
                 const h = Math.round(barH * y.pct);
                 return <div key={y.yr} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <div style={{ width: "100%", height: h, borderRadius: "10px 10px 4px 4px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-                    {colors.map(s => <div key={s.key} style={{ flex: s.val, background: s.color, minHeight: 2 }} />)}
+                    {segments.map((s, si) => <div key={s.key}
+                      onClick={() => setTappedBar(tappedBar === yi+"-"+si ? null : yi+"-"+si)}
+                      style={{ flex: s.val, background: s.color, minHeight: 2, cursor: "pointer", position: "relative", opacity: tappedBar && tappedBar !== yi+"-"+si ? 0.4 : 1, transition: "opacity .2s" }}>
+                      {tappedBar === yi+"-"+si && <div style={{
+                        position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%)", marginBottom: 4,
+                        padding: "6px 10px", background: "#222", borderRadius: 8, whiteSpace: "nowrap", zIndex: 10,
+                        fontSize: 11, fontWeight: 700, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.4)"
+                      }}>{s.key}: {fmtK(Math.round(s.val * y.pct))}</div>}
+                    </div>)}
                   </div>
                   <div style={{ fontSize: F.tiny, color: C.textMuted, marginTop: 6, fontWeight: 600 }}>{y.yr}</div>
                 </div>;
               })}
             </div>
+            {tappedBar && <div style={{ textAlign: "center", marginTop: 8, fontSize: F.tiny, color: C.textMuted }}>Tap again to dismiss · tap another segment to compare</div>}
             <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 12 }}>
-              {colors.map(s => <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              {segments.map(s => <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <div style={{ width: 8, height: 8, borderRadius: 2, background: s.color }} />
                 <span style={{ fontSize: 10, color: C.textMuted }}>{s.key}</span>
               </div>)}
@@ -163,15 +189,15 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         })()}
 
         <Methodology>
-          <strong>Method:</strong> 3-year phased ramp: Year 1 at 40%, Year 2 at 80%, Year 3 at 100%. Reflects progressive legacy system retirement — data is migrated and interfaces decommissioned over time, not all at once. Each savings category scales proportionally.
+          <strong>Method:</strong> {projYears}-year phased ramp: Year 1 at 40%, Year 2 at 80%, Years 3{projYears === 5 ? "–5" : ""} at 100%. Reflects progressive legacy system retirement — data is migrated and interfaces decommissioned over time. {projYears === 5 ? "Years 4 and 5 represent steady-state savings with all targeted systems fully retired." : ""} Each savings category scales proportionally.
         </Methodology>
       </Card>
     </div>
 
     {/* Decommission */}
     <div ref={decomRef}>
-      <Card style={{ marginBottom: 18 }}>
-        <CTitle iconKey="unlock">Decommission savings</CTitle>
+      <Card style={{ marginBottom: 18, borderLeft: `3px solid ${C.accent}` }}>
+        <CTitle iconKey="unlock" color={C.accent}>Decommission savings</CTitle>
         <Row label="Legacy systems in scope" value={r.legacy} />
         <Row label="Systems retired" value={r.decom} />
         <Row label="Total estate cost" value={fmtK(r.totalEstate) + "/yr"} />
@@ -184,8 +210,8 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     {/* Capacity */}
     <div ref={capacityRef}>
-      <Card style={{ marginBottom: 18 }}>
-        <CTitle iconKey="clock">Clinical capacity</CTitle>
+      <Card style={{ marginBottom: 18, borderLeft: `3px solid ${C.amber}` }}>
+        <CTitle iconKey="clock" color={C.amber}>Clinical capacity</CTitle>
         <Row label="Total staff" value={fmtNum(r.totalStaff)} />
         <Row label="Active system users (65%)" value={fmtNum(r.clinicians)} />
         <Row label="Systems per user (~35% exposure)" value={r.systemsPerUser} />
@@ -201,8 +227,8 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     {/* Reimbursement */}
     {seg.reimb > 0 && <div ref={reimbRef}>
-      <Card style={{ marginBottom: 18 }}>
-        <CTitle iconKey="dollar">Reimbursement & compliance</CTitle>
+      <Card style={{ marginBottom: 18, borderLeft: `3px solid ${C.blue}` }}>
+        <CTitle iconKey="dollar" color={C.blue}>Reimbursement & compliance</CTitle>
         {r.hrrpReduction > 0 && <Row label="HRRP penalty recovery" value={fmtK(r.hrrpReduction)} />}
         {r.hacReduction > 0 && <Row label="HAC improvement" value={fmtK(r.hacReduction)} />}
         {r.vbpImprovement > 0 && <Row label="VBP opportunity" value={fmtK(r.vbpImprovement)} />}
@@ -216,8 +242,8 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     {/* Patient safety */}
     <div ref={safetyRef}>
-      <Card style={{ marginBottom: 18 }}>
-        <CTitle iconKey="shield">Patient safety impact</CTitle>
+      <Card style={{ marginBottom: 18, borderLeft: `3px solid ${C.purple}` }}>
+        <CTitle iconKey="shield" color={C.purple}>Patient safety impact</CTitle>
         <Row label="Medication errors avoided" value={fmtNum(r.safetyMedErrorsAvoided)} />
         <Row label="Patients protected from harm" value={fmtNum(r.safetyPatientsProtected)} />
         <Row label="Excess bed days avoided" value={fmtNum(r.safetyBedDaysAvoided)} />
@@ -234,8 +260,8 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     {/* Network consolidation — only for multi-hospital/IDN */}
     {seg.network > 0 && <div ref={networkRef}>
-      <Card style={{ marginBottom: 18 }}>
-        <CTitle iconKey="network">Network consolidation</CTitle>
+      <Card style={{ marginBottom: 18, borderLeft: "3px solid #8e44ad" }}>
+        <CTitle iconKey="network" color="#8e44ad">Network consolidation</CTitle>
         <div style={{ marginBottom: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>
           Multi-facility health systems typically run duplicate instances of the same legacy system across sites. Consolidating to a single archive eliminates redundant licensing, infrastructure, and support contracts.
         </div>
@@ -253,8 +279,8 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     {/* Academic program — only for academic medical centers */}
     {seg.academic > 0 && <div ref={academicRef}>
-      <Card style={{ marginBottom: 18 }}>
-        <CTitle iconKey="graduation">Academic program savings</CTitle>
+      <Card style={{ marginBottom: 18, borderLeft: "3px solid #e67e22" }}>
+        <CTitle iconKey="graduation" color="#e67e22">Academic program savings</CTitle>
         {r.researchDecomSave > 0 && <Row label="Research system decommission" value={fmtK(r.researchDecomSave)} />}
         {r.gmeEfficiency > 0 && <Row label="Graduate Medical Education (GME) compliance" value={fmtK(r.gmeEfficiency)} />}
         {r.teachingOverhead > 0 && <Row label="Teaching program overhead" value={fmtK(r.teachingOverhead)} />}
@@ -272,7 +298,14 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Met label="Migration cost" value={fmtK(galenMigrationCost)} />
         <Met label="Annual cost" value={fmtK(galenAnnualCost) + "/yr"} />
         <Met label="Payback period" value={payback.toFixed(1) + " yrs"} />
-        <Met label="Return multiple" value={Math.round(r.decomSave / Math.max(1, galenMigrationCost)) + "x"} />
+        <Met label={projYears + "-year return"} value={(() => {
+          const yr3 = r.yr3R || r.yr3 || 0;
+          const totalSav = projYears === 5
+            ? (r.total3WithReimbursement || r.total3 || 0) + yr3 + yr3
+            : (r.total3WithReimbursement || r.total3 || 0);
+          const totalCost = galenMigrationCost + galenAnnualCost * projYears;
+          return Math.round((totalSav - totalCost) / Math.max(1, totalCost) * 100) + "% ROI";
+        })()} />
       </div>
       <div style={{ marginTop: 16, padding: "12px 16px", background: C.bg, borderRadius: 12, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.6 }}>
         Payback = migration cost ÷ (annual decom savings − annual archive cost). The {fmtK(r.decomSave)}/yr in decommission savings is only unlocked when legacy systems are safely retired — Galen enables this by providing continued access to historical data.
@@ -358,8 +391,8 @@ function CompositionItem({ color, label, value, pct }) {
   </div>;
 }
 
-function CTitle({ iconKey, children }) {
-  return <div style={{ fontSize: F.body, fontWeight: 700, color: C.textMid, marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}><Icon name={iconKey} size={24} stroke={C.accent} /> {children}</div>;
+function CTitle({ iconKey, children, color }) {
+  return <div style={{ fontSize: F.body, fontWeight: 700, color: C.textMid, marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}><Icon name={iconKey} size={24} stroke={color || C.accent} /> {children}</div>;
 }
 function Row({ label, value, accent }) {
   return <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
