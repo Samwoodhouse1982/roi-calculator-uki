@@ -108,6 +108,7 @@ export function FacilitiesStep({ inputs, update, facilities, setFacility }) {
 // STEP 4: Systems
 export function SystemsStep({ inputs, updateTier, flagships, addFlagship, removeFlagship, updateFlagshipCost, costMode, setCostMode, knownSpend, setKnownSpend }) {
   const [openTier, setOpenTier] = useState(null);
+  const [selected, setSelected] = useState([]);
   const tiers = [
     { key: "enterprise", label: "Enterprise", color: C.accent, hint: "Including legacy EHR, ERP, RCM", max: Math.max(10, inputs.tiers.enterprise + 3) },
     { key: "departmental", label: "Departmental", color: C.blue, hint: "Including laboratory, pharmacy, perinatal, imaging/PACS, cardiology, and radiology", max: Math.max(30, inputs.tiers.departmental + 5) },
@@ -168,13 +169,28 @@ export function SystemsStep({ inputs, updateTier, flagships, addFlagship, remove
             })}
           </div>}
           {tierSystems.length > 0 && <>
-            <div onClick={() => setOpenTier(openTier === t.key ? null : t.key)} style={{ marginTop: 8, fontSize: F.tiny, color: C.accent, cursor: "pointer", fontWeight: 600 }}>
+            <div onClick={() => { setOpenTier(openTier === t.key ? null : t.key); setSelected([]); }} style={{ marginTop: 8, fontSize: F.tiny, color: C.accent, cursor: "pointer", fontWeight: 600 }}>
               {openTier === t.key ? "▾" : "▸"} Name a specific system
             </div>
-            {openTier === t.key && <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-              {tierSystems.map(sys => <button key={sys.label} onClick={() => { addFlagship(sys, t.key); setOpenTier(null); }} style={{ padding: "8px 14px", fontSize: F.tiny, fontWeight: 600, border: `1px solid ${C.borderLight}`, borderRadius: 10, background: C.bg, cursor: "pointer", color: C.textMid, fontFamily: "inherit" }}>
-                {sys.label} <span style={{ color: C.textMuted }}>({fmtK(systemCost(sys, inputs.bed_count))})</span>
-              </button>)}
+            {openTier === t.key && <div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                {tierSystems.filter(sys => !tierFlagships.some(f => f.name === sys.label)).map(sys => {
+                  const isSel = selected.some(s => s.label === sys.label);
+                  return <button key={sys.label} onClick={() => setSelected(p => isSel ? p.filter(s => s.label !== sys.label) : [...p, sys])} style={{
+                    padding: "8px 14px", fontSize: F.tiny, fontWeight: 600, borderRadius: 10, cursor: "pointer", fontFamily: "inherit", transition: "all .15s",
+                    border: isSel ? `2px solid ${t.color}` : `1px solid ${C.borderLight}`,
+                    background: isSel ? t.color + "18" : C.bg,
+                    color: isSel ? t.color : C.textMid,
+                  }}>
+                    {isSel ? "✓ " : ""}{sys.label} <span style={{ color: C.textMuted }}>({fmtK(systemCost(sys, inputs.bed_count))})</span>
+                  </button>;
+                })}
+              </div>
+              {selected.length > 0 && <button onClick={() => { selected.forEach(sys => addFlagship(sys, t.key)); setSelected([]); setOpenTier(null); }} style={{
+                marginTop: 10, padding: "14px 32px", borderRadius: 14, border: "none",
+                background: t.color, color: "#0a0f1a", fontSize: F.small, fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit", width: "100%"
+              }}>Add {selected.length} system{selected.length > 1 ? "s" : ""}</button>}
             </div>}
           </>}
         </Card>;
