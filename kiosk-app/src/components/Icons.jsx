@@ -64,74 +64,65 @@ export const IconIDN = ({ size, stroke }) => <I size={size} stroke={stroke}>
 // FACILITY TYPES
 // ══════════════════════════════════════════════
 
-// Ambulatory Surgery Center - operating light (surgical lamp from above)
+// Ambulatory Surgery Center - medical facility with cross
 export const IconSurgery = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <path d="M12 2v4" />
-  <path d="M8 6h8" />
-  <circle cx="12" cy="11" r="5" />
-  <circle cx="12" cy="11" r="2" />
-  <path d="M12 16v2" />
-  <path d="M8 21h8" />
-  <path d="M10 18h4" />
+  <rect x="3" y="4" width="18" height="17" rx="2" />
+  <path d="M3 8h18" />
+  <path d="M12 12v6M9 15h6" />
 </I>;
 
-// Physician Practices - stethoscope (Tabler-inspired)
+// Physician Practices - stethoscope (clean U-shape with chest piece)
 export const IconPhysician = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <path d="M6 4H5a2 2 0 00-2 2v3.5a5.5 5.5 0 0011 0V6a2 2 0 00-2-2h-1" />
-  <path d="M8 15a6 6 0 1012 0v-3" />
-  <path d="M11 3v2M6 3v2" />
-  <circle cx="20" cy="10" r="2" />
+  <path d="M7 3v3a5 5 0 005 5h0a5 5 0 005-5V3" />
+  <path d="M12 11v4a3 3 0 003 3h0a3 3 0 003-3v-2" />
+  <circle cx="18" cy="20" r="2.5" />
 </I>;
 
-// Urgent Care - clock with medical cross (time-critical care)
+// Urgent Care - shield with medical cross
 export const IconUrgentCare = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <circle cx="12" cy="13" r="9" />
-  <path d="M12 4v3" />
-  <path d="M12 10v3l2 1.5" />
-  <path d="M4.5 7l1 .5" />
-  <path d="M19.5 7l-1 .5" />
+  <path d="M12 2l8 4v5c0 5.5-3.5 10-8 12-4.5-2-8-6.5-8-12V6l8-4z" />
+  <path d="M12 9v6M9 12h6" />
 </I>;
 
-// Imaging Centers - X-ray film on lightbox
+// Imaging Centers - diagnostic monitor with waveform
 export const IconImaging = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <rect x="3" y="2" width="18" height="20" rx="2" />
-  <rect x="6" y="5" width="12" height="14" rx="1" />
-  <path d="M12 7v5" />
-  <path d="M9 9l3 1.5L15 9" />
-  <path d="M10 12l-1 5" />
-  <path d="M14 12l1 5" />
-  <path d="M9.5 14h5" />
+  <rect x="2" y="3" width="20" height="14" rx="2" />
+  <path d="M4 12h4l2-3 2 6 2-3h6" />
+  <path d="M12 17v2" />
+  <path d="M8 21h8" />
 </I>;
 
-// Dialysis - kidney bean with artery
+// Dialysis - IV bag with drip drop
 export const IconDialysis = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <path d="M4 12c0-5 3-9 7-9 3 0 5 2 5 5s-2 4-5 4c-4 0-7 4-7 9" />
-  <path d="M20 12c0 5-3 9-7 9-3 0-5-2-5-5s2-4 5-4c4 0 7-4 7-9" />
-  <path d="M12 8v8" />
+  <path d="M12 2v2" />
+  <rect x="7" y="4" width="10" height="10" rx="1.5" />
+  <path d="M10 7h4M10 10h4" />
+  <path d="M12 14v3" />
+  <path d="M12 19c-1.5 0-2.5 1-2.5 2s1 2 2.5 2 2.5-1 2.5-2-1-2-2.5-2z" />
 </I>;
 
-// Skilled Nursing Facility - healthcare cross with heart
+// Skilled Nursing Facility - person sitting in bed
 export const IconSNF = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <path d="M9 3h6v5h5v6h-5v5H9v-5H4V8h5V3z" />
-  <path d="M12 9.5c-.5-.8-1.8-1-2.2-.2s.3 1.7 2.2 3c1.9-1.3 2.5-2.2 2.2-3s-1.7-.6-2.2.2z" />
+  <circle cx="8" cy="6" r="2.5" />
+  <path d="M6 11c0-1 1-2 2-2s2 1 2 2v3H6v-3z" />
+  <path d="M3 17h18" />
+  <path d="M10 14h8v3" />
+  <path d="M3 14v6M21 17v3" />
+  <path d="M5 20h2M17 20h2" />
 </I>;
 
-// Home Health - house with heart inside
+// Home Health - house with heart
 export const IconHomeHealth = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <path d="M3 10.5L12 3l9 7.5" />
-  <path d="M5 9.5V20a1 1 0 001 1h12a1 1 0 001-1V9.5" />
-  <path d="M12 13c-.7-1-2.2-1.2-2.8-.3-.6.9.2 2.1 2.8 3.8 2.6-1.7 3.4-2.9 2.8-3.8-.6-.9-2.1-.7-2.8.3z" />
+  <path d="M3 10l9-7 9 7" />
+  <path d="M5 9v11a1 1 0 001 1h12a1 1 0 001-1V9" />
+  <path d="M12 13.5c-.8-1.2-2.5-1.5-3-.5s.5 2.5 3 4.5c2.5-2 3.5-3.5 3-4.5s-2.2-.7-3 .5z" />
 </I>;
 
-// Behavioral Health - brain with two hemispheres and sulci
+// Behavioral Health - brain outline with heart
 export const IconBehavioral = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <path d="M12 2C9 2 7 3.5 6.5 5.5c-1 0-2.5.5-3 2S3 11 4.5 12c-1 1.5-.5 3.5 1 4.5s3 .5 3.5 0c.5 1.5 2 2.5 3 2.5" />
-  <path d="M12 2c3 0 5 1.5 5.5 3.5 1 0 2.5.5 3 2s.5 3.5-1 4.5c1 1.5.5 3.5-1 4.5s-3 .5-3.5 0c-.5 1.5-2 2.5-3 2.5" />
-  <path d="M12 2v17" />
-  <path d="M7 8c1.5.5 3 .5 5-.5" />
-  <path d="M17 8c-1.5.5-3 .5-5-.5" />
-  <path d="M7.5 13c1.5-.5 3-.5 4.5.5" />
-  <path d="M16.5 13c-1.5-.5-3-.5-4.5.5" />
+  <path d="M12 3c-1.5 0-3 .5-4 1.5s-1.5 2-2 3c-.5 1.5-.5 3 0 4s1 1.5 1 2.5c0 1.5.5 3 1.5 4S10.5 20 12 20" />
+  <path d="M12 3c1.5 0 3 .5 4 1.5s1.5 2 2 3c.5 1.5.5 3 0 4s-1 1.5-1 2.5c0 1.5-.5 3-1.5 4S13.5 20 12 20" />
+  <path d="M12 12c-.6-.9-1.8-1.1-2.2-.3s.3 1.6 2.2 3c1.9-1.4 2.5-2.2 2.2-3s-1.6-.6-2.2.3z" />
 </I>;
 
 // Rehabilitation - person doing arm exercise with dumbbell
@@ -146,17 +137,10 @@ export const IconRehab = ({ size, stroke }) => <I size={size} stroke={stroke}>
   <path d="M16 3v3" />
 </I>;
 
-// Long-Term Acute Care - hospital bed with raised head, side rails, monitor
+// Long-Term Acute Care - heart with ECG pulse line
 export const IconLTACH = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <path d="M2 16h18" />
-  <path d="M4 16V9l5-3v10" />
-  <path d="M9 16h8" />
-  <path d="M20 16v-4a2 2 0 00-2-2H9" />
-  <circle cx="4" cy="18.5" r="1.5" />
-  <circle cx="18" cy="18.5" r="1.5" />
-  <path d="M6 10v3" />
-  <path d="M15 10v3" />
-  <path d="M22 4v4M21 4h2" />
+  <path d="M20 8.5c0-2.5-2-4.5-4.5-4.5-1.5 0-2.8.7-3.5 1.8C11.3 4.7 10 4 8.5 4 6 4 4 6 4 8.5c0 5 8 11.5 8 11.5s8-6.5 8-11.5z" />
+  <path d="M4 12h4l1.5-2 2 4 1.5-2H20" />
 </I>;
 
 // ══════════════════════════════════════════════
