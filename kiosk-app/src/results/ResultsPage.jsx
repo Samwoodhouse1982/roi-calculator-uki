@@ -25,11 +25,18 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
   const projRef = useRef(null);
   const scrollTo = ref => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  const cashable = r.decomSave + (r.reimbursementImpact || 0) + (r.duplicateElimination || 0) + (r.infraConsolidation || 0);
-  const capacity = r.timeSave || 0;
-  const reimbursement = r.reimbursementImpact || 0;
+  // Use the engine's comprehensive total — all components sum exactly to this
+  const totalAnnual = r.annualWithReimbursement || 0;
+  // Non-overlapping segments that sum to totalAnnual
+  const seg = {
+    decom:    r.decomSave || 0,
+    capacity: r.timeSave || 0,
+    reimb:    r.reimbursementImpact || 0,
+    safety:   r.qualitySavings || 0,
+    academic: r.academicSavings || 0,
+    network:  r.mergeSavings || 0,
+  };
   const fte = r.hrsSaved ? Math.round(r.hrsSaved * (r.realization || 0.3) / 1824) : 0;
-  const combinedAnnual = cashable + capacity + (r.qualitySavings || 0);
   const hasGalen = galenMigrationCost > 0;
   const payback = hasGalen ? galenMigrationCost / Math.max(1, r.decomSave - galenAnnualCost) : 0;
 
@@ -40,30 +47,36 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {/* Hero */}
     <div style={{ textAlign: "center", marginBottom: 20, padding: "24px 0" }}>
       <div style={{ fontSize: F.body, fontWeight: 600, color: C.textMuted, letterSpacing: 4, textTransform: "uppercase", marginBottom: 16 }}>Estimated annual savings</div>
-      <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-4px", animation: "glow 3s ease-in-out infinite" }}>{fmtK(combinedAnnual)}</div>
+      <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-4px", animation: "glow 3s ease-in-out infinite" }}>{fmtK(totalAnnual)}</div>
       <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>per year at steady state</div>
     </div>
 
-    {/* Composition bar — shows how the topline is built */}
+    {/* Composition bar — every segment sums exactly to the topline */}
     <div style={{ marginBottom: 32, padding: "0 12px" }}>
       <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", marginBottom: 12 }}>
-        {cashable > 0 && <div style={{ flex: cashable, background: C.accent, transition: "flex .5s" }} />}
-        {capacity > 0 && <div style={{ flex: capacity, background: C.amber, transition: "flex .5s" }} />}
-        {(r.qualitySavings || 0) > 0 && <div style={{ flex: r.qualitySavings, background: C.purple, transition: "flex .5s" }} />}
+        {seg.decom > 0 && <div style={{ flex: seg.decom, background: C.accent }} />}
+        {seg.capacity > 0 && <div style={{ flex: seg.capacity, background: C.amber }} />}
+        {seg.reimb > 0 && <div style={{ flex: seg.reimb, background: C.blue || "#4a90d9" }} />}
+        {seg.safety > 0 && <div style={{ flex: seg.safety, background: C.purple }} />}
+        {seg.academic > 0 && <div style={{ flex: seg.academic, background: "#e67e22" }} />}
+        {seg.network > 0 && <div style={{ flex: seg.network, background: "#8e44ad" }} />}
       </div>
-      <div style={{ display: "flex", gap: 20, justifyContent: "center", flexWrap: "wrap" }}>
-        <CompositionItem color={C.accent} label="Cashable" value={fmtK(cashable)} pct={Math.round(cashable / Math.max(1, combinedAnnual) * 100)} />
-        <CompositionItem color={C.amber} label="Capacity" value={fmtK(capacity)} pct={Math.round(capacity / Math.max(1, combinedAnnual) * 100)} />
-        {(r.qualitySavings || 0) > 0 && <CompositionItem color={C.purple} label="Cost avoidance" value={fmtK(r.qualitySavings)} pct={Math.round((r.qualitySavings || 0) / Math.max(1, combinedAnnual) * 100)} />}
+      <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+        <CompositionItem color={C.accent} label="Decommission" value={fmtK(seg.decom)} pct={Math.round(seg.decom / Math.max(1, totalAnnual) * 100)} />
+        <CompositionItem color={C.amber} label="Capacity" value={fmtK(seg.capacity)} pct={Math.round(seg.capacity / Math.max(1, totalAnnual) * 100)} />
+        {seg.reimb > 0 && <CompositionItem color={C.blue || "#4a90d9"} label="Reimbursement" value={fmtK(seg.reimb)} pct={Math.round(seg.reimb / Math.max(1, totalAnnual) * 100)} />}
+        {seg.safety > 0 && <CompositionItem color={C.purple} label="Patient safety" value={fmtK(seg.safety)} pct={Math.round(seg.safety / Math.max(1, totalAnnual) * 100)} />}
+        {seg.academic > 0 && <CompositionItem color="#e67e22" label="Academic" value={fmtK(seg.academic)} pct={Math.round(seg.academic / Math.max(1, totalAnnual) * 100)} />}
+        {seg.network > 0 && <CompositionItem color="#8e44ad" label="Network" value={fmtK(seg.network)} pct={Math.round(seg.network / Math.max(1, totalAnnual) * 100)} />}
       </div>
     </div>
 
-    {/* KPI grid — financial + clinical + jump links */}
+    {/* KPI grid — each card maps to a segment above, tappable to jump to detail */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
-      <KpiCard label="Legacy decommission" value={fmtK(r.decomSave)} sub={`${r.decom} of ${r.legacy} systems retired`} color={C.accent} icon="🔓" onClick={() => scrollTo(decomRef)} />
-      <KpiCard label="Clinical capacity" value={`${fmtNum(fte)} FTE freed`} sub={`${fmtNum(r.hrsSaved)} hrs/yr recovered`} color={C.amber} icon="⏱️" onClick={() => scrollTo(capacityRef)} />
-      <KpiCard label="Reimbursement impact" value={fmtK(reimbursement)} sub="CMS penalty + denial recovery" color={C.blue} icon="💵" onClick={() => scrollTo(reimbRef)} />
-      <KpiCard label="Patient safety" value={`${fmtNum(r.safetyPatientsProtected)} protected`} sub={`${fmtNum(r.safetyMedErrorsAvoided)} med errors avoided`} color={C.rose} icon="🛡️" onClick={() => scrollTo(safetyRef)} />
+      <KpiCard label="Legacy decommission" value={fmtK(seg.decom)} sub={`${r.decom} of ${r.legacy} systems retired`} color={C.accent} icon="🔓" onClick={() => scrollTo(decomRef)} />
+      <KpiCard label="Clinical capacity" value={`${fmtNum(fte)} FTE freed`} sub={`${fmtK(seg.capacity)}/yr value`} color={C.amber} icon="⏱️" onClick={() => scrollTo(capacityRef)} />
+      <KpiCard label="Reimbursement impact" value={fmtK(seg.reimb)} sub="CMS penalty + denial recovery" color={C.blue || "#4a90d9"} icon="💵" onClick={() => scrollTo(reimbRef)} />
+      <KpiCard label="Patient safety" value={fmtK(seg.safety)} sub={`${fmtNum(r.safetyPatientsProtected)} patients protected`} color={C.purple} icon="🛡️" onClick={() => scrollTo(safetyRef)} />
     </div>
 
     {/* 3-year + Galen quick stats */}
@@ -104,7 +117,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Row label="Time wasted per person/week" value={`${r.minsWasted} mins`} />
         <Row label="Hours freed per year" value={fmtNum(r.hrsSaved)} />
         <Row label="FTE equivalent" value={fmtNum(fte)} accent />
-        <Row label="Capacity value" value={fmtK(capacity) + "/yr"} accent />
+        <Row label="Capacity value" value={fmtK(seg.capacity) + "/yr"} accent />
         <Methodology>
           <strong>Method:</strong> Of {fmtNum(r.totalStaff)} total staff, {fmtNum(r.clinicians)} (65%) are regular system users. Each navigates ~{r.systemsPerUser} of {r.legacy} systems (35% exposure). Switch penalty of 4% per system applies only to touched systems. Hours freed valued at $95/hr with {Math.round((r.realization || 0.3) * 100)}% realization. Evidence: HIMSS analytics, Westbrook et al JAMIA 2010.
         </Methodology>
@@ -112,14 +125,14 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     </div>
 
     {/* Reimbursement */}
-    {reimbursement > 0 && <div ref={reimbRef}>
+    {seg.reimb > 0 && <div ref={reimbRef}>
       <Card style={{ marginBottom: 18 }}>
         <CTitle icon="💵">Reimbursement & compliance</CTitle>
         {r.hrrpReduction > 0 && <Row label="HRRP penalty recovery" value={fmtK(r.hrrpReduction)} />}
         {r.hacReduction > 0 && <Row label="HAC improvement" value={fmtK(r.hacReduction)} />}
         {r.vbpImprovement > 0 && <Row label="VBP opportunity" value={fmtK(r.vbpImprovement)} />}
         {r.denialRecovery > 0 && <Row label="Denial recovery" value={fmtK(r.denialRecovery)} />}
-        <Row label="Total reimbursement impact" value={fmtK(reimbursement) + "/yr"} accent />
+        <Row label="Total reimbursement impact" value={fmtK(seg.reimb) + "/yr"} accent />
         <Methodology>
           <strong>Method:</strong> CMS penalty programs (HRRP 3% max, HAC 1%, VBP 2% withhold) modeled from FY2025 data. Denial recovery at 4.8% net revenue loss (HFMA 2024). Better documentation from system consolidation reduces penalties and denials. Evidence: Pattar et al JAMA 2025, Vest et al JAMIA 2019.
         </Methodology>
