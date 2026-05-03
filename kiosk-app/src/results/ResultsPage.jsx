@@ -285,6 +285,29 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       </Methodology>
     </Card>
 
+    {/* Legal & compliance */}
+    <Card style={{ marginBottom: 18, borderLeft: "3px solid #e74c3c" }}>
+      <CTitle iconKey="shield" color="#e74c3c">Legal and compliance</CTitle>
+      <div style={{ display: "flex", gap: 14, marginBottom: 16 }}>
+        <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
+          <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>e-Discovery savings</div>
+          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#e74c3c" }}>{fmtK(r.ediscoverySaving)}/yr</div>
+          <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 6 }}>{r.litigationCases} cases/yr, {Math.round((r.ediscoverySaving / Math.max(1, r.litigationCases)))} saved per case</div>
+        </div>
+        <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
+          <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>Cyber risk reduction</div>
+          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#e74c3c" }}>{r.cyberSystemsRetired} systems</div>
+          <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 6 }}>attack surfaces eliminated</div>
+        </div>
+      </div>
+      <div style={{ padding: "12px 16px", background: "#2a1015", borderRadius: 12, fontSize: F.tiny, color: "#e8a0a0", lineHeight: 1.6, marginBottom: 12 }}>
+        Average healthcare data breach: $10.93m (IBM/Ponemon 2023). Each legacy system on an unsupported operating system is a potential attack vector. 90% of healthcare organisations experienced a cyberattack in 2024. Retiring {r.cyberSystemsRetired} systems directly reduces your exposure.
+      </div>
+      <Methodology>
+        <strong>Method:</strong> e-Discovery: {r.litigationCases} litigation cases/yr ({Math.round(12)} per 100 beds). Records assembly across {r.legacy} legacy systems averages 28 hrs/case (3.5 days); consolidated archive reduces to 6 hrs (0.75 days). HIM staff rate: $55/hr. Cyber risk: each legacy system contributes approximately 4% to breach probability (based on 70% of hospitals breached over 3 years, with legacy systems on unsupported OS as primary vectors).
+      </Methodology>
+    </Card>
+
     {/* Network consolidation - only for multi-hospital/IDN */}
     {seg.network > 0 && <div ref={networkRef}>
       <Card style={{ marginBottom: 18, borderLeft: "3px solid #8e44ad" }}>

@@ -82,7 +82,17 @@ export const DENIAL_FRAGMENTATION_ATTRIBUTION = 0.35;  // 35% of denials attribu
                                                          // Remaining 65%: coding errors, clinical documentation, payer rules
                                                          // Advisory Board 2024: documentation gaps from fragmented systems
                                                          // are the #2 root cause of denials after authorization issues
-export const PATHOLOGY_COST_PER_BED = 8500;              // ~$8,500 per bed in lab/imaging spend // Per-facility duplicate infrastructure (data center, network, help desk)
+export const PATHOLOGY_COST_PER_BED = 8500;
+
+// Legal & compliance
+export const EDISCOVERY_CASES_PER_100_BEDS = 12;       // Malpractice, employment, slip-and-fall, contract disputes
+export const EDISCOVERY_HRS_PER_CASE_BEFORE = 28;      // 3.5 days x 8 hrs: searching across multiple legacy systems
+export const EDISCOVERY_HRS_PER_CASE_AFTER = 6;        // 0.75 days x 8 hrs: single archive search
+export const EDISCOVERY_HOURLY_RATE = 55;               // HIM / legal records staff blended rate
+export const CYBER_BREACH_AVG_COST = 10930000;          // $10.93m avg healthcare breach (IBM/Ponemon 2023)
+export const CYBER_LEGACY_RISK_FACTOR = 0.04;           // Each legacy system contributes ~4% to breach probability
+                                                         // Based on: 70% of hospitals breached over 3 years, legacy
+                                                         // systems on unsupported OS are primary attack vectors              // ~$8,500 per bed in lab/imaging spend // Per-facility duplicate infrastructure (data center, network, help desk)
 export const CROSS_FACILITY_STANDARDISATION_PCT = 0.15; // 15% of operational costs addressable through standardization
 
 // ROI Calculator Engine
@@ -243,13 +253,21 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const infraConsolidation = Math.round(duplicateInfraCost * 0.60 * sc.decom_pct); // 60% consolidatable
   const standardizationSave = isMultiHospital ? Math.round(totalEstate * CROSS_FACILITY_STANDARDISATION_PCT * sc.decom_pct) : 0;
 
+  // ── Legal & Compliance ──
+  const litigationCases = Math.round(inp.bed_count / 100 * EDISCOVERY_CASES_PER_100_BEDS);
+  const ediscoverySaveBefore = litigationCases * EDISCOVERY_HRS_PER_CASE_BEFORE * EDISCOVERY_HOURLY_RATE;
+  const ediscoverySaveAfter = litigationCases * EDISCOVERY_HRS_PER_CASE_AFTER * EDISCOVERY_HOURLY_RATE;
+  const ediscoverySaving = Math.round((ediscoverySaveBefore - ediscoverySaveAfter) * sc.decom_pct);
+  const cyberSystemsRetired = decom;
+  const cyberRiskReduction = Math.round(cyberSystemsRetired * CYBER_LEGACY_RISK_FACTOR * 100); // percentage points
+
   // Module totals
   const academicSavings = researchDecomSave + gmeEfficiency + teachingOverhead;
   const mergeSavings = duplicateElimination + infraConsolidation + standardizationSave;
 
   // Total reimbursement impact
   const reimbursementImpact = hrrpReduction + hacReduction + vbpImprovement + denialRecovery;
-  const qualitySavings = malpracticeReduction + excessDayCostAvoided + duplicateReduction;
+  const qualitySavings = malpracticeReduction + excessDayCostAvoided + duplicateReduction + ediscoverySaving;
 
   const annual = decomSave + timeSave;
   const annualWithReimbursement = annual + reimbursementImpact + qualitySavings + academicSavings + mergeSavings;
@@ -281,6 +299,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
     preventableADEs, excessDaysAvoided, excessDayCostAvoided,
     duplicateWaste, duplicateReduction,
     reimbursementImpact, qualitySavings,
+    litigationCases, ediscoverySaving, cyberSystemsRetired, cyberRiskReduction,
     // Academic module
     isAcademic, researchSystems, researchSystemCost, researchDecomSave,
     gmeComplianceCost, gmeEfficiency, teachingOverhead, academicSavings,
