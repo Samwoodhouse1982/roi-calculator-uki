@@ -82,7 +82,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
       <KpiCard label="Legacy decommission" value={fmtK(seg.decom)} sub={`${r.decom} of ${r.legacy} systems retired`} color={C.accent} iconKey="unlock" onClick={() => scrollTo(decomRef)} />
       <KpiCard label="Clinical capacity" value={`${fmtFte(fte)} FTE freed`} sub={`${fmtK(seg.capacity)}/yr value`} color={C.amber} iconKey="clock" onClick={() => scrollTo(capacityRef)} />
-      {seg.reimb > 0 && <KpiCard label="Reimbursement impact" value={fmtK(seg.reimb)} sub="CMS penalty + denial recovery" color={C.blue} iconKey="dollar" onClick={() => scrollTo(reimbRef)} />}
+      {seg.reimb > 0 && <KpiCard label="Reimbursement impact" value={fmtK(seg.reimb)} sub="CMS penalties + denial recovery" color={C.blue} iconKey="dollar" onClick={() => scrollTo(reimbRef)} />}
       {seg.safety > 0 && <KpiCard label="Patient safety" value={fmtK(seg.safety)} sub={`${fmtNum(r.safetyPatientsProtected)} patients protected`} color={C.purple} iconKey="shield" onClick={() => scrollTo(safetyRef)} />}
       {seg.network > 0 && <KpiCard label="Network consolidation" value={fmtK(seg.network)} sub={`${r.duplicateSystems} duplicate systems across ${r.org_count || ""} facilities`} color="#8e44ad" iconKey="network" onClick={() => scrollTo(networkRef)} />}
       {seg.academic > 0 && <KpiCard label="Academic program" value={fmtK(seg.academic)} sub="Research + GME + teaching" color="#e67e22" iconKey="graduation" onClick={() => scrollTo(academicRef)} />}
@@ -219,10 +219,10 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Row label="Systems per user (~35% exposure)" value={r.systemsPerUser} />
         <Row label="Time wasted per person/week" value={`${r.minsWasted} mins`} />
         <Row label="Hours freed per year" value={fmtNum(r.hrsSaved)} />
-        <Row label="FTE equivalent" value={fmtFte(fte)} accent />
+        <Row label="Full-time equivalent (FTE)" value={fmtFte(fte)} accent />
         <Row label="Capacity value" value={fmtK(seg.capacity) + "/yr"} accent />
         <Methodology>
-          <strong>Method:</strong> Of {fmtNum(r.totalStaff)} total staff, {fmtNum(r.clinicians)} (65%) are regular system users. Each navigates ~{r.systemsPerUser} of {r.legacy} systems (35% exposure). Switch penalty of 4% per system applies only to touched systems. Hours freed valued at $95/hr with {Math.round((r.realization || 0.3) * 100)}% realization. Evidence: HIMSS analytics, Westbrook et al JAMIA 2010.
+          <strong>Method:</strong> Of {fmtNum(r.totalStaff)} total staff, {fmtNum(r.clinicians)} (65%) are regular system users. Each navigates ~{r.systemsPerUser} of {r.legacy} systems (35% exposure). Switch penalty of 4% per system applies only to touched systems. Hours freed valued at $95/hr blended rate with {Math.round((r.realization || 0.3) * 100)}% realization. Evidence: HIMSS analytics, Westbrook et al JAMIA 2010.
         </Methodology>
       </Card>
     </div>
@@ -231,13 +231,13 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {seg.reimb > 0 && <div ref={reimbRef}>
       <Card style={{ marginBottom: 18, borderLeft: `3px solid ${C.blue}` }}>
         <CTitle iconKey="dollar" color={C.blue}>Reimbursement & compliance</CTitle>
-        {r.hrrpReduction > 0 && <Row label="HRRP penalty recovery" value={fmtK(r.hrrpReduction)} />}
-        {r.hacReduction > 0 && <Row label="HAC improvement" value={fmtK(r.hacReduction)} />}
-        {r.vbpImprovement > 0 && <Row label="VBP opportunity" value={fmtK(r.vbpImprovement)} />}
+        {r.hrrpReduction > 0 && <Row label="Hospital Readmissions Reduction Program (HRRP) recovery" value={fmtK(r.hrrpReduction)} />}
+        {r.hacReduction > 0 && <Row label="Hospital-Acquired Condition (HAC) improvement" value={fmtK(r.hacReduction)} />}
+        {r.vbpImprovement > 0 && <Row label="Value-Based Purchasing (VBP) opportunity" value={fmtK(r.vbpImprovement)} />}
         {r.denialRecovery > 0 && <Row label="Denial recovery" value={fmtK(r.denialRecovery)} />}
         <Row label="Total reimbursement impact" value={fmtK(seg.reimb) + "/yr"} accent />
         <Methodology>
-          <strong>Method:</strong> CMS penalty programs (HRRP 3% max, HAC 1%, VBP 2% withhold) modeled from FY2025 data. Denial recovery at 4.8% net revenue loss (HFMA 2024). Better documentation from system consolidation reduces penalties and denials. Evidence: Pattar et al JAMA 2025, Vest et al JAMIA 2019.
+          <strong>Method:</strong> CMS penalty programs: Hospital Readmissions Reduction Program (HRRP, 3% max), Hospital-Acquired Condition Reduction (HAC, 1%), Value-Based Purchasing (VBP, 2% withhold) modeled from FY2025 data. Denial recovery at 4.8% net revenue loss (HFMA 2024). Better documentation from system consolidation reduces penalties and denials. Evidence: Pattar et al JAMA 2025, Vest et al JAMIA 2019.
         </Methodology>
       </Card>
     </div>}
@@ -346,7 +346,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       <div style={{ fontSize: F.h3, fontWeight: 700, color: C.accent, marginBottom: 18 }}>Galen Clinical Archive: investment case</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         <Met label="Migration cost" value={fmtK(galenMigrationCost)} />
-        <Met label="Annual cost" value={fmtK(galenAnnualCost) + "/yr"} />
+        <Met label="Clinical archive annual cost" value={fmtK(galenAnnualCost) + "/yr"} />
         <Met label="Payback period" value={payback.toFixed(1) + " yrs"} />
         <Met label={projYears + "-year return"} value={(() => {
           const yr3 = r.yr3R || r.yr3 || 0;
@@ -380,7 +380,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         </MCard>
 
         <MCard color={C.blue} title="CMS reimbursement" num="03">
-          Three CMS penalty programmes are modelled: HRRP (up to 3% of base DRG, FY2025 data), HAC Reduction (1% for bottom quartile), and VBP (2% withhold pool). Denial recovery uses HFMA's 4.8% net revenue loss benchmark. Better documentation from system consolidation improves coding accuracy, reduces denials, and lowers penalty exposure. Evidence: Pattar et al JAMA 2025, Vest et al JAMIA 2019.
+          Three CMS penalty programmes are modelled: Hospital Readmissions Reduction Program (HRRP, up to 3% of base DRG, FY2025 data), Hospital-Acquired Condition Reduction (HAC, 1% for bottom quartile), and Value-Based Purchasing (VBP, 2% withhold pool). Denial recovery uses HFMA's 4.8% net revenue loss benchmark. Better documentation from system consolidation improves coding accuracy, reduces denials, and lowers penalty exposure. Evidence: Pattar et al JAMA 2025, Vest et al JAMIA 2019.
         </MCard>
 
         <MCard color={C.purple} title="Patient safety" num="04">
@@ -400,7 +400,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         </MCard>
 
         <MCard color={C.blue} title="Key sources" num="08">
-          KLAS Research (Best in KLAS 2025 Data Archiving) · HIMSS Analytics (system usage patterns) · AHRQ Patient Safety Indicators · CMS Hospital Compare (HRRP, HAC, VBP data) · HFMA (denial management benchmarks) · KFF/AHA (cost per bed day) · CRICO Strategies (malpractice analysis) · Bates et al, JAMA (ADE rates) · Westbrook et al, JAMIA 2010 (system switching costs) · CHIME Digital Health Survey (duplicate systems in IDNs).
+          KLAS Research (Best in KLAS 2025 Data Archiving) · HIMSS Analytics (system usage patterns) · AHRQ Patient Safety Indicators · CMS Hospital Compare (HRRP, HAC, VBP penalty data) · HFMA (denial management benchmarks) · KFF/AHA (cost per bed day) · CRICO Strategies (malpractice analysis) · Bates et al, JAMA (ADE rates) · Westbrook et al, JAMIA 2010 (system switching costs) · CHIME Digital Health Survey (duplicate systems in IDNs).
         </MCard>
 
       </div>
