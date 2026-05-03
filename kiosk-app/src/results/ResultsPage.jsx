@@ -235,6 +235,50 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       </div>
     </div>}
 
+    {/* ═══ METHODOLOGY CAROUSEL ═══ */}
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: F.body, fontWeight: 700, color: C.textMid, marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
+        <Icon name="lightbulb" size={22} stroke={C.accent} /> Full methodology
+        <span style={{ fontSize: F.tiny, fontWeight: 400, color: C.textMuted, marginLeft: "auto" }}>Swipe to browse →</span>
+      </div>
+      <div style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", paddingBottom: 12, scrollbarWidth: "none" }}>
+        <style>{`.mcard::-webkit-scrollbar { display: none; }`}</style>
+
+        <MCard color={C.accent} title="System costing" num="01">
+          Each legacy system is classified into three tiers — enterprise, departmental, or standalone — with costs scaled by bed count. Enterprise systems (e.g. legacy EHR) cost $150k–$1.5m+ base plus $650–$7,500 per bed. Departmental systems run $80k–$350k plus $200–$900 per bed. Standalone tools are $50k–$200k plus $120–$620 per bed. Source: KLAS 2025 benchmarks, Becker's Hospital Review.
+        </MCard>
+
+        <MCard color={C.amber} title="Clinical capacity" num="02">
+          Not all staff use all systems. We apply two evidence-based filters: 65% of staff are regular system users (HIMSS Analytics), and each user interacts with ~35% of the legacy estate. A 4% productivity penalty per system touched (Westbrook et al, JAMIA 2010) determines time wasted. Hours freed are valued at $95/hr with 30% realisation — reflecting that freed time creates capacity, not direct savings.
+        </MCard>
+
+        <MCard color={C.blue} title="CMS reimbursement" num="03">
+          Three CMS penalty programmes are modelled: HRRP (up to 3% of base DRG, FY2025 data), HAC Reduction (1% for bottom quartile), and VBP (2% withhold pool). Denial recovery uses HFMA's 4.8% net revenue loss benchmark. Better documentation from system consolidation improves coding accuracy, reduces denials, and lowers penalty exposure. Evidence: Pattar et al JAMA 2025, Vest et al JAMIA 2019.
+        </MCard>
+
+        <MCard color={C.purple} title="Patient safety" num="04">
+          ADE rates from AHRQ Patient Safety Indicators and HHS OIG 2022 (25% of Medicare patients experience adverse events). Preventable ADEs: 1.8 per 100 admissions (Bates et al). Excess bed day cost: $3,132/day (KFF/AHA 2023). Communication failures account for 30% of malpractice claims (CRICO 2016). These are cost avoidance figures — harm that doesn't occur — not direct budget reductions.
+        </MCard>
+
+        <MCard color="#8e44ad" title="Network savings" num="05">
+          Multi-hospital IDNs typically run duplicate instances of the same legacy system across sites — approximately 30% of the estate (CHIME Digital Health Survey). Each facility carries ~$350k/yr in duplicate hosting, interfaces, and support, of which 60% is consolidatable. Cross-facility standardisation addresses 15% of operational costs through unified workflows and data governance.
+        </MCard>
+
+        <MCard color="#e67e22" title="Academic impact" num="06">
+          Academic medical centres maintain additional legacy systems for research databases, GME (Graduate Medical Education) tracking, and teaching programme administration. These are costed at the same tier-based rates with an additional compliance efficiency factor from consolidated audit trails. Based on AAMC benchmarks for academic system overhead and ACGME reporting requirements.
+        </MCard>
+
+        <MCard color={C.accent} title="Year-by-year ramp" num="07">
+          Savings are phased over three years: Year 1 at 40%, Year 2 at 80%, Year 3 at 100% of steady state. This reflects progressive legacy system retirement — data is migrated and interfaces decommissioned over time, not all at once. Galen payback is calculated as migration cost ÷ (annual decom savings − annual archive cost).
+        </MCard>
+
+        <MCard color={C.blue} title="Key sources" num="08">
+          KLAS Research (Best in KLAS 2025 Data Archiving) · HIMSS Analytics (system usage patterns) · AHRQ Patient Safety Indicators · CMS Hospital Compare (HRRP, HAC, VBP data) · HFMA (denial management benchmarks) · KFF/AHA (cost per bed day) · CRICO Strategies (malpractice analysis) · Bates et al, JAMA (ADE rates) · Westbrook et al, JAMIA 2010 (system switching costs) · CHIME Digital Health Survey (duplicate systems in IDNs).
+        </MCard>
+
+      </div>
+    </div>
+
     {/* Actions */}
     <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "16px 0 24px" }}>
       <button onClick={onAdjust} style={{
@@ -281,4 +325,13 @@ function Row({ label, value, accent }) {
 }
 function Met({ label, value }) {
   return <div><div style={{ fontSize: F.tiny, color: C.textMuted }}>{label}</div><div style={{ fontSize: F.h2, fontWeight: 800, color: C.accent }}>{value}</div></div>;
+}
+function MCard({ color, title, num, children }) {
+  return <div className="mcard" style={{ flex: "0 0 320px", scrollSnapAlign: "start", padding: "28px 24px", background: C.surface, borderRadius: 20, border: `1px solid ${color}25`, minHeight: 240 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+      <span style={{ width: 32, height: 32, borderRadius: "50%", background: color + "20", color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: F.tiny, fontWeight: 800 }}>{num}</span>
+      <span style={{ fontSize: F.body, fontWeight: 700, color }}>{title}</span>
+    </div>
+    <div style={{ fontSize: F.tiny, color: C.textMid, lineHeight: 1.7 }}>{children}</div>
+  </div>;
 }
