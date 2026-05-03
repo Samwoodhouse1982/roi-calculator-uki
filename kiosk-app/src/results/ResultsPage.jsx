@@ -159,7 +159,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
           ].filter(s => s.val > 0);
           const barH = 160;
           return <div style={{ marginBottom: 16 }}>
-            <div style={{ display: "flex", gap: projYears === 5 ? 6 : 10, alignItems: "flex-end", height: barH + 30, padding: "0 12px" }}>
+            <div style={{ display: "flex", gap: projYears === 5 ? 6 : 10, alignItems: "flex-end", minHeight: barH + 30, padding: "50px 12px 0", overflow: "visible" }}>
               {yrs.map((y, yi) => {
                 const h = Math.round(barH * y.pct);
                 return <div key={y.yr} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
