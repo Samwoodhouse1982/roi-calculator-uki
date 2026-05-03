@@ -114,7 +114,8 @@ export function SystemsStep({ inputs, updateTier, flagships, addFlagship, remove
     { key: "departmental", label: "Departmental", color: C.blue, hint: "Including laboratory, pharmacy, perinatal, imaging/PACS, cardiology, and radiology", max: Math.max(30, inputs.tiers.departmental + 5) },
     { key: "niche", label: "Standalone", color: C.purple, hint: "Including document stores, data warehouses, scanned notes", max: Math.max(100, inputs.tiers.niche + 10) },
   ];
-  const total = inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche;
+  const sliderTotal = inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche;
+  const total = sliderTotal + flagships.length;
 
   return <div>
     <SectionTitle number="4">Legacy systems</SectionTitle>
@@ -160,6 +161,7 @@ export function SystemsStep({ inputs, updateTier, flagships, addFlagship, remove
             onChange={e => updateTier(t.key, Number(e.target.value))}
             style={{ width: "100%", cursor: "pointer", accentColor: t.color }} />
           {tierFlagships.length > 0 && <div style={{ marginTop: 8 }}>
+            <div style={{ fontSize: F.tiny, fontWeight: 600, color: C.textMuted, marginBottom: 6 }}>In addition to the {inputs.tiers[t.key]} above:</div>
             {tierFlagships.map((f, fi) => {
               const fIdx = flagships.indexOf(f);
               const step = f.cost > 500000 ? 50000 : f.cost > 100000 ? 25000 : 10000;
@@ -203,7 +205,10 @@ export function SystemsStep({ inputs, updateTier, flagships, addFlagship, remove
     </div>
     <div style={{ marginTop: 16, padding: "20px 24px", background: C.surface, borderRadius: 18, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 14 }}>
       <span style={{ fontSize: 48, fontWeight: 800, color: C.accent }}>{total}</span>
-      <span style={{ fontSize: F.h3, fontWeight: 600, color: C.textMid }}>legacy systems</span>
+      <div>
+        <div style={{ fontSize: F.h3, fontWeight: 600, color: C.textMid }}>total legacy systems</div>
+        {flagships.length > 0 && <div style={{ fontSize: F.tiny, color: C.textMuted, marginTop: 2 }}>{sliderTotal} by tier + {flagships.length} named system{flagships.length > 1 ? "s" : ""}</div>}
+      </div>
     </div>
   </div>;
 }
