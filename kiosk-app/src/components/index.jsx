@@ -20,7 +20,7 @@ export function StepIndicator({ steps, current, onJump }) {
 
 const STEP_CONTEXT = [
   // 0 - Scope
-  { title: "Why this matters", text: "Your organization type determines the staffing ratios, system complexity, and reimbursement models we use. A 500-bed IDN has a very different legacy footprint than a critical access hospital — this ensures the model fits your reality." },
+  { title: "Why this matters", text: "Your organization type determines the staffing ratios, system complexity, and cost benchmarks we use. The reimbursement model shapes which financial impacts appear in your report — fee-for-service focuses on denial recovery and coding accuracy, value-based adds CMS penalty programs (HRRP, HAC, VBP), and mixed models blend both. This ensures the ROI reflects your actual revenue exposure." },
   // 1 - Journey
   { title: "Why this matters", text: "Whether you already have an EHR changes the calculation significantly. With an EHR in place, the ROI focuses on archiving and decommissioning legacy systems. Without one, it includes the full migration case." },
   // 2 - Facilities
