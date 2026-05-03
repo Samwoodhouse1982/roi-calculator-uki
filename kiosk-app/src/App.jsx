@@ -99,12 +99,29 @@ export default function App() {
     const rm = REIMBURSE_MULTIPLIERS[reimbursementModel] || REIMBURSE_MULTIPLIERS.mixed;
 
     // Issue 2: Translate facility counts into portfolio inputs
-    // Each non-acute facility adds ~2 legacy systems and ~8 staff on average
-    const facKeys = Object.keys(facilities).filter(k => k !== "hospitals");
-    const facCount = facKeys.reduce((s, k) => s + (facilities[k] || 0), 0);
-    const portfolioSystems = Math.round(facCount * 2);
-    const portfolioStaff = Math.round(facCount * 8);
-    const portfolioCost = Math.round(facCount * 45000); // ~$45k/yr avg system cost for non-acute
+    // Each facility TYPE adds a base set of shared systems across the network,
+    // plus a small per-site multiplier for additional instances/interfaces.
+    // Staff and cost scale per facility.
+    const FAC_PROFILE = {
+      ambulatory_surgery:  { baseSys: 3, perSiteSys: 0.3, staffPer: 12, costPer: 55000 },  // surgery scheduling, anesthesia, ASC billing
+      physician_practices: { baseSys: 2, perSiteSys: 0.2, staffPer: 6,  costPer: 30000 },  // practice mgmt, ambulatory EHR
+      urgent_care:         { baseSys: 2, perSiteSys: 0.2, staffPer: 8,  costPer: 35000 },  // UC workflow, triage
+      imaging_centers:     { baseSys: 3, perSiteSys: 0.3, staffPer: 10, costPer: 60000 },  // RIS, mini-PACS, reporting
+      dialysis:            { baseSys: 2, perSiteSys: 0.2, staffPer: 10, costPer: 40000 },  // dialysis mgmt, vascular access
+      snf:                 { baseSys: 3, perSiteSys: 0.3, staffPer: 15, costPer: 50000 },  // resident mgmt, MDS/billing, pharmacy
+      home_health:         { baseSys: 2, perSiteSys: 0.2, staffPer: 12, costPer: 35000 },  // scheduling, OASIS reporting
+      behavioral:          { baseSys: 2, perSiteSys: 0.2, staffPer: 10, costPer: 40000 },  // behavioral EHR, outcomes
+      rehab:               { baseSys: 2, perSiteSys: 0.2, staffPer: 10, costPer: 40000 },  // rehab mgmt, therapy docs
+      ltach:               { baseSys: 3, perSiteSys: 0.3, staffPer: 15, costPer: 50000 },  // similar to SNF
+    };
+    let portfolioSystems = 0, portfolioStaff = 0, portfolioCost = 0;
+    for (const [key, count] of Object.entries(facilities)) {
+      if (key === "hospitals" || !count || count <= 0) continue;
+      const p = FAC_PROFILE[key] || { baseSys: 2, perSiteSys: 0.2, staffPer: 8, costPer: 40000 };
+      portfolioSystems += Math.round(p.baseSys + (count - 1) * p.perSiteSys);
+      portfolioStaff += count * p.staffPer;
+      portfolioCost += count * p.costPer;
+    }
 
     return {
       ...inputs,
