@@ -38,7 +38,9 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     academic: r.academicSavings || 0,
     network:  r.mergeSavings || 0,
   };
-  const fte = r.hrsSaved ? Math.round(r.hrsSaved * (r.realization || 0.3) / 1824) : 0;
+  const fteRaw = r.hrsSaved ? r.hrsSaved * (r.realization || 0.3) / 1824 : 0;
+  const fte = fteRaw >= 1 ? Math.round(fteRaw) : Math.round(fteRaw * 10) / 10;
+  const fmtFte = v => v < 1 ? v.toFixed(1) : fmtNum(v);
   const hasGalen = galenMigrationCost > 0;
   const payback = hasGalen ? galenMigrationCost / Math.max(1, r.decomSave - galenAnnualCost) : 0;
 
@@ -76,7 +78,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {/* KPI grid — each card maps to a segment above, tappable to jump to detail */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
       <KpiCard label="Legacy decommission" value={fmtK(seg.decom)} sub={`${r.decom} of ${r.legacy} systems retired`} color={C.accent} icon="🔓" onClick={() => scrollTo(decomRef)} />
-      <KpiCard label="Clinical capacity" value={`${fmtNum(fte)} FTE freed`} sub={`${fmtK(seg.capacity)}/yr value`} color={C.amber} icon="⏱️" onClick={() => scrollTo(capacityRef)} />
+      <KpiCard label="Clinical capacity" value={`${fmtFte(fte)} FTE freed`} sub={`${fmtK(seg.capacity)}/yr value`} color={C.amber} icon="⏱️" onClick={() => scrollTo(capacityRef)} />
       {seg.reimb > 0 && <KpiCard label="Reimbursement impact" value={fmtK(seg.reimb)} sub="CMS penalty + denial recovery" color={C.blue} icon="💵" onClick={() => scrollTo(reimbRef)} />}
       {seg.safety > 0 && <KpiCard label="Patient safety" value={fmtK(seg.safety)} sub={`${fmtNum(r.safetyPatientsProtected)} patients protected`} color={C.purple} icon="🛡️" onClick={() => scrollTo(safetyRef)} />}
       {seg.network > 0 && <KpiCard label="Network consolidation" value={fmtK(seg.network)} sub={`${r.duplicateSystems} duplicate systems across ${r.org_count || ""} facilities`} color="#8e44ad" icon="🏥" onClick={() => scrollTo(networkRef)} />}
@@ -120,7 +122,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Row label="Systems per user (~35% exposure)" value={r.systemsPerUser} />
         <Row label="Time wasted per person/week" value={`${r.minsWasted} mins`} />
         <Row label="Hours freed per year" value={fmtNum(r.hrsSaved)} />
-        <Row label="FTE equivalent" value={fmtNum(fte)} accent />
+        <Row label="FTE equivalent" value={fmtFte(fte)} accent />
         <Row label="Capacity value" value={fmtK(seg.capacity) + "/yr"} accent />
         <Methodology>
           <strong>Method:</strong> Of {fmtNum(r.totalStaff)} total staff, {fmtNum(r.clinicians)} (65%) are regular system users. Each navigates ~{r.systemsPerUser} of {r.legacy} systems (35% exposure). Switch penalty of 4% per system applies only to touched systems. Hours freed valued at $95/hr with {Math.round((r.realization || 0.3) * 100)}% realization. Evidence: HIMSS analytics, Westbrook et al JAMIA 2010.
