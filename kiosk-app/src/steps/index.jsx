@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { C, F, fmtNum, fmtK, FACILITY_TYPES } from '../theme';
 import { Card, BigChoice, SectionTitle, TouchSlider, Stepper, SegmentedControl, InfoTip } from '../components';
+import { Icon } from '../components/Icons';
 import { KNOWN_SYSTEMS, systemCost } from '../calc/vendors';
 
 const TIER_TYPES = {
