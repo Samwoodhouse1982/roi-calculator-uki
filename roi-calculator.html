@@ -956,6 +956,16 @@ function TogglePill({active, onToggle, labelA, labelB, labelAText, labelBText}) 
     ))}
   </div>;
 }
+function EvidenceDropdown({title,children}){
+  const [open,setOpen] = React.useState(false);
+  return <div style={{marginTop:10}}>
+    <button onClick={(e)=>{e.stopPropagation();setOpen(!open);}} style={{background:"none",border:"none",cursor:"pointer",padding:"6px 0",fontSize:12,fontWeight:600,color:C.textMid,display:"flex",alignItems:"center",gap:6,fontFamily:"inherit"}}>
+      <span style={{transform:open?"rotate(90deg)":"rotate(0deg)",transition:"transform .2s",fontSize:10}}>{"\u25B6"}</span>
+      {title||"Evidence & methodology"}
+    </button>
+    {open && <div style={{padding:"10px 14px",background:"#f8fafb",borderRadius:8,border:"1px solid "+C.borderLight,fontSize:12,color:C.textMid,lineHeight:1.6,marginTop:4}}>{children}</div>}
+  </div>;
+}
 function LockedConnector(){return<div style={{display:"flex",justifyContent:"center",padding:"8px 0"}}><div style={{width:2,height:28,background:C.border}}/></div>;}
 function ContinuePrompt({ onClick, label }) {
   return (
@@ -2969,7 +2979,7 @@ function ROICalculator() {
       <ResultCard dimmed={dim} label="Legacy decommission" value={an?fmtK(r.decomSave):"\u2013"} sub={an?r.decom+" of "+r.legacy+" systems retired":""} bg={C.greenPale} border="#c3ddd3" valueColor="#0F4146" />
       <ResultCard dimmed={dim} label={r.isAgedCare?"Places capacity":r.isNDIS?"Staff capacity":"Clinical capacity"} value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"\u2013"} sub={an?fmtK(r.timeSave)+"/yr value":""} bg="#e8faf6" border="#b0e8dc" valueColor="#1a8a7a" />
       <ResultCard dimmed={dim} label={r.isAgedCare?"Funding & efficiency":r.isNDIS?"Revenue & efficiency":"ABF efficiency & revenue"} value={an?fmtK(r.reimbursementImpact):"\u2013"} sub={an?(r.isAgedCare?"AN-ACC + agency + compliance":r.isNDIS?"Claims + utilisation + compliance + retention":"ABF efficiency"+(r.privateRevRecovery>0?" + private revenue":"")):"\u2013"} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
-      <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"\u2013"} sub={an?(r.isAgedCare?"Avoidable harm reduction":r.isNDIS?"":"Indemnity + excess bed days + e-discovery"):"\u2013"} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />}
+      {r.qualitySavings > 0 && <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"\u2013"} sub={an?(r.isAgedCare?"Avoidable harm reduction":r.isNDIS?"":"Indemnity + excess bed days + e-discovery"):"\u2013"} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />}
       {r.academicSavings > 0 && <ResultCard dimmed={dim} label="Academic programme" value={an?fmtK(r.academicSavings):"\u2013"} sub={an?"Research + teaching + compliance":""} bg="#eef0f8" border="#c4cce0" valueColor="#2c3e6b" />}
       {r.mergeSavings > 0 && <ResultCard dimmed={dim} label="Network consolidation" value={an?fmtK(r.mergeSavings):"\u2013"} sub={an?r.duplicateSystems+" duplicate systems":""} bg="#f0eefa" border="#c4c0e8" valueColor="#6c5ce7" />}
     </div>
@@ -3035,6 +3045,9 @@ function ROICalculator() {
         <span style={{margin:"0 8px",color:C.textMuted}}>|</span>
         Estate {fmtK(r.totalEstate)}/yr {"→"} {Math.round(r.decomSave/Math.max(1,r.totalEstate)*100)}% reduction
       </Callout>
+      <EvidenceDropdown title="Evidence & methodology">
+        System costs modelled per tier: Enterprise (A$250k base + A$600/bed), Departmental (A$65k + A$140/bed), Standalone (A$12k + A$18/bed), capped at market rates. Named systems use AU state contract-derived pricing.
+      </EvidenceDropdown>
     </Card><LockedConnector/>
 
     {/* Clinician time */}
@@ -3048,6 +3061,10 @@ function ROICalculator() {
         <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"-"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at A$65/hr blended rate (AIHW workforce data: nursing ~A$45-55/hr, medical ~A$90-120/hr, allied health ~A$40-60/hr). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity. This represents capacity redirected to patient care, not a direct cash saving. Equivalent to ~${(r.hrsSaved/1824).toFixed(0)} FTE.`}/>
       </div>
       <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"A$"}65 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong> <span style={{color:C.textMuted,fontSize:12}}>| Equivalent to ~{r.fteEquivalent.toFixed(0)} FTE of clinical capacity</span></Callout>
+      <EvidenceDropdown title="Evidence & methodology">
+        <strong>Sources:</strong> Westbrook et al JAMIA 2010 (context-switching). HIMSS Analytics (65% active user rate). Staffing: NSW Health SDPR (3.0 staff/bed). Blended hourly rate A$65 (AIHW).<br/><br/>
+        <strong>Formula:</strong> Active users (65%) x switch penalty (0.04/additional system) x base minutes x data quality x complexity. Only {Math.round(r.realisation*100)}% counted as realisable.
+      </EvidenceDropdown>
     </Card><LockedConnector/>
 
 
@@ -3080,9 +3097,10 @@ function ROICalculator() {
         {fmtK(r.abfEfficiencyGain + r.privateRevRecovery)}/yr
       </Callout>
 
-      <div style={{marginTop:12,padding:"10px 14px",background:"#f0faf8",borderRadius:8,border:"1px solid #b0e0d8",fontSize:12,color:"#0F4146",lineHeight:1.6}}>
-        <strong>Methodology:</strong> Activity-Based Funding (ABF) efficiency modelled at 15% of legacy estate cost addressable through consolidation. NSW SDPR benchmark: estimated legacy estate cost A$225-385M/yr (modelled from QLD Health proxy and NSW programme data); Epic replacement contract A$969M/10yr (~A$97M/yr); implied gross saving A$130-290M/yr. Private patient revenue uplift modelled at 30% recovery of leaked episodes (15% leakage rate, VAGO 2019). Medical indemnity reduction at 3% of A$20,000/bed (VMIA 2025-26). Excess bed days: 35% fragmentation attribution of preventable AEs (ACSQHC). All figures are scenario-adjusted estimates.<br/><br/><strong>Confidence key:</strong> Legacy system count (24 core): CONFIRMED (NSW Health Oct 2023). Hospital count (228): CONFIRMED. Epic contract (A$969M): CONFIRMED. Legacy estate cost (A$225-385M): ESTIMATE (QLD proxy + programme data). Galen archive (A$83M): CONFIRMED (IDM Magazine Dec 2024). Full estate (30-40+ systems): ESTIMATE (Microsoft ODS case study: 34+ systems).
-      </div>
+      <EvidenceDropdown title="Evidence & methodology">
+        <strong>Methodology:</strong> ABF efficiency modelled at 15% of legacy estate cost addressable through consolidation. Private patient revenue: 30% recovery of leaked episodes (15% leakage rate, VAGO 2019).<br/><br/>
+        <strong>Sources:</strong> IHACPA 2024-25 (NWAU pricing). VAGO 2019 (private patient leakage). NSW SDPR programme data. All figures are scenario-adjusted.
+      </EvidenceDropdown>
     </Card><LockedConnector/>
 
 
@@ -3120,9 +3138,10 @@ function ROICalculator() {
         <strong style={{color:"#d4507a"}}>Total avoidable cost of harm:</strong>{" "}
         {fmtK(r.costAvoidance)}/yr (included in annual savings as cost avoidance)
       </Callout>
-      <div style={{marginTop:10,padding:"8px 12px",background:"#f0faf8",borderRadius:6,fontSize:11,color:"#0F4146",lineHeight:1.6}}>
-        <strong>Important:</strong> These figures represent the estimated financial burden of preventable adverse events attributable to information fragmentation. They will not appear as line items in your budget {" \u2014 "} they represent costs that are avoided when adverse events do not occur. Include in business cases as {"\""}cost avoidance{"\""} category, separate from cashable savings.
-      </div>
+      <EvidenceDropdown title="Evidence & methodology">
+        <strong>Methodology:</strong> Excess bed days: 8.0/bed baseline (QAHCS/AIHW), 35% fragmentation attribution (ACSQHC), A$3,100/day (IHACPA). Indemnity: 3% of A$20,000/bed (VMIA 2025-26). Duplicate testing: 22% duplicate rate (Banker et al 2024, RCPA), A$12,000/bed pathology, 50% addressable.<br/><br/>
+        <strong>Classification:</strong> Cost avoidance. These represent costs not incurred when adverse events are prevented.
+      </EvidenceDropdown>
     </Card><LockedConnector/>
 
     </>}
@@ -3178,10 +3197,10 @@ function ROICalculator() {
           <div style={{fontSize:11,color:C.textMid}}>legacy systems retired</div>
         </div>
       </div>
-      <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,border:"1px solid #e0b0b015",fontSize:12,lineHeight:1.6,color:C.textMid}}>
-        <strong style={{color:C.text}}>Evidence</strong><br/>
-        Medico-legal records assembly across fragmented systems: ~24 hrs/case (3 days). Consolidated archive: ~5 hrs. Average Australian healthcare data breach: A$4.71m (IBM/Ponemon 2024). Each legacy system on an end-of-life operating system is a potential attack vector under the Privacy Act 1988 and Notifiable Data Breaches scheme.
-      </div>
+      <EvidenceDropdown title="Evidence & methodology">
+        <strong>e-Discovery:</strong> Records assembly: ~24 hrs/case across fragmented systems vs ~5 hrs in consolidated archive. 8 cases per 100 beds. HIM staff rate A$45/hr.<br/><br/>
+        <strong>Cyber risk:</strong> Average AU healthcare breach: A$4.71m (IBM/Ponemon 2024). Privacy Act 1988, Notifiable Data Breaches scheme.
+      </EvidenceDropdown>
     </Card>}
 
     {/* Readmission cost avoidance */}
@@ -3206,10 +3225,9 @@ function ROICalculator() {
         <strong style={{color:"#0F4146"}}>Total readmission cost avoidance:</strong>{" "}
         {fmtK(r.auReadmissionCostAvoidance)}/yr ({r.auReadmissionsAvoided} readmissions avoided)
       </Callout>
-      <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,fontSize:12,lineHeight:1.6,color:C.textMid}}>
-        <strong style={{color:C.text}}>Evidence</strong><br/>
-        AIHW 2023-24: 12% unplanned 30-day readmission rate nationally. Vest et al JAMIA 2019: single-vendor EMR consolidation reduces 30-day readmissions by 0.6 percentage points. 30% fragmentation attribution applied. Cost per readmission derived from IHACPA NWAU pricing. Included in cost avoidance category.
-      </div>
+      <EvidenceDropdown title="Evidence & methodology">
+        AIHW 2023-24: 12% unplanned 30-day readmission rate. Vest et al JAMIA 2019: 0.6pp reduction from EMR consolidation. 30% fragmentation attribution. Cost A$11,500/readmission (IHACPA NWAU-derived).
+      </EvidenceDropdown>
     </Card>}
 
 
@@ -3236,11 +3254,9 @@ function ROICalculator() {
           <div style={{marginTop:8,fontSize:12,color:C.rose,fontWeight:600}}>{"↓"} {an?fmtNum(m.av):0} {m.avl}</div>
         </div>)}
       </div>
-      {/* Litigation context */}
-      <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,border:`1px solid ${C.rose}15`,fontSize:12,lineHeight:1.6,color:C.textMid}}>
-        <strong style={{color:C.text}}>Evidence & litigation context</strong><br/>
-        ACSQHC National Safety and Quality Health Service Standards; AIHW hospital statistics: approximately 10% of hospital separations involve an adverse event (ACSQHC), with communication failure a contributing factor in 35% of clinical incidents. Australian state health systems face significant medical indemnity costs through schemes such as icare (NSW) and VMIA (VIC). Indemnity premiums are influenced by claims history {"\u2013"} fewer adverse events means fewer indemnity claims and lower premiums. Every patient harmed by fragmented records is a potential indemnity claim and accreditation risk under ACSQHC Standards 1 and 6.
-      </div>
+      <EvidenceDropdown title="Evidence & litigation context">
+        ACSQHC: ~10% of separations involve an adverse event; communication failure contributes to 35% of clinical incidents. State indemnity schemes (icare NSW, VMIA VIC) link claims to fragmented information. Accreditation risk under ACSQHC Standards 1 and 6.
+      </EvidenceDropdown>
     </Card><LockedConnector/>
     </div>}
 
@@ -3281,9 +3297,10 @@ function ROICalculator() {
           <div style={{fontSize:11,color:C.textMid,marginTop:6}}>{r.sarDaysBefore} days {"→"} {r.sarDaysAfter} days</div>
         </div>
       </div>
-      <div style={{fontSize:12,color:C.textMid,lineHeight:1.6}}>
-        Each legacy system generates ~2.5 service desk tickets per month. Retiring systems eliminates their ticket load; remaining systems see a 40% reduction. Records requests are faster when data is in a single archive rather than across {r.legacy} systems.
-      </div>
+      <EvidenceDropdown title="Evidence & methodology">
+        <strong>Tickets:</strong> ~2.5 tickets/system/month (password resets, access issues, interface errors). Retired systems eliminate tickets entirely; remaining systems see 40% reduction.<br/><br/>
+        <strong>Records:</strong> Base 3 days + 0.8 days/system (before) vs 0.15 days/system (after). Covers medico-legal, coronial, FOI requests.
+      </EvidenceDropdown>
     </Card><LockedConnector/></>}
 
         {r.isAcademic && <Card dimmed={dim}>
