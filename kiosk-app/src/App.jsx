@@ -177,8 +177,9 @@ export default function App() {
     }
   };
 
+  if (showSplash) return <SplashScreen onStart={() => setShowSplash(false)} />;
+
   if (calibrating) {
-    if (showSplash) return <SplashScreen onStart={() => setShowSplash(false)} />;
 
   return <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, height: '100vh', color: C.text, position: "relative" }}>
       <CalibratingScreen onDone={handleCalibrationDone} />
