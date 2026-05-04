@@ -2754,7 +2754,7 @@ function ROICalculator() {
     <LockedConnector/>
 
     {/* CTA */}
-    <div ref={refCta} style={{animation:step>=3?"fade-in .4s ease":"none",opacity:step<3?0.3:1,pointerEvents:step<3?"none":"auto",transition:"opacity .4s"}}>
+    <div ref={refCta} style={{animation:step>=2?"fade-in .4s ease":"none",opacity:step<2?0.3:1,pointerEvents:step<2?"none":"auto",transition:"opacity .4s"}}>
       <button type="button" className="roi-cta" onClick={() => {
           setPage("calculating"); setCalcStep(0); setScenarioMode(null);
           scrollToTop();
