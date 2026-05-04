@@ -2092,7 +2092,7 @@ function ROICalculator() {
           {k:"mixed",l:"Public + Private",d:"Public hospital with significant private patient revenue"},
           {k:"private",l:"Predominantly Private",d:"Private hospital or PPP model"},
         ].map(r=><button type="button" key={r.k} onClick={()=>setReimbursementModel(r.k)} className="roi-btn" style={{flex:"1 1 140px",padding:"12px 14px",textAlign:"left",border:reimbursementModel===r.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,background:reimbursementModel===r.k?C.accentPale:"#fff",cursor:"pointer"}}>
-          <div style={{fontSize:13,fontWeight:700,color:reimbursementModel===r.k?C.accent:C.text}}>{r.l}</div>}
+          <div style={{fontSize:13,fontWeight:700,color:reimbursementModel===r.k?C.accent:C.text}}>{r.l}</div>
           <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{r.d}</div>
         </button>)}
       </div>
