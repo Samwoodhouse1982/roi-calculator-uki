@@ -146,11 +146,12 @@ export function SplashScreen({ onStart }) {
           BEST IN KLAS 2025 &nbsp;·&nbsp; DATA ARCHIVING
         </div>
 
-        <img src={rldatixLogo} alt="RLDatix" style={{
-          position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          width: 180, opacity: 0.5,
-        }} />
       </div>
+
+      <img src={rldatixLogo} alt="RLDatix" style={{
+        position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)',
+        width: 180, opacity: 0.5, zIndex: 3,
+      }} />
     </div>
   );
 }
