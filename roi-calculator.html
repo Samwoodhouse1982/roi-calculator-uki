@@ -3038,10 +3038,10 @@ function ROICalculator() {
 
     {!dim && <ResultSection defaultOpen={true} title="Detailed breakdown" icon="🔍" dimmed={dim}>
     <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
-      <ResultCard dimmed={dim} label={`Total savings (${rampYears}-year)`} value={an?<AnimatedK value={r.total3} active={an}/>:"–"} sub={an?"Decom + clinician time x 3 years":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
-      <ResultCard dimmed={dim} label="Annual recurring" value={an?<AnimatedK value={r.annual} active={an}/>:"–"} sub={an?`${fmtK(r.decomSave)} decom + ${fmtK(r.timeSave)} time`:""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
+      <ResultCard dimmed={dim} label={`Total savings (${rampYears}-year)`} value={an?<AnimatedK value={r.total3WithReimbursement} active={an}/>:"–"} sub={an?`All benefits across ${rampYears} years`:""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
+      <ResultCard dimmed={dim} label="Annual savings (steady state)" value={an?<AnimatedK value={r.annualWithReimbursement} active={an}/>:"–"} sub={an?"Decom + capacity + ABF/funding + quality":""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
       <ResultCard dimmed={dim} label="Clinician time (annual)" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={an?<span>{fmtNum(r.hrsSaved)} hrs/yr, {Math.round(r.realisation*100)}% realisation</span>:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
-      <ResultCard dimmed={dim} label={r.isAgedCare ? "Aged care impact" : r.isNDIS ? "NDIS impact" : (r.privateRevRecovery > 0 ? "ABF efficiency & quality" : "ABF efficiency & quality")} value={an?<AnimatedK value={r.reimbursementImpact + r.qualitySavings} active={an}/>:"–"} sub={an?(r.isAgedCare ? "AN-ACC + agency + compliance + safety" : r.isNDIS ? "Claims + utilisation + compliance + retention" : (r.privateRevRecovery > 0 ? "ABF efficiency + private revenue + quality" : "ABF efficiency + quality")):""} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
+      <ResultCard dimmed={dim} label={r.isAgedCare ? "Aged care impact" : r.isNDIS ? "NDIS impact" : "ABF efficiency & quality"} value={an?<AnimatedK value={r.reimbursementImpact + r.qualitySavings} active={an}/>:"–"} sub={an?(r.isAgedCare ? "AN-ACC + agency + compliance + safety" : r.isNDIS ? "Claims + utilisation + compliance + retention" : (r.privateRevRecovery > 0 ? "ABF efficiency + private revenue + quality" : "ABF efficiency + quality")):""} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
     </div>
 
     {/* Decom – tiered breakdown */}
@@ -3168,11 +3168,11 @@ function ROICalculator() {
           <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.abfEfficiencyGain):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>15% of legacy estate admin overhead addressable through consolidation</div>
         </div>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
+        {r.privateRevRecovery > 0 && <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Private patient revenue uplift</div>
           <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.privateRevRecovery):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>30% recovery of leaked private episodes (15% leakage, VAGO (Victorian Auditor-General's Office) 2019)</div>
-        </div>
+          <div style={{fontSize:11,color:C.textMuted}}>30% recovery of leaked private episodes (15% leakage, VAGO 2019)</div>
+        </div>}
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate testing reduction</div>
           <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.duplicateReduction):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
@@ -3181,8 +3181,8 @@ function ROICalculator() {
       </div>
 
       <Callout bg={C.greenPale} border="#c3ddd3">
-        <strong style={{color:C.green}}>Total ABF & revenue impact:</strong>{" "}
-        {fmtK(r.abfEfficiencyGain + r.privateRevRecovery + r.duplicateReduction)}/yr (cashable)
+        <strong style={{color:C.green}}>Total reimbursement & quality impact:</strong>{" "}
+        {fmtK(r.reimbursementImpact + r.qualitySavings)}/yr
       </Callout>
 
       <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
