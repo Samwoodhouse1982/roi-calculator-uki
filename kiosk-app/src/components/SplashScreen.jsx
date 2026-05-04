@@ -27,11 +27,11 @@ export function SplashScreen({ onStart }) {
       particles.push({
         x: Math.random() * (w + 500) - 250,
         y: Math.random() * h,
-        r: Math.random() * 6 + 1.5,
+        r: Math.random() * 4 + 1,
         speed: Math.random() * 0.8 + 0.2,
-        opacity: Math.random() * 0.6 + 0.1,
+        opacity: Math.random() * 0.3 + 0.05,
         hue: Math.random() * 30 + 165,
-        glow: Math.random() > 0.85,
+        glow: Math.random() > 0.92,
         drift: (Math.random() - 0.5) * 0.3,
         phase: Math.random() * Math.PI * 2,
         waveAmp: Math.random() * 40 + 10,
@@ -57,7 +57,7 @@ export function SplashScreen({ onStart }) {
 
         if (p.glow) {
           const grad = ctx.createRadialGradient(p.x, drawY, 0, p.x, drawY, p.r * 8);
-          grad.addColorStop(0, `hsla(${p.hue}, 80%, 75%, ${p.opacity * 0.3})`);
+          grad.addColorStop(0, `hsla(${p.hue}, 80%, 75%, ${p.opacity * 0.15})`);
           grad.addColorStop(1, `hsla(${p.hue}, 80%, 75%, 0)`);
           ctx.fillStyle = grad;
           ctx.beginPath();
@@ -83,7 +83,7 @@ export function SplashScreen({ onStart }) {
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 100, width: '100vw', height: '100vh',
+      position: 'fixed', inset: 0, zIndex: 100, width: '100%', height: '100%',
       background: 'linear-gradient(160deg, #060b14 0%, #0a1020 25%, #0c1825 50%, #091520 75%, #060b14 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start',
       overflow: 'hidden', cursor: 'pointer',
@@ -95,7 +95,10 @@ export function SplashScreen({ onStart }) {
         background: 'radial-gradient(ellipse at 30% 50%, rgba(0,212,170,0.06) 0%, transparent 60%), radial-gradient(ellipse at 70% 30%, rgba(0,180,255,0.04) 0%, transparent 50%)',
       }} />
 
-      <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 900, padding: '0 64px', marginTop: '22vh' }}>
+      <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 900, padding: '60px 64px', marginTop: '18vh',
+        background: 'radial-gradient(ellipse at center, rgba(6,11,20,0.85) 0%, rgba(6,11,20,0.5) 50%, transparent 80%)',
+        borderRadius: 40,
+      }}>
 
         <div style={{
           fontSize: 16, fontWeight: 600, letterSpacing: 8, textTransform: 'uppercase',
