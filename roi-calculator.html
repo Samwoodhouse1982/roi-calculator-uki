@@ -3271,13 +3271,13 @@ function ROICalculator() {
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Service desk tickets</div>
           <div style={{fontSize:26,fontWeight:800,color:C.accent}}>{an?r.ticketsReductionPct:"\u2013"}%</div>
           <div style={{fontSize:11,color:C.textMuted}}>reduction</div>
-          <div style={{fontSize:11,color:C.textMid,marginTop:6}}>{r.ticketsBaselineMonthly}/mo \u2192 {r.ticketsAfter}/mo</div>
+          <div style={{fontSize:11,color:C.textMid,marginTop:6}}>{r.ticketsBaselineMonthly}/mo {"→"} {r.ticketsAfter}/mo</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #c3ddd315"}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Records request turnaround</div>
           <div style={{fontSize:26,fontWeight:800,color:C.accent}}>{an?r.sarReductionPct:"\u2013"}%</div>
           <div style={{fontSize:11,color:C.textMuted}}>faster</div>
-          <div style={{fontSize:11,color:C.textMid,marginTop:6}}>{r.sarDaysBefore} days \u2192 {r.sarDaysAfter} days</div>
+          <div style={{fontSize:11,color:C.textMid,marginTop:6}}>{r.sarDaysBefore} days {"→"} {r.sarDaysAfter} days</div>
         </div>
       </div>
       <div style={{fontSize:12,color:C.textMid,lineHeight:1.6}}>
@@ -3714,4 +3714,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(<ROICalculator />);
     })();
   </script>
 </body>
-</html{sector === "hospital" && >
+</html>
