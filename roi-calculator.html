@@ -2814,6 +2814,11 @@ function ROICalculator() {
       </div>
       <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:6,letterSpacing:0.5}}>RISK SCENARIOS</div>
       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        <button type="button" onClick={()=>{if(scenarioMode==="DELAYED"||scenarioMode==="PARTIAL")setScenarioMode("EXPECTED")}} className="roi-scenario" style={{flex:"1 1 0",minWidth:80,padding:"10px 8px",textAlign:"center",border:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accentPale:"#fff"}}>
+          <div style={{fontSize:16,marginBottom:2}}>{"\u2714\uFE0F"}</div>
+          <div style={{fontSize:12,fontWeight:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?700:500,color:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accent:C.textMid}}>None</div>
+          <div style={{fontSize:10,color:C.textMuted}}>No risk applied</div>
+        </button>
         {[
             { k: "DELAYED", l: "12-month delay", s: "Programme slips 1 year", e: "\u23f3" },
             { k: "PARTIAL", l: "Partial decom", s: "Only 50% systems retired", e: "\u26a0\ufe0f" },
