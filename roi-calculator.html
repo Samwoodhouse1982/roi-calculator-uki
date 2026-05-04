@@ -3037,12 +3037,90 @@ function ROICalculator() {
     </ResultSection>}
 
     {!dim && <ResultSection defaultOpen={true} title="Detailed breakdown" icon="🔍" dimmed={dim}>
-    <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
-      <ResultCard dimmed={dim} label={`Total savings (${rampYears}-year)`} value={an?<AnimatedK value={r.total3WithReimbursement} active={an}/>:"–"} sub={an?`All benefits across ${rampYears} years`:""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
-      <ResultCard dimmed={dim} label="Annual savings (steady state)" value={an?<AnimatedK value={r.annualWithReimbursement} active={an}/>:"–"} sub={an?"Decom + capacity + ABF/funding + quality":""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
-      <ResultCard dimmed={dim} label="Clinician time (annual)" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={an?<span>{fmtNum(r.hrsSaved)} hrs/yr, {Math.round(r.realisation*100)}% realisation</span>:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
-      <ResultCard dimmed={dim} label={r.isAgedCare ? "Aged care impact" : r.isNDIS ? "NDIS impact" : "ABF efficiency & quality"} value={an?<AnimatedK value={r.reimbursementImpact + r.qualitySavings} active={an}/>:"–"} sub={an?(r.isAgedCare ? "AN-ACC + agency + compliance + safety" : r.isNDIS ? "Claims + utilisation + compliance + retention" : (r.privateRevRecovery > 0 ? "ABF efficiency + private revenue + quality" : "ABF efficiency + quality")):""} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
+    {/* Hero summary */}
+    <div style={{textAlign:"center",padding:"8px 0 24px"}}>
+      <div style={{fontSize:13,fontWeight:600,color:C.textMuted,letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>Estimated annual savings at steady state</div>
+      <div style={{fontSize:52,fontWeight:800,color:C.accent,letterSpacing:"-2px",lineHeight:1}}>{an ? <AnimatedK value={r.annualWithReimbursement} active={an}/> : "\u2013"}</div>
+      <div style={{fontSize:14,color:C.textMid,marginTop:8}}>per year ({rampYears}-year total: <strong style={{color:C.accent}}>{an ? fmtK(r.total3WithReimbursement) : "\u2013"}</strong>)</div>
     </div>
+
+    {/* Composition bar */}
+    {an && (() => {
+      const segs = [
+        {label:"Decommission", value:r.decomSave, color:"#0F4146"},
+        {label:"Capacity", value:r.timeSave, color:"#2a6e6e"},
+        {label:r.isAgedCare?"AN-ACC & funding":r.isNDIS?"Claims & utilisation":"ABF & revenue", value:r.reimbursementImpact, color:"#73D2E1"},
+        {label:"Quality / cost avoidance", value:r.qualitySavings, color:"#8a2e4a"},
+        ...(r.academicSavings > 0 ? [{label:"Academic", value:r.academicSavings, color:"#7a6520"}] : []),
+        ...(r.mergeSavings > 0 ? [{label:"Network", value:r.mergeSavings, color:"#4a4080"}] : []),
+      ].filter(s => s.value > 0);
+      const total = r.annualWithReimbursement || 1;
+      return <div style={{marginBottom:24}}>
+        <div style={{display:"flex",height:10,borderRadius:5,overflow:"hidden",marginBottom:12}}>
+          {segs.map((s,i) => <div key={i} style={{flex:s.value,background:s.color,transition:"flex .5s"}} />)}
+        </div>
+        <div style={{display:"flex",gap:14,justifyContent:"center",flexWrap:"wrap"}}>
+          {segs.map((s,i) => <div key={i} style={{display:"flex",alignItems:"center",gap:6}}>
+            <div style={{width:10,height:10,borderRadius:3,background:s.color}} />
+            <span style={{fontSize:12,color:C.textMid}}>{s.label}: <strong style={{color:s.color}}>{fmtK(s.value)}</strong> ({Math.round(s.value/total*100)}%)</span>
+          </div>)}
+        </div>
+      </div>;
+    })()}
+
+    {/* KPI cards */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+      <ResultCard dimmed={dim} label="Legacy decommission" value={an?fmtK(r.decomSave):"\u2013"} sub={an?r.decom+" of "+r.legacy+" systems retired":""} bg={C.greenPale} border="#c3ddd3" valueColor="#0F4146" />
+      <ResultCard dimmed={dim} label={r.isAgedCare?"Places capacity":r.isNDIS?"Staff capacity":"Clinical capacity"} value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"\u2013"} sub={an?fmtK(r.timeSave)+"/yr value":""} bg="#e8faf6" border="#b0e8dc" valueColor="#2a6e6e" />
+      <ResultCard dimmed={dim} label={r.isAgedCare?"Funding & efficiency":r.isNDIS?"Revenue & efficiency":"ABF & revenue"} value={an?fmtK(r.reimbursementImpact):"\u2013"} sub={an?(r.isAgedCare?"AN-ACC + agency + compliance":r.isNDIS?"Claims + utilisation + compliance + retention":"ABF efficiency"+(r.privateRevRecovery>0?" + private revenue":"")):"\u2013"} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
+      <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"\u2013"} sub={an?(r.isAgedCare?"Avoidable harm reduction":r.isNDIS?"":"Indemnity + excess bed days + e-discovery"):"\u2013"} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
+      {r.academicSavings > 0 && <ResultCard dimmed={dim} label="Academic programme" value={an?fmtK(r.academicSavings):"\u2013"} sub={an?"Research + teaching + compliance":""} bg="#f5f0fa" border="#d4c4df" valueColor="#4a4080" />}
+      {r.mergeSavings > 0 && <ResultCard dimmed={dim} label="Network consolidation" value={an?fmtK(r.mergeSavings):"\u2013"} sub={an?r.duplicateSystems+" duplicate systems":""} bg="#f0f0fa" border="#c4c4df" valueColor="#4a4080" />}
+    </div>
+
+    {/* Year-by-year stacked bar chart */}
+    {an && (() => {
+      const pcts = r.rampPcts;
+      const segs = [
+        {label:"Decommission", color:"#0F4146", val:r.decomSave},
+        {label:"Capacity", color:"#2a6e6e", val:r.timeSave},
+        {label:r.isAgedCare?"Funding":r.isNDIS?"Revenue":"ABF", color:"#73D2E1", val:r.reimbursementImpact},
+        {label:"Quality", color:"#8a2e4a", val:r.qualitySavings},
+        ...(r.academicSavings > 0 ? [{label:"Academic", color:"#7a6520", val:r.academicSavings}] : []),
+        ...(r.mergeSavings > 0 ? [{label:"Network", color:"#4a4080", val:r.mergeSavings}] : []),
+      ].filter(s => s.val > 0);
+      const barH = 140;
+      return <div style={{padding:"0 20px",marginBottom:24}}>
+        <div style={{fontSize:13,fontWeight:700,color:C.textMid,marginBottom:12}}>{rampYears}-year savings projection</div>
+        <div style={{display:"flex",gap:8,alignItems:"flex-end",minHeight:barH+30,paddingTop:8}}>
+          {pcts.map((p,yi) => {
+            const h = Math.round(barH * p);
+            const yrTotal = Math.round(r.annualWithReimbursement * p);
+            return <div key={yi} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center"}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.accent,marginBottom:4}}>{fmtK(yrTotal)}</div>
+              <div style={{width:"100%",height:h,borderRadius:"8px 8px 4px 4px",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+                {segs.map((s,si) => <div key={si} style={{flex:s.val,background:s.color,minHeight:1}} />)}
+              </div>
+              <div style={{fontSize:11,color:C.textMuted,marginTop:6,fontWeight:600}}>Year {yi+1}</div>
+              <div style={{fontSize:10,color:C.textMuted}}>{Math.round(p*100)}%</div>
+            </div>;
+          })}
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:70}}>
+            <div style={{fontSize:13,fontWeight:800,color:C.accent,marginBottom:4}}>{fmtK(r.total3WithReimbursement)}</div>
+            <div style={{width:"100%",height:barH,borderRadius:"8px 8px 4px 4px",overflow:"hidden",display:"flex",flexDirection:"column",border:"2px solid "+C.accent}}>
+              {segs.map((s,si) => <div key={si} style={{flex:s.val,background:s.color,minHeight:1}} />)}
+            </div>
+            <div style={{fontSize:11,color:C.accent,marginTop:6,fontWeight:700}}>Total</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginTop:14}}>
+          {segs.map((s,i) => <div key={i} style={{display:"flex",alignItems:"center",gap:4}}>
+            <div style={{width:8,height:8,borderRadius:2,background:s.color}} />
+            <span style={{fontSize:10,color:C.textMuted}}>{s.label}</span>
+          </div>)}
+        </div>
+      </div>;
+    })()}
 
     {/* Decom – tiered breakdown */}
     <Card dimmed={dim}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Legacy decommission savings</h3>
