@@ -13,8 +13,8 @@ export function SplashScreen({ onStart }) {
     let w, h;
 
     const resize = () => {
-      w = canvas.width = canvas.parentElement.clientWidth || 1080;
-      h = canvas.height = canvas.parentElement.clientHeight || window.innerHeight;
+      w = canvas.width = 1080;
+      h = canvas.height = 1920;
     };
     resize();
 
@@ -83,7 +83,7 @@ export function SplashScreen({ onStart }) {
 
   return (
     <div style={{
-      position: 'relative', zIndex: 100, width: '100%', maxWidth: 1080, margin: '0 auto', height: '100vh',
+      position: 'relative', zIndex: 100, width: 1080, minHeight: 1920, height: '100vh',
       background: 'linear-gradient(160deg, #060b14 0%, #0a1020 25%, #0c1825 50%, #091520 75%, #060b14 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start',
       overflow: 'hidden', cursor: 'pointer',

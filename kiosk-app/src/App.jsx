@@ -181,13 +181,13 @@ export default function App() {
 
   if (calibrating) {
 
-  return <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: '100vh', height: '100vh', color: C.text, position: "relative" }}>
+  return <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, height: '100vh', color: C.text, position: "relative" }}>
       <CalibratingScreen onDone={handleCalibrationDone} />
     </div>;
   }
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: '100vh', color: C.text, lineHeight: 1.55, display: "flex", flexDirection: "column" }}>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, color: C.text, lineHeight: 1.55, display: "flex", flexDirection: "column" }}>
       <div style={{ padding: "48px 56px 0" }}>
         <StepIndicator steps={KIOSK_STEPS} current={kioskStep} onJump={setKioskStep} />
       </div>
