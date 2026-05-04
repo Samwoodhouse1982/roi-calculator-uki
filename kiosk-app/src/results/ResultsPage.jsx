@@ -1,7 +1,31 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { C, F, fmtK, fmtNum } from '../theme';
 import { Icon } from '../components/Icons';
 import { Card } from '../components';
+
+function useCountUp(target, duration = 1200) {
+  const [val, setVal] = useState(0);
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    if (!target) return;
+    setDone(false);
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      const ease = 1 - Math.pow(1 - t, 3);
+      setVal(Math.round(target * ease));
+      if (t < 1) requestAnimationFrame(tick);
+      else { setVal(target); setDone(true); }
+    };
+    requestAnimationFrame(tick);
+  }, [target, duration]);
+  return { val, done };
+}
+
+function AnimK({ value }) {
+  const { val, done } = useCountUp(value, 1400);
+  return <span style={{ display: "inline-block", transition: "transform .2s", transform: done ? "scale(1)" : "scale(1)", animation: done ? "numPulse .4s ease-out" : "none" }}>{fmtK(val)}</span>;
+}
 
 function Methodology({ children }) {
   const [open, setOpen] = useState(false);
@@ -49,12 +73,13 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
   return <div style={{ animation: "rfade .5s ease-out" }}>
     <style>{`@keyframes rfade { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
-      @keyframes glow { 0%,100% { text-shadow: 0 0 30px rgba(0,212,170,0.3); } 50% { text-shadow: 0 0 60px rgba(0,212,170,0.6); } }`}</style>
+      @keyframes glow { 0%,100% { text-shadow: 0 0 30px rgba(0,212,170,0.3); } 50% { text-shadow: 0 0 60px rgba(0,212,170,0.6); } }
+      @keyframes numPulse { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }`}</style>
 
     {/* Hero */}
     <div style={{ textAlign: "center", marginBottom: 20, padding: "24px 0" }}>
       <div style={{ fontSize: F.body, fontWeight: 600, color: C.textMuted, letterSpacing: 4, textTransform: "uppercase", marginBottom: 16 }}>Estimated annual savings</div>
-      <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-4px", animation: "glow 3s ease-in-out infinite" }}>{fmtK(totalAnnual)}</div>
+      <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-4px", animation: "glow 3s ease-in-out infinite" }}><AnimK value={totalAnnual} /></div>
       <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>per year at steady state</div>
     </div>
 
@@ -201,6 +226,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     <div ref={decomRef}>
       <Card style={{ marginBottom: 18, borderLeft: `3px solid ${C.accent}` }}>
         <CTitle iconKey="unlock" color={C.accent}>Decommission savings</CTitle>
+        <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Annual licensing, support, and infrastructure costs eliminated when legacy systems are retired and data archived into Galen.</div>
         <Row label="Legacy systems in scope" value={r.legacy} />
         <Row label="Systems retired" value={r.decom} />
         <Row label="Total estate cost" value={fmtK(r.totalEstate) + "/yr"} />
@@ -215,6 +241,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     <div ref={capacityRef}>
       <Card style={{ marginBottom: 18, borderLeft: `3px solid ${C.amber}` }}>
         <CTitle iconKey="clock" color={C.amber}>Clinical capacity</CTitle>
+        <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Clinician time freed by eliminating context-switching between legacy systems, valued at blended hourly rate with conservative realization.</div>
         <Row label="Total staff" value={fmtNum(r.totalStaff)} />
         <Row label="Active system users (65%)" value={fmtNum(r.clinicians)} />
         <Row label="Systems per user (~35% exposure)" value={r.systemsPerUser} />
@@ -232,6 +259,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {seg.reimb > 0 && <div ref={reimbRef}>
       <Card style={{ marginBottom: 18, borderLeft: `3px solid ${C.blue}` }}>
         <CTitle iconKey="dollar" color={C.blue}>Reimbursement & compliance</CTitle>
+        <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>CMS penalty program recovery and denial reduction from improved documentation through system consolidation.</div>
         {r.hrrpReduction > 0 && <Row label="Hospital Readmissions Reduction Program (HRRP) recovery" value={fmtK(r.hrrpReduction)} />}
         {r.hacReduction > 0 && <Row label="Hospital-Acquired Condition (HAC) improvement" value={fmtK(r.hacReduction)} />}
         {r.vbpImprovement > 0 && <Row label="Value-Based Purchasing (VBP) opportunity" value={fmtK(r.vbpImprovement)} />}
@@ -247,17 +275,15 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     <div ref={safetyRef}>
       <Card style={{ marginBottom: 18, borderLeft: `3px solid ${C.purple}` }}>
         <CTitle iconKey="shield" color={C.purple}>Patient safety impact</CTitle>
+        <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Cost avoidance from preventing adverse events attributable to fragmented clinical information across legacy systems.</div>
         <Row label="Medication errors avoided" value={fmtNum(r.safetyMedErrorsAvoided)} />
         <Row label="Patients protected from harm" value={fmtNum(r.safetyPatientsProtected)} />
         <Row label="Excess bed days avoided" value={fmtNum(r.safetyBedDaysAvoided)} />
         {r.readmissionsAvoided > 0 && <Row label={"Readmissions avoided (" + r.readmissionsAvoided + " patients)"} value={r.readmissionCostAvoidance > 0 ? fmtK(r.readmissionCostAvoidance) + "/yr" : "quality metric"} />}
         {r.malpracticeReduction > 0 && <Row label="Malpractice reduction" value={fmtK(r.malpracticeReduction) + "/yr"} />}
         {(r.qualitySavings || 0) > 0 && <Row label="Total cost avoidance" value={fmtK(r.qualitySavings) + "/yr"} accent />}
-        <div style={{ marginTop: 12, padding: "12px 16px", background: C.bg, borderRadius: 12, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.6 }}>
-          These are cost avoidance figures. They represent harm that doesn't occur, not direct budget reductions. They contribute to the total ROI through reduced length of stay, fewer readmissions, and lower liability exposure.
-        </div>
         <Methodology>
-          <strong>Method:</strong> ADE rates from AHRQ PSI data and HHS OIG 2022 (25% of Medicare patients experience adverse events). Excess bed day cost: $3,132/day (KFF/AHA 2023). Medication errors: Bates et al (1.8 preventable ADEs per 100 admissions). Communication failures: 30% of malpractice claims (CRICO 2016).
+          <strong>Method:</strong> ADE rates from AHRQ PSI data and HHS OIG 2022 (25% of Medicare patients experience adverse events). Excess bed day cost: $3,132/day (KFF/AHA 2023). Medication errors: Bates et al (1.8 preventable ADEs per 100 admissions). Communication failures: 30% of malpractice claims (CRICO 2016).<br/><br/><strong>Classification:</strong> Cost avoidance. These represent harm that doesn't occur, not direct budget reductions. Contributes through reduced length of stay, fewer readmissions, and lower liability.
         </Methodology>
       </Card>
     </div>
@@ -265,6 +291,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {/* Operational efficiency */}
     <Card style={{ marginBottom: 18, borderLeft: "3px solid #2ecc71" }}>
       <CTitle iconKey="clock" color="#2ecc71">Operational efficiency</CTitle>
+      <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>IT service desk and records request improvements from reducing the number of systems staff need to support and search.</div>
       <div style={{ display: "flex", gap: 14, marginBottom: 16 }}>
         <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
           <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>Service desk tickets</div>
@@ -279,9 +306,6 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
           <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 8 }}>{r.sarDaysBefore} days → {r.sarDaysAfter} days</div>
         </div>
       </div>
-      <div style={{ fontSize: F.tiny, color: C.textMid, lineHeight: 1.6 }}>
-        Each legacy system generates ~2.5 service desk tickets per month. Retiring systems eliminates their ticket load entirely; remaining systems see a 40% reduction through simplified interfaces. Medical records requests (HIPAA right of access) are faster when data is consolidated into a single archive rather than scattered across {r.legacy} separate systems.
-      </div>
       <Methodology>
         <strong>Method:</strong> Ticket baseline: {r.legacy} systems x 2.5 tickets/system/month, adjusted for data quality. Surviving systems generate 60% of baseline tickets (simplified support model). Records request turnaround: base 1.5 days + 0.4 days per system (before) vs 0.15 days per surviving system (after). Based on AHIMA benchmarks for multi-source record assembly and HIPAA-compliant release timelines.
       </Methodology>
@@ -290,6 +314,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {/* Legal & compliance */}
     <Card style={{ marginBottom: 18, borderLeft: "3px solid #e74c3c" }}>
       <CTitle iconKey="shield" color="#e74c3c">Legal and compliance</CTitle>
+      <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Medico-legal records assembly savings and cyber attack surface reduction from retiring legacy systems.</div>
       <div style={{ display: "flex", gap: 14, marginBottom: 16 }}>
         <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
           <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>e-Discovery savings</div>
@@ -302,11 +327,8 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
           <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 6 }}>attack surfaces eliminated</div>
         </div>
       </div>
-      <div style={{ padding: "12px 16px", background: "#2a1015", borderRadius: 12, fontSize: F.tiny, color: "#e8a0a0", lineHeight: 1.6, marginBottom: 12 }}>
-        Average healthcare data breach: $10.93m (IBM/Ponemon 2023). Each legacy system on an unsupported operating system is a potential attack vector. 90% of healthcare organisations experienced a cyberattack in 2024. Retiring {r.cyberSystemsRetired} systems directly reduces your exposure.
-      </div>
       <Methodology>
-        <strong>Method:</strong> e-Discovery: {r.litigationCases} litigation cases/yr ({Math.round(12)} per 100 beds). Records assembly across {r.legacy} legacy systems averages 28 hrs/case (3.5 days); consolidated archive reduces to 6 hrs (0.75 days). HIM staff rate: $55/hr. Cyber risk: each legacy system contributes approximately 4% to breach probability (based on 70% of hospitals breached over 3 years, with legacy systems on unsupported OS as primary vectors).
+        <strong>Method:</strong> e-Discovery: {r.litigationCases} cases/yr (~12 per 100 beds). Records assembly: 28 hrs/case (3.5 days) across fragmented systems vs 6 hrs consolidated. HIM staff: $55/hr. Cyber: avg healthcare breach $10.93m (IBM/Ponemon 2023). 90% of health systems attacked in 2024. Each legacy system on unsupported OS is an attack vector.
       </Methodology>
     </Card>
 
@@ -314,9 +336,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {seg.network > 0 && <div ref={networkRef}>
       <Card style={{ marginBottom: 18, borderLeft: "3px solid #8e44ad" }}>
         <CTitle iconKey="network" color="#8e44ad">Network consolidation</CTitle>
-        <div style={{ marginBottom: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>
-          Multi-facility health systems typically run duplicate instances of the same legacy system across sites. Consolidating to a single archive eliminates redundant licensing, infrastructure, and support contracts.
-        </div>
+        <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Multi-facility systems run duplicate legacy instances across sites. A single archive eliminates redundant licensing, infrastructure, and support.</div>
         <Row label="Duplicate systems identified" value={fmtNum(r.duplicateSystems)} />
         <Row label="Duplicate system cost" value={fmtK(r.duplicateSystemCost) + "/yr"} />
         {r.duplicateElimination > 0 && <Row label="Duplicate elimination savings" value={fmtK(r.duplicateElimination)} />}
@@ -333,6 +353,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {seg.academic > 0 && <div ref={academicRef}>
       <Card style={{ marginBottom: 18, borderLeft: "3px solid #e67e22" }}>
         <CTitle iconKey="graduation" color="#e67e22">Academic program savings</CTitle>
+        <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Additional savings from retiring research databases, GME tracking systems, and teaching program administration tools.</div>
         {r.researchDecomSave > 0 && <Row label="Research system decommission" value={fmtK(r.researchDecomSave)} />}
         {r.gmeEfficiency > 0 && <Row label="Graduate Medical Education (GME) compliance" value={fmtK(r.gmeEfficiency)} />}
         {r.teachingOverhead > 0 && <Row label="Teaching program overhead" value={fmtK(r.teachingOverhead)} />}

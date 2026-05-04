@@ -1,6 +1,6 @@
 export const C = {
   bg: "#0a0f1a", surface: "#141b2d", border: "#2a3548", borderLight: "#1e2840",
-  text: "#e8edf5", textMid: "#a0b0c0", textMuted: "#607080",
+  text: "#e8edf5", textMid: "#a0b0c0", textMuted: "#8494a8",
   accent: "#00d4aa", accentLight: "#003328", accentPale: "#0a2520",
   green: "#00d4aa", greenPale: "#0a2520",
   amber: "#f0a040", amberLight: "#2a2010",

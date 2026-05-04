@@ -150,8 +150,12 @@ export function SplashScreen({ onStart }) {
 
       <img src={rldatixLogo} alt="RLDatix" style={{
         position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)',
-        width: 180, opacity: 0.5, zIndex: 3,
+        width: 360, opacity: 0.5, zIndex: 3,
       }} />
+      <div style={{
+        position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)',
+        fontSize: 11, color: 'rgba(255,255,255,0.2)', letterSpacing: 1, zIndex: 3, whiteSpace: 'nowrap',
+      }}>v2.1 · Updated May 2026</div>
     </div>
   );
 }
