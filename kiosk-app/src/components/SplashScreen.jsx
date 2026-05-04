@@ -21,15 +21,15 @@ export function SplashScreen({ onStart }) {
     const isPortrait = h > w;
 
     const particles = [];
-    const PARTICLE_COUNT = 180;
+    const PARTICLE_COUNT = 140;
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       particles.push({
         x: Math.random() * (w + 500) - 250,
         y: Math.random() * h,
-        r: Math.random() * 4 + 1,
+        r: Math.random() * 3.5 + 0.8,
         speed: Math.random() * 0.8 + 0.2,
-        opacity: Math.random() * 0.3 + 0.05,
+        opacity: Math.random() * 0.2 + 0.03,
         hue: Math.random() * 30 + 165,
         glow: Math.random() > 0.92,
         drift: (Math.random() - 0.5) * 0.3,
@@ -83,13 +83,13 @@ export function SplashScreen({ onStart }) {
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 100, width: '100%', height: '100%',
+      position: 'relative', zIndex: 100, width: 1080, minHeight: 1920, height: '100vh',
       background: 'linear-gradient(160deg, #060b14 0%, #0a1020 25%, #0c1825 50%, #091520 75%, #060b14 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start',
       overflow: 'hidden', cursor: 'pointer',
     }} onClick={onStart}>
 
-      <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, zIndex: 0 }} />
+      <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }} />
 
       <div style={{ position: 'absolute', inset: 0, zIndex: 1,
         background: 'radial-gradient(ellipse at 30% 50%, rgba(0,212,170,0.06) 0%, transparent 60%), radial-gradient(ellipse at 70% 30%, rgba(0,180,255,0.04) 0%, transparent 50%)',
