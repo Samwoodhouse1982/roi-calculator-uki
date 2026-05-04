@@ -1419,7 +1419,7 @@ function ROICalculator() {
     blended_hourly_rate: 55,
 
     // Totals
-    annual_savings: r.annual,
+    annual_savings: r.annualWithReimbursement,
     projection_years: r.rampN,
     projection_total: r.total3WithReimbursement,
 
@@ -1493,7 +1493,7 @@ function ROICalculator() {
 
     // Formatted values (ready to drop into templates)
     fmt: {
-      annual_savings: fmtK(r.annual),
+      annual_savings: fmtK(r.annualWithReimbursement),
       three_year_total: fmtK(r.total3WithReimbursement),
       decom_savings: fmtK(r.decomSave),
       time_savings: fmtK(r.timeSave),
@@ -2027,8 +2027,8 @@ function ROICalculator() {
                 filename: pdf.filename,
                 pdf_base64: base64,
                 scenario: am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected",
-                annual: r.annual,
-                total3: r.total3,
+                annual: r.annualWithReimbursement,
+                total3: r.total3WithReimbursement,
               }),
             });
           } catch (e) { console.warn("Email endpoint failed:", e); }
@@ -2092,7 +2092,7 @@ function ROICalculator() {
           {k:"mixed",l:"Public + Private",d:"Public hospital with significant private patient revenue"},
           {k:"private",l:"Predominantly Private",d:"Private hospital or PPP model"},
         ].map(r=><button type="button" key={r.k} onClick={()=>setReimbursementModel(r.k)} className="roi-btn" style={{flex:"1 1 140px",padding:"12px 14px",textAlign:"left",border:reimbursementModel===r.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,background:reimbursementModel===r.k?C.accentPale:"#fff",cursor:"pointer"}}>
-          <div style={{fontSize:13,fontWeight:700,color:reimbursementModel===r.k?C.accent:C.text}}>{r.l}</div>}
+          <div style={{fontSize:13,fontWeight:700,color:reimbursementModel===r.k?C.accent:C.text}}>{r.l}</div>
           <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{r.d}</div>
         </button>)}
       </div>
@@ -2754,7 +2754,7 @@ function ROICalculator() {
     <LockedConnector/>
 
     {/* CTA */}
-    <div ref={refCta} style={{animation:step>=3?"fade-in .4s ease":"none",opacity:step<3?0.3:1,pointerEvents:step<3?"none":"auto",transition:"opacity .4s"}}>
+    <div ref={refCta} style={{animation:step>=2?"fade-in .4s ease":"none",opacity:step<2?0.3:1,pointerEvents:step<2?"none":"auto",transition:"opacity .4s"}}>
       <button type="button" className="roi-cta" onClick={() => {
           setPage("calculating"); setCalcStep(0); setScenarioMode(null);
           scrollToTop();
@@ -3137,7 +3137,7 @@ function ROICalculator() {
           <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.abfEfficiencyGain):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>15% of legacy estate admin overhead addressable through consolidation</div>
         </div>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
+        {r.privateRevRecovery > 0 && <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Private patient revenue uplift</div>
           <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.privateRevRecovery):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>30% recovery of leaked private episodes (15% leakage, VAGO (Victorian Auditor-General's Office) 2019)</div>
@@ -3150,8 +3150,8 @@ function ROICalculator() {
       </div>
 
       <Callout bg={C.greenPale} border="#c3ddd3">
-        <strong style={{color:C.green}}>Total ABF & revenue impact:</strong>{" "}
-        {fmtK(r.abfEfficiencyGain + r.privateRevRecovery + r.duplicateReduction)}/yr (cashable)
+        <strong style={{color:C.green}}>Total reimbursement & quality impact:</strong>{" "}
+        {fmtK(r.reimbursementImpact + r.qualitySavings)}/yr
       </Callout>
 
       <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
@@ -3371,7 +3371,7 @@ function ROICalculator() {
     {/* Year-by-year */}
     <Card dimmed={dim}>
       <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Year-by-year breakdown</h3>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>({fmtK(r.decomSave)} + {fmtK(r.timeSave)}) {"×"} 3 = <strong style={{color:C.green}}>{fmtK(r.total3)}</strong></p>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>({fmtK(r.decomSave)} + {fmtK(r.timeSave)} + {fmtK(r.reimbursementImpact)} + {fmtK(r.qualitySavings)}) {"\u00d7"} 3yr ramp = <strong style={{color:C.green}}>{fmtK(r.total3WithReimbursement)}</strong></p>
       <div style={{overflowX:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}><thead><tr>
           <th style={th_}>Benefit</th><th style={{...th_,textAlign:"right"}}>Y1</th><th style={{...th_,textAlign:"right"}}>Y2</th><th style={{...th_,textAlign:"right"}}>Y3</th><th style={{...th_,textAlign:"right",color:C.accent}}>Total</th>
