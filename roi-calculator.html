@@ -3123,7 +3123,7 @@ function ROICalculator() {
 
       <EvidenceDropdown title="Evidence & methodology">
         <strong>Methodology:</strong> ABF efficiency modelled at 15% of legacy estate cost addressable through consolidation. Private patient revenue: 30% recovery of leaked episodes (15% leakage rate, VAGO 2019).<br/><br/>
-        <strong>Sources:</strong> IHACPA 2024-25 (NWAU pricing). VAGO 2019 (private patient leakage). NSW SDPR programme data. All figures are scenario-adjusted.
+        <strong>Sources:</strong> IHACPA 2024-25 (NWAU pricing). VAGO 2019 (private patient leakage). NSW SDPR programme data. Productivity Commission May 2024: up to A$5.4bn/yr in national savings from better EMR data use. All figures are scenario-adjusted.
       </EvidenceDropdown>
     </Card><LockedConnector/>
 
@@ -3164,7 +3164,7 @@ function ROICalculator() {
       </Callout>
       <EvidenceDropdown title="Evidence & methodology">
         <strong>Methodology:</strong> Excess bed days: 8.0/bed baseline (QAHCS/AIHW), 35% fragmentation attribution (ACSQHC), A$3,100/day (IHACPA). Indemnity: 3% of A$20,000/bed (VMIA 2025-26). Duplicate testing: 22% duplicate rate (Banker et al 2024, RCPA), A$12,000/bed pathology, 50% addressable.<br/><br/>
-        <strong>Classification:</strong> Cost avoidance. These represent costs not incurred when adverse events are prevented.
+        <strong>AU evidence:</strong> QLD DigiMat (Woods et al 2024): 12.9% decline in medication complications across 1.55M episodes. RCH Melbourne (South et al 2022): 22% decrease in in-hospital mortality post-Epic. QAO 2018: 37% fewer hospital-acquired infections at Princess Alexandra post-ieMR.<br/><br/><strong>Classification:</strong> Cost avoidance. These represent costs not incurred when adverse events are prevented.
       </EvidenceDropdown>
     </Card><LockedConnector/>
 
@@ -3284,20 +3284,7 @@ function ROICalculator() {
     </div>}
 
 
-        {!dim && <ResultSection defaultOpen={true} title="Australian evidence benchmarks" icon="📋" dimmed={dim}>
-      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-        {[
-          {source:"Productivity Commission",date:"May 2024",metric:"Up to A$5.4bn/yr",desc:"national savings from better EMR data use",color:"#2d6a4f"},
-          {source:"QLD DigiMat",date:"Woods et al 2024",metric:"12.9% decline",desc:"in medication complications (1.55M episodes)",color:"#d4507a"},
-          {source:"RCH (Royal Children's Hospital) Melbourne",date:"South et al 2022",metric:"22% decrease",desc:"in in-hospital mortality post-Epic",color:"#2c3e6b"},
-          {source:"QAO (Queensland Audit Office) 2018",date:"Princess Alexandra",metric:"37% fewer",desc:"hospital-acquired infections post-ieMR",color:"#0f4146"},
-        ].map((b,i) => <div key={i} style={{flex:"1 1 150px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
-          <div style={{fontSize:18,fontWeight:800,color:b.color,marginBottom:2}}>{b.metric}</div>
-          <div style={{fontSize:11,color:C.textMid,lineHeight:1.4}}>{b.desc}</div>
-          <div style={{fontSize:10,color:C.textMuted,marginTop:4}}>{b.source} ({b.date})</div>
-        </div>)}
-      </div>
-    </ResultSection>}
+
 
     
     {/* Operational efficiency */}
