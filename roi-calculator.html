@@ -1754,7 +1754,7 @@ function ROICalculator() {
       });
       const safetyEnd = doc.lastAutoTable.finalY + 2;
       doc.setFontSize(7); doc.setFont("helvetica","normal"); setC(GREY);
-      const litigNote = "Context: ACSQHC reports that communication failure is a contributing factor in approximately 35% of clinical incidents. State-based medical indemnity schemes (icare NSW, VMIA VIC) show that adverse events from fragmented clinical information drive a significant proportion of claims. Safety metrics are not included in the financial ROI total.";
+      const litigNote = "Context: ACSQHC reports that communication failure is a contributing factor in approximately 35% of clinical incidents. State-based medical indemnity schemes (icare NSW, VMIA VIC) show that adverse events from fragmented clinical information drive a significant proportion of claims. Safety metrics support the quality and cost avoidance estimates in the ROI.";
       doc.text(doc.splitTextToSize(litigNote, cw - 16), ml + 6, safetyEnd + 2);
       // Resize safety box to fit
       const boxH = Math.max(52, safetyEnd + 10 - y);
@@ -1772,7 +1772,7 @@ function ROICalculator() {
       margin: { left: ml, right: mr },
       head: [["Category", "Annual impact", "Source"]],
       body: [
-        ["ABF efficiency gain", fmtK(r.abfEfficiencyGain || 0) + "/yr", "15% of legacy estate admin overhead (modelled)"],
+        ["Activity-Based Funding efficiency", fmtK(r.abfEfficiencyGain || 0) + "/yr", "15% of legacy estate admin overhead (modelled)"],
         ["Private patient uplift", fmtK(r.privateRevRecovery) + "/yr", "30% recovery of leaked private episodes"],
         ["Medical indemnity reduction", fmtK(r.malpracticeReduction) + "/yr", "3% of A$20,000/bed (VMIA 2025-26)"],
         ["Excess bed day savings", fmtK(r.excessDayCostAvoided) + "/yr", "QAHCS/AIHW (A$3,100/day x fragmentation attribution)"],
@@ -1873,7 +1873,7 @@ function ROICalculator() {
       if (r.ndisComplianceSaving > 0) pdfRows.push(pdfRow("Compliance savings", r.ndisComplianceSaving));
       if (r.ndisRetentionSaving > 0) pdfRows.push(pdfRow("Retention savings", r.ndisRetentionSaving));
     } else {
-      if (r.abfEfficiencyGain > 0) pdfRows.push(pdfRow("ABF efficiency", r.abfEfficiencyGain));
+      if (r.abfEfficiencyGain > 0) pdfRows.push(pdfRow("Activity-Based Funding (ABF) efficiency", r.abfEfficiencyGain));
       if (r.privateRevRecovery > 0) pdfRows.push(pdfRow("Private patient revenue", r.privateRevRecovery));
       if (r.qualitySavings > 0) pdfRows.push(pdfRow("Quality / cost avoidance", r.qualitySavings));
     }
@@ -2946,7 +2946,7 @@ function ROICalculator() {
         {label:"Decommission", value:r.decomSave, color:"#0F4146"},
         {label:"Capacity", value:r.timeSave, color:"#1a8a7a"},
         {label:r.isAgedCare?"AN-ACC & funding":r.isNDIS?"Claims & utilisation":"ABF & revenue", value:r.reimbursementImpact, color:"#00d4aa"},
-        {label:"Quality / cost avoidance", value:r.qualitySavings, color:"#d4507a"},
+        ...(r.qualitySavings > 0 ? [{label:"Quality / cost avoidance", value:r.qualitySavings, color:"#d4507a"}] : []),
         ...(r.academicSavings > 0 ? [{label:"Academic", value:r.academicSavings, color:"#2c3e6b"}] : []),
         ...(r.mergeSavings > 0 ? [{label:"Network", value:r.mergeSavings, color:"#6c5ce7"}] : []),
       ].filter(s => s.value > 0);
@@ -2969,7 +2969,7 @@ function ROICalculator() {
       <ResultCard dimmed={dim} label="Legacy decommission" value={an?fmtK(r.decomSave):"\u2013"} sub={an?r.decom+" of "+r.legacy+" systems retired":""} bg={C.greenPale} border="#c3ddd3" valueColor="#0F4146" />
       <ResultCard dimmed={dim} label={r.isAgedCare?"Places capacity":r.isNDIS?"Staff capacity":"Clinical capacity"} value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"\u2013"} sub={an?fmtK(r.timeSave)+"/yr value":""} bg="#e8faf6" border="#b0e8dc" valueColor="#1a8a7a" />
       <ResultCard dimmed={dim} label={r.isAgedCare?"Funding & efficiency":r.isNDIS?"Revenue & efficiency":"ABF efficiency & revenue"} value={an?fmtK(r.reimbursementImpact):"\u2013"} sub={an?(r.isAgedCare?"AN-ACC + agency + compliance":r.isNDIS?"Claims + utilisation + compliance + retention":"ABF efficiency"+(r.privateRevRecovery>0?" + private revenue":"")):"\u2013"} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
-      <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"\u2013"} sub={an?(r.isAgedCare?"Avoidable harm reduction":r.isNDIS?"":"Indemnity + excess bed days + e-discovery"):"\u2013"} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />
+      <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"\u2013"} sub={an?(r.isAgedCare?"Avoidable harm reduction":r.isNDIS?"":"Indemnity + excess bed days + e-discovery"):"\u2013"} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />}
       {r.academicSavings > 0 && <ResultCard dimmed={dim} label="Academic programme" value={an?fmtK(r.academicSavings):"\u2013"} sub={an?"Research + teaching + compliance":""} bg="#eef0f8" border="#c4cce0" valueColor="#2c3e6b" />}
       {r.mergeSavings > 0 && <ResultCard dimmed={dim} label="Network consolidation" value={an?fmtK(r.mergeSavings):"\u2013"} sub={an?r.duplicateSystems+" duplicate systems":""} bg="#f0eefa" border="#c4c0e8" valueColor="#6c5ce7" />}
     </div>
@@ -3152,7 +3152,7 @@ function ROICalculator() {
 
       <Callout bg={C.greenPale} border="#c3ddd3">
         <strong style={{color:C.green}}>Total in this section:</strong>{" "}
-        {fmtK(r.abfEfficiencyGain + r.privateRevRecovery + r.duplicateReduction)}/yr
+        {fmtK(r.abfEfficiencyGain + r.privateRevRecovery)}/yr
       </Callout>
 
       <div style={{marginTop:12,padding:"10px 14px",background:"#f0faf8",borderRadius:8,border:"1px solid #b0e0d8",fontSize:12,color:"#0F4146",lineHeight:1.6}}>
@@ -3168,31 +3168,31 @@ function ROICalculator() {
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Avoidable cost of harm</h3>
       </div>
       <p style={{fontSize:13,color:C.textMid,margin:"0 0 14px",lineHeight:1.5}}>
-        These are <strong>costs not incurred</strong> when fragmentation-related adverse events are prevented. They are not budget reductions {" \u2014 "} they represent the financial burden of preventable harm that would be reduced through consolidated clinical information. Classified as cost avoidance, not cashable savings.
+        These represent the <strong>financial cost of preventable harm</strong> attributable to legacy system fragmentation. They are included in the annual savings total as cost avoidance: real costs that would not be incurred if clinical information were consolidated.
       </p>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:14}}>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#f5f0f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Excess bed days avoided</div>
-          <div style={{fontSize:28,fontWeight:800,color:"#7a4f8a",margin:"6px 0"}}>{an?fmtK(r.excessDayCostAvoided):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(r.excessDayCostAvoided):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>{an?fmtNum(r.excessDaysAvoided):0} days at A$3,100/day (IHACPA, Independent Health and Aged Care Pricing Authority)</div>
-          <div style={{fontSize:10,color:"#7a4f8a",marginTop:4}}>35% fragmentation attribution (ACSQHC)</div>
+          <div style={{fontSize:10,color:"#d4507a",marginTop:4}}>35% fragmentation attribution (ACSQHC)</div>
         </div>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#f5f0f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Medical indemnity reduction</div>
-          <div style={{fontSize:28,fontWeight:800,color:"#7a4f8a",margin:"6px 0"}}>{an?fmtK(r.malpracticeReduction):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(r.malpracticeReduction):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>3% of A$20,000/bed institutional premium</div>
-          <div style={{fontSize:10,color:"#7a4f8a",marginTop:4}}>VMIA (Victorian Managed Insurance Authority) 2025-26 benchmark</div>
+          <div style={{fontSize:10,color:"#d4507a",marginTop:4}}>VMIA (Victorian Managed Insurance Authority) 2025-26 benchmark</div>
         </div>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#f5f0f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate testing reduction</div>
-          <div style={{fontSize:28,fontWeight:800,color:"#7a4f8a",margin:"6px 0"}}>{an?fmtK(r.duplicateReduction):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>22% duplicate rate at A2,000/bed pathology cost</div>
-          <div style={{fontSize:10,color:"#7a4f8a",marginTop:4}}>Banker et al 2024; RCPA guidelines</div>
+          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(r.duplicateReduction):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>22% duplicate rate at A$12,000/bed pathology cost</div>
+          <div style={{fontSize:10,color:"#d4507a",marginTop:4}}>Banker et al 2024; RCPA guidelines</div>
         </div>
       </div>
-      <Callout bg="#f5f0f8" border="#d4c4df">
-        <strong style={{color:"#7a4f8a"}}>Total avoidable cost of harm:</strong>{" "}
-        {fmtK(r.costAvoidance)}/yr (cost avoidance, not budget reduction)
+      <Callout bg="#fdf5f8" border="#f0c4d4">
+        <strong style={{color:"#d4507a"}}>Total avoidable cost of harm:</strong>{" "}
+        {fmtK(r.costAvoidance)}/yr (included in annual savings as cost avoidance)
       </Callout>
       <div style={{marginTop:10,padding:"8px 12px",background:"#f0faf8",borderRadius:6,fontSize:11,color:"#0F4146",lineHeight:1.6}}>
         <strong>Important:</strong> These figures represent the estimated financial burden of preventable adverse events attributable to information fragmentation. They will not appear as line items in your budget {" \u2014 "} they represent costs that are avoided when adverse events do not occur. Include in business cases as {"\""}cost avoidance{"\""} category, separate from cashable savings.
@@ -3211,25 +3211,25 @@ function ROICalculator() {
         Estimated financial impact of preventable safety incidents attributable to fragmented clinical information across your facilities.
       </p>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:14}}>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#f5f0f8",borderRadius:10}}>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Falls with fracture</div>
-          <div style={{fontSize:22,fontWeight:800,color:"#7a4f8a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.45))}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:10,color:"#7a4f8a"}}>~30% prevalence, A$35k/fracture hospitalisation (AIHW)</div>
+          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.45))}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:10,color:"#d4507a"}}>~30% prevalence, A$35k/fracture hospitalisation (AIHW)</div>
         </div>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#f5f0f8",borderRadius:10}}>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Pressure injuries</div>
-          <div style={{fontSize:22,fontWeight:800,color:"#7a4f8a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.25))}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:10,color:"#7a4f8a"}}>8.4% prevalence, A$10k/incident (ACSQHC QI data)</div>
+          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.25))}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:10,color:"#d4507a"}}>8.4% prevalence, A$10k/incident (ACSQHC QI data)</div>
         </div>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#f5f0f8",borderRadius:10}}>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Medication incidents</div>
-          <div style={{fontSize:22,fontWeight:800,color:"#7a4f8a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.30))}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:10,color:"#7a4f8a"}}>12-15 per 100 residents/yr, A$15k/hospitalisation</div>
+          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.30))}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:10,color:"#d4507a"}}>12-15 per 100 residents/yr, A$15k/hospitalisation</div>
         </div>
       </div>
-      <Callout bg="#f5f0f8" border="#d4c4df">
-        <strong style={{color:"#7a4f8a"}}>Total avoidable cost of harm:</strong>{" "}
-        {fmtK(r.acHarmAvoidance)}/yr (cost avoidance, not budget reduction)
+      <Callout bg="#fdf5f8" border="#f0c4d4">
+        <strong style={{color:"#d4507a"}}>Total avoidable cost of harm:</strong>{" "}
+        {fmtK(r.acHarmAvoidance)}/yr (included in annual savings as cost avoidance)
       </Callout>
     </Card>}
 
@@ -3521,7 +3521,7 @@ function ROICalculator() {
         </S>
 
         <S title="6. Patient safety metrics">
-          <p style={{margin:"0 0 8px"}}>These are <strong>not included</strong> in the financial ROI total. They provide qualitative context for the patient safety case.</p>
+          <p style={{margin:"0 0 8px"}}>These are <strong>clinical quality metrics</strong> that support the financial estimates above. The excess bed days and indemnity costs are quantified in the Avoidable Cost of Harm section.</p>
           <F>medErrors = beds {"\u00d7"} 14 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>patientsHarmed = beds {"\u00d7"} 5.8 {"\u00d7"} 35% attribution {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>excessBedDays = beds {"\u00d7"} 8.0 {"\u00d7"} 35% attribution {"\u00d7"} fragmentation {"\u00d7"} DQ</F>
           <p style={{margin:"8px 0 4px"}}><strong>14 medication errors per bed/yr</strong> {" - "} Westbrook et al (2015, two Sydney teaching hospitals) found incident reports capture only 1.2 per 1,000 actual errors. Administration errors occur in ~9% of medication administrations (ACSQHC 2013). At least 250,000 medication-related admissions annually costing A$1.4 billion (ACSQHC 2020). <Ev s="Westbrook et al 2015; ACSQHC 2013/2020; Runciman et al 2003."/></p>
           <p style={{margin:"4px 0"}}><strong>3.2 patients harmed per bed/yr</strong> {" - "} AIHW administrative data shows 5.4% of separations; at ~60 overnight separations per bed per year (ALOS 5.5), this yields ~3.2 adverse events per bed. The foundational QAHCS study (Wilson et al. 1995) found 16.6% of admissions associated with adverse events. Approximately 50% are deemed preventable. <Ev s="ACSQHC National Safety and Quality Reports; AIHW Hospital Statistics."/></p>
