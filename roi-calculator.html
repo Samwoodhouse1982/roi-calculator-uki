@@ -9,7 +9,7 @@
     body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background: transparent; overflow-x: hidden; }
 
 /* ═══════════════════════════════════════════════════════════════
-   ROI Calculator — Animations & Interactions
+   ROI Calculator - Animations & Interactions
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Keyframe animations ── */
@@ -353,7 +353,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const flagshipTotal = flagships.reduce((s,f) => s + (f.cost || 0), 0); // All flagships affect estate cost
   const flagshipDecomSave = flagships.filter(f => f.retire).reduce((s,f) => s + (f.cost || 0), 0); // All retiring flagships contribute savings
   const flagshipCount = flagships.length; // All flagships are additive to tier count
-  const flagshipRetireCount = flagships.filter(f => f.tier && f.retire).length;
+  const flagshipRetireCount = flagships.filter(f => f.retire).length;
   const portfolioSystems = inp._portfolioSystems || 0;
   const legacy = tieredLegacy + flagshipCount + portfolioSystems;
   const totalEstate = tieredEstate + flagshipTotal + (inp._portfolioCost ?? 0);
@@ -374,7 +374,12 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(totalStaff * ACTIVE_USER_PCT);
   const systemsPerUser = Math.max(2, Math.round(legacy * SYSTEM_EXPOSURE_PCT));
   const switchPenalty = Math.max(0, systemsPerUser - 1) * SWITCH_PENALTY_PER_SYSTEM;
-  const baseMin = isArchiveOnly ? 5 : 12;
+  // Base minutes wasted per clinician per week navigating legacy systems
+  // HAVE_EPR (8 mins): clinicians still look up historical data in unarchived systems,
+  //   re-key results, and context-switch. Lower than EVALUATING because the main
+  //   workflow is already on the EMR. Evidence: Westbrook et al 2020 time-motion studies.
+  // EVALUATING (12 mins): no single EMR, all clinical work spans multiple systems.
+  const baseMin = isArchiveOnly ? 8 : 12;
   const cappedPenalty = Math.min(switchPenalty, 4.0); // Cap: prevents >60 min/wk at extreme system counts
   const complexityBoost = inp._complexityBoost ?? 1.0;
   const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * complexityBoost * (1 + cappedPenalty));
@@ -426,7 +431,8 @@ function calc(inp, mode, ov = {}, flagships = []) {
   } else if (isNDIS) {
     // Claims accuracy
     const ndisRevenue = inp.bed_count * NDIS_REVENUE_PER_PARTICIPANT;
-    ndisClaimsRecovery = Math.round(ndisRevenue * 0.08 * NDIS_CLAIMS_IMPROVEMENT / 0.08 * sc.decom_pct);
+    // 8% of NDIS claims are rejected; 5% improvement in rejection rate through better documentation
+    ndisClaimsRecovery = Math.round(ndisRevenue * 0.08 * NDIS_CLAIMS_IMPROVEMENT * sc.decom_pct);
     // Utilisation improvement
     const ndisStaff = Math.round(inp.bed_count * NDIS_STAFF_PER_PARTICIPANT);
     const baseHrs = ndisStaff * 1824 * NDIS_UTILISATION_BASELINE;
@@ -439,8 +445,8 @@ function calc(inp, mode, ov = {}, flagships = []) {
     ndisRetentionSaving = Math.round(ndisTurnoverCost * NDIS_TURNOVER_REDUCTION * sc.decom_pct);
 
   } else {
-    // Hospital sector — original AU calculations
-    occupancy = inp._occupancy || DEFAULT_OCCUPANCY;
+    // Hospital sector - original AU calculations
+    occupancy = inp._occupancy ?? DEFAULT_OCCUPANCY;
     admissionsPerYear = Math.round(inp.bed_count * (365 / AU_AVG_ALOS) * occupancy);
     estAnnualRevenueCalc = admissionsPerYear * AU_NWAU_PER_SEPARATION * AU_NWAU_PRICE;
     estMedicareDrgRevenue = Math.round(estAnnualRevenueCalc * 0.70);
@@ -472,12 +478,12 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const isMultiHospital = inp._providerType === "state_network" || inp._providerType === "statewide";
   const survivingSystems = legacy - decom;
   const duplicateSystems = isMultiHospital ? Math.round(survivingSystems * DUPLICATE_SYSTEM_RATE) : 0;
-  const duplicateSystemCost = isMultiHospital ? Math.round(duplicateSystems * depCost) : 0; // Use dep tier cost — duplicates are departmental/niche, not enterprise
+  const duplicateSystemCost = isMultiHospital ? Math.round(duplicateSystems * depCost) : 0; // Use dep tier cost - duplicates are departmental/niche, not enterprise
   const duplicateElimination = Math.round(duplicateSystemCost * sc.decom_pct);
   const lhdCount = inp._lhdCount || Math.max(1, Math.round(inp.org_count / 15)); // LHDs/HHSs, not individual hospitals
   const duplicateInfraCost = isMultiHospital ? lhdCount * DUPLICATE_INFRA_COST_PER_FACILITY : 0;
   const infraConsolidation = Math.round(duplicateInfraCost * 0.60 * sc.decom_pct); // 60% consolidatable
-  // standardisationSave removed — identical formula to abfEfficiencyGain (both totalEstate*15%), was double-counting
+  // standardisationSave removed - identical formula to abfEfficiencyGain (both totalEstate*15%), was double-counting
   const standardisationSave = 0;
 
   // ── Legal & Compliance ──
@@ -1084,7 +1090,7 @@ function ROICalculator() {
   // To convert: in browser console run `const r=new FileReader();r.onload=()=>console.log(r.result.split(",")[1]);r.readAsDataURL(file)`
   const PDF_LOGO_BASE64 = "";     // e.g. "iVBORw0KGgo..."
   const PDF_LOGO_FORMAT = "PNG";  // "PNG" or "JPEG"
-  const PDF_LOGO_WIDTH = 42;      // mm — adjust to taste (height auto-scales)
+  const PDF_LOGO_WIDTH = 42;      // mm - adjust to taste (height auto-scales)
   const PDF_COMPANY_NAME = "RLDatix Data Solutions Group (AU)";
   const setOv = useCallback((k,v) => setOverrides(p=>({...p,[k]:v})),[]);
   const overrideCount = Object.values(overrides).filter(v=>v!=null).length;
@@ -1189,7 +1195,7 @@ function ROICalculator() {
 
   // Facility types: shared + perSite (AU)
   // Lightweight sites (community, outpatient, collection) connect to LHD shared platforms
-  // — perSite reflects only genuinely local integrations, not full system instances
+  // - perSite reflects only genuinely local integrations, not full system instances
   // Heavier sites (inpatient, labs, MPS) run their own departmental systems
   const FACILITY_TYPES = [
     { key: "community_health", label: "Community health centres", unit: "sites", shared:{ent:0,dep:0,nic:1}, perSite:{ent:0,dep:0,nic:0}, staffPer:15, baseCost:60000, perSiteCost:5000 },
@@ -1334,7 +1340,7 @@ function ROICalculator() {
       _providerType: providerType,
       _complexityBoost: pm.complexity_boost ?? 1.0,
       _lhdCount: providerType === "statewide" ? Math.max(1, Math.round(inputs.org_count / 13)) : (providerType === "state_network" ? Math.max(1, inputs.org_count) : 0),
-      _privatePct: reimbursementModel === "public" ? 0 : (PROVIDER_MULTIPLIERS[providerType]?.private_pct || 0.15),
+      _privatePct: reimbursementModel === "public" ? 0 : (PROVIDER_MULTIPLIERS[providerType]?.private_pct ?? 0.15),
       _portfolioSystems: portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems,
       _portfolioStaff: portfolioImpact.addStaff,
       _portfolioCost: portfolioOv.cost != null ? portfolioOv.cost : portfolioImpact.addCost,
@@ -1415,7 +1421,7 @@ function ROICalculator() {
     // Totals
     annual_savings: r.annual,
     projection_years: r.rampN,
-    projection_total: r.total3,
+    projection_total: r.total3WithReimbursement,
 
     // Provider profile
     provider_type: providerType,
@@ -1466,9 +1472,9 @@ function ROICalculator() {
 
     // Scenario comparison
     scenarios: {
-      conservative: { annual: rCon.annual, total3: rCon.total3, decom: rCon.decomSave, time: rCon.timeSave },
-      expected:     { annual: rExp.annual, total3: rExp.total3, decom: rExp.decomSave, time: rExp.timeSave },
-      stretch:      { annual: rStr.annual, total3: rStr.total3, decom: rStr.decomSave, time: rStr.timeSave },
+      conservative: { annual: rCon.annualWithReimbursement, total3: rCon.total3WithReimbursement, decom: rCon.decomSave, time: rCon.timeSave },
+      expected:     { annual: rExp.annualWithReimbursement, total3: rExp.total3WithReimbursement, decom: rExp.decomSave, time: rExp.timeSave },
+      stretch:      { annual: rStr.annualWithReimbursement, total3: rStr.total3WithReimbursement, decom: rStr.decomSave, time: rStr.timeSave },
     },
 
     // Support & SAR
@@ -1488,7 +1494,7 @@ function ROICalculator() {
     // Formatted values (ready to drop into templates)
     fmt: {
       annual_savings: fmtK(r.annual),
-      three_year_total: fmtK(r.total3),
+      three_year_total: fmtK(r.total3WithReimbursement),
       decom_savings: fmtK(r.decomSave),
       time_savings: fmtK(r.timeSave),
       total_estate: fmtK(r.totalEstate),
@@ -1500,9 +1506,9 @@ function ROICalculator() {
       cost_departmental: fmtK(r.depCost),
       cost_standalone: fmtK(r.nicCost),
       conservative_annual: fmtK(rCon.annual),
-      conservative_total3: fmtK(rCon.total3),
+      conservative_total3: fmtK(rCon.total3WithReimbursement),
       stretch_annual: fmtK(rStr.annual),
-      stretch_total3: fmtK(rStr.total3),
+      stretch_total3: fmtK(rStr.total3WithReimbursement),
       date: new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"}),
     },
   }), [r, rCon, rExp, rStr, inputs, flagships, leadForm, am, isArchiveOnly]);
@@ -1644,7 +1650,7 @@ function ROICalculator() {
     // Summary cards
     const cards = [
       { label: r.rampN + "-YEAR COMBINED", value: fmtK(r.total3WithReimbursement), sub: "All savings incl. ABF and quality", bg: LTBG },
-      { label: "ANNUAL RECURRING", value: fmtK(r.annual), sub: fmtK(r.decomSave) + " decom + " + fmtK(r.timeSave) + " time", bg: TEALBG },
+      { label: "ANNUAL RECURRING", value: fmtK(r.annualWithReimbursement), sub: "Decom + capacity + ABF/funding + quality", bg: TEALBG },
       { label: "ABF & QUALITY / YR", value: fmtK(r.reimbursementImpact + r.qualitySavings), sub: r.privateRevRecovery > 0 ? "ABF efficiency + private revenue + quality" : "ABF efficiency + quality", bg: [254,249,236] },
       { label: "HOURS FREED / YR", value: fmtNum(r.hrsSaved), sub: Math.round(r.realisation*100) + "% realisation", bg: [230,248,252] },
     ];
@@ -2628,7 +2634,7 @@ function ROICalculator() {
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
           <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>Galen Clinical Archive costs (optional)</span>
-          <InfoTip text="Enter indicative costs for the Galen Clinical Archive. The executive summary will show how the archiving investment unlocks decommission savings — without archiving, legacy systems cannot be safely decommissioned."/>
+          <InfoTip text="Enter indicative costs for the Galen Clinical Archive. The executive summary will show how the archiving investment unlocks decommission savings. Without archiving, legacy systems cannot be safely decommissioned."/>
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -2830,7 +2836,7 @@ function ROICalculator() {
           {[
             {label:"Combined annual",value:fmtK(r.annualWithReimbursement)+"/yr",color:C.green,bg:C.greenPale},
             ...(hasGalen ? [{label:rampYears+"-year net benefit",value:fmtK(netBenefit),color:C.accent,bg:"#e8faf6"},
-            {label:"Archive payback",value:payback>0?payback.toFixed(1)+" yrs":"—",color:"#0f4146",bg:C.blue25}] : []),
+            {label:"Archive payback",value:payback>0?payback.toFixed(1)+" yrs":"-",color:"#0f4146",bg:C.blue25}] : []),
             {label:"FTE (full-time equivalent) capacity freed",value:r.fteEquivalent.toFixed(0)+" FTE",color:"#b8860b",bg:"#fef9ec"},
           ].map((kpi,i) => <div key={i} style={{flex:"1 1 130px",minWidth:120,padding:"12px 14px",background:kpi.bg,borderRadius:10,textAlign:"center"}}>
             <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:3}}>{kpi.label}</div>
@@ -2838,7 +2844,7 @@ function ROICalculator() {
           </div>)}
         </div>
 
-        {/* Row 2: Benefit type split — one line */}
+        {/* Row 2: Benefit type split - one line */}
         <div style={{display:"flex",height:10,borderRadius:5,overflow:"hidden",marginBottom:4}}>
           {r.cashable > 0 && <div style={{flex:r.cashable,background:C.green}} title={"Cashable: "+fmtK(r.cashable)}/>}
           {r.nonCashable > 0 && <div style={{flex:r.nonCashable,background:"#daa520"}} title={"Capacity: "+fmtK(r.nonCashable)}/>}
@@ -2974,7 +2980,7 @@ function ROICalculator() {
             </tr></thead>
             <tbody>{yrBenefits.map((total,y) => <tr key={y} style={{borderBottom:`1px solid ${C.borderLight}`}}>
               <td style={{padding:"4px 8px",fontWeight:600}}>Year {y+1}</td>
-              {tranches.map((t,i) => {const ty=y-t.yearOffset;const p=ty>=0&&ty<ramp3.length?ramp3[ty]:ty>=ramp3.length?1:0;return <td key={i} style={{padding:"4px 8px",textAlign:"right",color:p===0?C.textMuted:C.textMid}}>{p===0?"—":fmtK(Math.round(r.annualWithReimbursement*t.bedPct*p))}</td>;})}
+              {tranches.map((t,i) => {const ty=y-t.yearOffset;const p=ty>=0&&ty<ramp3.length?ramp3[ty]:ty>=ramp3.length?1:0;return <td key={i} style={{padding:"4px 8px",textAlign:"right",color:p===0?C.textMuted:C.textMid}}>{p===0?"-":fmtK(Math.round(r.annualWithReimbursement*t.bedPct*p))}</td>;})}
               <td style={{padding:"4px 8px",textAlign:"right",fontWeight:700,color:C.accent}}>{fmtK(total)}</td>
               <td style={{padding:"4px 8px",textAlign:"right",color:cumBenefits[y+1]>=0?C.green:"#993535",fontWeight:600}}>{fmtK(cumBenefits[y+1])}</td>
             </tr>)}</tbody>
@@ -3035,7 +3041,7 @@ function ROICalculator() {
       <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:16}}>
         <OverridableStat label="Clinical staff" computed={calc(calcInputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on Australian health workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/admin staff per facility (20 base + 0.15/bed, capped at 120).`}/>
         <OverridableStat label="Mins wasted / wk" computed={calc(calcInputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on Westbrook et al 2010 (JAMIA) workflow interruption studies and Nuffield Trust 2020 system navigation research.`}/>
-        <Stat label="FTE equivalent" value={an?r.fteEquivalent.toFixed(0):0} sub="clinical capacity" color={"#b8860b"} info={`${fmtNum(r.hrsSaved)} hours freed ÷ 1,824 hours per FTE (38hr week × 48 working weeks) = ${r.fteEquivalent.toFixed(1)} FTE equivalent. This is not headcount reduction — it represents clinical capacity freed for patient care, equivalent to hiring ${r.fteEquivalent.toFixed(0)} additional clinicians without recruitment.`}/>
+        <Stat label="Full-time equivalent (FTE)" value={an?r.fteEquivalent.toFixed(0):0} sub="clinical capacity" color={"#b8860b"} info={`${fmtNum(r.hrsSaved)} hours freed ÷ 1,824 hours per FTE (38hr week × 48 working weeks) = ${r.fteEquivalent.toFixed(1)} FTE equivalent. This is not headcount reduction. It represents clinical capacity freed for patient care, equivalent to hiring ${r.fteEquivalent.toFixed(0)} additional clinicians without recruitment.`}/>
         <Stat label="Hours freed / yr" value={an?<AnimatedNum value={r.hrsSaved} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Result: ${fmtNum(r.hrsSaved)} hours per year.`}/>
         <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at A$65/hr blended rate (AIHW workforce data: nursing ~A$45-55/hr, medical ~A$90-120/hr, allied health ~A$40-60/hr). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity. This represents capacity redirected to patient care, not a direct cash saving. Equivalent to ~${(r.hrsSaved/1824).toFixed(0)} FTE.`}/>
       </div>
@@ -3153,7 +3159,7 @@ function ROICalculator() {
     </Card><LockedConnector/>
 
 
-    {sector === "hospital" && <>{/* Avoidable cost of harm — hospital only */}
+    {sector === "hospital" && <>{/* Avoidable cost of harm - hospital only */}
     <Card dimmed={dim} style={{border:"1px solid #d4c4df",background:"#faf7fc"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
         <span style={{fontSize:18}}>{"⚠️"}</span>
@@ -3166,7 +3172,7 @@ function ROICalculator() {
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#f5f0f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Excess bed days avoided</div>
           <div style={{fontSize:28,fontWeight:800,color:"#7a4f8a",margin:"6px 0"}}>{an?fmtK(r.excessDayCostAvoided):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>{an?fmtNum(r.excessDaysAvoided):0} days at A$3,100/day (IHACPA — Independent Health and Aged Care Pricing Authority)</div>
+          <div style={{fontSize:11,color:C.textMuted}}>{an?fmtNum(r.excessDaysAvoided):0} days at A$3,100/day (IHACPA (Independent Health and Aged Care Pricing Authority)</div>
           <div style={{fontSize:10,color:"#7a4f8a",marginTop:4}}>35% fragmentation attribution (ACSQHC)</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#f5f0f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
