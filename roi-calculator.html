@@ -2095,29 +2095,24 @@ function ROICalculator() {
     </Card>
     <LockedConnector/>
 
-    {/* FORK: Template vs Custom */}
-    {false && <div style={{animation:"fade-in .4s ease"}}>
-      <div style={{display:"flex",gap:10,margin:"0 0 8px"}}>
-        <button type="button" onClick={()=>{setModelMode("template");touch(0);touch(1);touch(2);touch(3);}} className="roi-btn" style={{flex:1,padding:"20px 18px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:12,background:"#fff",cursor:"pointer"}}>
-          <div style={{fontSize:20,marginBottom:6}}>{"⚡"}</div>
-          <div style={{fontSize:15,fontWeight:700,color:C.accent,marginBottom:4}}>Use template defaults</div>
-          <div style={{fontSize:12,color:C.textMuted,lineHeight:1.5}}>Pre-configured model based on Australian benchmarks. Review the numbers and calculate immediately.</div>
-        </button>
-        <button type="button" onClick={()=>{setModelMode("custom");}} className="roi-btn" style={{flex:1,padding:"20px 18px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:12,background:"#fff",cursor:"pointer"}}>
-          <div style={{fontSize:20,marginBottom:6}}>{"🔧"}</div>
-          <div style={{fontSize:15,fontWeight:700,color:C.textMid,marginBottom:4}}>Customise your model</div>
-          <div style={{fontSize:12,color:C.textMuted,lineHeight:1.5}}>{sector === "aged_care" ? "Step through each section to configure your facilities, residential places, legacy systems, and cost assumptions." : sector === "ndis" ? "Step through each section to configure your service locations, active participants, legacy systems, and cost assumptions." : "Step through each section to configure hospitals, facilities, legacy systems, and cost assumptions."}</div>
-        </button>
-      </div>
-    </div>}
+    {/* Editor mode toggle */}
+    <div style={{display:"flex",borderRadius:10,overflow:"hidden",border:`1px solid ${C.border}`,marginBottom:16}}>
+      {[{k:"template",label:"Quick summary"},{k:"custom",label:"Full editor"}].map(m =>
+        <button key={m.k} type="button" onClick={()=>setModelMode(m.k)} style={{
+          flex:1, padding:"12px 16px", border:"none", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"inherit",
+          background: modelMode===m.k ? C.accent : "#fff",
+          color: modelMode===m.k ? "#fff" : C.textMid,
+          transition:"all .2s"
+        }}>{m.label}</button>
+      )}
+    </div>
 
     {/* TEMPLATE SUMMARY */}
     {modelMode === "template" && <div style={{animation:"fade-in .4s ease"}}><Card style={{border:`2px solid ${C.accent}`,background:"linear-gradient(135deg, #f0f7f5 0%, #e8f4f0 100%)"}}>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:C.accent,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>{"⚡"}</span>
         Template summary
-        <button type="button" onClick={()=>setModelMode("custom")} style={{marginLeft:"auto",border:"none",background:"none",color:C.accent,fontSize:12,fontWeight:600,cursor:"pointer",textDecoration:"underline"}}>Switch to full editor</button>
-        <button type="button" onClick={()=>setModelMode(null)} style={{border:"none",background:"none",color:C.textMuted,fontSize:11,cursor:"pointer"}}>← Back</button>
+
       </div>
 
       <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
@@ -2223,7 +2218,7 @@ function ROICalculator() {
 
 
     <div style={{display:modelMode==="template"?"none":undefined}}>
-    {modelMode==="custom" && <div style={{marginBottom:8,marginTop:-4}}><button type="button" onClick={()=>setModelMode("template")} style={{border:"none",background:"none",color:C.accent,fontSize:12,cursor:"pointer",padding:"4px 0",display:"flex",alignItems:"center",gap:4}}>{"←"} Use template defaults</button></div>}
+    
     {/* STEP 1 – Org scale + presets */}
     <div ref={ref1} style={{animation:"fade-in .4s ease"}}><Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
