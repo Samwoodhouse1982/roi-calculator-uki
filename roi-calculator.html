@@ -491,7 +491,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const ediscoverySaveBefore = litigationCases * AU_EDISCOVERY_HRS_PER_CASE_BEFORE * AU_EDISCOVERY_HOURLY_RATE;
   const ediscoverySaveAfter = litigationCases * AU_EDISCOVERY_HRS_PER_CASE_AFTER * AU_EDISCOVERY_HOURLY_RATE;
   const ediscoverySaving = Math.round((ediscoverySaveBefore - ediscoverySaveAfter) * sc.decom_pct);
-  const cyberSystemsRetired = decom;
+  const cyberSystemsRetired = Math.max(0, decom - 1); // -1 for the new archive system
 
   // ── Readmission cost avoidance (hospital sector only) ──
   const auReadmissions = isAgedCare || isNDIS ? 0 : Math.round(admissionsPerYear * AU_READMISSION_RATE);
@@ -635,7 +635,7 @@ const AU_CYBER_BREACH_AVG_COST = 4710000;       // A$4.71m avg AU healthcare bre
 
 // ── Readmission Constants (AU) ──
 const AU_READMISSION_RATE = 0.12;               // 12% 30-day unplanned readmission (AIHW 2023-24)
-const AU_READMIT_REDUCTION = 0.006;             // 0.6pp absolute reduction (conservative; Vest JAMIA 2019 adjusted for AU context)
+const AU_READMIT_REDUCTION = 0.006;             // 0.6pp absolute reduction (Vest et al JAMIA 2019, conservative)
 const AU_READMIT_COST = 11500;                  // A$11,500 avg readmission cost (IHACPA NWAU-derived)
 const AU_READMIT_FRAGMENTATION_ATTRIBUTION = 0.30; // 30% attributable to information fragmentation
 
@@ -1766,7 +1766,7 @@ function ROICalculator() {
     // ABF efficiency and compliance
     if (y > 180) { doc.addPage(); addPageHeader(); y = 22; }
     doc.setFontSize(12); doc.setFont("helvetica","bold"); setC(TEAL);
-    doc.text("ABF efficiency and compliance impact", ml, y); y += 2;
+    doc.text("Activity-Based Funding (ABF) efficiency and compliance", ml, y); y += 2;
     doc.autoTable({
       startY: y,
       margin: { left: ml, right: mr },
@@ -2968,7 +2968,7 @@ function ROICalculator() {
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
       <ResultCard dimmed={dim} label="Legacy decommission" value={an?fmtK(r.decomSave):"\u2013"} sub={an?r.decom+" of "+r.legacy+" systems retired":""} bg={C.greenPale} border="#c3ddd3" valueColor="#0F4146" />
       <ResultCard dimmed={dim} label={r.isAgedCare?"Places capacity":r.isNDIS?"Staff capacity":"Clinical capacity"} value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"\u2013"} sub={an?fmtK(r.timeSave)+"/yr value":""} bg="#e8faf6" border="#b0e8dc" valueColor="#1a8a7a" />
-      <ResultCard dimmed={dim} label={r.isAgedCare?"Funding & efficiency":r.isNDIS?"Revenue & efficiency":"ABF & revenue"} value={an?fmtK(r.reimbursementImpact):"\u2013"} sub={an?(r.isAgedCare?"AN-ACC + agency + compliance":r.isNDIS?"Claims + utilisation + compliance + retention":"ABF efficiency"+(r.privateRevRecovery>0?" + private revenue":"")):"\u2013"} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
+      <ResultCard dimmed={dim} label={r.isAgedCare?"Funding & efficiency":r.isNDIS?"Revenue & efficiency":"ABF efficiency & revenue"} value={an?fmtK(r.reimbursementImpact):"\u2013"} sub={an?(r.isAgedCare?"AN-ACC + agency + compliance":r.isNDIS?"Claims + utilisation + compliance + retention":"ABF efficiency"+(r.privateRevRecovery>0?" + private revenue":"")):"\u2013"} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
       <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"\u2013"} sub={an?(r.isAgedCare?"Avoidable harm reduction":r.isNDIS?"":"Indemnity + excess bed days + e-discovery"):"\u2013"} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />
       {r.academicSavings > 0 && <ResultCard dimmed={dim} label="Academic programme" value={an?fmtK(r.academicSavings):"\u2013"} sub={an?"Research + teaching + compliance":""} bg="#eef0f8" border="#c4cce0" valueColor="#2c3e6b" />}
       {r.mergeSavings > 0 && <ResultCard dimmed={dim} label="Network consolidation" value={an?fmtK(r.mergeSavings):"\u2013"} sub={an?r.duplicateSystems+" duplicate systems":""} bg="#f0eefa" border="#c4c0e8" valueColor="#6c5ce7" />}
@@ -3004,13 +3004,6 @@ function ROICalculator() {
               <div style={{fontSize:10,color:C.textMuted}}>{Math.round(p*100)}%</div>
             </div>;
           })}
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:70}}>
-            <div style={{fontSize:13,fontWeight:800,color:C.accent,marginBottom:4}}>{fmtK(r.total3WithReimbursement)}</div>
-            <div style={{width:"100%",height:totalH,borderRadius:"8px 8px 4px 4px",overflow:"hidden",display:"flex",flexDirection:"column",border:"2px solid "+C.accent}}>
-              {segs.map((s,si) => <div key={si} title={s.label+": "+fmtK(Math.round(s.val*pcts.reduce((a,p)=>a+p,0)))} style={{flex:s.val,background:s.color,minHeight:1,cursor:"default"}} />)}
-            </div>
-            <div style={{fontSize:11,color:C.accent,marginTop:6,fontWeight:700}}>Total</div>
-          </div>
         </div>
         <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginTop:14}}>
           {segs.map((s,i) => <div key={i} style={{display:"flex",alignItems:"center",gap:4}}>
@@ -3130,13 +3123,13 @@ function ROICalculator() {
       </div>
       <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,fontSize:12,lineHeight:1.6,color:C.textMid}}>
         <strong style={{color:C.text}}>Evidence</strong><br/>
-        AIHW 2023-24: 12% unplanned 30-day readmission rate nationally. Vest et al JAMIA 2019: single-vendor EMR reduces readmissions by 0.8pp (adjusted to 0.6pp for AU context). 30% fragmentation attribution applied. Cost per readmission derived from IHACPA NWAU pricing. Included in cost avoidance category.
+        AIHW 2023-24: 12% unplanned 30-day readmission rate nationally. Vest et al JAMIA 2019: single-vendor EMR consolidation reduces 30-day readmissions by 0.6 percentage points. 30% fragmentation attribution applied. Cost per readmission derived from IHACPA NWAU pricing. Included in cost avoidance category.
       </div>
     </Card>}
 
         {/* ABF (Activity Based Funding) efficiency & revenue impact */}
     <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{r.isAgedCare ? "Aged care funding & efficiency" : r.isNDIS ? "NDIS revenue & efficiency" : (r.privateRevRecovery > 0 ? "ABF efficiency & revenue impact" : "ABF efficiency impact")}</h3>
+      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{r.isAgedCare ? "Aged care funding & efficiency" : r.isNDIS ? "NDIS revenue & efficiency" : (r.privateRevRecovery > 0 ? "Activity-Based Funding (ABF) efficiency & revenue" : "Activity-Based Funding (ABF) efficiency")}</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Cashable benefits from improved ABF coding efficiency and private patient billing accuracy, attributed to EMR consolidation as a contributing factor.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -3158,12 +3151,12 @@ function ROICalculator() {
       </div>
 
       <Callout bg={C.greenPale} border="#c3ddd3">
-        <strong style={{color:C.green}}>Total reimbursement & quality impact:</strong>{" "}
-        {fmtK(r.reimbursementImpact + r.qualitySavings)}/yr
+        <strong style={{color:C.green}}>Total in this section:</strong>{" "}
+        {fmtK(r.abfEfficiencyGain + r.privateRevRecovery + r.duplicateReduction)}/yr
       </Callout>
 
       <div style={{marginTop:12,padding:"10px 14px",background:"#f0faf8",borderRadius:8,border:"1px solid #b0e0d8",fontSize:12,color:"#0F4146",lineHeight:1.6}}>
-        <strong>Methodology:</strong> ABF efficiency modelled at 15% of legacy estate cost addressable through consolidation. NSW SDPR benchmark: estimated legacy estate cost A$225-385M/yr (modelled from QLD Health proxy and NSW programme data); Epic replacement contract A$969M/10yr (~A$97M/yr); implied gross saving A$130-290M/yr. Private patient revenue uplift modelled at 30% recovery of leaked episodes (15% leakage rate, VAGO 2019). Medical indemnity reduction at 3% of A$20,000/bed (VMIA 2025-26). Excess bed days: 35% fragmentation attribution of preventable AEs (ACSQHC). All figures are scenario-adjusted estimates.<br/><br/><strong>Confidence key:</strong> Legacy system count (24 core): CONFIRMED (NSW Health Oct 2023). Hospital count (228): CONFIRMED. Epic contract (A$969M): CONFIRMED. Legacy estate cost (A$225-385M): ESTIMATE (QLD proxy + programme data). Galen archive (A$83M): CONFIRMED (IDM Magazine Dec 2024). Full estate (30-40+ systems): ESTIMATE (Microsoft ODS case study: 34+ systems).
+        <strong>Methodology:</strong> Activity-Based Funding (ABF) efficiency modelled at 15% of legacy estate cost addressable through consolidation. NSW SDPR benchmark: estimated legacy estate cost A$225-385M/yr (modelled from QLD Health proxy and NSW programme data); Epic replacement contract A$969M/10yr (~A$97M/yr); implied gross saving A$130-290M/yr. Private patient revenue uplift modelled at 30% recovery of leaked episodes (15% leakage rate, VAGO 2019). Medical indemnity reduction at 3% of A$20,000/bed (VMIA 2025-26). Excess bed days: 35% fragmentation attribution of preventable AEs (ACSQHC). All figures are scenario-adjusted estimates.<br/><br/><strong>Confidence key:</strong> Legacy system count (24 core): CONFIRMED (NSW Health Oct 2023). Hospital count (228): CONFIRMED. Epic contract (A$969M): CONFIRMED. Legacy estate cost (A$225-385M): ESTIMATE (QLD proxy + programme data). Galen archive (A$83M): CONFIRMED (IDM Magazine Dec 2024). Full estate (30-40+ systems): ESTIMATE (Microsoft ODS case study: 34+ systems).
       </div>
     </Card><LockedConnector/>
 
