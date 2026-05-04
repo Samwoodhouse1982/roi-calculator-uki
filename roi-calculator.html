@@ -2843,103 +2843,11 @@ function ROICalculator() {
     )}
 
 
-        {/* ═══ LEVEL 1: AT-A-GLANCE ═══ */}
-    {!dim && (() => {
-      const hasGalen = galenMigrationCost > 0;
-      const galenTotalInvest = galenMigrationCost + Math.round(galenAnnualCost * rampYears);
-      const parallelRunCost = Math.round(r.totalEstate * (parallelRunMonths / 12) * 0.80);
-      const totalInvestment = galenTotalInvest + parallelRunCost;
-      const grossPhased = r.total3WithReimbursement;
-      const galenPhased = galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b) => a+b, 0));
-      const netBenefit = grossPhased - galenPhased - parallelRunCost;
-      const dr = discountRate;
-      let npvBenefit = 0, npvCost = galenMigrationCost + parallelRunCost;
-      for (let y = 0; y < r.rampPcts.length; y++) {
-        const benefit = Math.round(r.annualWithReimbursement * r.rampPcts[y]);
-        const cost = Math.round(galenAnnualCost * r.rampPcts[y]);
-        npvBenefit += (benefit - cost) / Math.pow(1 + dr, y + 1);
-      }
-      const npv = Math.round(npvBenefit - npvCost);
-      const bcr = galenMigrationCost > 0 ? (r.decomSave / galenMigrationCost) : 0; // Archive BCR: decom savings unlocked per A$ of archive investment
-      const payback = hasGalen && r.decomSave > galenAnnualCost ? (galenMigrationCost / (r.decomSave - galenAnnualCost)) : 0; // Archive payback: when archive investment is recovered from decom savings
-      return <Card style={{background:"linear-gradient(135deg, #f0f7f5 0%, #e8f4f0 100%)",border:`2px solid ${C.accent}`,marginBottom:16}}>
-        {/* Row 1: The four numbers that matter */}
-        <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:12}}>
-          {[
-            {label:"Combined annual",value:fmtK(r.annualWithReimbursement)+"/yr",color:C.green,bg:C.greenPale},
-            ...(hasGalen ? [{label:rampYears+"-year net benefit",value:fmtK(netBenefit),color:C.accent,bg:"#e8faf6"},
-            {label:"Archive payback",value:payback>0?payback.toFixed(1)+" yrs":"-",color:"#0f4146",bg:C.blue25}] : []),
-            {label:"FTE (full-time equivalent) capacity freed",value:r.fteEquivalent.toFixed(0)+" FTE",color:"#b8860b",bg:"#fef9ec"},
-          ].map((kpi,i) => <div key={i} style={{flex:"1 1 130px",minWidth:120,padding:"12px 14px",background:kpi.bg,borderRadius:10,textAlign:"center"}}>
-            <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:3}}>{kpi.label}</div>
-            <div style={{fontSize:20,fontWeight:800,color:kpi.color}}>{kpi.value}</div>
-          </div>)}
-        </div>
+        
 
-        {/* Row 2: Benefit type split - one line */}
-        <div style={{display:"flex",height:10,borderRadius:5,overflow:"hidden",marginBottom:4}}>
-          {r.cashable > 0 && <div style={{flex:r.cashable,background:C.green}} title={"Cashable: "+fmtK(r.cashable)}/>}
-          {r.nonCashable > 0 && <div style={{flex:r.nonCashable,background:"#daa520"}} title={"Capacity: "+fmtK(r.nonCashable)}/>}
-          {r.costAvoidance > 0 && <div style={{flex:r.costAvoidance,background:"#9b6bae"}} title={"Avoidance: "+fmtK(r.costAvoidance)}/>}
-        </div>
-        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:C.textMuted,marginBottom:hasGalen?12:0}}>
-          <span><span style={{display:"inline-block",width:8,height:8,borderRadius:2,background:C.green,marginRight:4}}/>Cashable {fmtK(r.cashable)} ({Math.round(r.cashable/r.annualWithReimbursement*100)}%)</span>
-          <span><span style={{display:"inline-block",width:8,height:8,borderRadius:2,background:"#daa520",marginRight:4}}/>Capacity {fmtK(r.nonCashable)} ({Math.round(r.nonCashable/r.annualWithReimbursement*100)}%)</span>
-          <span><span style={{display:"inline-block",width:8,height:8,borderRadius:2,background:"#9b6bae",marginRight:4}}/>Avoidance {fmtK(r.costAvoidance)} ({Math.round(r.costAvoidance/r.annualWithReimbursement*100)}%)</span>
-        </div>
 
-        {/* Row 3: Galen one-liner */}
-        {hasGalen && <div style={{padding:"8px 12px",background:C.accent+"10",borderRadius:6,fontSize:12,color:C.textMid}}>
-          <strong style={{color:C.accent}}>Archiving investment:</strong> {fmtK(galenMigrationCost)} migration {"→"} unlocks {fmtK(r.decomSave)}/yr decommission savings ({(r.decomSave/Math.max(1,galenMigrationCost)).toFixed(1)}x return)
-        </div>}
-      </Card>;
-    })()}
+    
 
-    {/* ═══ LEVEL 2: EXPANDABLE DETAIL ═══ */}
-
-    {!dim && <ResultSection defaultOpen={true} title="Executive detail" icon="📊" dimmed={dim}>
-      {(() => {
-        const hasGalen = galenMigrationCost > 0;
-        const galenTotalInvest = galenMigrationCost + Math.round(galenAnnualCost * rampYears);
-        const parallelRunCost = Math.round(r.totalEstate * (parallelRunMonths / 12) * 0.80);
-        const dr = discountRate;
-        let npvBenefit = 0, npvCost = galenMigrationCost + parallelRunCost;
-        for (let y = 0; y < r.rampPcts.length; y++) {
-          npvBenefit += (Math.round(r.annualWithReimbursement * r.rampPcts[y]) - Math.round(galenAnnualCost * r.rampPcts[y])) / Math.pow(1 + dr, y + 1);
-        }
-        const npv = Math.round(npvBenefit - npvCost);
-        const bcr = galenMigrationCost > 0 ? (r.decomSave / galenMigrationCost) : 0;
-        return <div>
-          {hasGalen && <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
-            {[
-              {label:"Total investment",value:fmtK(galenTotalInvest+parallelRunCost),color:"#993535",bg:"#fef0f0"},
-              {label:`NPV (${Math.round(dr*100)}%)`,value:fmtK(npv),color:npv>0?C.green:"#993535",bg:npv>0?C.greenPale:"#fef0f0"},
-              {label:"BCR (benefit-cost ratio)",value:bcr.toFixed(1)+":1",color:bcr>=1?C.accent:"#993535",bg:bcr>=1?"#e8faf6":"#fef0f0"},
-              {label:rampYears+"-yr gross",value:fmtK(r.total3WithReimbursement),color:C.green,bg:C.greenPale},
-            ].map((kpi,i) => <div key={i} style={{flex:"1 1 100px",padding:"10px 12px",background:kpi.bg,borderRadius:8,textAlign:"center"}}>
-              <div style={{fontSize:9,fontWeight:600,color:C.textMuted}}>{kpi.label}</div>
-              <div style={{fontSize:18,fontWeight:800,color:kpi.color}}>{kpi.value}</div>
-            </div>)}
-          </div>}
-
-          {/* Cashable / Capacity / Avoidance breakdown */}
-          <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
-            {[
-              {label:"CASHABLE",sub:"Budget reductions",value:r.cashable,color:C.green,bg:C.greenPale,
-               items:(r.isAgedCare ? [["Legacy decommission",r.decomSave],["AN-ACC optimisation",r.acAnaccUplift],["Agency cost reduction",r.acAgencyReduction],["Compliance efficiency",r.acComplianceSaving]] : r.isNDIS ? [["Legacy decommission",r.decomSave],["Claims recovery",r.ndisClaimsRecovery],["Utilisation uplift",r.ndisUtilisationUplift],["Compliance savings",r.ndisComplianceSaving],["Retention savings",r.ndisRetentionSaving]] : [["Legacy decommission",r.decomSave],["ABF efficiency",r.abfEfficiencyGain],...(r.privateRevRecovery > 0 ? [["Private patient revenue",r.privateRevRecovery]] : []),...(r.isMultiHospital?[["Network consolidation",r.duplicateElimination+r.infraConsolidation]]:[])] ).filter(x=>x[1]>0)},
-              {label:"CAPACITY",sub:"Non-cashable value",value:r.nonCashable,color:"#b8860b",bg:"#fef9ec",
-               items:[["Clinician time freed",r.timeSave],...(r.isAcademic?[["Teaching efficiency",r.teachingEfficiency+r.teachingOverhead]]:[])].filter(x=>x[1]>0)},
-              {label:"AVOIDANCE",sub:"Costs not incurred",value:r.costAvoidance,color:"#7a4f8a",bg:"#f5f0f8",
-               items:[["Excess bed days",r.excessDayCostAvoided],["Duplicate testing",r.duplicateReduction],["Medical indemnity",r.malpracticeReduction]].filter(x=>x[1]>0)},
-            ].map((cat,i) => <div key={i} style={{flex:"1 1 180px",padding:"12px 14px",background:cat.bg,borderRadius:10,border:`1px solid ${cat.color}20`}}>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:cat.color}}>{cat.label}</div>
-              <div style={{fontSize:20,fontWeight:800,color:cat.color,margin:"4px 0"}}>{fmtK(cat.value)}<span style={{fontSize:11,fontWeight:500}}>/yr</span></div>
-              {cat.items.map((item,j) => <div key={j} style={{display:"flex",justifyContent:"space-between",fontSize:11,color:C.textMid,padding:"2px 0"}}><span>{item[0]}</span><span style={{fontWeight:600}}>{fmtK(item[1])}</span></div>)}
-            </div>)}
-          </div>
-        </div>;
-      })()}
-    </ResultSection>}
 
     {!dim && galenMigrationCost > 0 && <ResultSection defaultOpen={true} title="Archiving investment case" icon="🔓" dimmed={dim}>
       <p style={{fontSize:13,color:C.textMid,margin:"0 0 14px",lineHeight:1.5}}>
@@ -3021,22 +2929,10 @@ function ROICalculator() {
       })()}
     </ResultSection>}
 
-    {!dim && <ResultSection defaultOpen={true} title="Australian evidence benchmarks" icon="📋" dimmed={dim}>
-      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-        {[
-          {source:"Productivity Commission",date:"May 2024",metric:"Up to A$5.4bn/yr",desc:"national savings from better EMR data use",color:"#2d6a4f"},
-          {source:"QLD DigiMat",date:"Woods et al 2024",metric:"12.9% decline",desc:"in medication complications (1.55M episodes)",color:"#e07020"},
-          {source:"RCH (Royal Children's Hospital) Melbourne",date:"South et al 2022",metric:"22% decrease",desc:"in in-hospital mortality post-Epic",color:"#993535"},
-          {source:"QAO (Queensland Audit Office) 2018",date:"Princess Alexandra",metric:"37% fewer",desc:"hospital-acquired infections post-ieMR",color:"#0f4146"},
-        ].map((b,i) => <div key={i} style={{flex:"1 1 150px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
-          <div style={{fontSize:18,fontWeight:800,color:b.color,marginBottom:2}}>{b.metric}</div>
-          <div style={{fontSize:11,color:C.textMid,lineHeight:1.4}}>{b.desc}</div>
-          <div style={{fontSize:10,color:C.textMuted,marginTop:4}}>{b.source} ({b.date})</div>
-        </div>)}
-      </div>
-    </ResultSection>}
+    
 
-    {!dim && <ResultSection defaultOpen={true} title="Detailed breakdown" icon="🔍" dimmed={dim}>
+
+    {!dim && <div>
     {/* Hero summary */}
     <div style={{textAlign:"center",padding:"8px 0 24px"}}>
       <div style={{fontSize:13,fontWeight:600,color:C.textMuted,letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>Estimated annual savings at steady state</div>
@@ -3264,13 +3160,34 @@ function ROICalculator() {
       </Callout>
     </Card>}
 
-    {/* Clinical safety */}
+    {/* Australian evidence benchmarks */}
+    {sector === "hospital" && <Card dimmed={dim} style={{border:"1px solid #c3ddd3",background:"#f0f7f5"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+        <span style={{fontSize:18}}>{"\U0001F4CB"}</span>
+        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Australian evidence benchmarks</h3>
+      </div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+        {[
+          {source:"Productivity Commission",date:"May 2024",metric:"Up to A$5.4bn/yr",desc:"national savings from better EMR data use",color:"#2d6a4f"},
+          {source:"QLD DigiMat",date:"Woods et al 2024",metric:"12.9% decline",desc:"in medication complications (1.55M episodes)",color:"#e07020"},
+          {source:"RCH (Royal Children's Hospital) Melbourne",date:"South et al 2022",metric:"22% decrease",desc:"in in-hospital mortality post-Epic",color:"#993535"},
+          {source:"QAO (Queensland Audit Office) 2018",date:"Princess Alexandra",metric:"37% fewer",desc:"hospital-acquired infections post-ieMR",color:"#0f4146"},
+        ].map((b,i) => <div key={i} style={{flex:"1 1 150px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+          <div style={{fontSize:18,fontWeight:800,color:b.color,marginBottom:2}}>{b.metric}</div>
+          <div style={{fontSize:11,color:C.textMid,lineHeight:1.4}}>{b.desc}</div>
+          <div style={{fontSize:10,color:C.textMuted,marginTop:4}}>{b.source} ({b.date})</div>
+        </div>)}
+      </div>
+    
+    </Card><LockedConnector/>}
+
+    {/* Clinical safety */
     {r.hasClinicalScope && <div>
     <Card dimmed={dim} style={{border:"1px solid #e0c4cf",background:"#faf5f7"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
         <span style={{fontSize:20}}>{"🛡️"}</span>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Patient safety context":"Patient safety case for migration"}</h3>
-        <InfoTip text={`Source: ACSQHC (Australian Commission on Safety and Quality in Health Care) safety reports; AIHW hospital statistics; QAHCS (Wilson et al 1995). Per-bed rates from Australian public hospital data, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). NOT included in financial totals.`}/>
+        <InfoTip text={`Source: ACSQHC (Australian Commission on Safety and Quality in Health Care) safety reports; AIHW hospital statistics; QAHCS (Wilson et al 1995). Per-bed rates from Australian public hospital data, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). Supporting evidence for the quality and cost avoidance estimates above.`}/>
       </div>
       <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EMR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -3342,6 +3259,32 @@ function ROICalculator() {
     </Card>}
 
         
+
+    {/* Operational efficiency */}
+    {sector === "hospital" && <Card dimmed={dim} style={{border:"1px solid #c3ddd3",background:"#f5faf7"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+        <span style={{fontSize:18}}>{"\u2699\uFE0F"}</span>
+        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Operational efficiency</h3>
+      </div>
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:12}}>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #c3ddd315"}}>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Service desk tickets</div>
+          <div style={{fontSize:26,fontWeight:800,color:C.accent}}>{an?r.ticketsReductionPct:"\u2013"}%</div>
+          <div style={{fontSize:11,color:C.textMuted}}>reduction</div>
+          <div style={{fontSize:11,color:C.textMid,marginTop:6}}>{r.ticketsBaselineMonthly}/mo \u2192 {r.ticketsAfter}/mo</div>
+        </div>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #c3ddd315"}}>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Records request turnaround</div>
+          <div style={{fontSize:26,fontWeight:800,color:C.accent}}>{an?r.sarReductionPct:"\u2013"}%</div>
+          <div style={{fontSize:11,color:C.textMuted}}>faster</div>
+          <div style={{fontSize:11,color:C.textMid,marginTop:6}}>{r.sarDaysBefore} days \u2192 {r.sarDaysAfter} days</div>
+        </div>
+      </div>
+      <div style={{fontSize:12,color:C.textMid,lineHeight:1.6}}>
+        Each legacy system generates ~2.5 service desk tickets per month. Retiring systems eliminates their ticket load; remaining systems see a 40% reduction through simplified interfaces. Records requests are faster when data is consolidated into a single archive rather than scattered across {r.legacy} separate systems.
+      </div>
+    </Card><LockedConnector/>}
+
     {r.isAcademic && <Card dimmed={dim}>
       <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{"🎓"} Teaching hospital module</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and registrar training and teaching compliance.</p>
@@ -3661,7 +3604,7 @@ function ROICalculator() {
       </Card>;
     })()}
 
-    </ResultSection>}
+    </div>}
 
     {/* Disclaimer */}
     <div style={{marginTop:24,padding:"16px 20px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`,fontSize:11,color:C.textMuted,lineHeight:1.7}}>
