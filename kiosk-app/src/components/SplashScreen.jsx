@@ -147,8 +147,8 @@ export function SplashScreen({ onStart }) {
         </div>
 
         <img src={rldatixLogo} alt="RLDatix" style={{
-          position: 'absolute', bottom: 60, left: '50%', transform: 'translateX(-50%)',
-          width: 200, opacity: 0.6,
+          position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          width: 180, opacity: 0.5,
         }} />
       </div>
     </div>
