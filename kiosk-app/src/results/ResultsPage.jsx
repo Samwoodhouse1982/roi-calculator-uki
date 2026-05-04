@@ -96,7 +96,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     <div ref={projRef}>
       <Card style={{ marginBottom: 18 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <CTitle iconKey="calendar">Savings projection</CTitle>
+          <CTitle iconKey="calendar">{projYears}-year cumulative projection</CTitle>
           <div style={{ display: "flex", borderRadius: 10, overflow: "hidden", border: `1px solid ${C.border}` }}>
             {[3, 5].map(n => <button key={n} onClick={() => { setProjYears(n); setTappedBar(null); }} style={{
               padding: "8px 20px", border: "none", fontSize: F.tiny, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
@@ -116,6 +116,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
           return <div style={{ textAlign: "center", padding: "12px 0 20px" }}>
             <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>{projYears}-year cumulative savings</div>
             <div style={{ fontSize: 56, fontWeight: 800, color: C.accent, letterSpacing: "-2px" }}>{fmtK(total)}</div>
+            <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 6 }}>Builds from {fmtK(Math.round((r.annualWithReimbursement || r.annual || 0) * 0.4))} in Year 1 to {fmtK(r.annualWithReimbursement || r.annual || 0)}/yr at steady state</div>
           </div>;
         })()}
 
