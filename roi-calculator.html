@@ -1849,18 +1849,50 @@ function ROICalculator() {
     if (y > 220) { doc.addPage(); addPageHeader(); y = 22; }
     doc.setFontSize(12); doc.setFont("helvetica","bold"); setC(TEAL);
     doc.text(r.rampN + "-Year Projection", ml, y); y += 2;
+    // Build year-by-year projection with all components and ramp
+    const pdfRamp = r.rampPcts;
+    const pdfYrCount = pdfRamp.length;
+    const pdfHead = ["Benefit", ...pdfRamp.map((_,i) => "Year " + (i+1)), "Total"];
+    const pdfRow = (label, steadyState) => {
+      const cells = pdfRamp.map(p => fmt(Math.round(steadyState * p)));
+      const total = pdfRamp.reduce((s,p) => s + Math.round(steadyState * p), 0);
+      return [label, ...cells, { content: fmt(total), styles: { fontStyle: "bold" } }];
+    };
+    const pdfRows = [
+      pdfRow("Legacy decommission", r.decomSave),
+      pdfRow("Clinical capacity", r.timeSave),
+    ];
+    if (r.isAgedCare) {
+      if (r.acAnaccUplift > 0) pdfRows.push(pdfRow("AN-ACC optimisation", r.acAnaccUplift));
+      if (r.acAgencyReduction > 0) pdfRows.push(pdfRow("Agency cost reduction", r.acAgencyReduction));
+      if (r.acComplianceSaving > 0) pdfRows.push(pdfRow("Compliance efficiency", r.acComplianceSaving));
+      if (r.acHarmAvoidance > 0) pdfRows.push(pdfRow("Harm avoidance", r.acHarmAvoidance));
+    } else if (r.isNDIS) {
+      if (r.ndisClaimsRecovery > 0) pdfRows.push(pdfRow("Claims recovery", r.ndisClaimsRecovery));
+      if (r.ndisUtilisationUplift > 0) pdfRows.push(pdfRow("Utilisation uplift", r.ndisUtilisationUplift));
+      if (r.ndisComplianceSaving > 0) pdfRows.push(pdfRow("Compliance savings", r.ndisComplianceSaving));
+      if (r.ndisRetentionSaving > 0) pdfRows.push(pdfRow("Retention savings", r.ndisRetentionSaving));
+    } else {
+      if (r.abfEfficiencyGain > 0) pdfRows.push(pdfRow("ABF efficiency", r.abfEfficiencyGain));
+      if (r.privateRevRecovery > 0) pdfRows.push(pdfRow("Private patient revenue", r.privateRevRecovery));
+      if (r.qualitySavings > 0) pdfRows.push(pdfRow("Quality / cost avoidance", r.qualitySavings));
+    }
+    if (r.academicSavings > 0) pdfRows.push(pdfRow("Academic programme", r.academicSavings));
+    if (r.mergeSavings > 0) pdfRows.push(pdfRow("Network consolidation", r.mergeSavings));
+    // Total row
+    const pdfTotalCells = pdfRamp.map(p => ({ content: fmt(Math.round(r.annualWithReimbursement * p)), styles: { fontStyle: "bold", fillColor: LTBG } }));
+    const pdfGrandTotal = pdfRamp.reduce((s,p) => s + Math.round(r.annualWithReimbursement * p), 0);
+    pdfRows.push([{ content: "Total", styles: { fontStyle: "bold", fillColor: LTBG } }, ...pdfTotalCells, { content: fmt(pdfGrandTotal), styles: { fontStyle: "bold", textColor: TEAL, fillColor: LTBG, fontSize: 11 } }]);
+    const pdfColStyles = {};
+    for (let ci = 1; ci <= pdfYrCount + 1; ci++) pdfColStyles[ci] = { halign: "right" };
     doc.autoTable({
       startY: y,
       margin: { left: ml, right: mr },
-      head: [r.rampN === 5 ? ["Benefit", "Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Total"] : ["Benefit", "Year 1", "Year 2", "Year 3", "Total"]],
-      body: [
-        ["Decom savings", fmt(r.decomSave), fmt(r.decomSave), fmt(r.decomSave), { content: fmt(r.decomSave * 3), styles: { fontStyle: "bold" } }],
-        ["Clinician time", fmt(r.timeSave), fmt(r.timeSave), fmt(r.timeSave), { content: fmt(r.timeSave * 3), styles: { fontStyle: "bold" } }],
-        [{ content: "Total", styles: { fontStyle: "bold", fillColor: LTBG } }, { content: fmt(r.annual), styles: { fontStyle: "bold", fillColor: LTBG } }, { content: fmt(r.annual), styles: { fontStyle: "bold", fillColor: LTBG } }, { content: fmt(r.annual), styles: { fontStyle: "bold", fillColor: LTBG } }, { content: fmt(r.total3), styles: { fontStyle: "bold", textColor: TEAL, fillColor: LTBG, fontSize: 11 } }],
-      ],
+      head: [pdfHead],
+      body: pdfRows,
       headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
-      styles: { fontSize: 9, cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
-      columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
+      styles: { fontSize: 8, cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
+      columnStyles: pdfColStyles,
     });
     y = doc.lastAutoTable.finalY + 8;
 
