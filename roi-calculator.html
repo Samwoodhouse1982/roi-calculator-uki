@@ -2156,100 +2156,122 @@ function ROICalculator() {
     </div>
 
     {/* TEMPLATE SUMMARY */}
-    {modelMode === "template" && <div style={{animation:"fade-in .4s ease"}}><Card style={{border:`2px solid ${C.accent}`,background:"linear-gradient(135deg, #f0f7f5 0%, #e8f4f0 100%)"}}>
-      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
-        <span style={{width:24,height:24,borderRadius:"50%",background:C.accent,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>{"⚡"}</span>
-        Template summary
+    {modelMode === "template" && (() => {
+      const handleTemplateOrg = (v) => {
+        const prev = inputs.org_count;
+        if (v !== prev && prev > 0) {
+          const ratio = v / prev;
+          setInputs(p => ({...p, org_count: v,
+            bed_count: Math.max(10, Math.round(p.bed_count * ratio / 10) * 10),
+            tiers: {
+              enterprise: Math.max(1, Math.round(p.tiers.enterprise * ratio)),
+              departmental: Math.max(0, Math.round(p.tiers.departmental * ratio)),
+              niche: Math.max(0, Math.round(p.tiers.niche * ratio)),
+            },
+          }));
+        } else {
+          update("org_count", v);
+        }
+      };
+      const handleTemplateBeds = (v) => {
+        update("bed_count", v);
+      };
+      const totalSystems = inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche;
+      const cx = CX[inputs.complexity_level];
+      const estEstate = inputs.tiers.enterprise * tierCost("enterprise",inputs.bed_count,cx)
+        + inputs.tiers.departmental * tierCost("departmental",inputs.bed_count,cx)
+        + inputs.tiers.niche * tierCost("niche",inputs.bed_count,cx);
+      const avgBedsPerSite = inputs.org_count > 0 ? Math.round(inputs.bed_count / inputs.org_count) : inputs.bed_count;
+      const unitLabel = sector === "aged_care" ? "places" : sector === "ndis" ? "participants" : "beds";
+      const siteLabel = sector === "aged_care" ? "facilities" : sector === "ndis" ? "service locations" : "hospitals";
 
-      </div>
-
-      <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
-        {[
-          {label:"Hospitals",value:inputs.org_count,key:"org_count",tip:"Acute care hospital facilities in scope"},
-          {label:"Total beds",value:inputs.bed_count,key:"bed_count",tip:"Total staffed acute beds across all hospitals"},
-        ].map(item => <div key={item.key} style={{flex:"1 1 120px",padding:"12px 14px",background:"#fff",borderRadius:10,border:`1px solid ${C.borderLight}`}}>
-          <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}>
-            <span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>{item.label}</span>
-            <InfoTip text={item.tip}/>
+      function Stepper({ value, onChange, min, max, step, label, sub, large }) {
+        return <div style={{display:"flex",alignItems:"center",gap:0}}>
+          <button type="button" onClick={()=>onChange(Math.max(min,value-(step||1)))} style={{
+            width:large?44:36,height:large?44:36,border:`1px solid ${C.borderLight}`,borderRadius:"8px 0 0 8px",
+            background:"#fff",cursor:"pointer",fontSize:18,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"
+          }}>-</button>
+          <div style={{flex:1,textAlign:"center",padding:large?"8px 4px":"6px 4px",borderTop:`1px solid ${C.borderLight}`,borderBottom:`1px solid ${C.borderLight}`,background:"#fff",minWidth:large?80:60}}>
+            <input type="number" value={value} min={min} max={max} step={step||1}
+              onChange={e=>{const v=parseInt(e.target.value)||min; onChange(Math.max(min,Math.min(max,v)));}}
+              style={{width:"100%",textAlign:"center",fontSize:large?28:20,fontWeight:800,color:C.accent,border:"none",background:"transparent",fontFamily:"inherit",padding:0}}/>
+            {sub && <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>{sub}</div>}
           </div>
-          <input type="number" value={item.value} min={1} max={item.key==="bed_count"?50000:500} step={item.key==="bed_count"?100:1}
-            onChange={e=>{update(item.key,Math.max(1,parseInt(e.target.value)||1));}}
-            style={{width:"100%",fontSize:22,fontWeight:800,color:C.accent,border:"none",background:"transparent",fontFamily:"inherit",padding:0}}/>
-        </div>)}
-      </div>
+          <button type="button" onClick={()=>onChange(Math.min(max,value+(step||1)))} style={{
+            width:large?44:36,height:large?44:36,border:`1px solid ${C.borderLight}`,borderRadius:"0 8px 8px 0",
+            background:"#fff",cursor:"pointer",fontSize:18,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"
+          }}>+</button>
+        </div>;
+      }
 
-      <div style={{marginBottom:16}}>
-        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
-          <span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>LEGACY SYSTEMS</span>
-          <InfoTip text="Enterprise: major EMR/PAS platforms. Departmental: theatres, radiology, LIMS, pharmacy. Standalone: document stores, small tools."/>
+      return <div style={{animation:"fade-in .4s ease"}}>
+
+      {/* Scale section */}
+      <Card style={{marginBottom:12,background:"#fff"}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:14}}>Organisation scale</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+          <div>
+            <div style={{fontSize:11,fontWeight:600,color:C.textMid,marginBottom:6,display:"flex",alignItems:"center",gap:4}}>{siteLabel.charAt(0).toUpperCase()+siteLabel.slice(1)}<InfoTip text="Changing this scales beds and legacy systems proportionally."/></div>
+            <Stepper value={inputs.org_count} onChange={handleTemplateOrg} min={1} max={500} step={1} large/>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:600,color:C.textMid,marginBottom:6,display:"flex",alignItems:"center",gap:4}}>Total {unitLabel}<InfoTip text={"Total staffed "+unitLabel+" across all "+siteLabel+". Avg: "+fmtNum(avgBedsPerSite)+" per "+siteLabel.slice(0,-1)+"."}/></div>
+            <Stepper value={inputs.bed_count} onChange={handleTemplateBeds} min={10} max={50000} step={sector==="ndis"?10:50} large/>
+            <div style={{fontSize:10,color:C.textMuted,textAlign:"center",marginTop:4}}>avg {fmtNum(avgBedsPerSite)} per {siteLabel.slice(0,-1)}</div>
+          </div>
         </div>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+      </Card>
+
+      {/* Systems section */}
+      <Card style={{marginBottom:12,background:"#fff"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".06em"}}>Legacy systems</div>
+          <div style={{fontSize:22,fontWeight:800,color:C.accent}}>{totalSystems}<span style={{fontSize:12,fontWeight:600,color:C.textMuted,marginLeft:6}}>systems</span></div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:12}}>
           {[
-            {label:"Enterprise",value:inputs.tiers.enterprise,tier:"enterprise",color:C.accent,tip:"Large clinical platforms (EMR, PAS, clinical suites). High per-system cost."},
-            {label:"Departmental",value:inputs.tiers.departmental,tier:"departmental",color:"#1a7a7a",tip:"Mid-tier systems (theatres, radiology, LIMS, pharmacy). Moderate cost."},
-            {label:"Standalone",value:inputs.tiers.niche,tier:"niche",color:"#3d8a8a",tip:"Small tools (document stores, scanned notes, specialty databases). Low individual cost."},
-          ].map(t => <div key={t.tier} style={{flex:"1 1 90px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
-            <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:2}}>
-              <span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>{t.label}</span>
-              <InfoTip text={t.tip}/>
-            </div>
-            <input type="number" value={t.value} min={0} max={200} step={1}
-              onChange={e=>{updateTier(t.tier,Math.max(0,parseInt(e.target.value)||0));}}
-              style={{width:"100%",fontSize:18,fontWeight:800,color:t.color,border:"none",background:"transparent",fontFamily:"inherit",padding:0}}/>
+            {label:"Enterprise",tier:"enterprise",color:C.accent,sub:"EMR, PAS"},
+            {label:"Departmental",tier:"departmental",color:"#1a7a7a",sub:"Lab, Pharmacy, PACS"},
+            {label:"Standalone",tier:"niche",color:"#3d8a8a",sub:"ECM, rostering"},
+          ].map(t => <div key={t.tier}>
+            <div style={{fontSize:10,fontWeight:600,color:t.color,marginBottom:4}}>{t.label}</div>
+            <Stepper value={inputs.tiers[t.tier]} onChange={v=>updateTier(t.tier,v)} min={0} max={200} step={1}/>
+            <div style={{fontSize:9,color:C.textMuted,textAlign:"center",marginTop:3}}>{t.sub}</div>
           </div>)}
         </div>
-        {(() => {
-          const pSys = portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems;
-          const pCost = portfolioOv.cost != null ? portfolioOv.cost : portfolioImpact.addCost;
-          const totalSys = inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche + pSys;
-          const cx = CX[inputs.complexity_level];
-          const estEstate = inputs.tiers.enterprise * tierCost("enterprise",inputs.bed_count,cx)
-            + inputs.tiers.departmental * tierCost("departmental",inputs.bed_count,cx)
-            + inputs.tiers.niche * tierCost("niche",inputs.bed_count,cx) + pCost;
-          return <div style={{marginTop:10,padding:"12px 16px",background:"#fff",borderRadius:10,border:`1px solid ${C.borderLight}`,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-            <div style={{fontSize:28,fontWeight:800,color:C.accent,lineHeight:1}}>{totalSys}</div>
-            <div>
-              <div style={{fontSize:13,fontWeight:700,color:C.text}}>legacy systems</div>
-              <div style={{fontSize:11,color:C.textMuted}}>
-                Estate: ~{fmtK(estEstate)}/yr running costs
-                {pSys > 0 ? ` (incl. ${pSys} from non-acute facilities)` : ""}
-              </div>
-            </div>
-          </div>;
-        })()}
-      </div>
-
-      {Object.values(facilityPortfolio).some(v=>v>0) && <div style={{marginBottom:16}}>
-        <div style={{fontSize:10,fontWeight:600,color:C.textMuted,marginBottom:6}}>NON-ACUTE FACILITIES INCLUDED</div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-          {FACILITY_TYPES.filter(ft=>(facilityPortfolio[ft.key]||0)>0).map(ft => <span key={ft.key} style={{padding:"4px 10px",background:"#fff",borderRadius:6,border:`1px solid ${C.green}30`,fontSize:11,color:C.green,fontWeight:600}}>
-            {ft.label} <span style={{fontWeight:700}}>{facilityPortfolio[ft.key]}</span>
-          </span>)}
+        <div style={{padding:"10px 14px",background:C.greenPale,borderRadius:8,fontSize:12,color:C.teal}}>
+          <strong>Est. estate cost:</strong> ~{fmtK(estEstate)}/yr across {totalSystems} systems
         </div>
-      </div>}
+      </Card>
 
-      <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:16}}>
-        {[
-          {label:"Complexity",value:inputs.complexity_level,options:["LOW","TYPICAL","HIGH"],tip:"How bespoke are your legacy systems?"},
-          {label:"Data quality",value:inputs.data_quality_level,options:["CLEAN","MIXED","POOR"],tip:"How clean is your legacy data?"},
-        ].map(s => <div key={s.label} style={{flex:"1 1 120px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
-          <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}>
-            <span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>{s.label}</span>
-            <InfoTip text={s.tip}/>
+      {/* Assumptions section */}
+      <Card style={{marginBottom:12,background:"#fff"}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:14}}>Assumptions</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+          <div>
+            <div style={{fontSize:10,fontWeight:600,color:C.textMid,marginBottom:4}}>Complexity</div>
+            <select value={inputs.complexity_level} onChange={e=>update("complexity_level",e.target.value)}
+              style={{width:"100%",padding:"8px 6px",fontSize:13,fontWeight:700,border:`1px solid ${C.borderLight}`,borderRadius:8,fontFamily:"inherit",color:C.accent,background:"#fff"}}>
+              {["LOW","TYPICAL","HIGH"].map(o=><option key={o} value={o}>{o.charAt(0)+o.slice(1).toLowerCase()}</option>)}
+            </select>
           </div>
-          <select value={s.value} onChange={e=>update(s.label==="Complexity"?"complexity_level":"data_quality_level",e.target.value)}
-            style={{width:"100%",padding:"4px 6px",fontSize:13,fontWeight:700,border:`1px solid ${C.borderLight}`,borderRadius:6,fontFamily:"inherit",color:C.accent,background:"#fff"}}>{s.options.map(o=><option key={o} value={o}>{o.charAt(0)+o.slice(1).toLowerCase()}</option>)}</select>
-        </div>)}
-        <div style={{flex:"1 1 120px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
-          <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}>
-            <span style={{fontSize:10,fontWeight:600,color:C.textMuted}}>Decom target</span>
-            <InfoTip text="What % of legacy systems do you plan to retire? 60-80% is typical."/>
+          <div>
+            <div style={{fontSize:10,fontWeight:600,color:C.textMid,marginBottom:4}}>Data quality</div>
+            <select value={inputs.data_quality_level} onChange={e=>update("data_quality_level",e.target.value)}
+              style={{width:"100%",padding:"8px 6px",fontSize:13,fontWeight:700,border:`1px solid ${C.borderLight}`,borderRadius:8,fontFamily:"inherit",color:C.accent,background:"#fff"}}>
+              {["CLEAN","MIXED","POOR"].map(o=><option key={o} value={o}>{o.charAt(0)+o.slice(1).toLowerCase()}</option>)}
+            </select>
           </div>
-          <div style={{fontSize:18,fontWeight:800,color:C.accent}}>{Math.round(inputs.decom_retire_rate*100)}%</div>
+          <div>
+            <div style={{fontSize:10,fontWeight:600,color:C.textMid,marginBottom:4,display:"flex",alignItems:"center",gap:4}}>Decom target<InfoTip text="What % of legacy systems do you plan to retire? 60-80% is typical."/></div>
+            <Stepper value={Math.round(inputs.decom_retire_rate*100)} onChange={v=>update("decom_retire_rate",v/100)} min={20} max={100} step={5}/>
+            <div style={{fontSize:9,color:C.textMuted,textAlign:"center",marginTop:3}}>% of systems retired</div>
+          </div>
         </div>
-      </div>
+      </Card>
 
-      <button type="button" className="roi-cta" onClick={() => {
+      {/* Calculate button */}
+            <button type="button" className="roi-cta" onClick={() => {
           setPage("calculating"); setCalcStep(0); setScenarioMode(null);
           scrollToTop();
           setTimeout(() => setCalcStep(1), 400);
@@ -2262,7 +2284,7 @@ function ROICalculator() {
         Calculate ROI estimate {"→"}
       </button>
       <div style={{textAlign:"center",fontSize:11,color:C.textMuted}}>All numbers above are adjustable. Click any value to change it.</div>
-    </Card></div>}
+    })()}
 
 
     <div style={{display:modelMode==="template"?"none":undefined}}>
