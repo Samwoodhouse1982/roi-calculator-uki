@@ -12,11 +12,11 @@ export function SplashScreen({ onStart }) {
     let w, h;
 
     const resize = () => {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
+      w = canvas.width = 1080;
+      h = canvas.height = 1920;
     };
     resize();
-    window.addEventListener('resize', resize);
+
     // Portrait 9:16 - distribute particles across full height
     const isPortrait = h > w;
 
@@ -77,7 +77,6 @@ export function SplashScreen({ onStart }) {
 
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener('resize', resize);
     };
   }, []);
 
