@@ -3201,7 +3201,7 @@ function ROICalculator() {
         {fmtK(r.acHarmAvoidance)}/yr (included in annual savings as cost avoidance)
       </Callout>
     </Card>}
-
+    <LockedConnector/>
 
     {/* Legal & compliance */}
     {r.litigationCases > 0 && <Card dimmed={dim} style={{border:"1px solid #c4cce0",background:"#f0f2f8"}}>
@@ -3226,6 +3226,7 @@ function ROICalculator() {
         <strong>Cyber risk:</strong> Average AU healthcare breach: A$4.71m (IBM/Ponemon 2024). Privacy Act 1988, Notifiable Data Breaches scheme.
       </EvidenceDropdown>
     </Card>}
+    <LockedConnector/>
 
     {/* Readmission cost avoidance */}
     {r.auReadmissionsAvoided > 0 && <Card dimmed={dim} style={{border:"1px solid #b0e0d8",background:"#f0faf8"}}>
@@ -3253,10 +3254,8 @@ function ROICalculator() {
         AIHW 2023-24: 12% unplanned 30-day readmission rate. Vest et al JAMIA 2019: 0.6pp reduction from EMR consolidation. 30% fragmentation attribution. Cost A$11,500/readmission (IHACPA NWAU-derived).
       </EvidenceDropdown>
     </Card>}
+    <LockedConnector/>
 
-
-
-        {/* Academic module - conditional */}
     {/* Clinical safety */}
     {r.hasClinicalScope && <div>
     <Card dimmed={dim} style={{border:"1px solid #f0c4d4",background:"#fdf5f8"}}>
