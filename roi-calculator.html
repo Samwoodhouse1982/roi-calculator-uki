@@ -846,12 +846,12 @@ const C = {
   text:"#0F4146",textMid:"#3d5a5e",textMuted:"#6e8a8e",
   accent:"#0F4146",accentLight:"#EEF7F1",accentPale:"#f6fbf8",
   green:"#0F4146",greenPale:"#EEF7F1",
-  amber:"#2a6e6e",amberLight:"#e8f5f3",
+  amber:"#1a8a7a",amberLight:"#e8f5f3",
   teal:"#0F4146",tealLight:"#BEFAF0",tealPale:"#e8faf6",
   navy:"#0F4146",navyMid:"#1a5459",
-  rose:"#8a2e4a",rosePale:"#faf0f4",
+  rose:"#d4507a",rosePale:"#faf0f4",
   seafoam:"#80F8E4",seafoamLight:"#BEFAF0",
-  blue:"#73D2E1",blue75:"rgba(115,210,225,0.75)",blue50:"rgba(115,210,225,0.5)",blue25:"rgba(115,210,225,0.25)",
+  blue:"#00d4aa",blue75:"rgba(115,210,225,0.75)",blue50:"rgba(115,210,225,0.5)",blue25:"rgba(115,210,225,0.25)",
   override:"#1a6b5a",overridePale:"#f0faf6"
 };
 
@@ -2308,7 +2308,7 @@ function ROICalculator() {
                   <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>HOSPITALS</div><div style={{fontSize:20,fontWeight:800,color:C.accent}}>{mergerSummary.totalFacilities}</div></div>
                   {mergerSummary.totalAmbSites > 0 && <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>AMB. SITES</div><div style={{fontSize:20,fontWeight:800,color:C.accent}}>{mergerSummary.totalAmbSites}</div></div>}
                   <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>TOTAL SYSTEMS</div><div style={{fontSize:20,fontWeight:800,color:C.accent}}>{mergerSummary.totalSys}</div></div>
-                  <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>LIKELY DUPLICATES</div><div style={{fontSize:20,fontWeight:800,color:"#993535"}}>{mergerSummary.dupTotal}</div></div>
+                  <div><div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>LIKELY DUPLICATES</div><div style={{fontSize:20,fontWeight:800,color:"#2c3e6b"}}>{mergerSummary.dupTotal}</div></div>
                 </div>
                 <div style={{fontSize:11,color:C.textMid,lineHeight:1.6,marginBottom:10}}>
                   Merging {mergerOrgs.length} organisations creates an estimated <strong>{mergerSummary.dupTotal} duplicate systems</strong> ({mergerSummary.dupEnt} enterprise, {mergerSummary.dupDep} departmental) that are candidates for decommission after the merged entity consolidates onto a single EMR.
@@ -2606,7 +2606,7 @@ function ROICalculator() {
               Estate: ~{fmtK(estEstate + (portfolioOv.cost != null ? portfolioOv.cost : portfolioImpact.addCost))}/yr {hasCustomCost ? "" : "(modelled estimate) "}running costs
             </div>
           </div>
-          {!hasCustomCost && costMode === "estimate" && <div style={{marginTop:8,padding:"12px 16px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:13,color:"#7a6520",lineHeight:1.6}}>
+          {!hasCustomCost && costMode === "estimate" && <div style={{marginTop:8,padding:"12px 16px",background:"#f0faf8",borderRadius:8,border:"1px solid #b0e0d8",fontSize:13,color:"#0F4146",lineHeight:1.6}}>
             <strong>Know your actual costs?</strong> Click any tier cost above to override, switch to {'"'}I know my spend{'"'}, or name specific systems within each tier. Real contract values give the most accurate ROI.
           </div>}
         </>;
@@ -2744,7 +2744,7 @@ function ROICalculator() {
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6}}>
             {tranches.length<5 && <button type="button" onClick={()=>setTranches([...tranches,{name:`Tranche ${String.fromCharCode(65+tranches.length)}`,bedPct:Math.max(0.01,1-tranches.reduce((s,t)=>s+t.bedPct,0)),yearOffset:tranches.length}])}
               style={{border:"none",background:"none",color:C.accent,fontSize:12,cursor:"pointer",fontWeight:600}}>+ Add tranche</button>}
-            <div style={{fontSize:10,color:Math.abs(tranches.reduce((s,t)=>s+t.bedPct,0)-1)<0.02?C.textMuted:"#993535"}}>{Math.round(tranches.reduce((s,t)=>s+t.bedPct,0)*100)}% allocated {Math.abs(tranches.reduce((s,t)=>s+t.bedPct,0)-1)>=0.02?" (should total 100%)":""}</div>
+            <div style={{fontSize:10,color:Math.abs(tranches.reduce((s,t)=>s+t.bedPct,0)-1)<0.02?C.textMuted:"#2c3e6b"}}>{Math.round(tranches.reduce((s,t)=>s+t.bedPct,0)*100)}% allocated {Math.abs(tranches.reduce((s,t)=>s+t.bedPct,0)-1)>=0.02?" (should total 100%)":""}</div>
           </div>
         </div>}
       </div>
@@ -2857,7 +2857,7 @@ function ROICalculator() {
       <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",marginBottom:12}}>
         <div style={{flex:"1 1 120px",padding:"12px 14px",background:"#fef0f0",borderRadius:8,textAlign:"center"}}>
           <div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>Archiving investment</div>
-          <div style={{fontSize:20,fontWeight:800,color:"#993535"}}>{fmtK(galenMigrationCost)}</div>
+          <div style={{fontSize:20,fontWeight:800,color:"#2c3e6b"}}>{fmtK(galenMigrationCost)}</div>
           <div style={{fontSize:10,color:C.textMuted}}>migration</div>
         </div>
         <div style={{fontSize:20,color:C.textMuted}}>{"→"}</div>
@@ -2923,7 +2923,7 @@ function ROICalculator() {
               <td style={{padding:"4px 8px",fontWeight:600}}>Year {y+1}</td>
               {tranches.map((t,i) => {const ty=y-t.yearOffset;const p=ty>=0&&ty<ramp3.length?ramp3[ty]:ty>=ramp3.length?1:0;return <td key={i} style={{padding:"4px 8px",textAlign:"right",color:p===0?C.textMuted:C.textMid}}>{p===0?"-":fmtK(Math.round(r.annualWithReimbursement*t.bedPct*p))}</td>;})}
               <td style={{padding:"4px 8px",textAlign:"right",fontWeight:700,color:C.accent}}>{fmtK(total)}</td>
-              <td style={{padding:"4px 8px",textAlign:"right",color:cumBenefits[y+1]>=0?C.green:"#993535",fontWeight:600}}>{fmtK(cumBenefits[y+1])}</td>
+              <td style={{padding:"4px 8px",textAlign:"right",color:cumBenefits[y+1]>=0?C.green:"#d4507a",fontWeight:600}}>{fmtK(cumBenefits[y+1])}</td>
             </tr>)}</tbody>
           </table></div>
         </div>;
@@ -3162,7 +3162,7 @@ function ROICalculator() {
         {fmtK(r.reimbursementImpact + r.qualitySavings)}/yr
       </Callout>
 
-      <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
+      <div style={{marginTop:12,padding:"10px 14px",background:"#f0faf8",borderRadius:8,border:"1px solid #b0e0d8",fontSize:12,color:"#0F4146",lineHeight:1.6}}>
         <strong>Methodology:</strong> ABF efficiency modelled at 15% of legacy estate cost addressable through consolidation. NSW SDPR benchmark: estimated legacy estate cost A$225-385M/yr (modelled from QLD Health proxy and NSW programme data); Epic replacement contract A$969M/10yr (~A$97M/yr); implied gross saving A$130-290M/yr. Private patient revenue uplift modelled at 30% recovery of leaked episodes (15% leakage rate, VAGO 2019). Medical indemnity reduction at 3% of A$20,000/bed (VMIA 2025-26). Excess bed days: 35% fragmentation attribution of preventable AEs (ACSQHC). All figures are scenario-adjusted estimates.<br/><br/><strong>Confidence key:</strong> Legacy system count (24 core): CONFIRMED (NSW Health Oct 2023). Hospital count (228): CONFIRMED. Epic contract (A$969M): CONFIRMED. Legacy estate cost (A$225-385M): ESTIMATE (QLD proxy + programme data). Galen archive (A$83M): CONFIRMED (IDM Magazine Dec 2024). Full estate (30-40+ systems): ESTIMATE (Microsoft ODS case study: 34+ systems).
       </div>
     </Card><LockedConnector/>
@@ -3201,7 +3201,7 @@ function ROICalculator() {
         <strong style={{color:"#7a4f8a"}}>Total avoidable cost of harm:</strong>{" "}
         {fmtK(r.costAvoidance)}/yr (cost avoidance, not budget reduction)
       </Callout>
-      <div style={{marginTop:10,padding:"8px 12px",background:"#fef9ec",borderRadius:6,fontSize:11,color:"#7a6520",lineHeight:1.6}}>
+      <div style={{marginTop:10,padding:"8px 12px",background:"#f0faf8",borderRadius:6,fontSize:11,color:"#0F4146",lineHeight:1.6}}>
         <strong>Important:</strong> These figures represent the estimated financial burden of preventable adverse events attributable to information fragmentation. They will not appear as line items in your budget {" \u2014 "} they represent costs that are avoided when adverse events do not occur. Include in business cases as {"\""}cost avoidance{"\""} category, separate from cashable savings.
       </div>
     </Card><LockedConnector/>
@@ -3246,7 +3246,7 @@ function ROICalculator() {
         {[
           {source:"Productivity Commission",date:"May 2024",metric:"Up to A$5.4bn/yr",desc:"national savings from better EMR data use",color:"#2d6a4f"},
           {source:"QLD DigiMat",date:"Woods et al 2024",metric:"12.9% decline",desc:"in medication complications (1.55M episodes)",color:"#d4507a"},
-          {source:"RCH (Royal Children's Hospital) Melbourne",date:"South et al 2022",metric:"22% decrease",desc:"in in-hospital mortality post-Epic",color:"#993535"},
+          {source:"RCH (Royal Children's Hospital) Melbourne",date:"South et al 2022",metric:"22% decrease",desc:"in in-hospital mortality post-Epic",color:"#2c3e6b"},
           {source:"QAO (Queensland Audit Office) 2018",date:"Princess Alexandra",metric:"37% fewer",desc:"hospital-acquired infections post-ieMR",color:"#0f4146"},
         ].map((b,i) => <div key={i} style={{flex:"1 1 150px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
           <div style={{fontSize:18,fontWeight:800,color:b.color,marginBottom:2}}>{b.metric}</div>
@@ -3309,7 +3309,7 @@ function ROICalculator() {
         <span style={{fontSize:12,color:C.textMuted,marginLeft:8}}>Included in combined annual total</span>
       </Callout>
 
-      <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
+      <div style={{marginTop:12,padding:"10px 14px",background:"#f0faf8",borderRadius:8,border:"1px solid #b0e0d8",fontSize:12,color:"#0F4146",lineHeight:1.6}}>
         <strong>Note:</strong> Research system count estimated at 3.5 per 100 beds (IRB, CTMS, biobank, research repositories, specialty registries). GME efficiency assumes 25% reduction in compliance overhead from unified reporting. All figures are modelled estimates.
       </div>
     </Card>}
@@ -3341,7 +3341,7 @@ function ROICalculator() {
         <span style={{fontSize:12,color:C.textMuted,marginLeft:8}}>Included in combined annual total</span>
       </Callout>
 
-      <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
+      <div style={{marginTop:12,padding:"10px 14px",background:"#f0faf8",borderRadius:8,border:"1px solid #b0e0d8",fontSize:12,color:"#0F4146",lineHeight:1.6}}>
         <strong>Note:</strong> Assumes 35% of legacy systems are duplicated across facilities (based on analysis of overlapping vendor coverage across Australian health districts). Infrastructure savings at A$350k per district for duplicate data centre, network, and service desk costs.
       </div>
     </Card>}
