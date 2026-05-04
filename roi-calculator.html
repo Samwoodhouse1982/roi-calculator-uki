@@ -2822,9 +2822,9 @@ function ROICalculator() {
         {[
             { k: "DELAYED", l: "12-month delay", s: "Programme slips 1 year", e: "\u23f3" },
             { k: "PARTIAL", l: "Partial decom", s: "Only 50% systems retired", e: "\u26a0\ufe0f" },
-          ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(scenarioMode===s.k?"EXPECTED":s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:100,padding:"10px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid #993535`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode===s.k?"#fef0f0":"#fff"}}>
+          ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(scenarioMode===s.k?"EXPECTED":s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:100,padding:"10px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid #2c3e6b`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode===s.k?"#eef0f8":"#fff"}}>
           <div style={{fontSize:16,marginBottom:2}}>{s.e}</div>
-          <div style={{fontSize:12,fontWeight:scenarioMode===s.k?700:500,color:scenarioMode===s.k?"#993535":C.textMid}}>{s.l}</div>
+          <div style={{fontSize:12,fontWeight:scenarioMode===s.k?700:500,color:scenarioMode===s.k?"#2c3e6b":C.textMid}}>{s.l}</div>
           <div style={{fontSize:10,color:C.textMuted}}>{s.s}</div>
         </button>)}
       </div>
@@ -2944,11 +2944,11 @@ function ROICalculator() {
     {an && (() => {
       const segs = [
         {label:"Decommission", value:r.decomSave, color:"#0F4146"},
-        {label:"Capacity", value:r.timeSave, color:"#2a6e6e"},
-        {label:r.isAgedCare?"AN-ACC & funding":r.isNDIS?"Claims & utilisation":"ABF & revenue", value:r.reimbursementImpact, color:"#73D2E1"},
-        {label:"Quality / cost avoidance", value:r.qualitySavings, color:"#8a2e4a"},
-        ...(r.academicSavings > 0 ? [{label:"Academic", value:r.academicSavings, color:"#7a6520"}] : []),
-        ...(r.mergeSavings > 0 ? [{label:"Network", value:r.mergeSavings, color:"#4a4080"}] : []),
+        {label:"Capacity", value:r.timeSave, color:"#1a8a7a"},
+        {label:r.isAgedCare?"AN-ACC & funding":r.isNDIS?"Claims & utilisation":"ABF & revenue", value:r.reimbursementImpact, color:"#00d4aa"},
+        {label:"Quality / cost avoidance", value:r.qualitySavings, color:"#d4507a"},
+        ...(r.academicSavings > 0 ? [{label:"Academic", value:r.academicSavings, color:"#2c3e6b"}] : []),
+        ...(r.mergeSavings > 0 ? [{label:"Network", value:r.mergeSavings, color:"#6c5ce7"}] : []),
       ].filter(s => s.value > 0);
       const total = r.annualWithReimbursement || 1;
       return <div style={{marginBottom:24}}>
@@ -2967,11 +2967,11 @@ function ROICalculator() {
     {/* KPI cards */}
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
       <ResultCard dimmed={dim} label="Legacy decommission" value={an?fmtK(r.decomSave):"\u2013"} sub={an?r.decom+" of "+r.legacy+" systems retired":""} bg={C.greenPale} border="#c3ddd3" valueColor="#0F4146" />
-      <ResultCard dimmed={dim} label={r.isAgedCare?"Places capacity":r.isNDIS?"Staff capacity":"Clinical capacity"} value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"\u2013"} sub={an?fmtK(r.timeSave)+"/yr value":""} bg="#e8faf6" border="#b0e8dc" valueColor="#2a6e6e" />
+      <ResultCard dimmed={dim} label={r.isAgedCare?"Places capacity":r.isNDIS?"Staff capacity":"Clinical capacity"} value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"\u2013"} sub={an?fmtK(r.timeSave)+"/yr value":""} bg="#e8faf6" border="#b0e8dc" valueColor="#1a8a7a" />
       <ResultCard dimmed={dim} label={r.isAgedCare?"Funding & efficiency":r.isNDIS?"Revenue & efficiency":"ABF & revenue"} value={an?fmtK(r.reimbursementImpact):"\u2013"} sub={an?(r.isAgedCare?"AN-ACC + agency + compliance":r.isNDIS?"Claims + utilisation + compliance + retention":"ABF efficiency"+(r.privateRevRecovery>0?" + private revenue":"")):"\u2013"} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
-      <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"\u2013"} sub={an?(r.isAgedCare?"Avoidable harm reduction":r.isNDIS?"":"Indemnity + excess bed days + e-discovery"):"\u2013"} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
-      {r.academicSavings > 0 && <ResultCard dimmed={dim} label="Academic programme" value={an?fmtK(r.academicSavings):"\u2013"} sub={an?"Research + teaching + compliance":""} bg="#f5f0fa" border="#d4c4df" valueColor="#4a4080" />}
-      {r.mergeSavings > 0 && <ResultCard dimmed={dim} label="Network consolidation" value={an?fmtK(r.mergeSavings):"\u2013"} sub={an?r.duplicateSystems+" duplicate systems":""} bg="#f0f0fa" border="#c4c4df" valueColor="#4a4080" />}
+      <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"\u2013"} sub={an?(r.isAgedCare?"Avoidable harm reduction":r.isNDIS?"":"Indemnity + excess bed days + e-discovery"):"\u2013"} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />
+      {r.academicSavings > 0 && <ResultCard dimmed={dim} label="Academic programme" value={an?fmtK(r.academicSavings):"\u2013"} sub={an?"Research + teaching + compliance":""} bg="#eef0f8" border="#c4cce0" valueColor="#2c3e6b" />}
+      {r.mergeSavings > 0 && <ResultCard dimmed={dim} label="Network consolidation" value={an?fmtK(r.mergeSavings):"\u2013"} sub={an?r.duplicateSystems+" duplicate systems":""} bg="#f0eefa" border="#c4c0e8" valueColor="#6c5ce7" />}
     </div>
 
     {/* Year-by-year stacked bar chart */}
@@ -2979,23 +2979,26 @@ function ROICalculator() {
       const pcts = r.rampPcts;
       const segs = [
         {label:"Decommission", color:"#0F4146", val:r.decomSave},
-        {label:"Capacity", color:"#2a6e6e", val:r.timeSave},
-        {label:r.isAgedCare?"Funding":r.isNDIS?"Revenue":"ABF", color:"#73D2E1", val:r.reimbursementImpact},
-        {label:"Quality", color:"#8a2e4a", val:r.qualitySavings},
-        ...(r.academicSavings > 0 ? [{label:"Academic", color:"#7a6520", val:r.academicSavings}] : []),
-        ...(r.mergeSavings > 0 ? [{label:"Network", color:"#4a4080", val:r.mergeSavings}] : []),
+        {label:"Capacity", color:"#1a8a7a", val:r.timeSave},
+        {label:r.isAgedCare?"Funding":r.isNDIS?"Revenue":"ABF & revenue", color:"#00d4aa", val:r.reimbursementImpact},
+        {label:"Quality", color:"#d4507a", val:r.qualitySavings},
+        ...(r.academicSavings > 0 ? [{label:"Academic", color:"#2c3e6b", val:r.academicSavings}] : []),
+        ...(r.mergeSavings > 0 ? [{label:"Network", color:"#6c5ce7", val:r.mergeSavings}] : []),
       ].filter(s => s.val > 0);
-      const barH = 140;
+      const maxP = Math.max(...pcts);
+      const barH = 160;
+      const totalSum = pcts.reduce((s,p) => s + r.annualWithReimbursement * p, 0);
+      const totalH = barH;
       return <div style={{padding:"0 20px",marginBottom:24}}>
         <div style={{fontSize:13,fontWeight:700,color:C.textMid,marginBottom:12}}>{rampYears}-year savings projection</div>
-        <div style={{display:"flex",gap:8,alignItems:"flex-end",minHeight:barH+30,paddingTop:8}}>
+        <div style={{display:"flex",gap:8,alignItems:"flex-end",minHeight:barH+50,paddingTop:8}}>
           {pcts.map((p,yi) => {
-            const h = Math.round(barH * p);
+            const h = Math.round(barH * p / maxP);
             const yrTotal = Math.round(r.annualWithReimbursement * p);
             return <div key={yi} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center"}}>
               <div style={{fontSize:11,fontWeight:700,color:C.accent,marginBottom:4}}>{fmtK(yrTotal)}</div>
-              <div style={{width:"100%",height:h,borderRadius:"8px 8px 4px 4px",overflow:"hidden",display:"flex",flexDirection:"column"}}>
-                {segs.map((s,si) => <div key={si} style={{flex:s.val,background:s.color,minHeight:1}} />)}
+              <div style={{width:"100%",height:h,borderRadius:"8px 8px 4px 4px",overflow:"hidden",display:"flex",flexDirection:"column",position:"relative"}}>
+                {segs.map((s,si) => <div key={si} title={s.label+": "+fmtK(Math.round(s.val*p))+"/yr"} style={{flex:s.val,background:s.color,minHeight:1,cursor:"default",transition:"opacity .2s"}} />)}
               </div>
               <div style={{fontSize:11,color:C.textMuted,marginTop:6,fontWeight:600}}>Year {yi+1}</div>
               <div style={{fontSize:10,color:C.textMuted}}>{Math.round(p*100)}%</div>
@@ -3003,8 +3006,8 @@ function ROICalculator() {
           })}
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:70}}>
             <div style={{fontSize:13,fontWeight:800,color:C.accent,marginBottom:4}}>{fmtK(r.total3WithReimbursement)}</div>
-            <div style={{width:"100%",height:barH,borderRadius:"8px 8px 4px 4px",overflow:"hidden",display:"flex",flexDirection:"column",border:"2px solid "+C.accent}}>
-              {segs.map((s,si) => <div key={si} style={{flex:s.val,background:s.color,minHeight:1}} />)}
+            <div style={{width:"100%",height:totalH,borderRadius:"8px 8px 4px 4px",overflow:"hidden",display:"flex",flexDirection:"column",border:"2px solid "+C.accent}}>
+              {segs.map((s,si) => <div key={si} title={s.label+": "+fmtK(Math.round(s.val*pcts.reduce((a,p)=>a+p,0)))} style={{flex:s.val,background:s.color,minHeight:1,cursor:"default"}} />)}
             </div>
             <div style={{fontSize:11,color:C.accent,marginTop:6,fontWeight:700}}>Total</div>
           </div>
@@ -3012,7 +3015,7 @@ function ROICalculator() {
         <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginTop:14}}>
           {segs.map((s,i) => <div key={i} style={{display:"flex",alignItems:"center",gap:4}}>
             <div style={{width:8,height:8,borderRadius:2,background:s.color}} />
-            <span style={{fontSize:10,color:C.textMuted}}>{s.label}</span>
+            <span style={{fontSize:10,color:C.textMid}}>{s.label}: <strong>{fmtK(s.val)}</strong>/yr</span>
           </div>)}
         </div>
       </div>;
@@ -3047,7 +3050,7 @@ function ROICalculator() {
       <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:16}}>
         <OverridableStat label="Clinical staff" computed={calc(calcInputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on Australian health workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/admin staff per facility (20 base + 0.15/bed, capped at 120).`}/>
         <OverridableStat label="Mins wasted / wk" computed={calc(calcInputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on Westbrook et al 2010 (JAMIA) workflow interruption studies and Nuffield Trust 2020 system navigation research.`}/>
-        <Stat label="Full-time equivalent (FTE)" value={an?r.fteEquivalent.toFixed(0):0} sub="clinical capacity" color={"#b8860b"} info={`${fmtNum(r.hrsSaved)} hours freed ÷ 1,824 hours per FTE (38hr week × 48 working weeks) = ${r.fteEquivalent.toFixed(1)} FTE equivalent. This is not headcount reduction. It represents clinical capacity freed for patient care, equivalent to hiring ${r.fteEquivalent.toFixed(0)} additional clinicians without recruitment.`}/>
+        <Stat label="Full-time equivalent (FTE)" value={an?r.fteEquivalent.toFixed(0):0} sub="clinical capacity" color={"#1a8a7a"} info={`${fmtNum(r.hrsSaved)} hours freed ÷ 1,824 hours per FTE (38hr week × 48 working weeks) = ${r.fteEquivalent.toFixed(1)} FTE equivalent. This is not headcount reduction. It represents clinical capacity freed for patient care, equivalent to hiring ${r.fteEquivalent.toFixed(0)} additional clinicians without recruitment.`}/>
         <Stat label="Hours freed / yr" value={an?<AnimatedNum value={r.hrsSaved} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Result: ${fmtNum(r.hrsSaved)} hours per year.`}/>
         <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at A$65/hr blended rate (AIHW workforce data: nursing ~A$45-55/hr, medical ~A$90-120/hr, allied health ~A$40-60/hr). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity. This represents capacity redirected to patient care, not a direct cash saving. Equivalent to ~${(r.hrsSaved/1824).toFixed(0)} FTE.`}/>
       </div>
@@ -3056,7 +3059,7 @@ function ROICalculator() {
 
     {/* Clinical safety */}
     {r.hasClinicalScope && <div>
-    <Card dimmed={dim} style={{border:"1px solid #e0c4cf",background:"#faf5f7"}}>
+    <Card dimmed={dim} style={{border:"1px solid #f0c4d4",background:"#fdf5f8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
         <span style={{fontSize:20}}>{"🛡️"}</span>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Patient safety context":"Patient safety case for migration"}</h3>
@@ -3084,7 +3087,7 @@ function ROICalculator() {
     </div>}
 
     {/* Legal & compliance */}
-    {r.litigationCases > 0 && <Card dimmed={dim} style={{border:"1px solid #e0b0b0",background:"#faf5f5"}}>
+    {r.litigationCases > 0 && <Card dimmed={dim} style={{border:"1px solid #c4cce0",background:"#f0f2f8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
         <span style={{fontSize:20}}>{"\u2696\uFE0F"}</span>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legal and compliance</h3>
@@ -3092,12 +3095,12 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>e-Discovery savings</div>
-          <div style={{fontSize:26,fontWeight:800,color:"#c0392b",margin:"6px 0"}}>{an?fmtK(r.ediscoverySaving):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:26,fontWeight:800,color:"#2c3e6b",margin:"6px 0"}}>{an?fmtK(r.ediscoverySaving):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMid}}>{r.litigationCases} cases/yr across {r.legacy} systems</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Cyber attack surfaces removed</div>
-          <div style={{fontSize:26,fontWeight:800,color:"#c0392b",margin:"6px 0"}}>{r.cyberSystemsRetired}</div>
+          <div style={{fontSize:26,fontWeight:800,color:"#2c3e6b",margin:"6px 0"}}>{r.cyberSystemsRetired}</div>
           <div style={{fontSize:11,color:C.textMid}}>legacy systems retired</div>
         </div>
       </div>
@@ -3108,7 +3111,7 @@ function ROICalculator() {
     </Card>}
 
     {/* Readmission cost avoidance */}
-    {r.auReadmissionsAvoided > 0 && <Card dimmed={dim} style={{border:"1px solid #d0c4e0",background:"#f8f5fa"}}>
+    {r.auReadmissionsAvoided > 0 && <Card dimmed={dim} style={{border:"1px solid #b0e0d8",background:"#f0faf8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
         <span style={{fontSize:20}}>{"\u{1F3E5}"}</span>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Readmission cost avoidance</h3>
@@ -3116,12 +3119,12 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 150px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Readmissions avoided</div>
-          <div style={{fontSize:26,fontWeight:800,color:"#8e44ad"}}>{an?fmtNum(r.auReadmissionsAvoided):"\u2013"}</div>
+          <div style={{fontSize:26,fontWeight:800,color:"#0F4146"}}>{an?fmtNum(r.auReadmissionsAvoided):"\u2013"}</div>
           <div style={{fontSize:11,color:C.textMid}}>patients/yr</div>
         </div>
         <div style={{flex:"1 1 150px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Cost avoidance</div>
-          <div style={{fontSize:26,fontWeight:800,color:"#8e44ad"}}>{an?fmtK(r.auReadmissionCostAvoidance):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:26,fontWeight:800,color:"#0F4146"}}>{an?fmtK(r.auReadmissionCostAvoidance):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMid}}>at A$11,500/readmission</div>
         </div>
       </div>
@@ -3242,7 +3245,7 @@ function ROICalculator() {
       <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
         {[
           {source:"Productivity Commission",date:"May 2024",metric:"Up to A$5.4bn/yr",desc:"national savings from better EMR data use",color:"#2d6a4f"},
-          {source:"QLD DigiMat",date:"Woods et al 2024",metric:"12.9% decline",desc:"in medication complications (1.55M episodes)",color:"#e07020"},
+          {source:"QLD DigiMat",date:"Woods et al 2024",metric:"12.9% decline",desc:"in medication complications (1.55M episodes)",color:"#d4507a"},
           {source:"RCH (Royal Children's Hospital) Melbourne",date:"South et al 2022",metric:"22% decrease",desc:"in in-hospital mortality post-Epic",color:"#993535"},
           {source:"QAO (Queensland Audit Office) 2018",date:"Princess Alexandra",metric:"37% fewer",desc:"hospital-acquired infections post-ieMR",color:"#0f4146"},
         ].map((b,i) => <div key={i} style={{flex:"1 1 150px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
@@ -3461,7 +3464,7 @@ function ROICalculator() {
       };
       const Ev = ({s}) => <Tag label="Evidence-based" color={C.green} source={s}/>;
       const Bm = ({s}) => <Tag label="Industry benchmark" color="#1a7a7a" source={s}/>;
-      const Bn = ({s}) => <Tag label="Benchmarked" color="#8a6d2b" source={s}/>;
+      const Bn = ({s}) => <Tag label="Benchmarked" color="#d4507a" source={s}/>;
       const Md = ({s}) => <Tag label="Modelled estimate" color={C.textMuted} source={s}/>;
       const F = ({children}) => <div style={{padding:"12px 16px",background:C.bg,borderRadius:8,margin:"10px 0",fontFamily:"'FK Grotesk Neue','FK Grotesk',monospace",fontSize:12,color:C.text,lineHeight:1.6}}>{children}</div>;
 
