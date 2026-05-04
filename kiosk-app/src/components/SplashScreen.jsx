@@ -96,8 +96,6 @@ export function SplashScreen({ onStart }) {
       }} />
 
       <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 900, padding: '60px 64px', marginTop: '18vh',
-        background: 'radial-gradient(ellipse at center, rgba(6,11,20,0.85) 0%, rgba(6,11,20,0.5) 50%, transparent 80%)',
-        borderRadius: 40,
       }}>
 
         <div style={{
