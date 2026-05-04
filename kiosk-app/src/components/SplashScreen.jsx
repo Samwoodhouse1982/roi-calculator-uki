@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { C } from '../theme';
 
 export function SplashScreen({ onStart }) {
   const canvasRef = useRef(null);
@@ -16,13 +17,15 @@ export function SplashScreen({ onStart }) {
     };
     resize();
     window.addEventListener('resize', resize);
+    // Portrait 9:16 - distribute particles across full height
+    const isPortrait = h > w;
 
     const particles = [];
-    const PARTICLE_COUNT = 120;
+    const PARTICLE_COUNT = 180;
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       particles.push({
-        x: Math.random() * 2000 - 500,
+        x: Math.random() * (w + 500) - 250,
         y: Math.random() * h,
         r: Math.random() * 6 + 1.5,
         speed: Math.random() * 0.8 + 0.2,
@@ -80,9 +83,9 @@ export function SplashScreen({ onStart }) {
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 100,
-      background: 'linear-gradient(135deg, #060b14 0%, #0a1020 30%, #0d1a2a 60%, #081218 100%)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      position: 'fixed', inset: 0, zIndex: 100, width: '100vw', height: '100vh',
+      background: 'linear-gradient(160deg, #060b14 0%, #0a1020 25%, #0c1825 50%, #091520 75%, #060b14 100%)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start',
       overflow: 'hidden', cursor: 'pointer',
     }} onClick={onStart}>
 
@@ -92,15 +95,15 @@ export function SplashScreen({ onStart }) {
         background: 'radial-gradient(ellipse at 30% 50%, rgba(0,212,170,0.06) 0%, transparent 60%), radial-gradient(ellipse at 70% 30%, rgba(0,180,255,0.04) 0%, transparent 50%)',
       }} />
 
-      <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 800, padding: '0 48px' }}>
+      <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 900, padding: '0 64px', marginTop: '22vh' }}>
 
         <div style={{
-          fontSize: 14, fontWeight: 600, letterSpacing: 6, textTransform: 'uppercase',
+          fontSize: 16, fontWeight: 600, letterSpacing: 8, textTransform: 'uppercase',
           color: '#00d4aa', marginBottom: 40, opacity: 0.7,
         }}>RLDatix Galen Clinical Archive</div>
 
         <h1 style={{
-          fontSize: 56, fontWeight: 800, lineHeight: 1.15, color: '#fff',
+          fontSize: 64, fontWeight: 800, lineHeight: 1.15, color: '#fff',
           margin: '0 0 24px', letterSpacing: '-1px',
         }}>
           Decommission legacy systems.
@@ -109,7 +112,7 @@ export function SplashScreen({ onStart }) {
         </h1>
 
         <p style={{
-          fontSize: 20, fontWeight: 400, color: 'rgba(255,255,255,0.5)',
+          fontSize: 22, fontWeight: 400, color: 'rgba(255,255,255,0.5)',
           lineHeight: 1.6, margin: '0 0 60px', maxWidth: 600, marginLeft: 'auto', marginRight: 'auto',
         }}>
           See exactly how much your health system could save by retiring legacy applications and consolidating clinical data into a single archive.
@@ -118,7 +121,7 @@ export function SplashScreen({ onStart }) {
         <button onClick={onStart} style={{
           padding: '24px 72px', borderRadius: 60, border: '2px solid #00d4aa',
           background: 'rgba(0,212,170,0.1)', color: '#00d4aa',
-          fontSize: 22, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+          fontSize: 24, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
           letterSpacing: 1, transition: 'all 0.3s',
           boxShadow: '0 0 40px rgba(0,212,170,0.15), inset 0 0 40px rgba(0,212,170,0.05)',
           animation: 'splashPulse 3s ease-in-out infinite',
@@ -134,7 +137,7 @@ export function SplashScreen({ onStart }) {
         `}</style>
 
         <div style={{
-          marginTop: 48, fontSize: 13, color: 'rgba(255,255,255,0.25)',
+          marginTop: 48, fontSize: 14, color: 'rgba(255,255,255,0.25)',
           letterSpacing: 2,
         }}>
           BEST IN KLAS 2025 &nbsp;·&nbsp; DATA ARCHIVING
