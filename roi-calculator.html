@@ -956,6 +956,25 @@ function TogglePill({active, onToggle, labelA, labelB, labelAText, labelBText}) 
     ))}
   </div>;
 }
+function Stepper({ value, onChange, min, max, step, label, sub, large }) {
+  return <div style={{display:"flex",alignItems:"center",gap:0}}>
+    <button type="button" onClick={()=>onChange(Math.max(min,value-(step||1)))} style={{
+      width:large?44:36,height:large?44:36,border:`1px solid ${C.borderLight}`,borderRadius:"8px 0 0 8px",
+      background:"#fff",cursor:"pointer",fontSize:18,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"
+    }}>-</button>
+    <div style={{flex:1,textAlign:"center",padding:large?"8px 4px":"6px 4px",borderTop:`1px solid ${C.borderLight}`,borderBottom:`1px solid ${C.borderLight}`,background:"#fff",minWidth:large?80:60}}>
+      <input type="number" value={value} min={min} max={max} step={step||1}
+        onChange={e=>{const v=parseInt(e.target.value)||min; onChange(Math.max(min,Math.min(max,v)));}}
+        style={{width:"100%",textAlign:"center",fontSize:large?28:20,fontWeight:800,color:C.accent,border:"none",background:"transparent",fontFamily:"inherit",padding:0}}/>
+      {sub && <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>{sub}</div>}
+    </div>
+    <button type="button" onClick={()=>onChange(Math.min(max,value+(step||1)))} style={{
+      width:large?44:36,height:large?44:36,border:`1px solid ${C.borderLight}`,borderRadius:"0 8px 8px 0",
+      background:"#fff",cursor:"pointer",fontSize:18,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"
+    }}>+</button>
+  </div>;
+}
+
 function EvidenceDropdown({title,children}){
   const [open,setOpen] = React.useState(false);
   return <div style={{marginTop:10}}>
@@ -2185,24 +2204,6 @@ function ROICalculator() {
       const unitLabel = sector === "aged_care" ? "places" : sector === "ndis" ? "participants" : "beds";
       const siteLabel = sector === "aged_care" ? "facilities" : sector === "ndis" ? "service locations" : "hospitals";
 
-      function Stepper({ value, onChange, min, max, step, label, sub, large }) {
-        return <div style={{display:"flex",alignItems:"center",gap:0}}>
-          <button type="button" onClick={()=>onChange(Math.max(min,value-(step||1)))} style={{
-            width:large?44:36,height:large?44:36,border:`1px solid ${C.borderLight}`,borderRadius:"8px 0 0 8px",
-            background:"#fff",cursor:"pointer",fontSize:18,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"
-          }}>-</button>
-          <div style={{flex:1,textAlign:"center",padding:large?"8px 4px":"6px 4px",borderTop:`1px solid ${C.borderLight}`,borderBottom:`1px solid ${C.borderLight}`,background:"#fff",minWidth:large?80:60}}>
-            <input type="number" value={value} min={min} max={max} step={step||1}
-              onChange={e=>{const v=parseInt(e.target.value)||min; onChange(Math.max(min,Math.min(max,v)));}}
-              style={{width:"100%",textAlign:"center",fontSize:large?28:20,fontWeight:800,color:C.accent,border:"none",background:"transparent",fontFamily:"inherit",padding:0}}/>
-            {sub && <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>{sub}</div>}
-          </div>
-          <button type="button" onClick={()=>onChange(Math.min(max,value+(step||1)))} style={{
-            width:large?44:36,height:large?44:36,border:`1px solid ${C.borderLight}`,borderRadius:"0 8px 8px 0",
-            background:"#fff",cursor:"pointer",fontSize:18,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"
-          }}>+</button>
-        </div>;
-      }
 
       return <div style={{animation:"fade-in .4s ease"}}>
 
@@ -2212,11 +2213,11 @@ function ROICalculator() {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
           <div>
             <div style={{fontSize:11,fontWeight:600,color:C.textMid,marginBottom:6,display:"flex",alignItems:"center",gap:4}}>{siteLabel.charAt(0).toUpperCase()+siteLabel.slice(1)}<InfoTip text="Changing this scales beds and legacy systems proportionally."/></div>
-            <Stepper value={inputs.org_count} onChange={handleTemplateOrg} min={1} max={500} step={1} large/>
+            <Stepper value={inputs.org_count} onChange={handleTemplateOrg} min={1} max={500} step={1} large={true}/>
           </div>
           <div>
             <div style={{fontSize:11,fontWeight:600,color:C.textMid,marginBottom:6,display:"flex",alignItems:"center",gap:4}}>Total {unitLabel}<InfoTip text={"Total staffed "+unitLabel+" across all "+siteLabel+". Avg: "+fmtNum(avgBedsPerSite)+" per "+siteLabel.slice(0,-1)+"."}/></div>
-            <Stepper value={inputs.bed_count} onChange={handleTemplateBeds} min={10} max={50000} step={sector==="ndis"?10:50} large/>
+            <Stepper value={inputs.bed_count} onChange={handleTemplateBeds} min={10} max={50000} step={sector==="ndis"?10:50} large={true}/>
             <div style={{fontSize:10,color:C.textMuted,textAlign:"center",marginTop:4}}>avg {fmtNum(avgBedsPerSite)} per {siteLabel.slice(0,-1)}</div>
           </div>
         </div>
@@ -2284,6 +2285,7 @@ function ROICalculator() {
         Calculate ROI estimate {"→"}
       </button>
       <div style={{textAlign:"center",fontSize:11,color:C.textMuted}}>All numbers above are adjustable. Click any value to change it.</div>
+    </div>
     })()}
 
 
@@ -3754,4 +3756,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(<ROICalculator />);
     })();
   </script>
 </body>
-</html{sector === "hospital" && >
+</html>
