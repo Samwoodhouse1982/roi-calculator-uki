@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { C, F, W, H, KIOSK_STEPS } from './theme';
+import { SplashScreen } from './components/SplashScreen';
 import { calc } from './calc/engine';
 import { PRESETS, PROVIDER_PRESET_MAP, PROVIDER_MULTIPLIERS, REIMBURSE_MULTIPLIERS } from './calc/presets';
 import { systemCost } from './calc/vendors';
@@ -63,6 +64,7 @@ function CalibratingScreen({ onDone }) {
 }
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
   const [kioskStep, setKioskStep] = useState(0);
   const [calibrating, setCalibrating] = useState(false);
   const [providerType, setProviderType] = useState("community");
@@ -149,6 +151,7 @@ export default function App() {
   const handleCalibrationDone = useCallback(() => { setCalibrating(false); setKioskStep(KIOSK_STEPS.length - 1); }, []);
   const handleAdjust = useCallback(() => setKioskStep(4), []);
   const handleStartOver = useCallback(() => {
+    setShowSplash(true);
     setKioskStep(0);
     setProviderType("community");
     setReimbursementModel("mixed");
@@ -175,7 +178,9 @@ export default function App() {
   };
 
   if (calibrating) {
-    return <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, height: '100vh', color: C.text, position: "relative" }}>
+    if (showSplash) return <SplashScreen onStart={() => setShowSplash(false)} />;
+
+  return <div style={ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, height: '100vh', color: C.text, position: "relative" }}>
       <CalibratingScreen onDone={handleCalibrationDone} />
     </div>;
   }
