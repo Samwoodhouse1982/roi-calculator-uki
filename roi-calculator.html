@@ -983,7 +983,7 @@ const tdR_={padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`,textAl
 
 function ROICalculator() {
   // Provider profile
-  const [providerType, setProviderType] = useState("community");
+  const [providerType, setProviderType] = useState("regional");
   const [reimbursementModel, setReimbursementModel] = useState("mixed");
   const [medicareDrgRevenue, setMedicareDrgRevenue] = useState(0);
   const [occupancyRate, setOccupancyRate] = useState(0.90);
@@ -2041,14 +2041,14 @@ function ROICalculator() {
       </div>
 
       <div style={{padding:"12px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`,fontSize:12,color:C.textMuted,lineHeight:1.6}}>
-        {providerType === "critical_access" && "Rural and remote hospitals often run standalone legacy systems. Consolidation improves care coordination and reduces per-site IT costs."}
+        {providerType === "rural_remote" && "Rural and remote hospitals often run standalone legacy systems with limited IT support. Consolidation improves care coordination, reduces per-site maintenance costs, and supports telehealth integration."}
+        {providerType === "regional" && "Regional hospitals serve as district hubs with 100-300 beds and moderate system complexity. EMR consolidation yields strong ROI through decommission savings and improved data sharing across the catchment area."}
+        {providerType === "metropolitan" && "Metropolitan hospitals have complex legacy estates with 300-600 beds and deep integration challenges. The consolidation case includes significant cost reduction, improved clinical data continuity, and better compliance with ACSQHC standards."}
+        {providerType === "tertiary" && "Tertiary referral centres carry the highest system complexity (40-200+ applications) including research databases, registries, and teaching systems. The ROI case includes research system rationalisation alongside operational savings."}
+        {providerType === "state_network" && "LHDs and Health Services typically have 2-3x the legacy system count across their facilities. Consolidation eliminates duplicate infrastructure across the district and enables consistent clinical pathways."}
+        {providerType === "statewide" && "Statewide programmes replace the entire state legacy estate with a single EMR. Typical state profile: 20-30 core legacy systems across 150-250 hospitals, 500+ community sites, and 15-20 health districts. Legacy estate typically A$150-400M/yr depending on state size. Australian benchmark: NSW SDPR identified 24 core systems across 228 hospitals and 17 LHDs."}
         {providerType === "aged_care" && "Aged care providers typically run 5-12 separate systems across clinical, medication, rostering, compliance, and billing functions. Consolidating onto a unified platform reduces duplication, improves care documentation quality, and supports AN-ACC funding optimisation."}
         {providerType === "ndis_provider" && "NDIS providers manage fragmented systems for client management, rostering, billing, incident reporting, and compliance. Consolidation improves claims accuracy, staff utilisation, and reduces the admin burden that drives 27.5% annual staff turnover."}
-        {providerType === "community" && "Regional hospitals serve as district hubs. EMR consolidation yields strong ROI through decommission savings and improved data sharing."}
-        {providerType === "regional" && "Metropolitan hospitals have complex legacy estates. The consolidation case includes cost reduction and improved clinical data continuity."}
-        {providerType === "academic" && "Tertiary referral centres carry the highest system complexity (40-200+ applications). The ROI case includes research system rationalisation alongside operational savings."}
-        {providerType === "state_network" && "LHDs and Health Services typically have 2-3x the legacy system count across their facilities. Consolidation eliminates duplicate infrastructure across the district."}
-        {providerType === "statewide" && "Statewide programmes replace the entire state legacy estate with a single EMR. Typical state profile: 20-30 core legacy systems across 150-250 hospitals, 500+ community sites, and 15-20 health districts. Legacy estate typically A$150-400M/yr depending on state size. Australian benchmark: NSW SDPR identified 24 core systems across 228 hospitals and 17 LHDs."}
       </div>
     </Card>
     <LockedConnector/>
