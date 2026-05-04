@@ -994,7 +994,7 @@ function ROICalculator() {
   const [trancheMode, setTrancheMode] = useState(false);
   const [showFacilities, setShowFacilities] = useState(null);
   const [showBedDetail, setShowBedDetail] = useState(false);
-  const [modelMode, setModelMode] = useState(null); // null, "template", "custom"
+  const [modelMode, setModelMode] = useState("template"); // "template", "custom"
   const [portfolioOv, setPortfolioOv] = useState({systems:null, cost:null});
   const [tranches, setTranches] = useState([
     { name: "Tranche A", bedPct: 0.16, yearOffset: 0 },
@@ -2077,7 +2077,7 @@ function ROICalculator() {
     <LockedConnector/>
 
     {/* FORK: Template vs Custom */}
-    {step >= 0 && !modelMode && <div style={{animation:"fade-in .4s ease"}}>
+    {false && <div style={{animation:"fade-in .4s ease"}}>
       <div style={{display:"flex",gap:10,margin:"0 0 8px"}}>
         <button type="button" onClick={()=>{setModelMode("template");touch(0);touch(1);touch(2);touch(3);}} className="roi-btn" style={{flex:1,padding:"20px 18px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:12,background:"#fff",cursor:"pointer"}}>
           <div style={{fontSize:20,marginBottom:6}}>{"⚡"}</div>
@@ -2204,7 +2204,7 @@ function ROICalculator() {
 
 
     <div style={{display:modelMode==="template"?"none":undefined}}>
-    {modelMode==="custom" && <div style={{marginBottom:8,marginTop:-4}}><button type="button" onClick={()=>setModelMode(null)} style={{border:"none",background:"none",color:C.textMuted,fontSize:12,cursor:"pointer",padding:"4px 0",display:"flex",alignItems:"center",gap:4}}>{"←"} Back to template option</button></div>}
+    {modelMode==="custom" && <div style={{marginBottom:8,marginTop:-4}}><button type="button" onClick={()=>setModelMode("template")} style={{border:"none",background:"none",color:C.accent,fontSize:12,cursor:"pointer",padding:"4px 0",display:"flex",alignItems:"center",gap:4}}>{"←"} Use template defaults</button></div>}
     {/* STEP 1 – Org scale + presets */}
     <div ref={ref1} style={{animation:"fade-in .4s ease"}}><Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
