@@ -352,29 +352,32 @@ function calc(inp, mode, ov = {}, flagships = []) {
   // Flagships
   const flagshipTotal = flagships.reduce((s,f) => s + (f.cost || 0), 0); // All flagships affect estate cost
   const flagshipDecomSave = flagships.filter(f => f.retire).reduce((s,f) => s + (f.cost || 0), 0); // All retiring flagships contribute savings
-  const flagshipCount = flagships.filter(f => f.tier).length; // Only tier-assigned flagships count (they offset the tier decrement)
+  const flagshipCount = flagships.length; // All flagships are additive to tier count
   const flagshipRetireCount = flagships.filter(f => f.tier && f.retire).length;
   const portfolioSystems = inp._portfolioSystems || 0;
   const legacy = tieredLegacy + flagshipCount + portfolioSystems;
-  const totalEstate = tieredEstate + flagshipTotal + (inp._portfolioCost || 0);
+  const totalEstate = tieredEstate + flagshipTotal + (inp._portfolioCost ?? 0);
   const blendedCost = legacy > 0 ? Math.round(totalEstate / legacy) : 0;
   const rawDecom = tieredLegacy * inp.decom_retire_rate * sc.decom_pct;
-  const decom = Math.min(Math.round(rawDecom), tieredLegacy) + flagshipRetireCount;
+  const decom = Math.min(Math.round(rawDecom), tieredLegacy) + flagshipRetireCount + (Math.round(portfolioSystems * inp.decom_retire_rate * sc.decom_pct) || 0);
   const decomFrac = tieredLegacy > 0 ? Math.min(Math.round(rawDecom), tieredLegacy) / tieredLegacy : 0;
   const entDecom = Math.min(Math.round(ent * decomFrac), ent);
   const depDecom = Math.min(Math.round(dep * decomFrac), dep);
   const nicDecom = clamp(Math.min(Math.round(rawDecom), tieredLegacy) - entDecom - depDecom, 0, nic);
-  const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * sc.decom_pct);
+  const portfolioDecomSave = Math.round((inp._portfolioCost ?? 0) * inp.decom_retire_rate * sc.decom_pct);
+  const portfolioDecom = Math.round(portfolioSystems * inp.decom_retire_rate * sc.decom_pct);
+  const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * sc.decom_pct) + portfolioDecomSave;
   const corpPerOrg = Math.min(100, Math.round(CORPORATE_STAFF_BASE + (inp.bed_count / Math.max(1, inp.org_count)) * CORPORATE_STAFF_PER_BED));
   const staffPerUnit = isAgedCare ? AC_STAFF_PER_PLACE : isNDIS ? (NDIS_STAFF_PER_PARTICIPANT * 10) : STAFF_PER_BED;
   const hourlyRate = isAgedCare ? AC_BLENDED_HOURLY : isNDIS ? NDIS_BLENDED_HOURLY : BLENDED_HOURLY_RATE;
-  const totalStaff = Math.round(inp.bed_count * staffPerUnit + (sector === "hospital" ? inp.org_count * corpPerOrg : 0) + (inp._portfolioStaff || 0));
+  const totalStaff = Math.round(inp.bed_count * staffPerUnit + (sector === "hospital" ? inp.org_count * corpPerOrg : 0) + (inp._portfolioStaff ?? 0));
   const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(totalStaff * ACTIVE_USER_PCT);
   const systemsPerUser = Math.max(2, Math.round(legacy * SYSTEM_EXPOSURE_PCT));
   const switchPenalty = Math.max(0, systemsPerUser - 1) * SWITCH_PENALTY_PER_SYSTEM;
   const baseMin = isArchiveOnly ? 5 : 12;
   const cappedPenalty = Math.min(switchPenalty, 4.0); // Cap: prevents >60 min/wk at extreme system counts
-  const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * (1 + cappedPenalty));
+  const complexityBoost = inp._complexityBoost ?? 1.0;
+  const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * complexityBoost * (1 + cappedPenalty));
   const residual = isArchiveOnly ? 1 : 2;
   const hrsSaved = Math.round((clinicians * Math.max(0, minsWasted - residual) * WORKING_WEEKS) / 60);
   const timeSave = Math.round(hrsSaved * hourlyRate * sc.realisation);
@@ -443,7 +446,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     estMedicareDrgRevenue = Math.round(estAnnualRevenueCalc * 0.70);
     medicareDrg = inp._medicareDrgRevenue > 0 ? inp._medicareDrgRevenue : estMedicareDrgRevenue;
     abfEfficiencyGain = Math.round(totalEstate * 0.15 * sc.decom_pct);
-    privatePct = inp._privatePct || 0.15;
+    privatePct = inp._privatePct ?? 0.15;
     privateLeakage = Math.round(admissionsPerYear * privatePct * PRIVATE_PATIENT_LEAKAGE * PRIVATE_EPISODE_AVG_VALUE);
     privateRevRecovery = Math.round(privateLeakage * 0.30 * sc.decom_pct);
     malpracticePremium = inp.bed_count * INDEMNITY_COST_PER_BED;
@@ -477,6 +480,18 @@ function calc(inp, mode, ov = {}, flagships = []) {
   // standardisationSave removed — identical formula to abfEfficiencyGain (both totalEstate*15%), was double-counting
   const standardisationSave = 0;
 
+  // ── Legal & Compliance ──
+  const litigationCases = isAgedCare || isNDIS ? 0 : Math.round(inp.bed_count / 100 * AU_EDISCOVERY_CASES_PER_100_BEDS);
+  const ediscoverySaveBefore = litigationCases * AU_EDISCOVERY_HRS_PER_CASE_BEFORE * AU_EDISCOVERY_HOURLY_RATE;
+  const ediscoverySaveAfter = litigationCases * AU_EDISCOVERY_HRS_PER_CASE_AFTER * AU_EDISCOVERY_HOURLY_RATE;
+  const ediscoverySaving = Math.round((ediscoverySaveBefore - ediscoverySaveAfter) * sc.decom_pct);
+  const cyberSystemsRetired = decom;
+
+  // ── Readmission cost avoidance (hospital sector only) ──
+  const auReadmissions = isAgedCare || isNDIS ? 0 : Math.round(admissionsPerYear * AU_READMISSION_RATE);
+  const auReadmissionsAvoided = Math.round(admissionsPerYear * AU_READMIT_REDUCTION * AU_READMIT_FRAGMENTATION_ATTRIBUTION * sc.safety);
+  const auReadmissionCostAvoidance = Math.round(auReadmissionsAvoided * AU_READMIT_COST);
+
   // Module totals
   const academicSavings = researchDecomSave + teachingEfficiency + teachingOverhead;
   const mergeSavings = duplicateElimination + infraConsolidation + standardisationSave;
@@ -487,7 +502,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
                            : abfEfficiencyGain + privateRevRecovery;
   const qualitySavings = isAgedCare ? acHarmAvoidance
                      : isNDIS ? 0
-                     : malpracticeReduction + excessDayCostAvoided + duplicateReduction;
+                     : malpracticeReduction + excessDayCostAvoided + duplicateReduction + ediscoverySaving + auReadmissionCostAvoidance;
 
   const annual = decomSave + timeSave;
   const annualWithReimbursement = annual + reimbursementImpact + qualitySavings + academicSavings + mergeSavings;
@@ -529,6 +544,8 @@ function calc(inp, mode, ov = {}, flagships = []) {
     // M&A module
     isMultiHospital, duplicateSystems, duplicateSystemCost, duplicateElimination,
     duplicateInfraCost, infraConsolidation, standardisationSave, mergeSavings,
+    litigationCases, ediscoverySaving, cyberSystemsRetired,
+    auReadmissions, auReadmissionsAvoided, auReadmissionCostAvoidance,
     sector, isAgedCare, isNDIS,
     acAnaccUplift, acAgencyReduction, acComplianceSaving, acHarmAvoidance,
     ndisClaimsRecovery, ndisUtilisationUplift, ndisComplianceSaving, ndisRetentionSaving,
@@ -537,7 +554,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     fteEquivalent: Math.round(hrsSaved * sc.realisation / 1824 * 10) / 10, // Realised FTE: hrs × realisation / 1,824 (38hr × 48wk)
     cashable: decomSave + abfEfficiencyGain + privateRevRecovery + duplicateElimination + infraConsolidation,
     nonCashable: timeSave + (isAcademic ? teachingEfficiency + teachingOverhead + researchDecomSave : 0),
-    costAvoidance: malpracticeReduction + excessDayCostAvoided + duplicateReduction,
+    costAvoidance: malpracticeReduction + excessDayCostAvoided + duplicateReduction + ediscoverySaving + auReadmissionCostAvoidance,
   };
 }
 
@@ -545,23 +562,22 @@ function calc(inp, mode, ov = {}, flagships = []) {
    PRESETS
    ═══════════════════════════════════════════════════════════════════════ */
 
-const emptyDt = () => ({ EPR_PAS:0,ED:0,MATERNITY:0,THEATRES:0,LAB:0,RAD_REPORTS:0,PACS_LINKS:0,DOC_ECM:0,SCANNED_NOTES:0,REFERRALS:0,COMMUNITY:0,MENTAL_HEALTH:0,OTHER:0 });
 const PRESETS = {
-  SMALL: { label:"Rural / Remote Hospital", desc:"~30 beds · 1 facility · 6 systems", data:{ bed_count:30, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:2,niche:3}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1,RAD_REPORTS:1}, complexity_level:"LOW", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
-  TYPICAL: { label:"Regional Hospital", desc:"~200 beds · 1 facility · 15 systems", data:{ bed_count:250, org_count:1, journey:"EVALUATING", tiers:{enterprise:1,departmental:5,niche:9}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:1,RAD_REPORTS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
-  LARGE: { label:"Metropolitan / Tertiary", desc:"~500 beds · 1 facility · 25 systems", data:{ bed_count:600, org_count:1, journey:"EVALUATING", tiers:{enterprise:2,departmental:8,niche:15}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:2,RAD_REPORTS:1,DOC_ECM:2,SCANNED_NOTES:1,MATERNITY:1,COMMUNITY:1}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
-  REGIONAL: { label:"Local Health District (LHD) / Hospital and Health Service (HHS)", desc:"~3000 beds · 12 hospitals · 80+ systems", data:{ bed_count:3000, org_count:12, journey:"EVALUATING", tiers:{enterprise:4,departmental:28,niche:50}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
-  STATEWIDE: { label:"Statewide Programme", desc:"~20000 beds · 200 hospitals · 15+ districts", data:{ bed_count:20000, org_count:200, journey:"EVALUATING", tiers:{enterprise:24,departmental:80,niche:80}, data_types:{...emptyDt(),EPR_PAS:8,ED:6,THEATRES:5,LAB:8,RAD_REPORTS:6,DOC_ECM:8,SCANNED_NOTES:6,MATERNITY:5,COMMUNITY:6,MENTAL_HEALTH:4,REFERRALS:3,OTHER:4}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.65 }},
+  SMALL: { label:"Rural / Remote Hospital", desc:"~30 beds · 1 facility · 6 systems", data:{ bed_count:30, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:2,niche:3}, complexity_level:"LOW", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
+  TYPICAL: { label:"Regional Hospital", desc:"~200 beds · 1 facility · 15 systems", data:{ bed_count:250, org_count:1, journey:"EVALUATING", tiers:{enterprise:1,departmental:5,niche:9}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
+  LARGE: { label:"Metropolitan / Tertiary", desc:"~500 beds · 1 facility · 25 systems", data:{ bed_count:600, org_count:1, journey:"EVALUATING", tiers:{enterprise:2,departmental:8,niche:15}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
+  REGIONAL: { label:"Local Health District (LHD) / Hospital and Health Service (HHS)", desc:"~3000 beds · 12 hospitals · 80+ systems", data:{ bed_count:3000, org_count:12, journey:"EVALUATING", tiers:{enterprise:4,departmental:28,niche:50}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
+  STATEWIDE: { label:"Statewide Programme", desc:"~20000 beds · 200 hospitals · 15+ districts", data:{ bed_count:20000, org_count:200, journey:"EVALUATING", tiers:{enterprise:24,departmental:80,niche:80}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.65 }},
   // Aged Care presets (places = bed_count equivalent)
-  AC_SINGLE: { label:"Single Aged Care Facility", desc:"~90 places · 1 facility · 6 systems", data:{ bed_count:90, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:2,niche:3}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"LOW", data_quality_level:"MIXED", decom_retire_rate:0.70 }},
-  AC_SMALL: { label:"Small Aged Care Group", desc:"~350 places · 4 facilities · 8 systems", data:{ bed_count:350, org_count:4, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:3,niche:4}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.70 }},
-  AC_MID: { label:"Mid-Range Aged Care Provider", desc:"~1,000 places · 12 facilities · 12 systems", data:{ bed_count:1000, org_count:12, journey:"HAVE_EPR", tiers:{enterprise:2,departmental:4,niche:6}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.65 }},
-  AC_LARGE: { label:"Large Aged Care Provider", desc:"~3,500 places · 35 facilities · 16 systems", data:{ bed_count:3500, org_count:35, journey:"HAVE_EPR", tiers:{enterprise:2,departmental:5,niche:9}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.60 }},
+  AC_SINGLE: { label:"Single Aged Care Facility", desc:"~90 places · 1 facility · 6 systems", data:{ bed_count:90, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:2,niche:3}, complexity_level:"LOW", data_quality_level:"MIXED", decom_retire_rate:0.70 }},
+  AC_SMALL: { label:"Small Aged Care Group", desc:"~350 places · 4 facilities · 8 systems", data:{ bed_count:350, org_count:4, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:3,niche:4}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.70 }},
+  AC_MID: { label:"Mid-Range Aged Care Provider", desc:"~1,000 places · 12 facilities · 12 systems", data:{ bed_count:1000, org_count:12, journey:"HAVE_EPR", tiers:{enterprise:2,departmental:4,niche:6}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.65 }},
+  AC_LARGE: { label:"Large Aged Care Provider", desc:"~3,500 places · 35 facilities · 16 systems", data:{ bed_count:3500, org_count:35, journey:"HAVE_EPR", tiers:{enterprise:2,departmental:5,niche:9}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.60 }},
   // NDIS presets (participants = bed_count equivalent)
-  NDIS_SMALL: { label:"Small NDIS Provider", desc:"~50 participants · 12 staff · 5 systems", data:{ bed_count:50, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:2,niche:2}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1}, complexity_level:"LOW", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
-  NDIS_THERAPY: { label:"Therapy Practice", desc:"~150 participants · 20 staff · 6 systems", data:{ bed_count:150, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:2,niche:3}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.70 }},
-  NDIS_MID: { label:"Mid-Range NDIS Provider", desc:"~500 participants · 100 staff · 8 systems", data:{ bed_count:500, org_count:3, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:3,niche:4}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.70 }},
-  NDIS_LARGE: { label:"Large NDIS Provider", desc:"~2,000 participants · 400 staff · 14 systems", data:{ bed_count:2000, org_count:8, journey:"HAVE_EPR", tiers:{enterprise:2,departmental:5,niche:7}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.65 }},
+  NDIS_SMALL: { label:"Small NDIS Provider", desc:"~50 participants · 12 staff · 5 systems", data:{ bed_count:50, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:2,niche:2}, complexity_level:"LOW", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
+  NDIS_THERAPY: { label:"Therapy Practice", desc:"~150 participants · 20 staff · 6 systems", data:{ bed_count:150, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:2,niche:3}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.70 }},
+  NDIS_MID: { label:"Mid-Range NDIS Provider", desc:"~500 participants · 100 staff · 8 systems", data:{ bed_count:500, org_count:3, journey:"HAVE_EPR", tiers:{enterprise:1,departmental:3,niche:4}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.70 }},
+  NDIS_LARGE: { label:"Large NDIS Provider", desc:"~2,000 participants · 400 staff · 14 systems", data:{ bed_count:2000, org_count:8, journey:"HAVE_EPR", tiers:{enterprise:2,departmental:5,niche:7}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.65 }},
 };
 
 // ── Model constants ──
@@ -603,6 +619,19 @@ const PREVENTABLE_ADE_PER_100_ADMITS = 2.0;    // Runciman et al 2003; Lim et al
 const DUPLICATE_TEST_RATE = 0.22;              // 22% (Banker et al 2024; RCPA guidelines; validated)
 const PATHOLOGY_COST_PER_BED = 12000;          // A$12,000/bed pathology/imaging (AIHW hospital expenditure; direct costs)
 const COMM_FAILURE_PCT_INCIDENTS = 0.35;       // 35% of incidents (ACSQHC: 24-60% range; 35% conservative midpoint)
+
+// ── Legal & Compliance Constants (AU) ──
+const AU_EDISCOVERY_CASES_PER_100_BEDS = 8;    // Lower than US (less litigious); medico-legal, coronial, complaints
+const AU_EDISCOVERY_HRS_PER_CASE_BEFORE = 24;  // 3 days: searching across fragmented legacy systems
+const AU_EDISCOVERY_HRS_PER_CASE_AFTER = 5;    // Single archive search
+const AU_EDISCOVERY_HOURLY_RATE = 45;           // HIM / health information staff (AU rates)
+const AU_CYBER_BREACH_AVG_COST = 4710000;       // A$4.71m avg AU healthcare breach (IBM/Ponemon 2024 AU report)
+
+// ── Readmission Constants (AU) ──
+const AU_READMISSION_RATE = 0.12;               // 12% 30-day unplanned readmission (AIHW 2023-24)
+const AU_READMIT_REDUCTION = 0.006;             // 0.6pp absolute reduction (conservative; Vest JAMIA 2019 adjusted for AU context)
+const AU_READMIT_COST = 11500;                  // A$11,500 avg readmission cost (IHACPA NWAU-derived)
+const AU_READMIT_FRAGMENTATION_ATTRIBUTION = 0.30; // 30% attributable to information fragmentation
 
 // ── Teaching Hospital Constants ──
 const RESEARCH_SYSTEMS_PER_100_BEDS = 3.5;     // IRB, CTMS, biobank, research repos, registry systems
@@ -978,7 +1007,7 @@ function ROICalculator() {
   const [showFacilityPortfolio, setShowFacilityPortfolio] = useState(false);
   const [facilityPortfolio, setFacilityPortfolio] = useState({}); // User can enter or we estimate
 
-  const [inputs, setInputs] = useState({...PRESETS.TYPICAL.data, data_types:{...PRESETS.TYPICAL.data.data_types}, tiers:{...PRESETS.TYPICAL.data.tiers}});
+  const [inputs, setInputs] = useState({...PRESETS.TYPICAL.data, tiers:{...PRESETS.TYPICAL.data.tiers}});
   const avgBedsPerHospital = inputs.org_count > 0 ? Math.round(inputs.bed_count / inputs.org_count) : 0;
   const [activePreset, setActivePreset] = useState(null);
   const [scenarioMode, setScenarioMode] = useState(null);
@@ -1216,7 +1245,7 @@ function ROICalculator() {
   }, [mergerSummary, resetOv, touch]);
   const applyPreset=useCallback(key=>{
     const d = PRESETS[key].data;
-    setInputs({...d,data_types:{...d.data_types},tiers:{...d.tiers}});
+    setInputs({...d,tiers:{...d.tiers}});
     setActivePreset(key);resetOv();setThinking(true);
     if (key === 'STATEWIDE') { setFacilityPortfolio({...STATEWIDE_PORTFOLIO}); setGalenMigrationCost(0); setGalenAnnualCost(0); setTrancheMode(true); setMergerMode(false); setMergerOrgs([]); setReimbursementModel('public');  setTranches([{name:'Tranche A (early adopters)',bedPct:0.20,yearOffset:0},{name:'Tranche B (metro districts)',bedPct:0.35,yearOffset:1},{name:'Tranche C (remaining)',bedPct:0.45,yearOffset:2}]); } else { setFacilityPortfolio({}); }
     setPerOrgBeds(false); setPerOrgSystems(false); setFlagships([]); setTierCostEdits({enterprise:null,departmental:null,niche:null}); setEditingTierCost(null); setCostMode("estimate"); setKnownAnnualSpend(null);
@@ -1277,13 +1306,14 @@ function ROICalculator() {
     const pm = PROVIDER_MULTIPLIERS[providerType] || PROVIDER_MULTIPLIERS.regional;
     const rm = REIMBURSE_MULTIPLIERS[reimbursementModel] || REIMBURSE_MULTIPLIERS.mixed;
     return {...inputs,
-      _abfPct: pm.abf_pct || 0.72,
-      _privateWeight: rm.private_weight || 1.0,
-      _efficiencyWeight: rm.efficiency_weight || 1.0,
+      _abfPct: pm.abf_pct ?? 0.72,
+      _privateWeight: rm.private_weight ?? 1.0,
+      _efficiencyWeight: rm.efficiency_weight ?? 1.0,
       _medicareDrgRevenue: medicareDrgRevenue,
       _occupancy: occupancyRate,
       _rampYears: rampYears,
       _providerType: providerType,
+      _complexityBoost: pm.complexity_boost ?? 1.0,
       _lhdCount: providerType === "statewide" ? Math.max(1, Math.round(inputs.org_count / 13)) : (providerType === "state_network" ? Math.max(1, inputs.org_count) : 0),
       _privatePct: reimbursementModel === "public" ? 0 : (PROVIDER_MULTIPLIERS[providerType]?.private_pct || 0.15),
       _portfolioSystems: portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems,
@@ -3125,7 +3155,55 @@ function ROICalculator() {
     </Card><LockedConnector/>
     </div>}
 
-    {/* ABF (Activity Based Funding) efficiency & revenue impact */}
+    {/* Legal & compliance */}
+    {r.litigationCases > 0 && <Card dimmed={dim} style={{border:"1px solid #e0b0b0",background:"#faf5f5"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+        <span style={{fontSize:20}}>{"\u2696\uFE0F"}</span>
+        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legal and compliance</h3>
+      </div>
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>e-Discovery savings</div>
+          <div style={{fontSize:26,fontWeight:800,color:"#c0392b",margin:"6px 0"}}>{an?fmtK(r.ediscoverySaving):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMid}}>{r.litigationCases} cases/yr across {r.legacy} systems</div>
+        </div>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Cyber attack surfaces removed</div>
+          <div style={{fontSize:26,fontWeight:800,color:"#c0392b",margin:"6px 0"}}>{r.cyberSystemsRetired}</div>
+          <div style={{fontSize:11,color:C.textMid}}>legacy systems retired</div>
+        </div>
+      </div>
+      <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,border:"1px solid #e0b0b015",fontSize:12,lineHeight:1.6,color:C.textMid}}>
+        <strong style={{color:C.text}}>Evidence</strong><br/>
+        Medico-legal records assembly across fragmented systems: ~24 hrs/case (3 days). Consolidated archive: ~5 hrs. Average Australian healthcare data breach: A$4.71m (IBM/Ponemon 2024). Each legacy system on an end-of-life operating system is a potential attack vector under the Privacy Act 1988 and Notifiable Data Breaches scheme.
+      </div>
+    </Card>}
+
+    {/* Readmission cost avoidance */}
+    {r.auReadmissionsAvoided > 0 && <Card dimmed={dim} style={{border:"1px solid #d0c4e0",background:"#f8f5fa"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+        <span style={{fontSize:20}}>{"\u{1F3E5}"}</span>
+        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Readmission cost avoidance</h3>
+      </div>
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
+        <div style={{flex:"1 1 150px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center"}}>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Readmissions avoided</div>
+          <div style={{fontSize:26,fontWeight:800,color:"#8e44ad"}}>{an?fmtNum(r.auReadmissionsAvoided):"\u2013"}</div>
+          <div style={{fontSize:11,color:C.textMid}}>patients/yr</div>
+        </div>
+        <div style={{flex:"1 1 150px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center"}}>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Cost avoidance</div>
+          <div style={{fontSize:26,fontWeight:800,color:"#8e44ad"}}>{an?fmtK(r.auReadmissionCostAvoidance):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMid}}>at A$11,500/readmission</div>
+        </div>
+      </div>
+      <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,fontSize:12,lineHeight:1.6,color:C.textMid}}>
+        <strong style={{color:C.text}}>Evidence</strong><br/>
+        AIHW 2023-24: 12% unplanned 30-day readmission rate nationally. Vest et al JAMIA 2019: single-vendor EMR reduces readmissions by 0.8pp (adjusted to 0.6pp for AU context). 30% fragmentation attribution applied. Cost per readmission derived from IHACPA NWAU pricing. Included in cost avoidance category.
+      </div>
+    </Card>}
+
+        {/* ABF (Activity Based Funding) efficiency & revenue impact */}
     <Card dimmed={dim}>
       <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{r.isAgedCare ? "Aged care funding & efficiency" : r.isNDIS ? "NDIS revenue & efficiency" : (r.privateRevRecovery > 0 ? "ABF efficiency & revenue impact" : "ABF efficiency impact")}</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Cashable benefits from improved ABF coding efficiency and private patient billing accuracy, attributed to EMR consolidation as a contributing factor.</p>
