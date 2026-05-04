@@ -313,7 +313,7 @@ function AnimatedNum({ value, active }) { const v = useCountUp(value, 1200, acti
 function AnimatedK({ value, active }) { const v = useCountUp(value, 1200, active); return <span>{v >= 1e6 ? `A$${(v/1e6).toFixed(1)}m` : v >= 1000 ? `A$${Math.round(v/1000).toLocaleString("en-AU")}k` : `A$${v.toLocaleString("en-AU")}`}</span>; }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   CALC ENGINE – tiered systems, bed-scaled costs, no parallel-run
+   CALC ENGINE - tiered systems, bed-scaled costs, no parallel-run
    ═══════════════════════════════════════════════════════════════════════ */
 
 const SCENARIO = {
@@ -2110,7 +2110,7 @@ function ROICalculator() {
     </Card>
     <LockedConnector/>
 
-    {/* STEP 1 – Journey stage */}
+    {/* STEP 1 - Journey stage */}
     <Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:C.accent,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>2</span>        Where are you on your EMR journey?
@@ -2257,7 +2257,7 @@ function ROICalculator() {
 
     <div style={{display:modelMode==="template"?"none":undefined}}>
     
-    {/* STEP 1 – Org scale + presets */}
+    {/* STEP 1 - Org scale + presets */}
     <div ref={ref1} style={{animation:"fade-in .4s ease"}}><Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:step>=0?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>3</span>        Organisation scale
@@ -2411,12 +2411,12 @@ function ROICalculator() {
         </div>;
       })}
 
-      {inputs.bed_count===0&&<div style={{marginTop:10,padding:"8px 14px",background:C.accentPale,borderRadius:6,fontSize:13,color:C.accent}}>Community provider {"–"} model still works.</div>}
+      {inputs.bed_count===0&&<div style={{marginTop:10,padding:"8px 14px",background:C.accentPale,borderRadius:6,fontSize:13,color:C.accent}}>Community provider {"-"} model still works.</div>}
 
     </Card></div>
     {step<1?<ContinuePrompt onClick={()=>goTo(1,ref2)} label="Next: legacy systems"/>:<LockedConnector/>}
 
-    {/* STEP 2 – Tiered legacy systems */}
+    {/* STEP 2 - Tiered legacy systems */}
     <div ref={ref2} style={{animation:step>=1?"fade-in .4s ease":"none"}}><Card dimmed={step<1}>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:step>=1?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>4</span>
@@ -3014,7 +3014,7 @@ function ROICalculator() {
       </div>;
     })()}
 
-        {/* Decom – tiered breakdown */}
+        {/* Decom - tiered breakdown */}
     <Card dimmed={dim}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Legacy decommission savings</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Annual costs eliminated when systems are switched off.</p>
       <div style={{overflowX:"auto",marginBottom:16}}>
@@ -3045,91 +3045,16 @@ function ROICalculator() {
         <OverridableStat label="Mins wasted / wk" computed={calc(calcInputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on Westbrook et al 2010 (JAMIA) workflow interruption studies and Nuffield Trust 2020 system navigation research.`}/>
         <Stat label="Full-time equivalent (FTE)" value={an?r.fteEquivalent.toFixed(0):0} sub="clinical capacity" color={"#1a8a7a"} info={`${fmtNum(r.hrsSaved)} hours freed ÷ 1,824 hours per FTE (38hr week × 48 working weeks) = ${r.fteEquivalent.toFixed(1)} FTE equivalent. This is not headcount reduction. It represents clinical capacity freed for patient care, equivalent to hiring ${r.fteEquivalent.toFixed(0)} additional clinicians without recruitment.`}/>
         <Stat label="Hours freed / yr" value={an?<AnimatedNum value={r.hrsSaved} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Result: ${fmtNum(r.hrsSaved)} hours per year.`}/>
-        <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at A$65/hr blended rate (AIHW workforce data: nursing ~A$45-55/hr, medical ~A$90-120/hr, allied health ~A$40-60/hr). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity. This represents capacity redirected to patient care, not a direct cash saving. Equivalent to ~${(r.hrsSaved/1824).toFixed(0)} FTE.`}/>
+        <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"-"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at A$65/hr blended rate (AIHW workforce data: nursing ~A$45-55/hr, medical ~A$90-120/hr, allied health ~A$40-60/hr). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity. This represents capacity redirected to patient care, not a direct cash saving. Equivalent to ~${(r.hrsSaved/1824).toFixed(0)} FTE.`}/>
       </div>
       <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"A$"}65 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong> <span style={{color:C.textMuted,fontSize:12}}>| Equivalent to ~{r.fteEquivalent.toFixed(0)} FTE of clinical capacity</span></Callout>
     </Card><LockedConnector/>
 
-    {/* Clinical safety */}
-    {r.hasClinicalScope && <div>
-    <Card dimmed={dim} style={{border:"1px solid #f0c4d4",background:"#fdf5f8"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-        <span style={{fontSize:20}}>{"🛡️"}</span>
-        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Patient safety context":"Patient safety case for migration"}</h3>
-        <InfoTip text={`Source: ACSQHC (Australian Commission on Safety and Quality in Health Care) safety reports; AIHW hospital statistics; QAHCS (Wilson et al 1995). Per-bed rates from Australian public hospital data, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). Supporting evidence for the quality and cost avoidance estimates above.`}/>
-      </div>
-      <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EMR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
-      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
-        {[
-          {label:"Medication errors",bl:r.safetyMedErrorsBaseline,av:r.safetyMedErrorsAvoided,avl:"potentially avoidable",sub:"at admission, transfer, or discharge"},
-          {label:"Patients harmed",bl:Math.round(r.safetyPatientsProtected/(SCENARIO[am].safety||0.25)),av:r.safetyPatientsProtected,avl:"potentially protected",sub:"by medication errors during handoffs"},
-          {label:"Excess bed days",bl:Math.round(r.safetyBedDaysAvoided/(SCENARIO[am].safety||0.25)),av:r.safetyBedDaysAvoided,avl:"potentially avoidable",sub:"from adverse medication events"},
-        ].map((m,i)=><div key={i} style={{flex:"1 1 150px",minWidth:140,padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:`1px solid ${C.rose}18`}}>
-          <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:6}}>{m.label}</div>
-          <div style={{fontSize:26,fontWeight:800,color:C.rose}}>{an?fmtNum(m.bl):0}<span style={{fontSize:13,fontWeight:600}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>{m.sub}</div>
-          <div style={{marginTop:8,fontSize:12,color:C.rose,fontWeight:600}}>{"↓"} {an?fmtNum(m.av):0} {m.avl}</div>
-        </div>)}
-      </div>
-      {/* Litigation context */}
-      <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,border:`1px solid ${C.rose}15`,fontSize:12,lineHeight:1.6,color:C.textMid}}>
-        <strong style={{color:C.text}}>Evidence & litigation context</strong><br/>
-        ACSQHC National Safety and Quality Health Service Standards; AIHW hospital statistics: approximately 10% of hospital separations involve an adverse event (ACSQHC), with communication failure a contributing factor in 35% of clinical incidents. Australian state health systems face significant medical indemnity costs through schemes such as icare (NSW) and VMIA (VIC). Indemnity premiums are influenced by claims history {"\u2013"} fewer adverse events means fewer indemnity claims and lower premiums. Every patient harmed by fragmented records is a potential indemnity claim and accreditation risk under ACSQHC Standards 1 and 6.
-      </div>
-    </Card><LockedConnector/>
-    </div>}
 
-    {/* Legal & compliance */}
-    {r.litigationCases > 0 && <Card dimmed={dim} style={{border:"1px solid #c4cce0",background:"#f0f2f8"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <span style={{fontSize:20}}>{"\u2696\uFE0F"}</span>
-        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legal and compliance</h3>
-      </div>
-      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
-          <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>e-Discovery savings</div>
-          <div style={{fontSize:26,fontWeight:800,color:"#2c3e6b",margin:"6px 0"}}>{an?fmtK(r.ediscoverySaving):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMid}}>{r.litigationCases} cases/yr across {r.legacy} systems</div>
-        </div>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
-          <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Cyber attack surfaces removed</div>
-          <div style={{fontSize:26,fontWeight:800,color:"#2c3e6b",margin:"6px 0"}}>{r.cyberSystemsRetired}</div>
-          <div style={{fontSize:11,color:C.textMid}}>legacy systems retired</div>
-        </div>
-      </div>
-      <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,border:"1px solid #e0b0b015",fontSize:12,lineHeight:1.6,color:C.textMid}}>
-        <strong style={{color:C.text}}>Evidence</strong><br/>
-        Medico-legal records assembly across fragmented systems: ~24 hrs/case (3 days). Consolidated archive: ~5 hrs. Average Australian healthcare data breach: A$4.71m (IBM/Ponemon 2024). Each legacy system on an end-of-life operating system is a potential attack vector under the Privacy Act 1988 and Notifiable Data Breaches scheme.
-      </div>
-    </Card>}
-
-    {/* Readmission cost avoidance */}
-    {r.auReadmissionsAvoided > 0 && <Card dimmed={dim} style={{border:"1px solid #b0e0d8",background:"#f0faf8"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <span style={{fontSize:20}}>{"\u{1F3E5}"}</span>
-        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Readmission cost avoidance</h3>
-      </div>
-      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
-        <div style={{flex:"1 1 150px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center"}}>
-          <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Readmissions avoided</div>
-          <div style={{fontSize:26,fontWeight:800,color:"#0F4146"}}>{an?fmtNum(r.auReadmissionsAvoided):"\u2013"}</div>
-          <div style={{fontSize:11,color:C.textMid}}>patients/yr</div>
-        </div>
-        <div style={{flex:"1 1 150px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center"}}>
-          <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Cost avoidance</div>
-          <div style={{fontSize:26,fontWeight:800,color:"#0F4146"}}>{an?fmtK(r.auReadmissionCostAvoidance):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMid}}>at A$11,500/readmission</div>
-        </div>
-      </div>
-      <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,fontSize:12,lineHeight:1.6,color:C.textMid}}>
-        <strong style={{color:C.text}}>Evidence</strong><br/>
-        AIHW 2023-24: 12% unplanned 30-day readmission rate nationally. Vest et al JAMIA 2019: single-vendor EMR consolidation reduces 30-day readmissions by 0.6 percentage points. 30% fragmentation attribution applied. Cost per readmission derived from IHACPA NWAU pricing. Included in cost avoidance category.
-      </div>
-    </Card>}
 
         {/* ABF (Activity Based Funding) efficiency & revenue impact */}
     <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{r.isAgedCare ? "Aged care funding & efficiency" : r.isNDIS ? "NDIS revenue & efficiency" : (r.privateRevRecovery > 0 ? "Activity-Based Funding (ABF) efficiency & revenue" : "Activity-Based Funding (ABF) efficiency")}</h3>
+      <div style={{display:"flex",alignItems:"center"}}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{r.isAgedCare ? "Aged care funding & efficiency" : r.isNDIS ? "NDIS revenue & efficiency" : (r.privateRevRecovery > 0 ? "Activity-Based Funding (ABF) efficiency & revenue" : "Activity-Based Funding (ABF) efficiency")}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Cashable benefits from improved ABF coding efficiency and private patient billing accuracy, attributed to EMR consolidation as a contributing factor.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -3161,31 +3086,32 @@ function ROICalculator() {
     </Card><LockedConnector/>
 
 
-    {sector === "hospital" && <>{/* Avoidable cost of harm - hospital only */}
-    <Card dimmed={dim} style={{border:"1px solid #d4c4df",background:"#faf7fc"}}>
+        {sector === "hospital" && <>{/* Avoidable cost of harm - hospital only */}
+    <Card dimmed={dim} style={{border:"1px solid #f0c4d4",background:"#fdf5f8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
         <span style={{fontSize:18}}>{"⚠️"}</span>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Avoidable cost of harm</h3>
+        <span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span>
       </div>
       <p style={{fontSize:13,color:C.textMid,margin:"0 0 14px",lineHeight:1.5}}>
         These represent the <strong>financial cost of preventable harm</strong> attributable to legacy system fragmentation. They are included in the annual savings total as cost avoidance: real costs that would not be incurred if clinical information were consolidated.
       </p>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:14}}>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #f0c4d430"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Excess bed days avoided</div>
           <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(r.excessDayCostAvoided):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>{an?fmtNum(r.excessDaysAvoided):0} days at A$3,100/day (IHACPA, Independent Health and Aged Care Pricing Authority)</div>
           <div style={{fontSize:10,color:"#d4507a",marginTop:4}}>35% fragmentation attribution (ACSQHC)</div>
         </div>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #f0c4d430"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Medical indemnity reduction</div>
           <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(r.malpracticeReduction):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>3% of A$20,000/bed institutional premium</div>
           <div style={{fontSize:10,color:"#d4507a",marginTop:4}}>VMIA (Victorian Managed Insurance Authority) 2025-26 benchmark</div>
         </div>
-        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #d4c4df30"}}>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #f0c4d430"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate testing reduction</div>
-          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(r.duplicateReduction):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(r.duplicateReduction):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>22% duplicate rate at A$12,000/bed pathology cost</div>
           <div style={{fontSize:10,color:"#d4507a",marginTop:4}}>Banker et al 2024; RCPA guidelines</div>
         </div>
@@ -3202,7 +3128,7 @@ function ROICalculator() {
     </>}
 
     {/* Aged care safety */}
-    {sector === "aged_care" && r.acHarmAvoidance > 0 && <Card style={{border:"1px solid #d4c4df",background:"#faf7fc"}}>
+    {sector === "aged_care" && r.acHarmAvoidance > 0 && <Card style={{border:"1px solid #f0c4d4",background:"#fdf5f8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
         <span style={{fontSize:18}}>{"⚠️"}</span>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Avoidable cost of harm</h3>
@@ -3233,8 +3159,93 @@ function ROICalculator() {
       </Callout>
     </Card>}
 
-    {/* Academic module - conditional */}
-    {!dim && <ResultSection defaultOpen={true} title="Australian evidence benchmarks" icon="📋" dimmed={dim}>
+
+    {/* Legal & compliance */}
+    {r.litigationCases > 0 && <Card dimmed={dim} style={{border:"1px solid #c4cce0",background:"#f0f2f8"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+        <span style={{fontSize:20}}>{"\u2696\uFE0F"}</span>
+        <div style={{display:"flex",alignItems:"center"}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legal and compliance</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      </div>
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>e-Discovery savings</div>
+          <div style={{fontSize:26,fontWeight:800,color:"#2c3e6b",margin:"6px 0"}}>{an?fmtK(r.ediscoverySaving):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMid}}>{r.litigationCases} cases/yr across {r.legacy} systems</div>
+        </div>
+        <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Cyber attack surfaces removed</div>
+          <div style={{fontSize:26,fontWeight:800,color:"#2c3e6b",margin:"6px 0"}}>{r.cyberSystemsRetired}</div>
+          <div style={{fontSize:11,color:C.textMid}}>legacy systems retired</div>
+        </div>
+      </div>
+      <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,border:"1px solid #e0b0b015",fontSize:12,lineHeight:1.6,color:C.textMid}}>
+        <strong style={{color:C.text}}>Evidence</strong><br/>
+        Medico-legal records assembly across fragmented systems: ~24 hrs/case (3 days). Consolidated archive: ~5 hrs. Average Australian healthcare data breach: A$4.71m (IBM/Ponemon 2024). Each legacy system on an end-of-life operating system is a potential attack vector under the Privacy Act 1988 and Notifiable Data Breaches scheme.
+      </div>
+    </Card>}
+
+    {/* Readmission cost avoidance */}
+    {r.auReadmissionsAvoided > 0 && <Card dimmed={dim} style={{border:"1px solid #b0e0d8",background:"#f0faf8"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+        <span style={{fontSize:20}}>{"\u{1F3E5}"}</span>
+        <div style={{display:"flex",alignItems:"center"}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Readmission cost avoidance</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      </div>
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
+        <div style={{flex:"1 1 150px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center"}}>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Readmissions avoided</div>
+          <div style={{fontSize:26,fontWeight:800,color:"#0F4146"}}>{an?fmtNum(r.auReadmissionsAvoided):"\u2013"}</div>
+          <div style={{fontSize:11,color:C.textMid}}>patients/yr</div>
+        </div>
+        <div style={{flex:"1 1 150px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center"}}>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Cost avoidance</div>
+          <div style={{fontSize:26,fontWeight:800,color:"#0F4146"}}>{an?fmtK(r.auReadmissionCostAvoidance):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMid}}>at A$11,500/readmission</div>
+        </div>
+      </div>
+      <Callout bg="#f0faf8" border="#b0e0d8">
+        <strong style={{color:"#0F4146"}}>Total readmission cost avoidance:</strong>{" "}
+        {fmtK(r.auReadmissionCostAvoidance)}/yr ({r.auReadmissionsAvoided} readmissions avoided)
+      </Callout>
+      <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,fontSize:12,lineHeight:1.6,color:C.textMid}}>
+        <strong style={{color:C.text}}>Evidence</strong><br/>
+        AIHW 2023-24: 12% unplanned 30-day readmission rate nationally. Vest et al JAMIA 2019: single-vendor EMR consolidation reduces 30-day readmissions by 0.6 percentage points. 30% fragmentation attribution applied. Cost per readmission derived from IHACPA NWAU pricing. Included in cost avoidance category.
+      </div>
+    </Card>}
+
+
+
+        {/* Academic module - conditional */}
+    {/* Clinical safety */}
+    {r.hasClinicalScope && <div>
+    <Card dimmed={dim} style={{border:"1px solid #f0c4d4",background:"#fdf5f8"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+        <span style={{fontSize:20}}>{"🛡️"}</span>
+        <div style={{display:"flex",alignItems:"center"}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Patient safety context":"Patient safety case for migration"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Supporting evidence</span></div>
+        <InfoTip text={`Source: ACSQHC (Australian Commission on Safety and Quality in Health Care) safety reports; AIHW hospital statistics; QAHCS (Wilson et al 1995). Per-bed rates from Australian public hospital data, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). Supporting evidence for the quality and cost avoidance estimates above.`}/>
+      </div>
+      <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EMR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
+        {[
+          {label:"Medication errors",bl:r.safetyMedErrorsBaseline,av:r.safetyMedErrorsAvoided,avl:"potentially avoidable",sub:"at admission, transfer, or discharge"},
+          {label:"Patients harmed",bl:Math.round(r.safetyPatientsProtected/(SCENARIO[am].safety||0.25)),av:r.safetyPatientsProtected,avl:"potentially protected",sub:"by medication errors during handoffs"},
+          {label:"Excess bed days",bl:Math.round(r.safetyBedDaysAvoided/(SCENARIO[am].safety||0.25)),av:r.safetyBedDaysAvoided,avl:"potentially avoidable",sub:"from adverse medication events"},
+        ].map((m,i)=><div key={i} style={{flex:"1 1 150px",minWidth:140,padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:`1px solid ${C.rose}18`}}>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:6}}>{m.label}</div>
+          <div style={{fontSize:26,fontWeight:800,color:C.rose}}>{an?fmtNum(m.bl):0}<span style={{fontSize:13,fontWeight:600}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>{m.sub}</div>
+          <div style={{marginTop:8,fontSize:12,color:C.rose,fontWeight:600}}>{"↓"} {an?fmtNum(m.av):0} {m.avl}</div>
+        </div>)}
+      </div>
+      {/* Litigation context */}
+      <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,border:`1px solid ${C.rose}15`,fontSize:12,lineHeight:1.6,color:C.textMid}}>
+        <strong style={{color:C.text}}>Evidence & litigation context</strong><br/>
+        ACSQHC National Safety and Quality Health Service Standards; AIHW hospital statistics: approximately 10% of hospital separations involve an adverse event (ACSQHC), with communication failure a contributing factor in 35% of clinical incidents. Australian state health systems face significant medical indemnity costs through schemes such as icare (NSW) and VMIA (VIC). Indemnity premiums are influenced by claims history {"\u2013"} fewer adverse events means fewer indemnity claims and lower premiums. Every patient harmed by fragmented records is a potential indemnity claim and accreditation risk under ACSQHC Standards 1 and 6.
+      </div>
+    </Card><LockedConnector/>
+    </div>}
+
+
+        {!dim && <ResultSection defaultOpen={true} title="Australian evidence benchmarks" icon="📋" dimmed={dim}>
       <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
         {[
           {source:"Productivity Commission",date:"May 2024",metric:"Up to A$5.4bn/yr",desc:"national savings from better EMR data use",color:"#2d6a4f"},
@@ -3251,10 +3262,10 @@ function ROICalculator() {
 
     
     {/* Operational efficiency */}
-    {sector === "hospital" && <><Card dimmed={dim} style={{border:"1px solid #c3ddd3",background:"#f5faf7"}}>
+    {!r.isNDIS && <><Card dimmed={dim} style={{border:"1px solid #c3ddd3",background:"#f5faf7"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
         <span style={{fontSize:18}}>{"⚙️"}</span>
-        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Operational efficiency</h3>
+        <div style={{display:"flex",alignItems:"center"}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Operational efficiency</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Operational metric</span></div>
       </div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:12}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #c3ddd315"}}>
@@ -3282,17 +3293,17 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Research system decommission</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.researchDecomSave):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.researchDecomSave):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>{r.researchSystems} research systems at ~{fmtK(RESEARCH_SYSTEM_AVG_COST)} avg</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Teaching compliance efficiency</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.teachingEfficiency):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.teachingEfficiency):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>Registrar training, procedural logging</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Teaching workflow savings</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.teachingOverhead):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.teachingOverhead):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>Reduced complexity from consolidation</div>
         </div>
       </div>
@@ -3316,12 +3327,12 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate system elimination</div>
-          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.duplicateElimination):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.duplicateElimination):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>{r.duplicateSystems} duplicate systems across {inputs.org_count} facilities</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Infrastructure consolidation</div>
-          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.infraConsolidation):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.infraConsolidation):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>Data center, network, help desk</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
@@ -3387,7 +3398,7 @@ function ROICalculator() {
       </div>
       <div style={{marginTop:14,padding:"10px 14px",background:C.bg,borderRadius:6,fontSize:12,color:C.textMuted,display:"flex",gap:16,flexWrap:"wrap"}}>
         <span>Showing: <strong style={{color:C.accent}}>{am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected"}</strong></span>
-        <span>Range: <strong>{fmtK(rCon.total3)}</strong> {"–"} <strong>{fmtK(rStr.total3)}</strong></span>
+        <span>Range: <strong>{fmtK(rCon.total3)}</strong> {"-"} <strong>{fmtK(rStr.total3)}</strong></span>
       </div>
     </Card>
 
