@@ -708,7 +708,7 @@ const REIMBURSE_MULTIPLIERS = {
 const TIER_TYPE_MAP_HOSPITAL = {
   enterprise: ["EMR","EMR/PAS","PAS","Clinical"],
   departmental: ["Theatre","Radiology","LIMS","Pharmacy","Maternity","Integration","eMeds","Dictation","ED"],
-  niche: ["ECM","Incident"],
+  niche: ["ECM","Incident","DocMgmt","ClinComms","Rostering","InfControl","Analytics","PatientFlow","Support","Credentialing","Dictation","Portal","ICU"],
 };
 const TIER_TYPE_MAP_AC = {
   enterprise: ["Clinical"],
@@ -747,6 +747,25 @@ const KNOWN_SYSTEMS = [
   { label: "DXC MedChart", baseCost: 250000, perBed: 500, type: "eMeds" },
   { label: "Cerner eMeds", baseCost: 300000, perBed: 600, type: "eMeds" },
   { label: "CorePAS", baseCost: 200000, perBed: 400, type: "PAS" },
+  // ── Standalone systems ──
+  { label: "Objective ECM", baseCost: 120000, perBed: 180, type: "DocMgmt" },
+  { label: "Micro Focus Content Manager (TRIM)", baseCost: 100000, perBed: 160, type: "DocMgmt" },
+  { label: "OpenText", baseCost: 140000, perBed: 200, type: "DocMgmt" },
+  { label: "Dragon Medical (Nuance)", baseCost: 80000, perBed: 140, type: "Dictation" },
+  { label: "MedTasker", baseCost: 60000, perBed: 100, type: "ClinComms" },
+  { label: "Alcidion Smartpage", baseCost: 80000, perBed: 130, type: "ClinComms" },
+  { label: "Vocera (Stryker)", baseCost: 70000, perBed: 120, type: "ClinComms" },
+  { label: "Allocate HealthRoster", baseCost: 150000, perBed: 220, type: "Rostering" },
+  { label: "Kronos / UKG", baseCost: 120000, perBed: 180, type: "Rostering" },
+  { label: "ICNet (BD)", baseCost: 80000, perBed: 130, type: "InfControl" },
+  { label: "SAP Business Objects", baseCost: 100000, perBed: 150, type: "Analytics" },
+  { label: "Qlik (legacy)", baseCost: 80000, perBed: 120, type: "Analytics" },
+  { label: "Patient Flow Manager", baseCost: 90000, perBed: 140, type: "PatientFlow" },
+  { label: "CBORD (Food Services)", baseCost: 60000, perBed: 90, type: "Support" },
+  { label: "TechOne (Asset Mgmt)", baseCost: 80000, perBed: 110, type: "Support" },
+  { label: "VHIMS (Incident/OH&S)", baseCost: 50000, perBed: 80, type: "Incident" },
+  { label: "Clinical Forms (legacy)", baseCost: 40000, perBed: 60, type: "DocMgmt" },
+  { label: "SIMS (Staff Credentialing)", baseCost: 50000, perBed: 70, type: "Credentialing" },
 ]
 // ── Aged Care Systems ──
 const AC_KNOWN_SYSTEMS = [
