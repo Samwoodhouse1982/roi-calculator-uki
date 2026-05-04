@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { C } from '../theme';
+import rldatixLogo from '../assets/rldatix-logo.png';
 
 export function SplashScreen({ onStart }) {
   const canvasRef = useRef(null);
@@ -144,6 +145,11 @@ export function SplashScreen({ onStart }) {
         }}>
           BEST IN KLAS 2025 &nbsp;·&nbsp; DATA ARCHIVING
         </div>
+
+        <img src={rldatixLogo} alt="RLDatix" style={{
+          position: 'absolute', bottom: 60, left: '50%', transform: 'translateX(-50%)',
+          width: 200, opacity: 0.6,
+        }} />
       </div>
     </div>
   );
