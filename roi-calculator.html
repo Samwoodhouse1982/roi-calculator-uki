@@ -2843,10 +2843,6 @@ function ROICalculator() {
     )}
 
 
-        
-
-
-    
 
 
     {!dim && galenMigrationCost > 0 && <ResultSection defaultOpen={true} title="Archiving investment case" icon="🔓" dimmed={dim}>
@@ -2929,10 +2925,9 @@ function ROICalculator() {
       })()}
     </ResultSection>}
 
-    
 
 
-    {!dim && <div>
+    {!dim && <>
     {/* Hero summary */}
     <div style={{textAlign:"center",padding:"8px 0 24px"}}>
       <div style={{fontSize:13,fontWeight:600,color:C.textMuted,letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>Estimated annual savings at steady state</div>
@@ -3160,27 +3155,6 @@ function ROICalculator() {
       </Callout>
     </Card>}
 
-    {/* Australian evidence benchmarks */}
-    {sector === "hospital" && <Card dimmed={dim} style={{border:"1px solid #c3ddd3",background:"#f0f7f5"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-        <span style={{fontSize:18}}>{"📋"}</span>
-        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Australian evidence benchmarks</h3>
-      </div>
-      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-        {[
-          {source:"Productivity Commission",date:"May 2024",metric:"Up to A$5.4bn/yr",desc:"national savings from better EMR data use",color:"#2d6a4f"},
-          {source:"QLD DigiMat",date:"Woods et al 2024",metric:"12.9% decline",desc:"in medication complications (1.55M episodes)",color:"#e07020"},
-          {source:"RCH (Royal Children's Hospital) Melbourne",date:"South et al 2022",metric:"22% decrease",desc:"in in-hospital mortality post-Epic",color:"#993535"},
-          {source:"QAO (Queensland Audit Office) 2018",date:"Princess Alexandra",metric:"37% fewer",desc:"hospital-acquired infections post-ieMR",color:"#0f4146"},
-        ].map((b,i) => <div key={i} style={{flex:"1 1 150px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
-          <div style={{fontSize:18,fontWeight:800,color:b.color,marginBottom:2}}>{b.metric}</div>
-          <div style={{fontSize:11,color:C.textMid,lineHeight:1.4}}>{b.desc}</div>
-          <div style={{fontSize:10,color:C.textMuted,marginTop:4}}>{b.source} ({b.date})</div>
-        </div>)}
-      </div>
-    
-    </Card><LockedConnector/>}
-
     {/* Clinical safety */}
     {r.hasClinicalScope && <div>
     <Card dimmed={dim} style={{border:"1px solid #e0c4cf",background:"#faf5f7"}}>
@@ -3237,7 +3211,7 @@ function ROICalculator() {
     {/* Readmission cost avoidance */}
     {r.auReadmissionsAvoided > 0 && <Card dimmed={dim} style={{border:"1px solid #d0c4e0",background:"#f8f5fa"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <span style={{fontSize:20}}>{"🏥"}</span>
+        <span style={{fontSize:20}}>{"\u{1F3E5}"}</span>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Readmission cost avoidance</h3>
       </div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -3259,33 +3233,48 @@ function ROICalculator() {
     </Card>}
 
         
+    {!dim && <ResultSection defaultOpen={true} title="Australian evidence benchmarks" icon="📋" dimmed={dim}>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+        {[
+          {source:"Productivity Commission",date:"May 2024",metric:"Up to A$5.4bn/yr",desc:"national savings from better EMR data use",color:"#2d6a4f"},
+          {source:"QLD DigiMat",date:"Woods et al 2024",metric:"12.9% decline",desc:"in medication complications (1.55M episodes)",color:"#e07020"},
+          {source:"RCH (Royal Children's Hospital) Melbourne",date:"South et al 2022",metric:"22% decrease",desc:"in in-hospital mortality post-Epic",color:"#993535"},
+          {source:"QAO (Queensland Audit Office) 2018",date:"Princess Alexandra",metric:"37% fewer",desc:"hospital-acquired infections post-ieMR",color:"#0f4146"},
+        ].map((b,i) => <div key={i} style={{flex:"1 1 150px",padding:"10px 12px",background:"#fff",borderRadius:8,border:`1px solid ${C.borderLight}`}}>
+          <div style={{fontSize:18,fontWeight:800,color:b.color,marginBottom:2}}>{b.metric}</div>
+          <div style={{fontSize:11,color:C.textMid,lineHeight:1.4}}>{b.desc}</div>
+          <div style={{fontSize:10,color:C.textMuted,marginTop:4}}>{b.source} ({b.date})</div>
+        </div>)}
+      </div>
+    </ResultSection>}
 
+    
     {/* Operational efficiency */}
     {sector === "hospital" && <Card dimmed={dim} style={{border:"1px solid #c3ddd3",background:"#f5faf7"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-        <span style={{fontSize:18}}>{"⚙️"}</span>
+        <span style={{fontSize:18}}>{"\u2699\uFE0F"}</span>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Operational efficiency</h3>
       </div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:12}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #c3ddd315"}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Service desk tickets</div>
-          <div style={{fontSize:26,fontWeight:800,color:C.accent}}>{an?r.ticketsReductionPct:"\u2013"}%</div>
+          <div style={{fontSize:26,fontWeight:800,color:C.accent}}>{an ? r.ticketsReductionPct : 0}%</div>
           <div style={{fontSize:11,color:C.textMuted}}>reduction</div>
-          <div style={{fontSize:11,color:C.textMid,marginTop:6}}>{r.ticketsBaselineMonthly}/mo {"→"} {r.ticketsAfter}/mo</div>
+          <div style={{fontSize:11,color:C.textMid,marginTop:6}}>{r.ticketsBaselineMonthly}/mo {"\u2192"} {r.ticketsAfter}/mo</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #c3ddd315"}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Records request turnaround</div>
-          <div style={{fontSize:26,fontWeight:800,color:C.accent}}>{an?r.sarReductionPct:"\u2013"}%</div>
+          <div style={{fontSize:26,fontWeight:800,color:C.accent}}>{an ? r.sarReductionPct : 0}%</div>
           <div style={{fontSize:11,color:C.textMuted}}>faster</div>
-          <div style={{fontSize:11,color:C.textMid,marginTop:6}}>{r.sarDaysBefore} days {"→"} {r.sarDaysAfter} days</div>
+          <div style={{fontSize:11,color:C.textMid,marginTop:6}}>{r.sarDaysBefore} days {"\u2192"} {r.sarDaysAfter} days</div>
         </div>
       </div>
       <div style={{fontSize:12,color:C.textMid,lineHeight:1.6}}>
-        Each legacy system generates ~2.5 service desk tickets per month. Retiring systems eliminates their ticket load; remaining systems see a 40% reduction through simplified interfaces. Records requests are faster when data is consolidated into a single archive rather than scattered across {r.legacy} separate systems.
+        Each legacy system generates ~2.5 service desk tickets per month. Retiring systems eliminates their ticket load; remaining systems see a 40% reduction. Records requests are faster when data is in a single archive rather than across {r.legacy} systems.
       </div>
     </Card><LockedConnector/>}
 
-    {r.isAcademic && <Card dimmed={dim}>
+        {r.isAcademic && <Card dimmed={dim}>
       <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{"🎓"} Teaching hospital module</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and registrar training and teaching compliance.</p>
 
@@ -3604,7 +3593,7 @@ function ROICalculator() {
       </Card>;
     })()}
 
-    </div>}
+    </>}
 
     {/* Disclaimer */}
     <div style={{marginTop:24,padding:"16px 20px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`,fontSize:11,color:C.textMuted,lineHeight:1.7}}>
@@ -3714,4 +3703,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(<ROICalculator />);
     })();
   </script>
 </body>
-</html>
+</html{sector === "hospital" && >
