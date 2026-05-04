@@ -3003,7 +3003,7 @@ function ROICalculator() {
       <ResultCard dimmed={dim} label="Legacy decommission" value={an?fmtK(r.decomSave):"\u2013"} sub={an?r.decom+" of "+r.legacy+" systems retired":""} bg={C.greenPale} border="#c3ddd3" valueColor="#0F4146" />
       <ResultCard dimmed={dim} label={r.isAgedCare?"Places capacity":r.isNDIS?"Staff capacity":"Clinical capacity"} value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"\u2013"} sub={an?fmtK(r.timeSave)+"/yr value":""} bg="#e8faf6" border="#b0e8dc" valueColor="#1a8a7a" />
       <ResultCard dimmed={dim} label={r.isAgedCare?"Funding & efficiency":r.isNDIS?"Revenue & efficiency":"ABF efficiency & revenue"} value={an?fmtK(r.reimbursementImpact):"\u2013"} sub={an?(r.isAgedCare?"AN-ACC + agency + compliance":r.isNDIS?"Claims + utilisation + compliance + retention":"ABF efficiency"+(r.privateRevRecovery>0?" + private revenue":"")):"\u2013"} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
-      {r.qualitySavings > 0 && <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"\u2013"} sub={an?(r.isAgedCare?"Avoidable harm reduction":r.isNDIS?"":"Indemnity + excess bed days + e-discovery"):"\u2013"} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />}
+      {r.qualitySavings > 0 && <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"\u2013"} sub={an?(r.isAgedCare?"Avoidable harm reduction":r.isNDIS?"":"Indemnity + bed days + testing + legal + readmission"):"\u2013"} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />}
       {r.academicSavings > 0 && <ResultCard dimmed={dim} label="Academic programme" value={an?fmtK(r.academicSavings):"\u2013"} sub={an?"Research + teaching + compliance":""} bg="#eef0f8" border="#c4cce0" valueColor="#2c3e6b" />}
       {r.mergeSavings > 0 && <ResultCard dimmed={dim} label="Network consolidation" value={an?fmtK(r.mergeSavings):"\u2013"} sub={an?r.duplicateSystems+" duplicate systems":""} bg="#f0eefa" border="#c4c0e8" valueColor="#6c5ce7" />}
     </div>
@@ -3049,7 +3049,11 @@ function ROICalculator() {
     })()}
 
         {/* Decom - tiered breakdown */}
-    <Card dimmed={dim}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Legacy decommission savings</h3>
+    <Card dimmed={dim}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+        <span style={{fontSize:20}}>{"\uD83D\uDD13"}</span>
+        <div style={{display:"flex",alignItems:"center",flex:1}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legacy decommission savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Annual costs eliminated when systems are switched off.</p>
       <div style={{overflowX:"auto",marginBottom:16}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}><thead><tr>
@@ -3075,7 +3079,11 @@ function ROICalculator() {
     </Card><LockedConnector/>
 
     {/* Clinician time */}
-    <Card dimmed={dim}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3>
+    <Card dimmed={dim}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+        <span style={{fontSize:20}}>{"\u23F1\uFE0F"}</span>
+        <div style={{display:"flex",alignItems:"center",flex:1}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
       <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:16}}>
         <OverridableStat label="Clinical staff" computed={calc(calcInputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on Australian health workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/admin staff per facility (20 base + 0.15/bed, capped at 120).`}/>
@@ -3218,9 +3226,13 @@ function ROICalculator() {
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Cyber attack surfaces removed</div>
           <div style={{fontSize:26,fontWeight:800,color:"#2c3e6b",margin:"6px 0"}}>{r.cyberSystemsRetired}</div>
-          <div style={{fontSize:11,color:C.textMid}}>legacy systems retired</div>
+          <div style={{fontSize:11,color:C.textMid}}>attack surfaces eliminated</div>
         </div>
       </div>
+      <Callout bg="#f0f2f8" border="#c4cce0">
+        <strong style={{color:"#2c3e6b"}}>Total legal savings:</strong>{" "}
+        {fmtK(r.ediscoverySaving)}/yr (e-Discovery cost reduction)
+      </Callout>
       <EvidenceDropdown title="Evidence & methodology">
         <strong>e-Discovery:</strong> Records assembly: ~24 hrs/case across fragmented systems vs ~5 hrs in consolidated archive. 8 cases per 100 beds. HIM staff rate A$45/hr.<br/><br/>
         <strong>Cyber risk:</strong> Average AU healthcare breach: A$4.71m (IBM/Ponemon 2024). Privacy Act 1988, Notifiable Data Breaches scheme.
@@ -3282,11 +3294,8 @@ function ROICalculator() {
       </EvidenceDropdown>
     </Card><LockedConnector/>
     </div>}
+    <LockedConnector/>
 
-
-
-
-    
     {/* Operational efficiency */}
     {!r.isNDIS && <><Card dimmed={dim} style={{border:"1px solid #c3ddd3",background:"#f5faf7"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
@@ -3314,7 +3323,7 @@ function ROICalculator() {
     </Card><LockedConnector/></>}
 
         {r.isAcademic && <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{"🎓"} Teaching hospital module</h3>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{"🎓"} Teaching hospital module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and registrar training and teaching compliance.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -3348,7 +3357,7 @@ function ROICalculator() {
 
     {/* M&A module - conditional */}
     {r.isMultiHospital && <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{"🏢"} Network consolidation module</h3>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{"🏢"} Network consolidation module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Savings from eliminating duplicate systems and infrastructure across {inputs.org_count} facilities post-merger.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -3407,27 +3416,6 @@ function ROICalculator() {
       </div>
     </Card><LockedConnector/>
 
-    {/* Year-by-year */}
-    <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Year-by-year breakdown</h3>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>({fmtK(r.decomSave)} + {fmtK(r.timeSave)} + {fmtK(r.reimbursementImpact)} + {fmtK(r.qualitySavings)}) {"\u00d7"} 3yr ramp = <strong style={{color:C.green}}>{fmtK(r.total3WithReimbursement)}</strong></p>
-      <div style={{overflowX:"auto"}}>
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}><thead><tr>
-          <th style={th_}>Benefit</th><th style={{...th_,textAlign:"right"}}>Y1</th><th style={{...th_,textAlign:"right"}}>Y2</th><th style={{...th_,textAlign:"right"}}>Y3</th><th style={{...th_,textAlign:"right",color:C.accent}}>Total</th>
-        </tr></thead><tbody>
-          {[
-            {l:"Decom savings",y:r.decomSave},
-            {l:"Clinician time",y:r.timeSave},
-          ].map((row,i)=><tr key={i}><td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`}}>{row.l} <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,background:C.greenPale,color:C.green,textTransform:"uppercase"}}>recurring</span></td><td style={tdR_}>{fmt(row.y)}</td><td style={tdR_}>{fmt(row.y)}</td><td style={tdR_}>{fmt(row.y)}</td><td style={{...tdR_,fontWeight:600,color:C.accent}}>{fmt(row.y*3)}</td></tr>)}
-          <tr style={{background:C.bg}}><td style={{padding:"12px",fontWeight:700}}>Total</td><td style={{...tdR_,fontWeight:700}}>{fmt(r.annual)}</td><td style={{...tdR_,fontWeight:700}}>{fmt(r.annual)}</td><td style={{...tdR_,fontWeight:700}}>{fmt(r.annual)}</td><td style={{...tdR_,fontWeight:800,color:C.green,fontSize:15}}>{fmt(r.total3)}</td></tr>
-          <tr style={{background:C.bg}}><td style={{padding:"12px",fontWeight:600,color:C.textMid}}>Cumulative</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmt(r.annual)}</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmt(r.annual*2)}</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmt(r.total3)}</td><td></td></tr>
-        </tbody></table>
-      </div>
-      <div style={{marginTop:14,padding:"10px 14px",background:C.bg,borderRadius:6,fontSize:12,color:C.textMuted,display:"flex",gap:16,flexWrap:"wrap"}}>
-        <span>Showing: <strong style={{color:C.accent}}>{am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected"}</strong></span>
-        <span>Range: <strong>{fmtK(rCon.total3)}</strong> {"-"} <strong>{fmtK(rStr.total3)}</strong></span>
-      </div>
-    </Card>
 
     {/* Lead gen */}
     {!dim && !leadSubmitted && (
