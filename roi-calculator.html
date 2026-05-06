@@ -452,7 +452,9 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const annual = decomSave + timeSave;
   const annualWithReimbursement = annual + reimbursementImpact + qualitySavings + academicSavings + mergeSavings;
   // Phased ramp: Year 1 = 40%, Year 2 = 80%, Year 3 = 100% of steady-state
-  const y1Pct = 0.40, y2Pct = 0.80, y3Pct = 1.00;
+  const rampYears = inp._rampYears || 3;
+  const rampPcts = rampYears === 5 ? [0.20,0.40,0.60,0.80,1.00] : [0.40,0.80,1.00];
+  const y1Pct = rampPcts[0], y2Pct = rampPcts[1], y3Pct = rampPcts[2];
   const yr1 = Math.round(annual * y1Pct);
   const yr2 = Math.round(annual * y2Pct);
   const yr3 = Math.round(annual * y3Pct);
@@ -460,7 +462,9 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const yr1R = Math.round(annualWithReimbursement * y1Pct);
   const yr2R = Math.round(annualWithReimbursement * y2Pct);
   const yr3R = Math.round(annualWithReimbursement * y3Pct);
-  const total3WithReimbursement = yr1R + yr2R + yr3R;
+  const yr4R = rampYears===5 ? Math.round(annualWithReimbursement*rampPcts[3]) : 0;
+  const yr5R = rampYears===5 ? Math.round(annualWithReimbursement*rampPcts[4]) : 0;
+  const total3WithReimbursement = rampPcts.reduce((s,p) => s + Math.round(annualWithReimbursement*p), 0);
   return {
     legacy, ent, dep, nic, entCost, depCost, nicCost, blendedCost, totalEstate,
     decom, entDecom, depDecom, nicDecom, decomSave,
@@ -469,7 +473,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
-    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realization: sc.realization, isArchiveOnly,
+    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, yr4R, yr5R, rampYears, rampPcts, realization: sc.realization, isArchiveOnly,
     fteEquivalent: Math.round(hrsSaved * sc.realization / 2080 * 10) / 10,
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
     flagshipCount, flagshipRetireCount,
@@ -772,6 +776,17 @@ function TogglePill({active, onToggle, labelA, labelB, labelAText, labelBText}) 
     ))}
   </div>;
 }
+function Stepper({value,onChange,min,max,step,sub,large}){
+  return <div style={{display:"flex",alignItems:"center",gap:0}}>
+    <button type="button" onClick={()=>onChange(Math.max(min,value-(step||1)))} style={{width:large?44:36,height:large?44:36,border:"1px solid "+C.borderLight,borderRadius:"8px 0 0 8px",background:"#fff",cursor:"pointer",fontSize:18,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"}}>-</button>
+    <div style={{flex:1,textAlign:"center",padding:large?"8px 4px":"6px 4px",borderTop:"1px solid "+C.borderLight,borderBottom:"1px solid "+C.borderLight,background:"#fff",minWidth:large?80:60}}>
+      <input type="number" value={value} min={min} max={max} step={step||1} onChange={e=>{const v=parseInt(e.target.value)||min;onChange(Math.max(min,Math.min(max,v)));}}
+        style={{width:"100%",textAlign:"center",fontSize:large?28:20,fontWeight:800,color:C.accent,border:"none",background:"transparent",fontFamily:"inherit",padding:0}}/>
+      {sub&&<div style={{fontSize:10,color:C.textMuted,marginTop:2}}>{sub}</div>}
+    </div>
+    <button type="button" onClick={()=>onChange(Math.min(max,value+(step||1)))} style={{width:large?44:36,height:large?44:36,border:"1px solid "+C.borderLight,borderRadius:"0 8px 8px 0",background:"#fff",cursor:"pointer",fontSize:18,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"}}>+</button>
+  </div>;
+}
 function EvidenceDropdown({title,children}){
   const [open,setOpen] = React.useState(false);
   return <div style={{marginTop:10}}>
@@ -851,6 +866,7 @@ function ROICalculator() {
   const [page, setPage] = useState("inputs");
   const [calcStep, setCalcStep] = useState(0);
   const [step, setStep] = useState(0);
+  const [modelMode, setModelMode] = useState("custom");
   const [thinking, setThinking] = useState(false);
 
   // Per-org breakdowns (optional, for multi-org)
@@ -1853,6 +1869,111 @@ function ROICalculator() {
     )}
 
 
+    {/* Mode toggle */}
+    <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
+      {[{k:"template",label:"Quick summary"},{k:"custom",label:"Full editor"}].map(m =>
+        <button type="button" key={m.k} onClick={()=>setModelMode(m.k)} style={{
+          padding:"10px 24px",fontSize:14,fontWeight:modelMode===m.k?700:500,
+          border:"1px solid "+C.accent,borderRadius:m.k==="template"?"999px 0 0 999px":"0 999px 999px 0",
+          background:modelMode===m.k?C.accent:"#fff",color:modelMode===m.k?"#fff":C.accent,
+          cursor:"pointer",fontFamily:"inherit"
+        }}>{m.label}</button>
+      )}
+    </div>
+
+    {modelMode === "template" && (() => {
+      const handleTemplateOrg = (v) => {
+        const prev = inputs.org_count;
+        if (v !== prev && prev > 0) {
+          const ratio = v / prev;
+          setInputs(p => ({...p, org_count: v,
+            bed_count: Math.max(10, Math.round(p.bed_count * ratio / 10) * 10),
+            tiers: { enterprise: Math.max(1, Math.round(p.tiers.enterprise * ratio)),
+              departmental: Math.max(0, Math.round(p.tiers.departmental * ratio)),
+              niche: Math.max(0, Math.round(p.tiers.niche * ratio)) },
+          }));
+        } else { update("org_count", v); }
+      };
+      const totalSys = inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche + flagships.length;
+      const cx = CX[inputs.complexity_level];
+      const estEstate = inputs.tiers.enterprise * tierCost("enterprise",inputs.bed_count,cx)
+        + inputs.tiers.departmental * tierCost("departmental",inputs.bed_count,cx)
+        + inputs.tiers.niche * tierCost("niche",inputs.bed_count,cx)
+        + flagships.reduce((s,f) => s + (f.cost||0), 0);
+      const avgBeds = inputs.org_count > 0 ? Math.round(inputs.bed_count / inputs.org_count) : inputs.bed_count;
+
+      return <div style={{animation:"fade-in .4s ease"}}>
+      <Card style={{marginBottom:12,background:"#fff"}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:14}}>Organization scale</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:8}}>
+          <div>
+            <div style={{fontSize:11,fontWeight:600,color:C.textMid,marginBottom:6}}>Hospitals / facilities</div>
+            <Stepper value={inputs.org_count} onChange={handleTemplateOrg} min={1} max={500} step={1} large={true}/>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:600,color:C.textMid,marginBottom:6}}>Total beds</div>
+            <Stepper value={inputs.bed_count} onChange={v=>update("bed_count",v)} min={10} max={50000} step={50} large={true}/>
+            <div style={{fontSize:10,color:C.textMuted,textAlign:"center",marginTop:4}}>avg {fmtNum(avgBeds)} per facility</div>
+          </div>
+        </div>
+      </Card>
+      <Card style={{marginBottom:12,background:"#fff"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".06em"}}>Legacy systems</div>
+          <div style={{fontSize:22,fontWeight:800,color:C.accent}}>{totalSys}<span style={{fontSize:12,fontWeight:600,color:C.textMuted,marginLeft:6}}>systems</span></div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:12}}>
+          {[{label:"Enterprise",tier:"enterprise",color:C.accent,sub:"EHR, PAS"},
+            {label:"Departmental",tier:"departmental",color:"#1a7a7a",sub:"Lab, Pharmacy, PACS"},
+            {label:"Standalone",tier:"niche",color:"#3d8a8a",sub:"ECM, rostering"}
+          ].map(t => <div key={t.tier}>
+            <div style={{fontSize:10,fontWeight:600,color:t.color,marginBottom:4}}>{t.label}</div>
+            <Stepper value={inputs.tiers[t.tier]} onChange={v=>updateTier(t.tier,v)} min={0} max={200} step={1}/>
+            <div style={{fontSize:9,color:C.textMuted,textAlign:"center",marginTop:3}}>{t.sub}</div>
+          </div>)}
+        </div>
+        <div style={{padding:"10px 14px",background:C.greenPale,borderRadius:8,fontSize:12,color:C.teal}}>
+          <strong>Est. estate cost:</strong> ~{fmtK(estEstate)}/yr across {totalSys} systems
+        </div>
+      </Card>
+      <Card style={{marginBottom:12,background:"#fff"}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:14}}>Assumptions</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+          <div>
+            <div style={{fontSize:10,fontWeight:600,color:C.textMid,marginBottom:4}}>Complexity</div>
+            <select value={inputs.complexity_level} onChange={e=>update("complexity_level",e.target.value)}
+              style={{width:"100%",padding:"8px 6px",fontSize:13,fontWeight:700,border:"1px solid "+C.borderLight,borderRadius:8,fontFamily:"inherit",color:C.accent,background:"#fff"}}>
+              {["LOW","TYPICAL","HIGH"].map(o=><option key={o} value={o}>{o.charAt(0)+o.slice(1).toLowerCase()}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{fontSize:10,fontWeight:600,color:C.textMid,marginBottom:4}}>Data quality</div>
+            <select value={inputs.data_quality_level} onChange={e=>update("data_quality_level",e.target.value)}
+              style={{width:"100%",padding:"8px 6px",fontSize:13,fontWeight:700,border:"1px solid "+C.borderLight,borderRadius:8,fontFamily:"inherit",color:C.accent,background:"#fff"}}>
+              {["CLEAN","MIXED","POOR"].map(o=><option key={o} value={o}>{o.charAt(0)+o.slice(1).toLowerCase()}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{fontSize:10,fontWeight:600,color:C.textMid,marginBottom:4}}>Decom target</div>
+            <Stepper value={Math.round(inputs.decom_retire_rate*100)} onChange={v=>update("decom_retire_rate",v/100)} min={20} max={100} step={5}/>
+            <div style={{fontSize:9,color:C.textMuted,textAlign:"center",marginTop:3}}>% retired</div>
+          </div>
+        </div>
+      </Card>
+      <button type="button" className="roi-cta" onClick={() => {
+        setPage("calculating"); setCalcStep(0); setScenarioMode(null); scrollToTop();
+        setTimeout(() => setCalcStep(1), 400);
+        setTimeout(() => setCalcStep(2), 1100);
+        setTimeout(() => setCalcStep(3), 1800);
+        setTimeout(() => { setPage("results"); scrollToTop(); }, 2400);
+      }} style={{width:"100%",padding:"16px",background:"linear-gradient(135deg, "+C.accent+", "+C.teal+")",color:"#fff",border:"none",borderRadius:999,fontSize:16,fontWeight:700,cursor:"pointer",marginBottom:8,fontFamily:"inherit"}}>
+        Calculate ROI estimate {"\u2192"}
+      </button>
+      <div style={{textAlign:"center",fontSize:11,color:C.textMuted}}>All values are adjustable. Switch to Full editor for detailed control.</div>
+    </div>;
+    })()}
+
+    {modelMode === "custom" && <>
     {/* STEP 0 - Provider profile */}
     <Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
@@ -2237,6 +2358,35 @@ function ROICalculator() {
 
 
 
+
+      <button type="button" onClick={()=>{
+        const cost = Math.round((150000 + inputs.bed_count * 400) / 1000) * 1000;
+        setFlagships(p => [...p, {name:"", cost:cost, retire:true, known:"", items:defaultLineItems(cost), showItems:false}]);
+        touch(2);
+      }} style={{marginTop:12,border:"none",background:"none",color:C.accent,fontSize:13,fontWeight:700,cursor:"pointer",padding:"8px 0",display:"flex",alignItems:"center",gap:6,fontFamily:"inherit"}}>
+        + Add a custom / unlisted system
+      </button>
+
+      {flagships.filter(f=>!f.known).length > 0 && <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:8}}>
+        {flagships.map((f, i) => !f.known && (
+          <div key={"c"+i} style={{padding:"10px 14px",background:C.bg,borderRadius:8,border:"1px solid "+C.borderLight,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <input type="text" placeholder="System name" value={f.name} onChange={e => updateFlagship(i,"name",e.target.value)}
+              style={{flex:"1 1 160px",padding:"6px 10px",border:"1px solid "+C.borderLight,borderRadius:8,fontSize:13,fontFamily:"inherit"}}/>
+            <div style={{display:"flex",alignItems:"center",gap:4}}>
+              <span style={{fontSize:12,color:C.textMuted}}>{"$"}</span>
+              <input type="number" value={f.cost} min={0} step={10000}
+                onChange={e => updateFlagship(i,"cost",parseInt(e.target.value)||0)}
+                style={{width:100,padding:"6px 8px",border:"1px solid "+C.borderLight,borderRadius:8,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
+              <span style={{fontSize:11,color:C.textMuted}}>/yr</span>
+            </div>
+            <label style={{display:"flex",alignItems:"center",gap:4,fontSize:12,color:C.textMid,cursor:"pointer"}}>
+              <input type="checkbox" checked={f.retire} onChange={e => updateFlagship(i,"retire",e.target.checked)} style={{accentColor:C.accent}}/> Retire
+            </label>
+            <button type="button" onClick={() => removeFlagship(i)} style={{border:"none",background:"none",color:C.textMuted,fontSize:16,cursor:"pointer",padding:"4px 8px"}}>{"\u2715"}</button>
+          </div>
+        ))}
+      </div>}
+
       {(totalSystems + flagships.length) > 0 && (() => {
         const estEstate = costMode === "known" && knownAnnualSpend > 0 ? knownAnnualSpend :
           inputs.tiers.enterprise * (tierCostEdits.enterprise != null ? tierCostEdits.enterprise : tierCost("enterprise",inputs.bed_count,CX[inputs.complexity_level]))
@@ -2317,6 +2467,17 @@ function ROICalculator() {
         {(galenMigrationCost > 0 || galenAnnualCost > 0) && <div style={{fontSize:11,color:C.textMuted,marginTop:6}}>Net savings after Galen costs will be shown on the results page</div>}
         {(galenMigrationCost > 0 || galenAnnualCost > 0) && <button type="button" onClick={()=>{setGalenMigrationCost(0);setGalenAnnualCost(0);}} style={{border:"none",background:"none",color:C.textMuted,fontSize:11,cursor:"pointer",textDecoration:"underline",padding:"4px 0",marginTop:2}}>Clear costs</button>}
       </div>
+      <div style={{marginTop:16,paddingTop:16,borderTop:"1px solid "+C.borderLight}}>
+        <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>Phased approach</div>
+        <div style={{display:"flex",gap:8}}>
+          {[{k:3,l:"3-year",s:"40 / 80 / 100%"},{k:5,l:"5-year",s:"20 / 40 / 60 / 80 / 100%"}].map(o =>
+            <button type="button" key={o.k} onClick={()=>setInputs(p=>({...p,_rampYears:o.k}))} style={{flex:1,padding:"10px",border:(inputs._rampYears||3)===o.k?"2px solid "+C.accent:"1px solid "+C.borderLight,borderRadius:10,background:(inputs._rampYears||3)===o.k?C.accentPale:"#fff",cursor:"pointer",textAlign:"center",fontFamily:"inherit"}}>
+              <div style={{fontSize:14,fontWeight:(inputs._rampYears||3)===o.k?700:500,color:(inputs._rampYears||3)===o.k?C.accent:C.textMid}}>{o.l}</div>
+              <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{o.s} ramp</div>
+            </button>
+          )}
+        </div>
+      </div>
     </Card></div>
     <LockedConnector/>
 
@@ -2337,6 +2498,7 @@ function ROICalculator() {
           Calculate ROI {"\u2192"}
         </button>
     </div>
+    </>}
   </div>;
 
   /* ── RESULTS PAGE ───────────────────────────────────────── */
@@ -2398,7 +2560,7 @@ function ROICalculator() {
 
     {/* Headline cards */}
     <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
-      <ResultCard dimmed={dim} label="Total savings (3-year)" value={an?<AnimatedK value={r.total3WithReimbursement} active={an}/>:"-"} sub={an?"All savings with "+Math.round(r.y1Pct*100)+"/"+Math.round(r.y2Pct*100)+"/"+Math.round(r.y3Pct*100)+"% ramp":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
+      <ResultCard dimmed={dim} label={"Total savings ("+r.rampYears+"-year)"} value={an?<AnimatedK value={r.total3WithReimbursement} active={an}/>:"-"} sub={an?r.rampYears+"-year phased ("+r.rampPcts.map(p=>Math.round(p*100)+"%").join("/")+")":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
       <ResultCard dimmed={dim} label="Annual at steady state" value={an?<AnimatedK value={r.annualWithReimbursement} active={an}/>:"-"} sub={an?`Decom ${fmtK(r.decomSave)} + capacity ${fmtK(r.timeSave)} + reimb & quality ${fmtK(r.reimbursementImpact+r.qualitySavings)}`:""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
       <ResultCard dimmed={dim} label="Clinician time (annual)" value={an?<AnimatedK value={r.timeSave} active={an}/>:"-"} sub={an?<span>{fmtNum(r.hrsSaved)} hrs/yr, {Math.round(r.realization*100)}% realization</span>:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
       <ResultCard dimmed={dim} label="Reimbursement & quality" value={an?<AnimatedK value={r.reimbursementImpact + r.qualitySavings} active={an}/>:"-"} sub={an?"Penalties + denials + quality":""} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
@@ -2654,11 +2816,11 @@ function ROICalculator() {
       ].filter(s=>s.val>0);
       const total = segs.reduce((a,s)=>a+s.val,0);
       if (total <= 0) return null;
-      const years = [{pct:r.y1Pct,label:"Year 1"},{pct:r.y2Pct,label:"Year 2"},{pct:r.y3Pct,label:"Year 3"}];
+      const years = r.rampPcts.map((p,i) => ({pct:p,label:"Year "+(i+1)}));
       const maxH = 200;
       return <Card style={{marginBottom:16}}>
-        <div style={{fontSize:13,fontWeight:700,color:C.textMid,marginBottom:4}}>3-year savings projection</div>
-        <div style={{fontSize:12,color:C.textMuted,marginBottom:16}}>Builds from {fmtK(Math.round(total*r.y1Pct))} in Year 1 to {fmtK(total)}/yr at steady state</div>
+        <div style={{fontSize:13,fontWeight:700,color:C.textMid,marginBottom:4}}>{r.rampYears}-year savings projection</div>
+        <div style={{fontSize:12,color:C.textMuted,marginBottom:16}}>Builds from {fmtK(Math.round(total*r.rampPcts[0]))} in Year 1 to {fmtK(total)}/yr at steady state</div>
         <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:24,marginBottom:16,height:maxH+30}}>
           {years.map((yr,yi)=>{
             const h = Math.round(maxH * yr.pct);
@@ -2682,7 +2844,7 @@ function ROICalculator() {
 
     {/* Year-by-year */}
     <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Year-by-year breakdown</h3>
+      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{r.rampYears}-year phased breakdown</h3>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>({fmtK(r.decomSave)} + {fmtK(r.timeSave)}) {"×"} 3 = <strong style={{color:C.green}}>{fmtK(r.total3)}</strong></p>
       <div style={{overflowX:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}><thead><tr>
