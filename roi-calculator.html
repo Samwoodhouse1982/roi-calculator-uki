@@ -765,6 +765,16 @@ function TogglePill({active, onToggle, labelA, labelB, labelAText, labelBText}) 
     ))}
   </div>;
 }
+function EvidenceDropdown({title,children}){
+  const [open,setOpen] = React.useState(false);
+  return <div style={{marginTop:10}}>
+    <button onClick={(e)=>{e.stopPropagation();setOpen(!open);}} style={{background:"none",border:"none",cursor:"pointer",padding:"6px 0",fontSize:12,fontWeight:600,color:C.textMid,display:"flex",alignItems:"center",gap:6,fontFamily:"inherit"}}>
+      <span style={{transform:open?"rotate(90deg)":"rotate(0deg)",transition:"transform .2s",fontSize:10}}>{"\u25B6"}</span>
+      {title||"Evidence & methodology"}
+    </button>
+    {open && <div style={{padding:"10px 14px",background:"#f8fafb",borderRadius:8,border:"1px solid "+C.borderLight,fontSize:12,color:C.textMid,lineHeight:1.6,marginTop:4}}>{children}</div>}
+  </div>;
+}
 function LockedConnector(){return<div style={{display:"flex",justifyContent:"center",padding:"8px 0"}}><div style={{width:2,height:28,background:C.border}}/></div>;}
 function ContinuePrompt({ onClick, label }) {
   return (
@@ -2464,8 +2474,36 @@ function ROICalculator() {
       <ResultCard dimmed={dim} label="Reimbursement & quality" value={an?<AnimatedK value={r.reimbursementImpact + r.qualitySavings} active={an}/>:"–"} sub={an?"Penalties + denials + quality":""} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
     </div>
 
+    {!dim && (() => {
+      const segs = [
+        {label:"Decommission",val:r.decomSave,color:"#0F4146"},
+        {label:"Capacity",val:r.timeSave,color:"#1a7a7a"},
+        {label:"Reimbursement",val:r.reimbursementImpact,color:"#00d4aa"},
+        {label:"Quality",val:r.qualitySavings,color:"#d4507a"},
+        ...(r.academicSavings>0?[{label:"Academic",val:r.academicSavings,color:"#534AB7"}]:[]),
+        ...(r.mergeSavings>0?[{label:"M&A",val:r.mergeSavings,color:"#2c3e6b"}]:[]),
+      ].filter(s=>s.val>0);
+      const total = segs.reduce((a,s)=>a+s.val,0);
+      if (total <= 0) return null;
+      return <div style={{marginBottom:20}}>
+        <div style={{display:"flex",height:10,borderRadius:5,overflow:"hidden",marginBottom:8}}>
+          {segs.map((s,i)=><div key={i} style={{width:`${s.val/total*100}%`,background:s.color,minWidth:2}} title={`${s.label}: ${fmtK(s.val)}`}/>)}
+        </div>
+        <div style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center"}}>
+          {segs.map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:C.textMid}}>
+            <div style={{width:8,height:8,borderRadius:2,background:s.color}}/>
+            {s.label} {fmtK(s.val)}
+          </div>)}
+        </div>
+      </div>;
+    })()}
+
     {/* Decom – tiered breakdown */}
-    <Card dimmed={dim}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Legacy decommission savings</h3>
+    <Card dimmed={dim}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+        <span style={{fontSize:20}}>{"\uD83D\uDD13"}</span>
+        <div style={{display:"flex",alignItems:"center",flex:1}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legacy decommission savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Annual costs eliminated when systems are switched off.</p>
       <div style={{overflowX:"auto",marginBottom:16}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}><thead><tr>
@@ -2488,7 +2526,11 @@ function ROICalculator() {
     </Card><LockedConnector/>
 
     {/* Clinician time */}
-    <Card dimmed={dim}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3>
+    <Card dimmed={dim}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+        <span style={{fontSize:20}}>{"\u23F1\uFE0F"}</span>
+        <div style={{display:"flex",alignItems:"center",flex:1}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
       <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:16}}>
         <OverridableStat label="Clinical staff" computed={calc(calcInputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on BLS workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/admin staff per facility (20 base + 0.15/bed, capped at 120).`}/>
@@ -2497,40 +2539,16 @@ function ROICalculator() {
         <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at the BLS median blended rate of $95/hr (BLS median clinical compensation including benefits). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity, since not all freed time converts to measurable output. This represents capacity redirected to patient care, not a direct cash saving.`}/>
       </div>
       <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"$"}55 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong></Callout>
+      <EvidenceDropdown title="Evidence & methodology">
+        <strong>Sources:</strong> AMIA 2019 workflow studies, Brigham & Women's time-motion research (context-switching costs). HIMSS Analytics (65% active user rate). BLS workforce data (3.2 staff/bed, $95/hr blended rate).<br/><br/>
+        <strong>Formula:</strong> Active users (65%) x switch penalty (0.04/additional system) x base minutes x data quality x complexity. Only {Math.round(r.realisation*100)}% of freed time counted as realisable capacity.
+      </EvidenceDropdown>
     </Card><LockedConnector/>
 
-    {/* Clinical safety */}
-    {r.hasClinicalScope && <div>
-    <Card dimmed={dim} style={{border:"1px solid #e0c4cf",background:"#faf5f7"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-        <span style={{fontSize:20}}>{"🛡️"}</span>
-        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Patient safety context":"Patient safety case for migration"}</h3>
-        <InfoTip text={`Source: AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data. Per-bed rates from ~100K acute beds nationally, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). NOT included in financial totals.`}/>
-      </div>
-      <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EHR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
-      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
-        {[
-          {label:"Medication errors",bl:r.safetyMedErrorsBaseline,av:r.safetyMedErrorsAvoided,avl:"potentially avoidable",sub:"at admission, transfer, or discharge"},
-          {label:"Patients harmed",bl:Math.round(r.safetyPatientsProtected/(SCENARIO[am].safety||0.25)),av:r.safetyPatientsProtected,avl:"potentially protected",sub:"by medication errors during handoffs"},
-          {label:"Excess bed days",bl:Math.round(r.safetyBedDaysAvoided/(SCENARIO[am].safety||0.25)),av:r.safetyBedDaysAvoided,avl:"potentially avoidable",sub:"from adverse medication events"},
-        ].map((m,i)=><div key={i} style={{flex:"1 1 150px",minWidth:140,padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:`1px solid ${C.rose}18`}}>
-          <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:6}}>{m.label}</div>
-          <div style={{fontSize:26,fontWeight:800,color:C.rose}}>{an?fmtNum(m.bl):0}<span style={{fontSize:13,fontWeight:600}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>{m.sub}</div>
-          <div style={{marginTop:8,fontSize:12,color:C.rose,fontWeight:600}}>{"↓"} {an?fmtNum(m.av):0} {m.avl}</div>
-        </div>)}
-      </div>
-      {/* Litigation context */}
-      <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,border:`1px solid ${C.rose}15`,fontSize:12,lineHeight:1.6,color:C.textMid}}>
-        <strong style={{color:C.text}}>Evidence & litigation context</strong><br/>
-        AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data: over 250,000 adverse events at care transitions annually (AHRQ), with EHR fragmentation a contributing factor in 40% of cases. US health systems face an estimated <strong>{"$"}55bn/yr</strong> in malpractice liability costs (Coverys/PIAA). Malpractice premiums are directly influenced by claims history {"\u2013"} fewer adverse events means fewer malpractice claims, lower premiums, and better CMS quality scores. Every patient harmed by fragmented records is a potential malpractice claim and CMS penalty event.
-      </div>
-    </Card><LockedConnector/>
-    </div>}
 
     {/* Reimbursement & compliance impact */}
     <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Reimbursement & compliance impact</h3>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Reimbursement & compliance impact</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Estimated annual impact from CMS penalty avoidance, denial reduction, and quality improvements. These are modelled estimates with improvement rates attributed to EHR consolidation as a contributing factor, not sole cause. Actual attribution will depend on your implementation scope and existing infrastructure.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -2558,14 +2576,44 @@ function ROICalculator() {
         Combined total: <strong style={{color:C.accent}}>{fmtK(r.annualWithReimbursement)}/yr</strong>
       </Callout>
 
-      <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
-        <strong>Methodology:</strong> CMS penalty rates are verified (HRRP 3% cap, HAC 1%, VBP 2%). Improvement attribution is modelled: Pattar et al (JAMA 2025, 116 RCTs) found 17% readmission reduction from EHR-based interventions broadly; Vest et al (JAMIA 2019) found 0.8pp from single-vendor EHR specifically. This model uses scenario-adjusted fractions (15-35%) as an upper bound for the combined effect of consolidation, archiving, and workflow simplification. Denial recovery assumes partial attribution only (20% of 4.8% revenue loss).
-      </div>
+      <EvidenceDropdown title="Evidence & methodology">
+        <strong>CMS penalties:</strong> HRRP 3% cap (Section 1886(q) SSA, FY2025). HAC 1% (bottom quartile). VBP 2% withhold. Rates verified from CMS programme pages.<br/><br/>
+        <strong>Attribution:</strong> Pattar et al (JAMA 2025, 116 RCTs): 17% readmission reduction from EHR interventions. Vest et al (JAMIA 2019): 0.8pp from single-vendor EHR. Model uses scenario-adjusted fractions (15-35%). Denial recovery: 20% of 4.8% revenue loss (HFMA).<br/><br/>
+        <strong>Quality:</strong> Malpractice 5% reduction (CRICO: 30% of claims involve communication failure). Excess bed days: Bates/Classen ADEs. Duplicate testing: Banker et al 2024.
+      </EvidenceDropdown>
     </Card><LockedConnector/>
+
+    {/* Clinical safety */}
+    {r.hasClinicalScope && <div>
+    <Card dimmed={dim} style={{border:"1px solid #e0c4cf",background:"#faf5f7"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+        <span style={{fontSize:20}}>{"🛡️"}</span>
+        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Patient safety context":"Patient safety case for migration"}</h3>
+        <span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Supporting evidence</span>
+        <InfoTip text={`Source: AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data. Per-bed rates from ~100K acute beds nationally, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). NOT included in financial totals.`}/>
+      </div>
+      <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EHR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
+        {[
+          {label:"Medication errors",bl:r.safetyMedErrorsBaseline,av:r.safetyMedErrorsAvoided,avl:"potentially avoidable",sub:"at admission, transfer, or discharge"},
+          {label:"Patients harmed",bl:Math.round(r.safetyPatientsProtected/(SCENARIO[am].safety||0.25)),av:r.safetyPatientsProtected,avl:"potentially protected",sub:"by medication errors during handoffs"},
+          {label:"Excess bed days",bl:Math.round(r.safetyBedDaysAvoided/(SCENARIO[am].safety||0.25)),av:r.safetyBedDaysAvoided,avl:"potentially avoidable",sub:"from adverse medication events"},
+        ].map((m,i)=><div key={i} style={{flex:"1 1 150px",minWidth:140,padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:`1px solid ${C.rose}18`}}>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:6}}>{m.label}</div>
+          <div style={{fontSize:26,fontWeight:800,color:C.rose}}>{"↓"} {an?fmtNum(m.av):0}<span style={{fontSize:13,fontWeight:500}}> {m.avl}</span></div>
+          <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>{m.sub}</div>
+          <div style={{marginTop:8,fontSize:11,color:C.textMid}}>of {an?fmtNum(m.bl):0} baseline/yr</div>
+        </div>)}
+      </div>
+      <EvidenceDropdown title="Evidence & litigation context">
+        AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data: over 250,000 adverse events at care transitions annually, with EHR fragmentation contributing to 40% of cases. US health systems face ~$55bn/yr in malpractice liability (Coverys/PIAA). Fewer adverse events means fewer claims, lower premiums, and better CMS quality scores. Accreditation risk under Joint Commission standards.
+      </EvidenceDropdown>
+    </Card><LockedConnector/>
+    </div>}
 
     {/* Academic module - conditional */}
     {r.isAcademic && <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{"🎓"} Academic medical center module</h3>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{"🎓"} Academic medical center module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and GME compliance obligations.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -2591,15 +2639,15 @@ function ROICalculator() {
         <span style={{fontSize:12,color:C.textMuted,marginLeft:8}}>Included in combined annual total</span>
       </Callout>
 
-      <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
-        <strong>Note:</strong> Research system count estimated at 3.5 per 100 beds (IRB, CTMS, biobank, research repositories, specialty registries). GME efficiency assumes 25% reduction in compliance overhead from unified reporting. All figures are modelled estimates.
-      </div>
+      <EvidenceDropdown title="Evidence & methodology">
+        Research system count: 3.5 per 100 beds (IRB, CTMS, biobank, research repositories, specialty registries). GME efficiency: 25% reduction in ACGME compliance overhead from unified reporting. Teaching overhead: 12% additional complexity for teaching workflows, 30% addressable. All figures are modelled estimates.
+      </EvidenceDropdown>
     </Card>}
     {r.isAcademic && <LockedConnector/>}
 
     {/* M&A module - conditional */}
     {r.isMultiHospital && <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{"🏢"} Multi-hospital / M&A consolidation module</h3>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{"🏢"} Multi-hospital / M&A consolidation module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Savings from eliminating duplicate systems and infrastructure across {inputs.org_count} facilities post-merger.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -2625,21 +2673,23 @@ function ROICalculator() {
         <span style={{fontSize:12,color:C.textMuted,marginLeft:8}}>Included in combined annual total</span>
       </Callout>
 
-      <div style={{marginTop:12,padding:"10px 14px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:12,color:"#7a6520",lineHeight:1.6}}>
-        <strong>Note:</strong> Assumes 35% of legacy systems are duplicated across facilities (Becker{"'"}s: only 35% of acquired hospitals switch to acquirer{"'"}s EHR). Infrastructure savings at $250k/facility for duplicate data center, network, and support desk costs. Standardization covers formulary, order set, and protocol harmonization.
-      </div>
+      <EvidenceDropdown title="Evidence & methodology">
+        Duplicate systems: 35% of legacy systems duplicated across facilities (Becker's: only 35% of acquired hospitals switch to acquirer's EHR). Infrastructure: $250k/facility for duplicate data center, network, and support desk. Standardization: formulary, order set, and protocol harmonization.
+      </EvidenceDropdown>
     </Card>}
     {r.isMultiHospital && <LockedConnector/>}
 
     {/* KPIs */}
     <Card dimmed={dim} style={{background:C.surface,border:`1px solid ${C.border}`}}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Projected KPI improvements</h3>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Projected KPI improvements</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Operational metric</span></div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16,marginTop:16}}>
         <div style={{flex:"1 1 180px",minWidth:170,padding:"18px 20px",background:C.greenPale,borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Decommissioned</div>
           <div style={{fontSize:42,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?<AnimatedNum value={r.decom} active={an}/>:0}</div>
           <div style={{fontSize:13,color:C.textMid}}>of {r.legacy}</div>
           <div style={{marginTop:8,display:"inline-block",padding:"4px 12px",borderRadius:20,background:C.green,color:"#fff",fontSize:13,fontWeight:700}}>{Math.round(r.decom/Math.max(1,r.legacy)*100)}%</div>
+          <div style={{marginTop:10,fontSize:11,color:C.textMid}}>{Math.max(0,r.decom-1)} attack surfaces eliminated</div>
+          <div style={{fontSize:10,color:C.textMuted}}>Avg breach: $10.93m (IBM/Ponemon 2024)</div>
         </div>
         <div style={{flex:"1 1 200px",minWidth:240,padding:"18px 20px",background:"#e8faf6",borderRadius:10}}>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:14,fontWeight:700}}>Support tickets (monthly)</span></div>
@@ -2666,14 +2716,11 @@ function ROICalculator() {
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>({fmtK(r.decomSave)} + {fmtK(r.timeSave)}) {"×"} 3 = <strong style={{color:C.green}}>{fmtK(r.total3)}</strong></p>
       <div style={{overflowX:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}><thead><tr>
-          <th style={th_}>Benefit</th><th style={{...th_,textAlign:"right"}}>Y1</th><th style={{...th_,textAlign:"right"}}>Y2</th><th style={{...th_,textAlign:"right"}}>Y3</th><th style={{...th_,textAlign:"right",color:C.accent}}>Total</th>
+          <th style={th_}>Benefit</th><th style={{...th_,textAlign:"right"}}>Year 1</th><th style={{...th_,textAlign:"right"}}>Year 2</th><th style={{...th_,textAlign:"right"}}>Year 3</th>
         </tr></thead><tbody>
-          {[
-            {l:"Decom savings",y:r.decomSave},
-            {l:"Clinician time",y:r.timeSave},
-          ].map((row,i)=><tr key={i}><td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`}}>{row.l} <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,background:C.greenPale,color:C.green,textTransform:"uppercase"}}>recurring</span></td><td style={tdR_}>{fmt(row.y)}</td><td style={tdR_}>{fmt(row.y)}</td><td style={tdR_}>{fmt(row.y)}</td><td style={{...tdR_,fontWeight:600,color:C.accent}}>{fmt(row.y*3)}</td></tr>)}
-          <tr style={{background:C.bg}}><td style={{padding:"12px",fontWeight:700}}>Total</td><td style={{...tdR_,fontWeight:700}}>{fmt(r.annual)}</td><td style={{...tdR_,fontWeight:700}}>{fmt(r.annual)}</td><td style={{...tdR_,fontWeight:700}}>{fmt(r.annual)}</td><td style={{...tdR_,fontWeight:800,color:C.green,fontSize:15}}>{fmt(r.total3)}</td></tr>
-          <tr style={{background:C.bg}}><td style={{padding:"12px",fontWeight:600,color:C.textMid}}>Cumulative</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmt(r.annual)}</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmt(r.annual*2)}</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmt(r.total3)}</td><td></td></tr>
+          <tr><td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`}}>Total savings</td><td style={tdR_}>{fmtK(r.yr1R)}</td><td style={tdR_}>{fmtK(r.yr2R)}</td><td style={tdR_}>{fmtK(r.yr3R)}</td></tr>
+          <tr style={{background:C.bg}}><td style={{padding:"12px",fontWeight:600,color:C.textMid}}>Ramp</td><td style={{...tdR_,color:C.textMid}}>{Math.round(r.y1Pct*100)}%</td><td style={{...tdR_,color:C.textMid}}>{Math.round(r.y2Pct*100)}%</td><td style={{...tdR_,color:C.textMid}}>{Math.round(r.y3Pct*100)}%</td></tr>
+          <tr style={{background:C.bg}}><td style={{padding:"12px",fontWeight:600,color:C.textMid}}>Cumulative</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmtK(r.yr1R)}</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmtK(r.yr1R+r.yr2R)}</td><td style={{...tdR_,fontWeight:800,color:C.green,fontSize:15}}>{fmtK(r.total3WithReimbursement)}</td></tr>
         </tbody></table>
       </div>
       <div style={{marginTop:14,padding:"10px 14px",background:C.bg,borderRadius:6,fontSize:12,color:C.textMuted,display:"flex",gap:16,flexWrap:"wrap"}}>
