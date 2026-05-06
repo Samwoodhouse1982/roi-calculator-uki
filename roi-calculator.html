@@ -643,6 +643,12 @@ const COST_CATEGORIES = [
   { key: "interfaces", label: "Interfaces / integrations", pct: 0.15 },
   { key: "other", label: "Other (training, admin)", pct: 0.10 },
 ];
+function tierCatMatch(sysCat, tier) {
+  if (tier === "enterprise") return sysCat === "enterprise";
+  if (tier === "departmental") return ["departmental","Ambulatory","Acute"].includes(sysCat);
+  return ["standalone","Post-acute"].includes(sysCat);
+}
+
 function defaultLineItems(total) {
   const items = {};
   COST_CATEGORIES.forEach(c => { items[c.key] = Math.round(total * c.pct / 1000) * 1000; });
@@ -2164,6 +2170,30 @@ function ROICalculator() {
                 )}
               </div>
               <AnimatedSlider value={inputs.tiers[t.tier]} min={0} max={t.max} step={1} onChange={v=>{updateTier(t.tier,v);touch(2);}} hideRange label={<span style={{fontSize:12,color:C.textMuted}}>{t.hint}</span>}/>
+              {(() => {
+                const tierSys = KNOWN_SYSTEMS.filter(s => tierCatMatch(s.cat, t.tier));
+                const selNames = flagships.map(f => f.known || f.name);
+                if (!tierSys.length) return null;
+                return <details style={{marginTop:8}}>
+                  <summary style={{fontSize:12,fontWeight:600,color:C.accent,cursor:"pointer",padding:"4px 0"}}>
+                    Name specific systems
+                    {(() => { const n = tierSys.filter(s => selNames.includes(s.label)).length; return n > 0 ? " ("+n+" selected)" : ""; })()}
+                  </summary>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}>
+                    {tierSys.map(sys => {
+                      const sel = selNames.includes(sys.label);
+                      return <button type="button" key={sys.label} onClick={()=>{
+                        if (sel) { setFlagships(p => p.filter(f => (f.known||f.name) !== sys.label)); }
+                        else { addFlagship(sys); }
+                        touch(2);
+                      }} style={{padding:"6px 10px",fontSize:11,fontWeight:sel?700:500,border:"1px solid "+(sel?C.accent:C.borderLight),borderRadius:8,background:sel?C.accentPale:"#fff",color:sel?C.accent:C.textMid,cursor:"pointer",fontFamily:"inherit"}}>
+                        {sel ? "\u2713 " : ""}{sys.label}
+                        <span style={{fontSize:10,color:C.textMuted,marginLeft:4}}>~{fmtK(systemCost(sys, inputs.bed_count))}</span>
+                      </button>;
+                    })}
+                  </div>
+                </details>;
+              })()}
             </div>})}
           </div>
 
@@ -2230,113 +2260,12 @@ function ROICalculator() {
         </>;
       })()}
     </Card></div>
-    {step<2?<ContinuePrompt onClick={()=>goTo(2,refFlag)} label="Next: named systems"/>:<LockedConnector/>}
-
-    {/* STEP 3 - Named high-cost systems */}
-    <div ref={refFlag} style={{animation:step>=2?"fade-in .4s ease":"none"}}><Card dimmed={step<2}>
-      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4,display:"flex",alignItems:"center",gap:8}}>
-        <span style={{width:24,height:24,borderRadius:"50%",background:step>=2?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>5</span>
-        Named high-cost systems
-        {flagships.length > 0 && <span style={{marginLeft:"auto",display:"inline-flex",alignItems:"center",justifyContent:"center",minWidth:24,height:24,borderRadius:12,padding:"0 8px",background:C.accent,color:"#fff",fontSize:13,fontWeight:800,lineHeight:1}}>{flagships.length}</span>}
-      </div>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Do you know the specific legacy systems you plan to archive or decommission? Adding them with actual contract values gives a more accurate estimate.</p>
-
-      <div style={{marginBottom:16}}>
-        <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>Select a known system to add</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-          {KNOWN_SYSTEMS.slice(0, 10).map(sys => (
-            <button type="button" key={sys.label} onClick={()=>{addFlagship(sys);touch(3);}} className="roi-preset" style={{width:"100%",padding:"10px 12px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:14,background:"#fff",cursor:"pointer"}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.text}}>{sys.label}</div>
-              <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>{sys.type} - ~{fmtK(systemCost(sys, inputs.bed_count))}/yr</div>
-            </button>
-          ))}
-        </div>
-        <details style={{marginTop:8}}>
-          <summary style={{fontSize:13,fontWeight:600,color:C.accent,cursor:"pointer",padding:"8px 0"}}>Show more systems</summary>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}}>
-            {KNOWN_SYSTEMS.slice(10).map(sys => (
-              <button type="button" key={sys.label} onClick={()=>{addFlagship(sys);touch(3);}} className="roi-preset" style={{width:"100%",padding:"10px 12px",textAlign:"left",border:`1px solid ${C.border}`,borderRadius:14,background:"#fff",cursor:"pointer"}}>
-                <div style={{fontSize:13,fontWeight:700,color:C.text}}>{sys.label}</div>
-                <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>{sys.type} - ~{fmtK(systemCost(sys, inputs.bed_count))}/yr</div>
-              </button>
-            ))}
-          </div>
-        </details>
-        <button type="button" onClick={()=>{addFlagship({cost:Math.round((150000 + inputs.bed_count * 400) / 1000) * 1000});touch(3);}} className="roi-link" style={{marginTop:10,border:"none",background:"none",color:C.accent,fontSize:13,fontWeight:700,cursor:"pointer",padding:"8px 0",display:"flex",alignItems:"center",gap:6}}>
-          + Add a custom / unlisted system
-        </button>
-      </div>
-
-      {flagships.length > 0 && (
-        <div>
-          <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>Your named systems</div>
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {flagships.map((f, i) => (
-              <div key={i} className="roi-flag" style={{padding:"14px 16px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                  {f.known ? (
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:14,fontWeight:700,color:C.text}}>{f.known}</div>
-                      <div style={{fontSize:11,color:C.textMuted}}>From known systems list</div>
-                    </div>
-                  ) : (
-                    <input type="text" placeholder="System name" value={f.name} onChange={e => updateFlagship(i,"name",e.target.value)}
-                      style={{flex:1,padding:"8px 10px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,fontFamily:"inherit"}}/>
-                  )}
-                  <label style={{display:"flex",alignItems:"center",gap:4,fontSize:12,color:C.textMid,cursor:"pointer"}}>
-                    <input type="checkbox" checked={f.retire} onChange={e => updateFlagship(i,"retire",e.target.checked)} style={{accentColor:C.accent}}/>
-                    Retire
-                  </label>
-                  <button type="button" onClick={() => removeFlagship(i)} style={{border:"none",background:"none",color:C.textMuted,fontSize:18,cursor:"pointer",padding:"8px",lineHeight:1}} title="Remove">{"\u2715"}</button>
-                </div>
-                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:f.showItems?8:0}}>
-                  <span style={{fontSize:14,fontWeight:700,color:C.accent}}>{fmtK(f.cost)}/yr</span>
-                  <button type="button" onClick={()=>toggleLineItems(i)} className="roi-link" style={{border:"none",background:"none",color:C.accent,fontSize:12,fontWeight:600,cursor:"pointer",padding:"4px 8px",borderRadius:999,border:`1px solid ${C.borderLight}`}}>
-                    {f.showItems ? "Hide breakdown" : "Edit cost breakdown"}
-                  </button>
-                </div>
-                {f.showItems && (
-                  <div style={{background:C.surface,borderRadius:8,border:`1px solid ${C.borderLight}`,padding:"12px 14px",marginTop:4}}>
-                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                      {COST_CATEGORIES.map(cat => (
-                        <div key={cat.key} style={{display:"flex",alignItems:"center",gap:8}}>
-                          <span style={{fontSize:12,color:C.textMid,flex:"1 1 160px",minWidth:120}}>{cat.label}</span>
-                          <span style={{fontSize:12,color:C.textMuted}}>{"$"}</span>
-                          <input type="number" value={(f.items && f.items[cat.key]) || 0} min={0} max={20000000} step={1000}
-                            onChange={e => updateLineItem(i, cat.key, parseInt(e.target.value)||0)}
-                            style={{width:100,padding:"5px 8px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:12,fontFamily:"inherit",textAlign:"right"}}/>
-                          <span style={{fontSize:11,color:C.textMuted,minWidth:20}}>/yr</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${C.borderLight}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                      <span style={{fontSize:12,fontWeight:700,color:C.text}}>Total annual cost</span>
-                      <span style={{fontSize:14,fontWeight:800,color:C.accent}}>{fmtK(f.cost)}/yr</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          <div style={{marginTop:12,padding:"10px 14px",background:C.bg,borderRadius:8,fontSize:12,color:C.textMuted,lineHeight:1.5}}>
-            {flagships.length} named system{flagships.length !== 1 ? "s" : ""} totalling {fmtK(flagships.reduce((s,f)=>s+(f.cost||0),0))}/yr.
-            {" "}{flagships.filter(f=>f.retire).length} flagged for retirement.
-          </div>
-        </div>
-      )}
-
-      {flagships.length === 0 && (
-        <div style={{padding:"20px",textAlign:"center",color:C.textMuted,fontSize:13,background:C.bg,borderRadius:8}}>
-          No named systems added yet. Select from the list above, add a custom system, or skip this step to use tier estimates only.
-        </div>
-      )}
-    </Card></div>
-    {step<3?<ContinuePrompt onClick={()=>goTo(3,ref3)} label="Next: fine-tune"/>:<LockedConnector/>}
+    {step<2?<ContinuePrompt onClick={()=>goTo(2,ref3)} label="Next: fine-tune"/>:<LockedConnector/>}
 
     {/* STEP 4 - Fine-tune */}
-    <div ref={ref3} style={{animation:step>=3?"fade-in .4s ease":"none"}}><Card dimmed={step<3}>
+    <div ref={ref3} style={{animation:step>=2?"fade-in .4s ease":"none"}}><Card dimmed={step<2}>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
-        <span style={{width:24,height:24,borderRadius:"50%",background:step>=3?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>6</span>
+        <span style={{width:24,height:24,borderRadius:"50%",background:step>=2?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>5</span>
         Fine-tune
       </div>
       <div style={{display:"flex",gap:16,flexWrap:"wrap",marginBottom:16}}>
@@ -2712,6 +2641,44 @@ function ROICalculator() {
         </div>
       </div>
     </Card><LockedConnector/>
+
+    {/* Year-by-year stacked bar chart */}
+    {!dim && (() => {
+      const segs = [
+        {label:"Decommission",val:r.decomSave,color:"#0F4146"},
+        {label:"Capacity",val:r.timeSave,color:"#1a7a7a"},
+        {label:"Reimbursement",val:r.reimbursementImpact,color:"#00d4aa"},
+        {label:"Quality",val:r.qualitySavings,color:"#d4507a"},
+        ...(r.academicSavings>0?[{label:"Academic",val:r.academicSavings,color:"#534AB7"}]:[]),
+        ...(r.mergeSavings>0?[{label:"M&A",val:r.mergeSavings,color:"#2c3e6b"}]:[]),
+      ].filter(s=>s.val>0);
+      const total = segs.reduce((a,s)=>a+s.val,0);
+      if (total <= 0) return null;
+      const years = [{pct:r.y1Pct,label:"Year 1"},{pct:r.y2Pct,label:"Year 2"},{pct:r.y3Pct,label:"Year 3"}];
+      const maxH = 200;
+      return <Card style={{marginBottom:16}}>
+        <div style={{fontSize:13,fontWeight:700,color:C.textMid,marginBottom:4}}>3-year savings projection</div>
+        <div style={{fontSize:12,color:C.textMuted,marginBottom:16}}>Builds from {fmtK(Math.round(total*r.y1Pct))} in Year 1 to {fmtK(total)}/yr at steady state</div>
+        <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:24,marginBottom:16,height:maxH+30}}>
+          {years.map((yr,yi)=>{
+            const h = Math.round(maxH * yr.pct);
+            return <div key={yi} style={{display:"flex",flexDirection:"column",alignItems:"center",width:80}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.accent,marginBottom:4}}>{fmtK(Math.round(total*yr.pct))}</div>
+              <div style={{width:"100%",height:h,borderRadius:"6px 6px 0 0",overflow:"hidden",display:"flex",flexDirection:"column-reverse"}}>
+                {segs.map((s,si)=><div key={si} style={{width:"100%",height:`${s.val/total*100}%`,background:s.color,minHeight:s.val>0?2:0}} title={`${s.label}: ${fmtK(Math.round(s.val*yr.pct))}`}/>)}
+              </div>
+              <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginTop:6}}>{yr.label}</div>
+              <div style={{fontSize:10,color:C.textMuted}}>{Math.round(yr.pct*100)}%</div>
+            </div>;
+          })}
+        </div>
+        <div style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center"}}>
+          {segs.map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:C.textMid}}>
+            <div style={{width:8,height:8,borderRadius:2,background:s.color}}/>{s.label}
+          </div>)}
+        </div>
+      </Card>;
+    })()}
 
     {/* Year-by-year */}
     <Card dimmed={dim}>
