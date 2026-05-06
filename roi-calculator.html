@@ -309,13 +309,13 @@ function AnimatedNum({ value, active }) { const v = useCountUp(value, 1200, acti
 function AnimatedK({ value, active }) { const v = useCountUp(value, 1200, active); return <span>{v >= 1e6 ? `$${(v/1e6).toFixed(1)}m` : v >= 1000 ? `$${Math.round(v/1000).toLocaleString("en-US")}k` : `$${v.toLocaleString("en-US")}`}</span>; }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   CALC ENGINE – tiered systems, bed-scaled costs, no parallel-run
+   CALC ENGINE - tiered systems, bed-scaled costs, no parallel-run
    ═══════════════════════════════════════════════════════════════════════ */
 
 const SCENARIO = {
-  CONSERVATIVE: { decom_pct: 0.85, realisation: 0.20, safety: 0.15 },
-  EXPECTED:     { decom_pct: 1.00, realisation: 0.30, safety: 0.25 },
-  STRETCH:      { decom_pct: 1.10, realisation: 0.40, safety: 0.35 },
+  CONSERVATIVE: { decom_pct: 0.85, realization: 0.20, safety: 0.15 },
+  EXPECTED:     { decom_pct: 1.00, realization: 0.30, safety: 0.25 },
+  STRETCH:      { decom_pct: 1.10, realization: 0.40, safety: 0.35 },
 };
 const CX = { LOW: 0.7, TYPICAL: 1.0, HIGH: 1.45 };
 const DQ = { CLEAN: 0.75, MIXED: 1.0, POOR: 1.4 };
@@ -364,7 +364,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * (1 + cappedPenalty));
   const residual = isArchiveOnly ? 1 : 2;
   const hrsSaved = Math.round((clinicians * Math.max(0, minsWasted - residual) * WORKING_WEEKS) / 60);
-  const timeSave = Math.round(hrsSaved * BLENDED_HOURLY_RATE * sc.realisation);
+  const timeSave = Math.round(hrsSaved * BLENDED_HOURLY_RATE * sc.realization);
   const ticketsBaselineMonthly = ov.ticketsBaseline != null ? ov.ticketsBaseline : Math.round(legacy * TICKETS_PER_SYSTEM * dq);
   const ticketsAfter = Math.min(Math.round((legacy - decom) * TICKETS_PER_SYSTEM * dq * SURVIVING_SYSTEM_TICKET_FACTOR), ticketsBaselineMonthly);
   const ticketsReductionPct = Math.round((ticketsBaselineMonthly - ticketsAfter) / Math.max(1, ticketsBaselineMonthly) * 100);
@@ -469,7 +469,8 @@ function calc(inp, mode, ov = {}, flagships = []) {
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
-    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realisation: sc.realisation, isArchiveOnly,
+    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realization: sc.realization, isArchiveOnly,
+    fteEquivalent: Math.round(hrsSaved * sc.realization / 2080 * 10) / 10,
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
     flagshipCount, flagshipRetireCount,
     // Reimbursement & compliance
@@ -1220,7 +1221,7 @@ function ROICalculator() {
     mins_wasted_per_week: r.minsWasted,
     hours_freed_per_year: r.hrsSaved,
     time_savings_annual: r.timeSave,
-    realisation_rate_pct: Math.round(r.realisation * 100),
+    realization_rate_pct: Math.round(r.realization * 100),
     blended_hourly_rate: 55,
 
     // Totals
@@ -1374,7 +1375,7 @@ function ROICalculator() {
     const scenarioLabel = am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected";
     const dateStr = new Date().toLocaleDateString("en-US",{day:"numeric",month:"long",year:"numeric"});
 
-    // Colours
+    // Colors
     const TEAL = [15,65,70], WHITE = [255,255,255], SEAFOAM = [190,250,240];
     const GREY = [61,90,94], LTBG = [238,247,241], TEALBG = [232,250,246];
     const DARK = [31,41,55], MID = [110,138,142];
@@ -1441,7 +1442,7 @@ function ROICalculator() {
     const metaCol1 = ml, metaCol2 = ml + cw / 2;
     const metaW = cw / 2 - 8;
     doc.setFontSize(8); doc.setFont("helvetica","bold"); setC(TEAL);
-    doc.text("Organisation:", metaCol1, y);
+    doc.text("Organization:", metaCol1, y);
     doc.text("Prepared for:", metaCol2, y);
     doc.setFont("helvetica","normal"); setC(GREY);
     const orgLines = doc.splitTextToSize(leadForm.org || "Not specified", metaW);
@@ -1464,7 +1465,7 @@ function ROICalculator() {
       { label: "3-YEAR COMBINED", value: fmtK(r.total3WithReimbursement), sub: "All savings + reimbursement", bg: LTBG },
       { label: "ANNUAL RECURRING", value: fmtK(r.annual), sub: fmtK(r.decomSave) + " decom + " + fmtK(r.timeSave) + " time", bg: TEALBG },
       { label: "REIMBURSEMENT / YR", value: fmtK(r.reimbursementImpact + r.qualitySavings), sub: "Penalties + denials + quality", bg: [254,249,236] },
-      { label: "HOURS FREED / YR", value: fmtNum(r.hrsSaved), sub: Math.round(r.realisation*100) + "% realisation", bg: [230,248,252] },
+      { label: "HOURS FREED / YR", value: fmtNum(r.hrsSaved), sub: Math.round(r.realization*100) + "% realization", bg: [230,248,252] },
     ];
     const cardW = (cw - 12) / 4;
     cards.forEach((cd, i) => {
@@ -1538,7 +1539,7 @@ function ROICalculator() {
         ["Clinical staff in scope", fmtNum(r.clinicians)],
         ["Minutes wasted / week", r.minsWasted + " min"],
         ["Hours freed / year", fmtNum(r.hrsSaved)],
-        [{ content: "Capacity value", styles: { fontStyle: "bold" } }, { content: fmtK(r.timeSave) + "/yr (at " + Math.round(r.realisation*100) + "% realisation)", styles: { fontStyle: "bold", textColor: TEAL } }],
+        [{ content: "Capacity value", styles: { fontStyle: "bold" } }, { content: fmtK(r.timeSave) + "/yr (at " + Math.round(r.realization*100) + "% realization)", styles: { fontStyle: "bold", textColor: TEAL } }],
       ],
     });
     y = doc.lastAutoTable.finalY + 10;
@@ -1723,7 +1724,7 @@ function ROICalculator() {
     doc.setFontSize(7); doc.setFont("helvetica","bold"); setC(MID);
     doc.text("Important disclaimer", ml + 4, y + 5);
     doc.setFont("helvetica","normal"); setC(GREY);
-    const disclaimerText = "This report presents indicative estimates only, generated from real-world data where available alongside generalised assumptions and industry-level benchmarks. It does not constitute a guaranteed ROI, a binding savings target, or professional financial, legal, or clinical advice. Actual outcomes will vary based on your organisation\u2019s specific circumstances, contract terms, implementation approach, and operational factors not captured by this model. All projected figures should be independently validated before being used to support investment decisions. No liability is accepted for decisions made in reliance on these estimates.";
+    const disclaimerText = "This report presents indicative estimates only, generated from real-world data where available alongside generalized assumptions and industry-level benchmarks. It does not constitute a guaranteed ROI, a binding savings target, or professional financial, legal, or clinical advice. Actual outcomes will vary based on your organization's specific circumstances, contract terms, implementation approach, and operational factors not captured by this model. All projected figures should be independently validated before being used to support investment decisions. No liability is accepted for decisions made in reliance on these estimates.";
     const disclaimerLines = doc.splitTextToSize(disclaimerText, cw - 8);
     doc.text(disclaimerLines, ml + 4, y + 9);
     const disclaimerH = Math.max(28, 12 + disclaimerLines.length * 3);
@@ -1887,7 +1888,7 @@ function ROICalculator() {
     </Card>
     <LockedConnector/>
 
-    {/* STEP 1 – Journey stage */}
+    {/* STEP 1 - Journey stage */}
     <Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:C.accent,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>2</span>        Where are you on your EHR journey?
@@ -1910,7 +1911,7 @@ function ROICalculator() {
     </Card>
     <LockedConnector/>
 
-    {/* STEP 1 – Org scale + presets */}
+    {/* STEP 1 - Org scale + presets */}
     <div ref={ref1} style={{animation:"fade-in .4s ease"}}><Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:step>=0?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>3</span>        Organization scale
@@ -2016,7 +2017,7 @@ function ROICalculator() {
           </div>
         )}
       </div>
-      {inputs.bed_count===0&&<div style={{marginTop:10,padding:"8px 14px",background:C.accentPale,borderRadius:6,fontSize:13,color:C.accent}}>Community provider {"\u2013"} model still works.</div>}
+      {inputs.bed_count===0&&<div style={{marginTop:10,padding:"8px 14px",background:C.accentPale,borderRadius:6,fontSize:13,color:C.accent}}>Community provider {"-"} model still works.</div>}
 
       {/* ── Ambulatory sites ── */}
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,marginTop:24}}>Ambulatory</div>
@@ -2086,7 +2087,7 @@ function ROICalculator() {
     </Card></div>
     {step<1?<ContinuePrompt onClick={()=>goTo(1,ref2)} label="Next: legacy systems"/>:<LockedConnector/>}
 
-    {/* STEP 2 – Tiered legacy systems */}
+    {/* STEP 2 - Tiered legacy systems */}
     <div ref={ref2} style={{animation:step>=1?"fade-in .4s ease":"none"}}><Card dimmed={step<1}>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:step>=1?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>4</span>
@@ -2468,10 +2469,10 @@ function ROICalculator() {
 
     {/* Headline cards */}
     <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
-      <ResultCard dimmed={dim} label="Total savings (3-year)" value={an?<AnimatedK value={r.total3} active={an}/>:"–"} sub={an?"Decom + clinician time x 3 years":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
-      <ResultCard dimmed={dim} label="Annual recurring" value={an?<AnimatedK value={r.annual} active={an}/>:"–"} sub={an?`${fmtK(r.decomSave)} decom + ${fmtK(r.timeSave)} time`:""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
-      <ResultCard dimmed={dim} label="Clinician time (annual)" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={an?<span>{fmtNum(r.hrsSaved)} hrs/yr, {Math.round(r.realisation*100)}% realisation</span>:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
-      <ResultCard dimmed={dim} label="Reimbursement & quality" value={an?<AnimatedK value={r.reimbursementImpact + r.qualitySavings} active={an}/>:"–"} sub={an?"Penalties + denials + quality":""} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
+      <ResultCard dimmed={dim} label="Total savings (3-year)" value={an?<AnimatedK value={r.total3WithReimbursement} active={an}/>:"-"} sub={an?"All savings with "+Math.round(r.y1Pct*100)+"/"+Math.round(r.y2Pct*100)+"/"+Math.round(r.y3Pct*100)+"% ramp":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
+      <ResultCard dimmed={dim} label="Annual at steady state" value={an?<AnimatedK value={r.annualWithReimbursement} active={an}/>:"-"} sub={an?`Decom ${fmtK(r.decomSave)} + capacity ${fmtK(r.timeSave)} + reimb & quality ${fmtK(r.reimbursementImpact+r.qualitySavings)}`:""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
+      <ResultCard dimmed={dim} label="Clinician time (annual)" value={an?<AnimatedK value={r.timeSave} active={an}/>:"-"} sub={an?<span>{fmtNum(r.hrsSaved)} hrs/yr, {Math.round(r.realization*100)}% realization</span>:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
+      <ResultCard dimmed={dim} label="Reimbursement & quality" value={an?<AnimatedK value={r.reimbursementImpact + r.qualitySavings} active={an}/>:"-"} sub={an?"Penalties + denials + quality":""} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
     </div>
 
     {!dim && (() => {
@@ -2498,7 +2499,7 @@ function ROICalculator() {
       </div>;
     })()}
 
-    {/* Decom – tiered breakdown */}
+    {/* Decom - tiered breakdown */}
     <Card dimmed={dim}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
         <span style={{fontSize:20}}>{"\uD83D\uDD13"}</span>
@@ -2536,12 +2537,13 @@ function ROICalculator() {
         <OverridableStat label="Clinical staff" computed={calc(calcInputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on BLS workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/admin staff per facility (20 base + 0.15/bed, capped at 120).`}/>
         <OverridableStat label="Mins wasted / wk" computed={calc(calcInputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on AMIA 2019 workflow studies and Brigham & Women's time-motion research.`}/>
         <Stat label="Hours freed / yr" value={an?<AnimatedNum value={r.hrsSaved} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Result: ${fmtNum(r.hrsSaved)} hours per year.`}/>
-        <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at the BLS median blended rate of $95/hr (BLS median clinical compensation including benefits). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity, since not all freed time converts to measurable output. This represents capacity redirected to patient care, not a direct cash saving.`}/>
+        <Stat label="FTE equivalent" value={an?r.fteEquivalent.toFixed(1):"-"} color={C.amber} info={`The freed clinician time equates to ${r.fteEquivalent.toFixed(1)} full-time equivalents (based on 2,080 hours per FTE per year at ${Math.round(r.realization*100)}% realization). This is not headcount reduction — it represents capacity redirected to patient care.`}/>
+        <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"-"} sub={`${Math.round(r.realization*100)}% realization`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at the BLS median blended rate of $95/hr (BLS median clinical compensation including benefits). Only ${Math.round(r.realization*100)}% is counted as realisable capacity, since not all freed time converts to measurable output. This represents capacity redirected to patient care, not a direct cash saving.`}/>
       </div>
-      <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"$"}55 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong></Callout>
+      <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"$"}95 {"×"} {Math.round(r.realization*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong></Callout>
       <EvidenceDropdown title="Evidence & methodology">
         <strong>Sources:</strong> AMIA 2019 workflow studies, Brigham & Women's time-motion research (context-switching costs). HIMSS Analytics (65% active user rate). BLS workforce data (3.2 staff/bed, $95/hr blended rate).<br/><br/>
-        <strong>Formula:</strong> Active users (65%) x switch penalty (0.04/additional system) x base minutes x data quality x complexity. Only {Math.round(r.realisation*100)}% of freed time counted as realisable capacity.
+        <strong>Formula:</strong> Active users (65%) x switch penalty (0.04/additional system) x base minutes x data quality x complexity. Only {Math.round(r.realization*100)}% of freed time counted as realisable capacity.
       </EvidenceDropdown>
     </Card><LockedConnector/>
 
@@ -2554,17 +2556,17 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>CMS penalty avoidance</div>
-          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.hrrpReduction + r.hacReduction):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.hrrpReduction + r.hacReduction):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>HRRP: {fmtK(r.hrrpReduction)} + HAC: {fmtK(r.hacReduction)}</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Denial recovery + VBP</div>
-          <div style={{fontSize:28,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.denialRecovery + r.vbpImprovement):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.denialRecovery + r.vbpImprovement):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>Denials: {fmtK(r.denialRecovery)} + VBP: {fmtK(r.vbpImprovement)}</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.blue25,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Quality & safety savings</div>
-          <div style={{fontSize:28,fontWeight:800,color:"#0f4146",margin:"6px 0"}}>{an?fmtK(r.qualitySavings):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:"#0f4146",margin:"6px 0"}}>{an?fmtK(r.qualitySavings):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>Malpractice: {fmtK(r.malpracticeReduction)} + Bed days: {fmtK(r.excessDayCostAvoided)} + Duplicates: {fmtK(r.duplicateReduction)}</div>
         </div>
       </div>
@@ -2582,6 +2584,75 @@ function ROICalculator() {
         <strong>Quality:</strong> Malpractice 5% reduction (CRICO: 30% of claims involve communication failure). Excess bed days: Bates/Classen ADEs. Duplicate testing: Banker et al 2024.
       </EvidenceDropdown>
     </Card><LockedConnector/>
+
+
+    {/* Academic module - conditional */}
+    {r.isAcademic && <Card dimmed={dim}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{"🎓"} Academic medical center module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and GME compliance obligations.</p>
+
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Research system decommission</div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.researchDecomSave):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>{r.researchSystems} research systems at ~{fmtK(RESEARCH_SYSTEM_AVG_COST)} avg</div>
+        </div>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>GME compliance efficiency</div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.gmeEfficiency):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>ACGME reporting, residency tracking</div>
+        </div>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Teaching workflow savings</div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.teachingOverhead):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>Reduced complexity from consolidation</div>
+        </div>
+      </div>
+
+      <Callout bg="#f3eefa" border="#c8b8e8">
+        <strong style={{color:"#534AB7"}}>Academic module total:</strong> {fmtK(r.academicSavings)}/yr
+        <span style={{fontSize:12,color:C.textMuted,marginLeft:8}}>Included in combined annual total</span>
+      </Callout>
+
+      <EvidenceDropdown title="Evidence & methodology">
+        Research system count: 3.5 per 100 beds (IRB, CTMS, biobank, research repositories, specialty registries). GME efficiency: 25% reduction in ACGME compliance overhead from unified reporting. Teaching overhead: 12% additional complexity for teaching workflows, 30% addressable. All figures are modelled estimates.
+      </EvidenceDropdown>
+    </Card>}
+    {r.isAcademic && <LockedConnector/>}
+
+    {/* M&A module - conditional */}
+    {r.isMultiHospital && <Card dimmed={dim}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{"🏢"} Multi-hospital / M&A consolidation module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Savings from eliminating duplicate systems and infrastructure across {inputs.org_count} facilities post-merger.</p>
+
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate system elimination</div>
+          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.duplicateElimination):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>{r.duplicateSystems} duplicate systems across {inputs.org_count} facilities</div>
+        </div>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Infrastructure consolidation</div>
+          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.infraConsolidation):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>Data center, network, help desk</div>
+        </div>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Cross-facility standardization</div>
+          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.standardisationSave):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>Formulary, order sets, protocols</div>
+        </div>
+      </div>
+
+      <Callout bg="#e8faf6" border="#a8d8c8">
+        <strong style={{color:C.accent}}>M&A module total:</strong> {fmtK(r.mergeSavings)}/yr
+        <span style={{fontSize:12,color:C.textMuted,marginLeft:8}}>Included in combined annual total</span>
+      </Callout>
+
+      <EvidenceDropdown title="Evidence & methodology">
+        Duplicate systems: 35% of legacy systems duplicated across facilities (Becker's: only 35% of acquired hospitals switch to acquirer's EHR). Infrastructure: $250k/facility for duplicate data center, network, and support desk. Standardization: formulary, order set, and protocol harmonization.
+      </EvidenceDropdown>
+    </Card>}
+    {r.isMultiHospital && <LockedConnector/>}
 
     {/* Clinical safety */}
     {r.hasClinicalScope && <div>
@@ -2611,75 +2682,7 @@ function ROICalculator() {
     </Card><LockedConnector/>
     </div>}
 
-    {/* Academic module - conditional */}
-    {r.isAcademic && <Card dimmed={dim}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{"🎓"} Academic medical center module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and GME compliance obligations.</p>
-
-      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
-        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Research system decommission</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.researchDecomSave):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>{r.researchSystems} research systems at ~{fmtK(RESEARCH_SYSTEM_AVG_COST)} avg</div>
-        </div>
-        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>GME compliance efficiency</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.gmeEfficiency):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>ACGME reporting, residency tracking</div>
-        </div>
-        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Teaching workflow savings</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.teachingOverhead):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>Reduced complexity from consolidation</div>
-        </div>
-      </div>
-
-      <Callout bg="#f3eefa" border="#c8b8e8">
-        <strong style={{color:"#534AB7"}}>Academic module total:</strong> {fmtK(r.academicSavings)}/yr
-        <span style={{fontSize:12,color:C.textMuted,marginLeft:8}}>Included in combined annual total</span>
-      </Callout>
-
-      <EvidenceDropdown title="Evidence & methodology">
-        Research system count: 3.5 per 100 beds (IRB, CTMS, biobank, research repositories, specialty registries). GME efficiency: 25% reduction in ACGME compliance overhead from unified reporting. Teaching overhead: 12% additional complexity for teaching workflows, 30% addressable. All figures are modelled estimates.
-      </EvidenceDropdown>
-    </Card>}
-    {r.isAcademic && <LockedConnector/>}
-
-    {/* M&A module - conditional */}
-    {r.isMultiHospital && <Card dimmed={dim}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{"🏢"} Multi-hospital / M&A consolidation module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Savings from eliminating duplicate systems and infrastructure across {inputs.org_count} facilities post-merger.</p>
-
-      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
-        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate system elimination</div>
-          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.duplicateElimination):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>{r.duplicateSystems} duplicate systems across {inputs.org_count} facilities</div>
-        </div>
-        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Infrastructure consolidation</div>
-          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.infraConsolidation):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>Data center, network, help desk</div>
-        </div>
-        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Cross-facility standardization</div>
-          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.standardisationSave):"–"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>Formulary, order sets, protocols</div>
-        </div>
-      </div>
-
-      <Callout bg="#e8faf6" border="#a8d8c8">
-        <strong style={{color:C.accent}}>M&A module total:</strong> {fmtK(r.mergeSavings)}/yr
-        <span style={{fontSize:12,color:C.textMuted,marginLeft:8}}>Included in combined annual total</span>
-      </Callout>
-
-      <EvidenceDropdown title="Evidence & methodology">
-        Duplicate systems: 35% of legacy systems duplicated across facilities (Becker's: only 35% of acquired hospitals switch to acquirer's EHR). Infrastructure: $250k/facility for duplicate data center, network, and support desk. Standardization: formulary, order set, and protocol harmonization.
-      </EvidenceDropdown>
-    </Card>}
-    {r.isMultiHospital && <LockedConnector/>}
-
-    {/* KPIs */}
+        {/* KPIs */}
     <Card dimmed={dim} style={{background:C.surface,border:`1px solid ${C.border}`}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Projected KPI improvements</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Operational metric</span></div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16,marginTop:16}}>
@@ -2693,7 +2696,7 @@ function ROICalculator() {
         </div>
         <div style={{flex:"1 1 200px",minWidth:240,padding:"18px 20px",background:"#e8faf6",borderRadius:10}}>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:14,fontWeight:700}}>Support tickets (monthly)</span></div>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,color:C.textMuted,marginBottom:3}}><span>Before</span><OverridableStat inline label="" computed={calc(calcInputs,am,{...mergedOv,ticketsBaseline:null},flagships).ticketsBaselineMonthly} override={overrides.ticketsBaseline} onOverride={v=>setOv("ticketsBaseline",v)} suffix="/mo" info={`Estimated monthly IT support tickets across your ${r.legacy} legacy systems. Based on typical typical service desk volumes of 2.5 tickets per system per month (password resets, access issues, data queries, interface failures), adjusted for data quality. Your baseline: ${r.ticketsBaselineMonthly} tickets/month.`}/></div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,color:C.textMuted,marginBottom:3}}><span>Before</span><OverridableStat inline label="" computed={calc(calcInputs,am,{...mergedOv,ticketsBaseline:null},flagships).ticketsBaselineMonthly} override={overrides.ticketsBaseline} onOverride={v=>setOv("ticketsBaseline",v)} suffix="/mo" info={`Estimated monthly IT support tickets across your ${r.legacy} legacy systems. Based on typical service desk volumes of 2.5 tickets per system per month (password resets, access issues, data queries, interface failures), adjusted for data quality. Your baseline: ${r.ticketsBaselineMonthly} tickets/month.`}/></div>
           <div style={{height:8,background:"#e0e4ea",borderRadius:4,marginBottom:6}}><div style={{height:"100%",width:"100%",background:"#b0b8c4",borderRadius:4}}/></div>
           <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.textMuted,marginBottom:3}}><span>After</span><span style={{fontWeight:600,color:C.teal}}>{r.ticketsAfter}/mo</span></div>
           <div style={{height:8,background:"#e0e4ea",borderRadius:4,marginBottom:8}}><div style={{height:"100%",width:`${Math.max(5,Math.round(r.ticketsAfter/Math.max(1,r.ticketsBaselineMonthly)*100))}%`,background:C.teal,borderRadius:4,transition:"width .8s"}}/></div>
@@ -2701,7 +2704,7 @@ function ROICalculator() {
         </div>
         <div style={{flex:"1 1 200px",minWidth:240,padding:"18px 20px",background:C.blue25,borderRadius:10}}>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:14,fontWeight:700}}>Records request turnaround</span></div>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,color:C.textMuted,marginBottom:3}}><span>Before</span><OverridableStat inline label="" computed={calc(calcInputs,am,{...mergedOv,sarDaysBefore:null},flagships).sarDaysBefore} override={overrides.sarDaysBefore} onOverride={v=>setOv("sarDaysBefore",v)} suffix=" days" step={.5} info={`Working days to fulfil a patient records request. Each legacy system adds search time, login overhead, and potentially manual extraction. With ${r.legacy} systems, estimated turnaround is ${r.sarDaysBefore} working days. HIPAA requires covered entities to search all systems where patient data may be held.`}/></div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,color:C.textMuted,marginBottom:3}}><span>Before</span><OverridableStat inline label="" computed={calc(calcInputs,am,{...mergedOv,sarDaysBefore:null},flagships).sarDaysBefore} override={overrides.sarDaysBefore} onOverride={v=>setOv("sarDaysBefore",v)} suffix=" days" step={.5} info={`Working days to fulfill a patient records request. Each legacy system adds search time, login overhead, and potentially manual extraction. With ${r.legacy} systems, estimated turnaround is ${r.sarDaysBefore} working days. HIPAA requires covered entities to search all systems where patient data may be held.`}/></div>
           <div style={{height:8,background:"#e0e4ea",borderRadius:4,marginBottom:6}}><div style={{height:"100%",width:"100%",background:"#b0b8c4",borderRadius:4}}/></div>
           <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.textMuted,marginBottom:3}}><span>After</span><span style={{fontWeight:600,color:C.accent}}>{r.sarDaysAfter} days</span></div>
           <div style={{height:8,background:"#e0e4ea",borderRadius:4,marginBottom:8}}><div style={{height:"100%",width:`${Math.max(5,Math.round(r.sarDaysAfter/Math.max(1,r.sarDaysBefore)*100))}%`,background:C.accent,borderRadius:4,transition:"width .8s"}}/></div>
@@ -2718,14 +2721,22 @@ function ROICalculator() {
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}><thead><tr>
           <th style={th_}>Benefit</th><th style={{...th_,textAlign:"right"}}>Year 1</th><th style={{...th_,textAlign:"right"}}>Year 2</th><th style={{...th_,textAlign:"right"}}>Year 3</th>
         </tr></thead><tbody>
-          <tr><td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`}}>Total savings</td><td style={tdR_}>{fmtK(r.yr1R)}</td><td style={tdR_}>{fmtK(r.yr2R)}</td><td style={tdR_}>{fmtK(r.yr3R)}</td></tr>
+          {[
+            {l:"Decommission",v:r.decomSave},
+            {l:"Clinician capacity",v:r.timeSave},
+            {l:"Reimbursement",v:r.reimbursementImpact},
+            {l:"Quality & safety",v:r.qualitySavings},
+            ...(r.academicSavings>0?[{l:"Academic",v:r.academicSavings}]:[]),
+            ...(r.mergeSavings>0?[{l:"M&A consolidation",v:r.mergeSavings}]:[]),
+          ].filter(row=>row.v>0).map((row,i)=><tr key={i}><td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`}}>{row.l}</td><td style={tdR_}>{fmtK(Math.round(row.v*r.y1Pct))}</td><td style={tdR_}>{fmtK(Math.round(row.v*r.y2Pct))}</td><td style={tdR_}>{fmtK(Math.round(row.v*r.y3Pct))}</td></tr>)}
+          <tr style={{background:C.bg}}><td style={{padding:"12px",fontWeight:700}}>Total</td><td style={{...tdR_,fontWeight:700}}>{fmtK(r.yr1R)}</td><td style={{...tdR_,fontWeight:700}}>{fmtK(r.yr2R)}</td><td style={{...tdR_,fontWeight:700}}>{fmtK(r.yr3R)}</td></tr>
           <tr style={{background:C.bg}}><td style={{padding:"12px",fontWeight:600,color:C.textMid}}>Ramp</td><td style={{...tdR_,color:C.textMid}}>{Math.round(r.y1Pct*100)}%</td><td style={{...tdR_,color:C.textMid}}>{Math.round(r.y2Pct*100)}%</td><td style={{...tdR_,color:C.textMid}}>{Math.round(r.y3Pct*100)}%</td></tr>
           <tr style={{background:C.bg}}><td style={{padding:"12px",fontWeight:600,color:C.textMid}}>Cumulative</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmtK(r.yr1R)}</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmtK(r.yr1R+r.yr2R)}</td><td style={{...tdR_,fontWeight:800,color:C.green,fontSize:15}}>{fmtK(r.total3WithReimbursement)}</td></tr>
         </tbody></table>
       </div>
       <div style={{marginTop:14,padding:"10px 14px",background:C.bg,borderRadius:6,fontSize:12,color:C.textMuted,display:"flex",gap:16,flexWrap:"wrap"}}>
         <span>Showing: <strong style={{color:C.accent}}>{am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected"}</strong></span>
-        <span>Range: <strong>{fmtK(rCon.total3)}</strong> {"–"} <strong>{fmtK(rStr.total3)}</strong></span>
+        <span>Range: <strong>{fmtK(rCon.total3)}</strong> {"-"} <strong>{fmtK(rStr.total3)}</strong></span>
       </div>
     </Card>
 
@@ -2742,7 +2753,7 @@ function ROICalculator() {
           <input type="email" className="roi-lead-input" placeholder="Work email *" value={leadForm.email} onChange={e=>setLeadForm(p=>({...p,email:e.target.value}))} style={{flex:"1 1 200px",minWidth:160,padding:"11px 14px",borderRadius:999,border:"1px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:14,outline:"none",fontFamily:"inherit"}} />
         </div>
         <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:20}}>
-          <input type="text" className="roi-lead-input" placeholder="Organisation" value={leadForm.org} onChange={e=>setLeadForm(p=>({...p,org:e.target.value}))} style={{flex:"1 1 200px",minWidth:160,padding:"11px 14px",borderRadius:999,border:"1px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:14,outline:"none",fontFamily:"inherit"}} />
+          <input type="text" className="roi-lead-input" placeholder="Organization" value={leadForm.org} onChange={e=>setLeadForm(p=>({...p,org:e.target.value}))} style={{flex:"1 1 200px",minWidth:160,padding:"11px 14px",borderRadius:999,border:"1px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:14,outline:"none",fontFamily:"inherit"}} />
           <select value={leadForm.role} onChange={e=>setLeadForm(p=>({...p,role:e.target.value}))} style={{flex:"1 1 200px",minWidth:160,padding:"11px 14px",borderRadius:999,border:"1px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.15)",color:leadForm.role?"#fff":"rgba(255,255,255,0.5)",fontSize:14,outline:"none",fontFamily:"inherit"}}>
             <option value="" style={{color:"#1b2433"}}>Your role</option>
             <option value="CIO/CCIO" style={{color:"#1b2433"}}>CIO / CCIO</option>
@@ -2812,12 +2823,12 @@ function ROICalculator() {
             <thead><tr style={{background:C.accent,color:"#fff"}}><th style={{padding:"6px 10px",textAlign:"left"}}>Parameter</th><th style={{padding:"6px 10px"}}>Conservative</th><th style={{padding:"6px 10px"}}>Expected</th><th style={{padding:"6px 10px"}}>Stretch</th></tr></thead>
             <tbody>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px",fontWeight:600}}>Decommission scaling</td><td style={{padding:"6px 10px",textAlign:"center"}}>0.85x</td><td style={{padding:"6px 10px",textAlign:"center"}}>1.00x</td><td style={{padding:"6px 10px",textAlign:"center"}}>1.10x</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px",fontWeight:600}}>Time realisation rate</td><td style={{padding:"6px 10px",textAlign:"center"}}>20%</td><td style={{padding:"6px 10px",textAlign:"center"}}>30%</td><td style={{padding:"6px 10px",textAlign:"center"}}>40%</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px",fontWeight:600}}>Time realization rate</td><td style={{padding:"6px 10px",textAlign:"center"}}>20%</td><td style={{padding:"6px 10px",textAlign:"center"}}>30%</td><td style={{padding:"6px 10px",textAlign:"center"}}>40%</td></tr>
               <tr><td style={{padding:"6px 10px",fontWeight:600}}>Safety reduction</td><td style={{padding:"6px 10px",textAlign:"center"}}>15%</td><td style={{padding:"6px 10px",textAlign:"center"}}>25%</td><td style={{padding:"6px 10px",textAlign:"center"}}>35%</td></tr>
             </tbody>
           </table></div>
           <p style={{margin:"8px 0 4px"}}><strong>Decom scaling</strong> adjusts how many of your planned retirements actually happen {" - "} Conservative assumes 85% (programme delays, contractual holdups), Stretch assumes 10% overachievement. <Md s="No published benchmark. User sets their own target and this scales it."/></p>
-          <p style={{margin:"4px 0"}}><strong>Time realisation</strong> {" - "} the fraction of freed clinician time that translates into measurable capacity. IHI productive ward reported 20-40%. <Bm s="IHI productive ward programme; IHI operational efficiency framework."/></p>
+          <p style={{margin:"4px 0"}}><strong>Time realization</strong> {" - "} the fraction of freed clinician time that translates into measurable capacity. IHI productive ward reported 20-40%. <Bm s="IHI productive ward programme; IHI operational efficiency framework."/></p>
           <p style={{margin:"4px 0"}}><strong>Safety reduction</strong> {" - "} avoidable medication errors from system consolidation. AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data, Gate et al 2023 found 25-50% reductions. <Ev s="AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data; Gate et al 2023."/></p>
         </S>
 
@@ -2846,7 +2857,7 @@ function ROICalculator() {
 
         <S title="4. Clinician time savings">
           <p style={{margin:"0 0 8px"}}>Time freed when clinicians no longer switch between multiple legacy systems.</p>
-          <F>corpPerOrg = min(120, 20 + bedsPerFacility {"\u00d7"} 0.15)<br/>clinicians = beds {"\u00d7"} 3.2 + facilities {"\u00d7"} corpPerOrg<br/>switchPenalty = min(max(0, systems - 1) {"\u00d7"} 0.04, 4.0)<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 50wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"$"}95/hr {"\u00d7"} realisationRate</F>
+          <F>corpPerOrg = min(120, 20 + bedsPerFacility {"\u00d7"} 0.15)<br/>clinicians = beds {"\u00d7"} 3.2 + facilities {"\u00d7"} corpPerOrg<br/>switchPenalty = min(max(0, systems - 1) {"\u00d7"} 0.04, 4.0)<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 50wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"$"}95/hr {"\u00d7"} realizationRate</F>
           <p style={{margin:"8px 0 4px"}}><strong>3.2 staff per bed</strong> {" - "} BLS Occupational Employment and Wage Statistics show 2.8-3.5 clinical full-time equivalents (FTEs) per acute bed (doctors, nurses, allied health professionals (AHPs), pharmacists). <Ev s="BLS OEWS 2023; MGMA staffing benchmarks."/></p>
           <p style={{margin:"4px 0"}}><strong>12 min/wk base</strong> (migration path) {" - "} Westbrook et al 2010 (JAMIA) found nurses interrupted 3-6 times/hour by system-switching. Nuffield Trust 2020 estimated 15-20 min/day lost to system navigation. Our 12 min/week is conservative (reducible portion only). Archive-only uses 5 min/wk. <Ev s="Westbrook et al 2010 (JAMIA); Nuffield Trust 2020 system navigation study."/></p>
           <p style={{margin:"4px 0"}}><strong>+4% per system</strong> {" - "} each additional legacy system adds cognitive overhead. At 42 systems (as in the benchmarked Trust), this produces ~10 min/day wasted, consistent with published studies. <Md s="First-principles switching cost model. Validated against benchmarked Trust (42 systems)."/></p>
@@ -2921,7 +2932,7 @@ function ROICalculator() {
         </S>
 
         <S title="11. What is included and excluded">
-          <p style={{margin:"0 0 8px"}}><strong>Included:</strong> Decommission savings (licensing, hosting, support costs eliminated), clinician time capacity value (hours freed, valued at blended rate with realisation discount), CMS penalty avoidance (HRRP, HAC, VBP), denial recovery, malpractice premium reduction, excess bed day cost avoidance, and duplicate testing reduction.</p>
+          <p style={{margin:"0 0 8px"}}><strong>Included:</strong> Decommission savings (licensing, hosting, support costs eliminated), clinician time capacity value (hours freed, valued at blended rate with realization discount), CMS penalty avoidance (HRRP, HAC, VBP), denial recovery, malpractice premium reduction, excess bed day cost avoidance, and duplicate testing reduction.</p>
           <p style={{margin:"4px 0"}}><strong>Excluded:</strong> EHR implementation costs (covered separately), parallel-run costs (too variable to model), data migration costs (one-off programme budget), implementation disruption period (12-24 months of potential performance degradation per NYU Langone and VA studies), and staffing increases during transition (20%+ per VA experience).</p>
           <p style={{margin:"4px 0"}}>The 3-year total assumes flat annual savings. In practice, savings may increase in years 2-3 as more systems are retired, or decrease as easy wins are captured first.</p>
         </S>
@@ -2939,7 +2950,7 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:12}}>
         <div style={{flex:"1 1 160px",padding:"16px 18px",background:C.greenPale,borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>3-year gross savings</div>
-          <div style={{fontSize:22,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement):"–"}</div>
+          <div style={{fontSize:22,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement):"-"}</div>
           <div style={{fontSize:11,color:C.textMuted}}>Phased: 40% / 80% / 100%</div>
         </div>
         <div style={{flex:"1 1 160px",padding:"16px 18px",background:"#fef0f0",borderRadius:10,textAlign:"center"}}>
@@ -2954,8 +2965,8 @@ function ROICalculator() {
         </div>
         <div style={{flex:"1 1 160px",padding:"16px 18px",background:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.greenPale : "#fef0f0",borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>3-year net savings</div>
-          <div style={{fontSize:22,fontWeight:800,color:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.green : "#993535",margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))):"–"}</div>
-          <div style={{fontSize:11,color:C.textMuted}}>Payback: ~{an && r.annualWithReimbursement > galenAnnualCost ? (galenMigrationCost / (r.annualWithReimbursement - galenAnnualCost)).toFixed(1) : "–"} years</div>
+          <div style={{fontSize:22,fontWeight:800,color:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.green : "#993535",margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))):"-"}</div>
+          <div style={{fontSize:11,color:C.textMuted}}>Payback: ~{an && r.annualWithReimbursement > galenAnnualCost ? (galenMigrationCost / (r.annualWithReimbursement - galenAnnualCost)).toFixed(1) : "-"} years</div>
         </div>
       </div>
     </Card>}
@@ -2964,7 +2975,7 @@ function ROICalculator() {
     {/* Disclaimer */}
     <div style={{marginTop:24,padding:"16px 20px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`,fontSize:11,color:C.textMuted,lineHeight:1.7}}>
       <div style={{fontWeight:700,fontSize:12,marginBottom:4,color:C.textMid}}>Important disclaimer</div>
-      This report presents indicative estimates only, generated from real-world data where available alongside generalised assumptions and industry-level benchmarks. It does not constitute a guaranteed ROI, a binding savings target, or professional financial, legal, or clinical advice. Actual outcomes will vary based on your organisation{"'"}s specific circumstances, contract terms, implementation approach, and operational factors not captured by this model. All projected figures, including decommission savings, reimbursement impact, and quality metrics, are scenario-modelled approximations and should be independently validated before being used to support investment decisions. No liability is accepted for decisions made in reliance on these estimates. Consult qualified advisors for guidance specific to your organisation.
+      This report presents indicative estimates only, generated from real-world data where available alongside generalized assumptions and industry-level benchmarks. It does not constitute a guaranteed ROI, a binding savings target, or professional financial, legal, or clinical advice. Actual outcomes will vary based on your organization{"'"}s specific circumstances, contract terms, implementation approach, and operational factors not captured by this model. All projected figures, including decommission savings, reimbursement impact, and quality metrics, are scenario-modelled approximations and should be independently validated before being used to support investment decisions. No liability is accepted for decisions made in reliance on these estimates. Consult qualified advisors for guidance specific to your organization.
     </div>
 
     <button type="button" onClick={()=>{setPage("inputs");scrollToTop();}} className="roi-btn" style={{marginTop:20,padding:"12px 28px",background:"#fff",color:C.textMid,border:`1px solid ${C.border}`,borderRadius:999,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"←"} Edit inputs</button>
