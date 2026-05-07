@@ -2483,21 +2483,35 @@ function ROICalculator() {
     <LockedConnector/>
 
     {/* CTA */}
-    <div ref={refCta} style={{animation:step>=3?"fade-in .4s ease":"none",opacity:step<3?0.3:1,pointerEvents:step<3?"none":"auto",transition:"opacity .4s"}}>
-      <button type="button" className="roi-cta" onClick={() => {
-          setPage("calculating"); setCalcStep(0); setScenarioMode(null);
-          scrollToTop();
-          setTimeout(() => setCalcStep(1), 400);
-          setTimeout(() => setCalcStep(2), 1100);
-          setTimeout(() => setCalcStep(3), 1800);
-          setTimeout(() => { setPage("results"); scrollToTop(); }, 2400);
-        }} style={{
-          width: "100%", padding: "18px", background: C.accent, color: "#fff",
-          border: "none", borderRadius: 999, fontSize: 17, fontWeight: 700,
-          cursor: "pointer", boxShadow: "0 2px 12px rgba(0,94,184,.3)",
-        }}>
-          Calculate ROI {"\u2192"}
-        </button>
+    <div ref={refCta} style={{animation:step>=2?"fade-in .4s ease":"none",opacity:step<2?0.3:1,pointerEvents:step<2?"none":"auto",transition:"opacity .4s"}}>
+      {(() => {
+        const issues = getValidationIssues();
+        const canCalc = issues.length === 0;
+        return <>
+          <button type="button" className={canCalc ? "roi-cta" : "roi-cta"} onClick={() => {
+            if (!canCalc) return;
+            setPage("calculating"); setCalcStep(0); setScenarioMode(null);
+            scrollToTop();
+            setTimeout(() => setCalcStep(1), 400);
+            setTimeout(() => setCalcStep(2), 1100);
+            setTimeout(() => setCalcStep(3), 1800);
+            setTimeout(() => { setPage("results"); scrollToTop(); }, 2400);
+          }} style={{
+            width: "100%", padding: "18px", background: canCalc ? C.accent : C.border, color: "#fff",
+            border: "none", borderRadius: 999, fontSize: 17, fontWeight: 700,
+            cursor: canCalc ? "pointer" : "not-allowed", boxShadow: canCalc ? "0 2px 12px rgba(0,94,184,.3)" : "none",
+            opacity: canCalc ? 1 : 0.5,
+          }}>
+            Calculate ROI {"\u2192"}
+          </button>
+          {!canCalc && <div style={{marginTop:10,padding:"12px 16px",background:"#fef2f2",borderRadius:10,border:"1px solid #fca5a5"}}>
+            <div style={{fontSize:12,fontWeight:700,color:"#dc2626",marginBottom:6}}>Complete these fields to proceed:</div>
+            {issues.map((iss,i) => <div key={i} style={{fontSize:12,color:"#dc2626",padding:"2px 0",display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:10}}>{"\u2022"}</span> {iss.msg}
+            </div>)}
+          </div>}
+        </>;
+      })()}
     </div>
     </>}
   </div>;
@@ -2505,6 +2519,16 @@ function ROICalculator() {
   /* ── RESULTS PAGE ───────────────────────────────────────── */
 
   const dim=!sOk, an=sOk;
+
+
+  const getValidationIssues = useCallback(() => {
+    const issues = [];
+    if (!providerType) issues.push({field: "provider", msg: "Select a provider type"});
+    if (!inputs.journey) issues.push({field: "journey", msg: "Select an EHR journey"});
+    if (inputs.bed_count <= 0) issues.push({field: "beds", msg: "Enter bed count"});
+    if (inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche <= 0 && flagships.length === 0) issues.push({field: "systems", msg: "Add at least one legacy system"});
+    return issues;
+  }, [providerType, inputs, flagships]);
 
   const resultsPage = <div>
     {/* Journey context banner */}
