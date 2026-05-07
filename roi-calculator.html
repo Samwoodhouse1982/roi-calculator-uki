@@ -593,15 +593,15 @@ const CORPORATE_STAFF_PER_BED = 0.10;  // Scales with size, caps at ~100 for lar
 const BLENDED_HOURLY_RATE = 65;
 const WORKING_WEEKS = 48;
 const TICKETS_PER_SYSTEM = 2.5;
-const SWITCH_PENALTY_PER_SYSTEM = 0.04;
+const SWITCH_PENALTY_PER_SYSTEM = 0.04;  // Bartek et al JIMI 2023: 3% switch cost (beta=0.03); 4% conservative for multi-system switching
 const SURVIVING_SYSTEM_TICKET_FACTOR = 0.6;
 const SAR_BASE_DAYS = 3.0;              // Base coordination overhead (cross-LHD, redaction, quality review)
 const SAR_DAYS_PER_SYSTEM_BEFORE = 0.8;  // Per-system search, extraction, reconciliation
 const SAR_DAYS_PER_SYSTEM_AFTER = 0.15;
 
 // Clinical engagement factors
-const ACTIVE_USER_PCT = 0.65;           // 65% of total staff are regular EMR/system users
-const SYSTEM_EXPOSURE_PCT = 0.35;       // Average clinician interacts with ~35% of legacy systems
+const ACTIVE_USER_PCT = 0.65;           // Sinsky et al 2016 (49% physician time on EHR); KLAS Arch Collaborative (500k+ clinicians). 65% conservative
+const SYSTEM_EXPOSURE_PCT = 0.35;       // Modeled assumption: role-based access patterns mean each clinician touches ~1/3 of the legacy estate
 const MED_ERRORS_PER_BED = 14;  // ACSQHC sentinel event data
 const PATIENTS_HARMED_PER_BED = 3.2;   // AIHW admin data: 5.4% of separations; ~60 seps/bed at ALOS 5.5 * 5.4% = 3.2
 const EXCESS_BED_DAYS_PER_BED = 8.0;   // QAHCS (Quality in Australian Health Care Study)/AIHW: AEs account for ~8% of bed days; ~50% preventable
@@ -609,15 +609,15 @@ const FRAGMENTATION_ATTRIBUTION = 0.35;  // 35% of preventable AEs attributable 
 
 
 // ── Australian ABF & Efficiency Constants ──
-// Validated against AIHW 2023-24, <a href="https://www.ihacpa.gov.au/resources/national-efficient-price-determination-2024-25" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>IHACPA 2024-25</a> Determination, VMIA 2025-26, QAHCS, Productivity Commission May 2024
+// Validated against AIHW 2023-24, <a href="https://www.ihacpa.gov.au/resources/national-efficient-price-determination-2025-26" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>IHACPA 2025-26</a> Determination, VMIA 2025-26, QAHCS, Productivity Commission May 2024
 const AU_AVG_ALOS = 5.5;                       // Average overnight ALOS, days (AIHW 2023-24: 5.7 public, 5.2 private)
-const AU_NWAU_PRICE = 6465;                    // National Efficient Price per NWAU (IHACPA 2024-25 Determination)
+const AU_NWAU_PRICE = 7258;                    // National Efficient Price per NWAU (IHACPA 2025-26 Determination)
 const AU_NWAU_PER_SEPARATION = 1.5;            // Average NWAUs per acute overnight separation (derived from IHACPA price weights)
 const DEFAULT_OCCUPANCY = 0.90;                // ~90% national average (OECD 2023; AMA: well above 85% threshold)
 const ABF_ADMIN_OVERHEAD_PCT = 0.08;           // Reference: 8% of hospital costs are IT/admin overhead (not directly used in calc)
 const PRIVATE_PATIENT_LEAKAGE = 0.15;          // ~15% of private episodes go unbilled (VAGO 2019; conservative)
 const PRIVATE_EPISODE_AVG_VALUE = 4200;        // A$4,200 avg private episode value (APRA: avg PHI benefit $3,824 Dec 2024 + MBS)
-const INDEMNITY_COST_PER_BED = 20000;          // A$20,000/bed (VMIA 2025-26: $380.9M / ~16k VIC beds = $23.8k; conservative national)
+const INDEMNITY_COST_PER_BED = 20000;          // VMIA 2025-26: $380.9M / ~16k VIC beds = $23.8k. A$20k conservative national average. Supplementary: Mello 2010, NPDB 2023, TDC 2025
 const INDEMNITY_REDUCTION_PCT = 0.03;          // 3% reduction (modelled assumption; no direct AU evidence; conservative)
 const COST_PER_EXCESS_BED_DAY = 3100;          // A$3,100 per diem (IHACPA long-stay outlier weights; validated)
 const EXCESS_DAYS_PER_ADE = 2.0;               // ACSQHC midpoint (validated)
@@ -631,7 +631,7 @@ const AU_EDISCOVERY_CASES_PER_100_BEDS = 8;    // Lower than US (less litigious)
 const AU_EDISCOVERY_HRS_PER_CASE_BEFORE = 24;  // 3 days: searching across fragmented legacy systems
 const AU_EDISCOVERY_HRS_PER_CASE_AFTER = 5;    // Single archive search
 const AU_EDISCOVERY_HOURLY_RATE = 45;           // HIM / health information staff (AU rates)
-const AU_CYBER_BREACH_AVG_COST = 4710000;       // A$4.71m avg AU healthcare breach (<a href="https://www.ibm.com/reports/data-breach" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>IBM/Ponemon 2024</a> AU report)
+const AU_CYBER_BREACH_AVG_COST = 4710000;       // A$4.71m avg AU healthcare breach (<a href="https://www.ibm.com/reports/data-breach" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>IBM/Ponemon 2023</a> AU report)
 
 // ── Readmission Constants (AU) ──
 const AU_READMISSION_RATE = 0.12;               // 12% 30-day unplanned readmission (AIHW 2023-24)
@@ -3108,7 +3108,7 @@ function ROICalculator() {
       </div>
       <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"A$"}65 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong> <span style={{color:C.textMuted,fontSize:12}}>| Equivalent to ~{r.fteEquivalent.toFixed(0)} FTE of clinical capacity</span></Callout>
       <EvidenceDropdown title="Evidence & methodology">
-        <strong>Sources:</strong> Westbrook et al JAMIA 2010 (context-switching). HIMSS Analytics (65% active user rate). Staffing: NSW Health SDPR (3.0 staff/bed). Blended hourly rate A$65 (AIHW).<br/><br/>
+        <strong>Sources:</strong> Westbrook et al JAMIA 2010 (context-switching). Sinsky et al 2016; KLAS Arch Collaborative (65% active user rate). Staffing: NSW Health SDPR (3.0 staff/bed). Blended hourly rate A$65 (AIHW).<br/><br/>
         <strong>Formula:</strong> Active users (65%) x switch penalty (0.04/additional system) x base minutes x data quality x complexity. Only {Math.round(r.realisation*100)}% counted as realisable.
       </EvidenceDropdown>
     </Card><LockedConnector/>
@@ -3145,7 +3145,7 @@ function ROICalculator() {
 
       <EvidenceDropdown title="Evidence & methodology">
         <strong>Methodology:</strong> ABF efficiency modelled at 15% of legacy estate cost addressable through consolidation. Private patient revenue: 30% recovery of leaked episodes (15% leakage rate, VAGO 2019).<br/><br/>
-        <strong>Sources:</strong> IHACPA 2024-25 (NWAU pricing). VAGO 2019 (private patient leakage). NSW SDPR programme data. Productivity Commission May 2024: up to A$5.4bn/yr in national savings from better EMR data use. All figures are scenario-adjusted.
+        <strong>Sources:</strong> IHACPA 2025-26 (NWAU pricing). VAGO 2019 (private patient leakage). NSW SDPR programme data. Productivity Commission May 2024: up to A$5.4bn/yr in national savings from better EMR data use. All figures are scenario-adjusted.
       </EvidenceDropdown>
     </Card><LockedConnector/>
 
@@ -3249,7 +3249,7 @@ function ROICalculator() {
       </Callout>
       <EvidenceDropdown title="Evidence & methodology">
         <strong>e-Discovery:</strong> Records assembly: ~24 hrs/case across fragmented systems vs ~5 hrs in consolidated archive. 8 cases per 100 beds. HIM staff rate A$45/hr.<br/><br/>
-        <strong>Cyber risk:</strong> Average AU healthcare breach: A$4.71m (IBM/Ponemon 2024). Privacy Act 1988, Notifiable Data Breaches scheme.
+        <strong>Cyber risk:</strong> Average AU healthcare breach: A$4.71m (IBM/Ponemon 2023). Privacy Act 1988, Notifiable Data Breaches scheme.
       </EvidenceDropdown>
     </Card>}
     <LockedConnector/>
@@ -3587,7 +3587,7 @@ function ROICalculator() {
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Comm. failure in incidents</td><td style={{padding:"6px 10px",textAlign:"center"}}>35%</td><td style={{padding:"6px 10px"}}>ACSQHC root cause analyses</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Excess bed day cost</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$3,100/day</td><td style={{padding:"6px 10px"}}>IHACPA long-stay outlier per diems</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Duplicate testing rate</td><td style={{padding:"6px 10px",textAlign:"center"}}>22%</td><td style={{padding:"6px 10px"}}>Banker et al 2024 (SA); RCPA guidelines</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>NEP (National Efficient Price) per NWAU</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$6,465</td><td style={{padding:"6px 10px"}}>IHACPA 2024-25</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>NEP (National Efficient Price) per NWAU</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$7,258</td><td style={{padding:"6px 10px"}}>IHACPA 2025-26</td></tr>
               <tr><td style={{padding:"6px 10px"}}>Medical indemnity/bed</td><td style={{padding:"6px 10px",textAlign:"center"}}>A$20,000</td><td style={{padding:"6px 10px"}}>VMIA 2025-26 ($380.9M / ~16k beds)</td></tr>
             </tbody>
           </table></div>
@@ -3599,7 +3599,7 @@ function ROICalculator() {
         <S title="8. ABF efficiency and compliance methodology">
           <p style={{margin:"0 0 8px"}}>ABF efficiency gain and revenue cycle impact are modelled from verified programme rates and provider-specific multipliers.</p>
           <F>abfEfficiencyGain = totalEstate {"\u00d7"} 15% {"\u00d7"} decomFactor<br/>privateRevRecovery = admissions {"\u00d7"} privatePct {"\u00d7"} 15% leakage {"\u00d7"} A$4,200 {"\u00d7"} 30% recoverable<br/>indemnityReduction = beds {"\u00d7"} A$20,000 {"\u00d7"} 3% {"\u00d7"} safetyFactor<br/>excessBedDaySavings = beds {"\u00d7"} 8.0 days {"\u00d7"} 35% attribution {"\u00d7"} fragmentation {"\u00d7"} safetyFactor {"\u00d7"} A$3,100</F>
-          <p style={{margin:"8px 0 4px"}}><strong>ABF efficiency</strong> {" - "} Activity Based Funding through IHPA. National Efficient Price A$6,465/NWAU (IHACPA 2024-25 Determination; 2025-26 = A$7,258). IT/admin overhead estimated at 8% of total hospital costs, with 25% addressable through system consolidation. <Ev s="IHACPA National Efficient Price Determination 2024-25; AIHW hospital expenditure data."/></p>
+          <p style={{margin:"8px 0 4px"}}><strong>ABF efficiency</strong> {" - "} Activity Based Funding through IHPA. National Efficient Price A$7,258/NWAU (IHACPA 2025-26 Determination; 2025-26 = A$7,258). IT/admin overhead estimated at 8% of total hospital costs, with 25% addressable through system consolidation. <Ev s="IHACPA National Efficient Price Determination 2024-25; AIHW hospital expenditure data."/></p>
           <p style={{margin:"4px 0"}}><strong>Private patient revenue</strong> {" - "} 15% of privately insured episodes in public hospitals estimated to go unbilled due to incomplete documentation. Average private episode value A$4,200 above ABF rate. <Ev s="VAGO 2019; APRA (Australian Prudential Regulation Authority) Private Health Insurance (PHI) statistics; PHIO annual reports."/></p>
           <p style={{margin:"4px 0"}}><strong>Medical indemnity</strong> {" - "} A$20,000/bed institutional indemnity (VMIA 2025-26: $380.9M for ~16,000 VIC beds). 3% reduction modelled from ACSQHC communication failure data. <Ev s="VMIA 2025-26 annual report; ACSQHC root cause analyses."/></p>
 
