@@ -2859,42 +2859,6 @@ function ROICalculator() {
         ))}
       </div>}
 
-      <button type="button" onClick={()=>{
-        const cost = Math.round((100000 + inputs.bed_count * 300) / 1000) * 1000;
-        setFlagships(p => [...p, {name:"", cost:cost, retire:true, known:"", items:defaultLineItems(cost), showItems:false, tier:null}]);
-        touch(2);
-      }} style={{marginTop:12,border:"none",background:"none",color:C.accent,fontSize:13,fontWeight:700,cursor:"pointer",padding:"8px 0",display:"flex",alignItems:"center",gap:6,fontFamily:"inherit"}}>
-        + Add a custom / unlisted system
-      </button>
-
-      {flagships.length > 0 && <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:8}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginTop:4}}>Named systems ({flagships.length})</div>
-        {flagships.map((f, i) => (
-          <div key={"f"+i} style={{padding:"10px 14px",background:C.bg,borderRadius:8,border:"1px solid "+C.borderLight,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-            {f.known ? (
-              <div style={{flex:"1 1 160px",fontSize:13,fontWeight:700,color:C.text,padding:"6px 0"}}>
-                {f.known}
-                {f.tier && <span style={{fontSize:10,fontWeight:500,color:C.textMuted,marginLeft:6,padding:"2px 6px",background:"#fff",borderRadius:4}}>{f.tier}</span>}
-              </div>
-            ) : (
-              <input type="text" placeholder="System name" value={f.name} onChange={e => updateFlagship(i,"name",e.target.value)}
-                style={{flex:"1 1 160px",padding:"6px 10px",border:"1px solid "+C.borderLight,borderRadius:8,fontSize:13,fontFamily:"inherit"}}/>
-            )}
-            <div style={{display:"flex",alignItems:"center",gap:4}}>
-              <span style={{fontSize:12,color:C.textMuted}}>{"A$"}</span>
-              <input type="number" value={f.cost} min={0} step={10000}
-                onChange={e => updateFlagship(i,"cost",parseInt(e.target.value)||0)}
-                style={{width:110,padding:"6px 8px",border:"1px solid "+C.borderLight,borderRadius:8,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
-              <span style={{fontSize:11,color:C.textMuted}}>/yr</span>
-            </div>
-            <label style={{display:"flex",alignItems:"center",gap:4,fontSize:12,color:C.textMid,cursor:"pointer"}}>
-              <input type="checkbox" checked={f.retire} onChange={e => updateFlagship(i,"retire",e.target.checked)} style={{accentColor:C.accent}}/> Retire
-            </label>
-            <button type="button" onClick={() => removeFlagship(i)} style={{border:"none",background:"none",color:C.textMuted,fontSize:16,cursor:"pointer",padding:"4px 8px"}} title="Remove">{"\u2715"}</button>
-          </div>
-        ))}
-      </div>}
-
       {(totalSystems + flagships.length) > 0 && (() => {
         const estEstate = costMode === "known" && knownAnnualSpend > 0 ? knownAnnualSpend :
           inputs.tiers.enterprise * (tierCostEdits.enterprise != null ? tierCostEdits.enterprise : tierCost("enterprise",inputs.bed_count,CX[inputs.complexity_level]))
