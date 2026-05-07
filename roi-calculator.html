@@ -381,12 +381,15 @@ function calc(inp, mode, ov = {}, flagships = []) {
     safetyBedDaysAvoided = Math.round(bedDaysBl * sc.safety);
   }
   const annual = decomSave + timeSave;
-  // Phased ramp: Year 1 = 40%, Year 2 = 80%, Year 3 = 100% of steady-state
-  const y1Pct = 0.40, y2Pct = 0.80, y3Pct = 1.00;
-  const yr1 = Math.round(annual * y1Pct);
-  const yr2 = Math.round(annual * y2Pct);
-  const yr3 = Math.round(annual * y3Pct);
-  const total3 = yr1 + yr2 + yr3;
+  // Phased ramp: 3yr [40,80,100] or 5yr [20,40,60,80,100]
+  const rampYears = inp._rampYears || 3;
+  const rampPcts = rampYears === 5 ? [0.20, 0.40, 0.60, 0.80, 1.00] : [0.40, 0.80, 1.00];
+  const yrValues = rampPcts.map(p => Math.round(annual * p));
+  const totalRamp = yrValues.reduce((a, b) => a + b, 0);
+  // Backwards compatibility for existing references
+  const y1Pct = rampPcts[0], y2Pct = rampPcts[1] || 0, y3Pct = rampPcts[2] || 0;
+  const yr1 = yrValues[0], yr2 = yrValues[1] || 0, yr3 = yrValues[2] || 0;
+  const total3 = totalRamp;
   return {
     legacy, ent, dep, nic, entCost, depCost, nicCost, blendedCost, totalEstate,
     decom, entDecom, depDecom, nicDecom, decomSave,
@@ -395,7 +398,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
-    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realisation: sc.realisation, isArchiveOnly,
+    annual, total3, totalRamp, rampYears, rampPcts, yrValues, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realisation: sc.realisation, isArchiveOnly,
     fteEquivalent: Math.round(hrsSaved * sc.realisation / 1820 * 10) / 10,  // NHS FTE = 1820 hrs (8.4 hrs/day x 5 days x 52 weeks - leave)
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
     flagshipCount, flagshipRetireCount,
@@ -666,6 +669,8 @@ function ROICalculator() {
   const [viewMode, setViewMode] = useState("executive");
   const [pdfFormat, setPdfFormat] = useState("full");
   const [audience, setAudience] = useState("finance"); // "finance" or "clinical"
+  const [rampYears, setRampYears] = useState(3);
+  const [modelMode, setModelMode] = useState("custom"); // "template" or "custom"
   const [page, setPage] = useState("inputs");
   const [calcStep, setCalcStep] = useState(0);
   const [step, setStep] = useState(0);
@@ -855,9 +860,9 @@ function ROICalculator() {
     if (costMode === "known" && knownAnnualSpend > 0) return { ...base, ...knownCostOv };
     return base;
   }, [overrides, tierCostEdits, costMode, knownAnnualSpend, knownCostOv]);
-  const rCon=useMemo(()=>calc(inputs,"CONSERVATIVE",mergedOv,flagships),[inputs,mergedOv,flagships]);
-  const rExp=useMemo(()=>calc(inputs,"EXPECTED",mergedOv,flagships),[inputs,mergedOv,flagships]);
-  const rStr=useMemo(()=>calc(inputs,"STRETCH",mergedOv,flagships),[inputs,mergedOv,flagships]);
+  const rCon=useMemo(()=>calc({...inputs,_rampYears:rampYears},"CONSERVATIVE",mergedOv,flagships),[inputs,mergedOv,flagships,rampYears]);
+  const rExp=useMemo(()=>calc({...inputs,_rampYears:rampYears},"EXPECTED",mergedOv,flagships),[inputs,mergedOv,flagships,rampYears]);
+  const rStr=useMemo(()=>calc({...inputs,_rampYears:rampYears},"STRETCH",mergedOv,flagships),[inputs,mergedOv,flagships,rampYears]);
   const r=am==="CONSERVATIVE"?rCon:am==="STRETCH"?rStr:rExp;
   const isArchiveOnly = inputs.journey === "HAVE_EPR";
 
@@ -1563,6 +1568,113 @@ function ROICalculator() {
       </div>
     )}
 
+    {/* Mode toggle */}
+    <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
+      {[{k:"template",label:"Quick summary"},{k:"custom",label:"Full editor"}].map(m =>
+        <button type="button" key={m.k} onClick={()=>setModelMode(m.k)} style={{
+          padding:"10px 24px",fontSize:14,fontWeight:modelMode===m.k?700:500,
+          border:"1px solid "+C.accent,borderRadius:m.k==="template"?"999px 0 0 999px":"0 999px 999px 0",
+          background:modelMode===m.k?C.accent:"#fff",color:modelMode===m.k?"#fff":C.accent,
+          cursor:"pointer",fontFamily:"inherit"
+        }}>{m.label}</button>
+      )}
+    </div>
+
+    {modelMode === "template" && (() => {
+      const totalSys = inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche + flagships.length;
+      const cx = CX[inputs.complexity_level];
+      const estEstate = inputs.tiers.enterprise * (overrides.entCost != null ? overrides.entCost : tierCost("enterprise",inputs.bed_count,cx))
+        + inputs.tiers.departmental * (overrides.depCost != null ? overrides.depCost : tierCost("departmental",inputs.bed_count,cx))
+        + inputs.tiers.niche * (overrides.nicCost != null ? overrides.nicCost : tierCost("niche",inputs.bed_count,cx))
+        + flagships.reduce((s,f) => s + (f.cost||0), 0);
+      const avgBeds = inputs.org_count > 0 ? Math.round(inputs.bed_count / inputs.org_count) : inputs.bed_count;
+
+      return <div style={{animation:"fade-in .4s ease"}}>
+        <Card style={{marginBottom:12}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:14}}>Journey stage</div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {[
+              {k:"HAVE_EPR",l:"Have an EPR",d:"Archiving focus"},
+              {k:"EVALUATING",l:"Evaluating EPRs",d:"FDP + migration"},
+            ].map(j=><button type="button" key={j.k} onClick={()=>update("journey",j.k)} style={{flex:"1 1 200px",padding:"12px 14px",textAlign:"left",border:inputs.journey===j.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,background:inputs.journey===j.k?C.accentPale:"#fff",cursor:"pointer",fontFamily:"inherit"}}>
+              <div style={{fontSize:13,fontWeight:700,color:inputs.journey===j.k?C.accent:C.text}}>{j.l}</div>
+              <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{j.d}</div>
+            </button>)}
+          </div>
+        </Card>
+        <Card style={{marginBottom:12}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:14}}>Organisation scale</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:8}}>
+            <div>
+              <div style={{fontSize:11,fontWeight:600,color:C.textMid,marginBottom:6}}>Trusts / sites</div>
+              <input type="number" value={inputs.org_count} onChange={e=>update("org_count",Math.max(1,parseInt(e.target.value)||1))} min={1} max={500} style={{width:"100%",padding:"10px 12px",border:`1px solid ${C.border}`,borderRadius:8,fontSize:16,fontWeight:700,fontFamily:"inherit",textAlign:"center"}}/>
+            </div>
+            <div>
+              <div style={{fontSize:11,fontWeight:600,color:C.textMid,marginBottom:6}}>Total beds</div>
+              <input type="number" value={inputs.bed_count} onChange={e=>update("bed_count",Math.max(10,parseInt(e.target.value)||10))} min={10} step={50} style={{width:"100%",padding:"10px 12px",border:`1px solid ${C.border}`,borderRadius:8,fontSize:16,fontWeight:700,fontFamily:"inherit",textAlign:"center"}}/>
+              <div style={{fontSize:10,color:C.textMuted,textAlign:"center",marginTop:4}}>avg {fmtNum(avgBeds)} per site</div>
+            </div>
+          </div>
+        </Card>
+        <Card style={{marginBottom:12}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".06em"}}>Legacy systems</div>
+            <div style={{fontSize:22,fontWeight:800,color:C.accent}}>{totalSys}<span style={{fontSize:12,fontWeight:600,color:C.textMuted,marginLeft:6}}>systems</span></div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:12}}>
+            {[
+              {label:"Enterprise",tier:"enterprise",sub:"EPR, PAS"},
+              {label:"Departmental",tier:"departmental",sub:"Lab, Pharmacy, PACS"},
+              {label:"Standalone",tier:"niche",sub:"ECM, rostering"}
+            ].map(t => <div key={t.tier}>
+              <div style={{fontSize:10,fontWeight:600,color:C.accent,marginBottom:4}}>{t.label}</div>
+              <input type="number" value={inputs.tiers[t.tier]} onChange={e=>updateTier(t.tier,Math.max(0,parseInt(e.target.value)||0))} min={0} max={200} style={{width:"100%",padding:"6px 10px",border:`1px solid ${C.border}`,borderRadius:8,fontSize:14,fontWeight:700,fontFamily:"inherit",textAlign:"center"}}/>
+              <div style={{fontSize:9,color:C.textMuted,textAlign:"center",marginTop:3}}>{t.sub}</div>
+            </div>)}
+          </div>
+          <div style={{padding:"10px 14px",background:C.greenPale,borderRadius:8,fontSize:12,color:C.teal}}>
+            <strong>Estimated estate cost:</strong> ~{fmtK(estEstate)}/yr across {totalSys} systems
+          </div>
+        </Card>
+        <Card style={{marginBottom:12}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:14}}>Assumptions</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+            <div>
+              <div style={{fontSize:10,fontWeight:600,color:C.textMid,marginBottom:4}}>Complexity</div>
+              <select value={inputs.complexity_level} onChange={e=>update("complexity_level",e.target.value)}
+                style={{width:"100%",padding:"8px 6px",fontSize:13,fontWeight:700,border:`1px solid ${C.border}`,borderRadius:8,fontFamily:"inherit",color:C.accent,background:"#fff"}}>
+                {["LOW","TYPICAL","HIGH"].map(o=><option key={o} value={o}>{o.charAt(0)+o.slice(1).toLowerCase()}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{fontSize:10,fontWeight:600,color:C.textMid,marginBottom:4}}>Data quality</div>
+              <select value={inputs.data_quality_level} onChange={e=>update("data_quality_level",e.target.value)}
+                style={{width:"100%",padding:"8px 6px",fontSize:13,fontWeight:700,border:`1px solid ${C.border}`,borderRadius:8,fontFamily:"inherit",color:C.accent,background:"#fff"}}>
+                {["CLEAN","MIXED","POOR"].map(o=><option key={o} value={o}>{o.charAt(0)+o.slice(1).toLowerCase()}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{fontSize:10,fontWeight:600,color:C.textMid,marginBottom:4}}>Decom target %</div>
+              <input type="number" value={Math.round(inputs.decom_retire_rate*100)} onChange={e=>update("decom_retire_rate",Math.max(20,Math.min(100,parseInt(e.target.value)||70))/100)} min={20} max={100} step={5} style={{width:"100%",padding:"8px 6px",fontSize:13,fontWeight:700,border:`1px solid ${C.border}`,borderRadius:8,fontFamily:"inherit",color:C.accent,textAlign:"center"}}/>
+            </div>
+          </div>
+        </Card>
+        <button type="button" className="roi-cta" onClick={() => {
+          if (!inputs.journey) { update("journey", "EVALUATING"); }
+          setPage("calculating"); setCalcStep(0); setScenarioMode("EXPECTED");
+          scrollToTop();
+          setTimeout(() => setCalcStep(1), 400);
+          setTimeout(() => setCalcStep(2), 1100);
+          setTimeout(() => setCalcStep(3), 1800);
+          setTimeout(() => { setPage("results"); scrollToTop(); }, 2400);
+        }} style={{width:"100%",padding:"16px",background:`linear-gradient(135deg, ${C.accent}, ${C.teal})`,color:"#fff",border:"none",borderRadius:999,fontSize:16,fontWeight:700,cursor:"pointer",marginBottom:8,fontFamily:"inherit"}}>
+          Calculate ROI estimate {"\u2192"}
+        </button>
+        <div style={{textAlign:"center",fontSize:11,color:C.textMuted}}>All values adjustable. Switch to Full editor for detailed control.</div>
+      </div>;
+    })()}
+
+    {modelMode === "custom" && <>
     {/* STEP 0 – Journey stage */}
     <Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
@@ -1924,6 +2036,7 @@ function ROICalculator() {
           Calculate ROI {"\u2192"}
         </button>
     </div>
+    </>}
   </div>;
 
   /* ── RESULTS PAGE ───────────────────────────────────────── */
@@ -2011,7 +2124,7 @@ function ROICalculator() {
 
     {/* Headline cards */}
     <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
-      <ResultCard dimmed={dim} label="Total savings (3-year)" value={an?<AnimatedK value={r.total3} active={an}/>:"–"} sub={an?"Decom + clinician time x 3 years":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
+      <ResultCard dimmed={dim} label={`Total savings (${r.rampYears}-year)`} value={an?<AnimatedK value={r.totalRamp} active={an}/>:"–"} sub={an?`Phased over ${r.rampYears} years (${r.rampPcts.map(p=>Math.round(p*100)+"%").join("/")})`:""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
       <ResultCard dimmed={dim} label="Annual recurring" value={an?<AnimatedK value={r.annual} active={an}/>:"–"} sub={an?`${fmtK(r.decomSave)} decom + ${fmtK(r.timeSave)} time`:""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
       <ResultCard dimmed={dim} label="Clinician time (annual)" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={an?<span>{fmtNum(r.hrsSaved)} hrs/yr, {Math.round(r.realisation*100)}% realisation</span>:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
     </div>
@@ -2173,17 +2286,18 @@ function ROICalculator() {
       ].filter(s=>s.val>0);
       const total = segs.reduce((a,s)=>a+s.val,0);
       if (total <= 0) return null;
-      const years = [
-        {label:"Year 1",pct:0.40},
-        {label:"Year 2",pct:0.80},
-        {label:"Year 3",pct:1.00},
-      ];
+      const years = r.rampPcts.map((p,i)=>({label:`Year ${i+1}`, pct:p}));
       const maxYr = Math.max(...years.map(y=>total*y.pct));
       return <Card style={{marginBottom:24}}>
-        <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 16px",display:"flex",alignItems:"center",gap:8}}>
-          <SIcon name="chart" size={20} color={C.accent}/>
-          Year-by-year savings build-up
-        </h3>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
+          <h3 style={{fontSize:16,fontWeight:700,margin:0,display:"flex",alignItems:"center",gap:8}}>
+            <SIcon name="chart" size={20} color={C.accent}/>
+            {r.rampYears}-year savings build-up
+          </h3>
+          <div style={{display:"inline-flex",gap:0,padding:3,background:"#f8fafb",border:`1px solid ${C.border}`,borderRadius:999}}>
+            {[3,5].map(yr=><button type="button" key={yr} onClick={()=>setRampYears(yr)} style={{padding:"4px 12px",border:"none",borderRadius:999,background:rampYears===yr?C.accent:"transparent",color:rampYears===yr?"#fff":C.textMid,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{yr}-year</button>)}
+          </div>
+        </div>
         <div style={{display:"flex",alignItems:"flex-end",gap:24,height:240,padding:"20px 12px",background:"#f8fafb",borderRadius:8,marginBottom:12,justifyContent:"space-evenly"}}>
           {years.map((yr,yi)=>{
             const yrTot = total * yr.pct;
@@ -2212,23 +2326,45 @@ function ROICalculator() {
 
     {/* Year-by-year */}
     <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Year-by-year breakdown</h3>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>({fmtK(r.decomSave)} + {fmtK(r.timeSave)}) {"×"} 3 = <strong style={{color:C.green}}>{fmtK(r.total3)}</strong></p>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:8}}>
+        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{r.rampYears}-year phased breakdown</h3>
+        <div style={{display:"inline-flex",gap:0,padding:3,background:"#f8fafb",border:`1px solid ${C.border}`,borderRadius:999}}>
+          {[3,5].map(yr=><button type="button" key={yr} onClick={()=>setRampYears(yr)} style={{padding:"4px 12px",border:"none",borderRadius:999,background:rampYears===yr?C.accent:"transparent",color:rampYears===yr?"#fff":C.textMid,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{yr}-year</button>)}
+        </div>
+      </div>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>({fmtK(r.decomSave)} + {fmtK(r.timeSave)}) phased over {r.rampYears} years = <strong style={{color:C.green}}>{fmtK(r.totalRamp)}</strong></p>
       <div style={{overflowX:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}><thead><tr>
-          <th style={th_}>Benefit</th><th style={{...th_,textAlign:"right"}}>Y1</th><th style={{...th_,textAlign:"right"}}>Y2</th><th style={{...th_,textAlign:"right"}}>Y3</th><th style={{...th_,textAlign:"right",color:C.accent}}>Total</th>
+          <th style={th_}>Benefit</th>
+          {r.rampPcts.map((_,i)=><th key={i} style={{...th_,textAlign:"right"}}>Y{i+1}</th>)}
+          <th style={{...th_,textAlign:"right",color:C.accent}}>Total</th>
         </tr></thead><tbody>
           {[
             {l:"Decom savings",y:r.decomSave},
             {l:"Clinician time",y:r.timeSave},
-          ].map((row,i)=><tr key={i}><td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`}}>{row.l} <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,background:C.greenPale,color:C.green,textTransform:"uppercase"}}>recurring</span></td><td style={tdR_}>{fmt(row.y)}</td><td style={tdR_}>{fmt(row.y)}</td><td style={tdR_}>{fmt(row.y)}</td><td style={{...tdR_,fontWeight:600,color:C.accent}}>{fmt(row.y*3)}</td></tr>)}
-          <tr style={{background:C.bg}}><td style={{padding:"12px",fontWeight:700}}>Total</td><td style={{...tdR_,fontWeight:700}}>{fmt(r.annual)}</td><td style={{...tdR_,fontWeight:700}}>{fmt(r.annual)}</td><td style={{...tdR_,fontWeight:700}}>{fmt(r.annual)}</td><td style={{...tdR_,fontWeight:800,color:C.green,fontSize:15}}>{fmt(r.total3)}</td></tr>
-          <tr style={{background:C.bg}}><td style={{padding:"12px",fontWeight:600,color:C.textMid}}>Cumulative</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmt(r.annual)}</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmt(r.annual*2)}</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmt(r.total3)}</td><td></td></tr>
+          ].map((row,i)=><tr key={i}>
+            <td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`}}>{row.l} <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,background:C.greenPale,color:C.green,textTransform:"uppercase"}}>recurring</span></td>
+            {r.rampPcts.map((p,j)=><td key={j} style={tdR_}>{fmt(Math.round(row.y*p))}</td>)}
+            <td style={{...tdR_,fontWeight:600,color:C.accent}}>{fmt(Math.round(row.y * r.rampPcts.reduce((a,b)=>a+b,0)))}</td>
+          </tr>)}
+          <tr style={{background:C.bg}}>
+            <td style={{padding:"12px",fontWeight:700}}>Total</td>
+            {r.yrValues.map((v,i)=><td key={i} style={{...tdR_,fontWeight:700}}>{fmt(v)}</td>)}
+            <td style={{...tdR_,fontWeight:800,color:C.green,fontSize:15}}>{fmt(r.totalRamp)}</td>
+          </tr>
+          <tr style={{background:C.bg}}>
+            <td style={{padding:"12px",fontWeight:600,color:C.textMid}}>Cumulative</td>
+            {r.yrValues.map((_,i)=>{
+              const cum = r.yrValues.slice(0,i+1).reduce((a,b)=>a+b,0);
+              return <td key={i} style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmt(cum)}</td>;
+            })}
+            <td></td>
+          </tr>
         </tbody></table>
       </div>
       <div style={{marginTop:14,padding:"10px 14px",background:C.bg,borderRadius:6,fontSize:12,color:C.textMuted,display:"flex",gap:16,flexWrap:"wrap"}}>
         <span>Showing: <strong style={{color:C.accent}}>{am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected"}</strong></span>
-        <span>Range: <strong>{fmtK(rCon.total3)}</strong> {"–"} <strong>{fmtK(rStr.total3)}</strong></span>
+        <span>Range: <strong>{fmtK(rCon.totalRamp)}</strong> {"–"} <strong>{fmtK(rStr.totalRamp)}</strong></span>
       </div>
     </Card>
 
