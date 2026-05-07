@@ -1906,9 +1906,9 @@ function ROICalculator() {
       };
       const totalSys = inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche + flagships.length;
       const cx = CX[inputs.complexity_level];
-      const estEstate = inputs.tiers.enterprise * tierCost("enterprise",inputs.bed_count,cx)
-        + inputs.tiers.departmental * tierCost("departmental",inputs.bed_count,cx)
-        + inputs.tiers.niche * tierCost("niche",inputs.bed_count,cx)
+      const estEstate = inputs.tiers.enterprise * (overrides.entCost != null ? overrides.entCost : tierCost("enterprise",inputs.bed_count,cx))
+        + inputs.tiers.departmental * (overrides.depCost != null ? overrides.depCost : tierCost("departmental",inputs.bed_count,cx))
+        + inputs.tiers.niche * (overrides.nicCost != null ? overrides.nicCost : tierCost("niche",inputs.bed_count,cx))
         + flagships.reduce((s,f) => s + (f.cost||0), 0);
       const avgBeds = inputs.org_count > 0 ? Math.round(inputs.bed_count / inputs.org_count) : inputs.bed_count;
 
@@ -1933,17 +1933,26 @@ function ROICalculator() {
           <div style={{fontSize:22,fontWeight:800,color:C.accent}}>{totalSys}<span style={{fontSize:12,fontWeight:600,color:C.textMuted,marginLeft:6}}>systems</span></div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:12}}>
-          {[{label:"Enterprise",tier:"enterprise",color:C.accent,sub:"EHR, PAS"},
-            {label:"Departmental",tier:"departmental",color:"#1a7a7a",sub:"Lab, Pharmacy, PACS"},
-            {label:"Standalone",tier:"niche",color:"#3d8a8a",sub:"ECM, rostering"}
+          {[{label:"Enterprise",tier:"enterprise",color:C.accent,sub:"EHR, PAS",ovKey:"entCost"},
+            {label:"Departmental",tier:"departmental",color:"#1a7a7a",sub:"Lab, Pharmacy, PACS",ovKey:"depCost"},
+            {label:"Standalone",tier:"niche",color:"#3d8a8a",sub:"ECM, rostering",ovKey:"nicCost"}
           ].map(t => <div key={t.tier}>
             <div style={{fontSize:10,fontWeight:600,color:t.color,marginBottom:4}}>{t.label}</div>
             <Stepper value={inputs.tiers[t.tier]} onChange={v=>updateTier(t.tier,v)} min={0} max={200} step={1}/>
             <div style={{fontSize:9,color:C.textMuted,textAlign:"center",marginTop:3}}>{t.sub}</div>
+            <div style={{marginTop:6}}>
+              <div style={{display:"flex",alignItems:"center",gap:2}}>
+                <span style={{fontSize:10,color:C.textMuted}}>{"$"}</span>
+                <input type="number" placeholder={fmtNum(tierCost(t.tier,inputs.bed_count,cx))} value={overrides[t.ovKey]!=null?overrides[t.ovKey]:""} min={0} step={10000}
+                  onChange={e=>{const v=e.target.value;setOv(t.ovKey,v===""?null:parseInt(v)||0);}}
+                  style={{width:"100%",padding:"4px 6px",border:"1px solid "+C.borderLight,borderRadius:6,fontSize:11,fontFamily:"inherit",textAlign:"right",color:overrides[t.ovKey]!=null?C.accent:C.textMuted}}/>
+              </div>
+              <div style={{fontSize:8,color:C.textMuted,textAlign:"center",marginTop:2}}>{overrides[t.ovKey]!=null?"actual cost/sys/yr":"est. cost/sys/yr"}</div>
+            </div>
           </div>)}
         </div>
         <div style={{padding:"10px 14px",background:C.greenPale,borderRadius:8,fontSize:12,color:C.teal}}>
-          <strong>Est. estate cost:</strong> ~{fmtK(estEstate)}/yr across {totalSys} systems
+          <strong>{overrides.entCost!=null||overrides.depCost!=null||overrides.nicCost!=null?"Estate cost (with actuals):":"Est. estate cost:"}</strong> ~{fmtK(estEstate)}/yr across {totalSys} systems
         </div>
       </Card>
       <Card style={{marginBottom:12,background:"#fff"}}>
