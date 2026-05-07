@@ -393,15 +393,15 @@ function calc(inp, mode, ov = {}, flagships = []) {
 
   // HRRP penalty exposure
   const hrrpExposure = medicareDrg * CMS_HRRP_AVG_PENALTY;
-  const hrrpReduction = Math.round(hrrpExposure * sc.safety * (inp._penaltyWeight || 1.0));
+  const hrrpReduction = Math.round(hrrpExposure * sc.safety * (inp._penaltyWeight != null ? inp._penaltyWeight : 1.0));
 
   // HAC penalty exposure (bottom quartile = 1% of all Medicare payments)
   const hacExposure = medicareDrg * CMS_HAC_PENALTY * 0.25; // 25% probability of being in bottom quartile
-  const hacReduction = Math.round(hacExposure * sc.safety * (inp._penaltyWeight || 1.0));
+  const hacReduction = Math.round(hacExposure * sc.safety * (inp._penaltyWeight != null ? inp._penaltyWeight : 1.0));
 
   // VBP improvement potential
   const vbpPool = medicareDrg * CMS_VBP_WITHHOLD;
-  const vbpImprovement = Math.round(vbpPool * 0.15 * sc.safety * (inp._qualityBonus || 0.5));
+  const vbpImprovement = Math.round(vbpPool * 0.15 * sc.safety * (inp._qualityBonus != null ? inp._qualityBonus : 0.5));
 
   // Denial rate reduction (FFS pathway)
   const estAnnualRevenue = estAnnualRevenueCalc; // from admissions-based model above
@@ -492,7 +492,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     malpracticePremium, malpracticeReduction,
     preventableADEs, excessDaysAvoided, excessDayCostAvoided,
     duplicateWaste, duplicateReduction,
-    reimbursementImpact, qualitySavings,
+    reimbursementImpact, qualitySavings, usReadmissionsAvoided, usReadmissionCostAvoidance, isVBC,
     // Academic module
     isAcademic, researchSystems, researchSystemCost, researchDecomSave,
     gmeComplianceCost, gmeEfficiency, teachingOverhead, academicSavings,
@@ -1216,6 +1216,7 @@ function ROICalculator() {
       _medicareDrgRevenue: medicareDrgRevenue,
       _occupancy: occupancyRate,
       _providerType: providerType,
+      _reimbursementModel: reimbursementModel,
       _portfolioSystems: portfolioImpact.addSystems,
       _portfolioStaff: portfolioImpact.addStaff,
       _portfolioCost: portfolioImpact.addCost,
@@ -2640,7 +2641,7 @@ function ROICalculator() {
       <ResultCard dimmed={dim} label={"Total savings ("+r.rampYears+"-year)"} value={an?<AnimatedK value={r.total3WithReimbursement} active={an}/>:"-"} sub={an?r.rampYears+"-year phased ("+r.rampPcts.map(p=>Math.round(p*100)+"%").join("/")+")":""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
       <ResultCard dimmed={dim} label="Annual at steady state" value={an?<AnimatedK value={r.annualWithReimbursement} active={an}/>:"-"} sub={an?`Decom ${fmtK(r.decomSave)} + capacity ${fmtK(r.timeSave)} + reimb & quality ${fmtK(r.reimbursementImpact+r.qualitySavings)}`:""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
       <ResultCard dimmed={dim} label="Clinician time (annual)" value={an?<AnimatedK value={r.timeSave} active={an}/>:"-"} sub={an?<span>{fmtNum(r.hrsSaved)} hrs/yr, {Math.round(r.realization*100)}% realization</span>:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
-      <ResultCard dimmed={dim} label="Reimbursement & quality" value={an?<AnimatedK value={r.reimbursementImpact + r.qualitySavings} active={an}/>:"-"} sub={an?"Penalties + denials + quality":""} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
+      <ResultCard dimmed={dim} label="Reimbursement & quality" value={an?<AnimatedK value={r.reimbursementImpact + r.qualitySavings} active={an}/>:"-"} sub={an?`HRRP/HAC/VBP ${fmtK(r.reimbursementImpact)} + quality ${fmtK(r.qualitySavings)}`:""} bg="#fef9ec" border="#f0dca0" valueColor="#7a6520" />
     </div>
 
     {!dim && (() => {
