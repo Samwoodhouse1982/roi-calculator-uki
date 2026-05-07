@@ -1127,6 +1127,15 @@ function ROICalculator() {
   },[resetOv]);
   const goTo=useCallback((s,ref)=>{setStep(p=>Math.max(p,s));scrollTo(ref);},[]);
 
+  const getValidationIssues = useCallback(() => {
+    const issues = [];
+    if (!providerType) issues.push({field: "provider", msg: "Select a provider type"});
+    if (!inputs.journey) issues.push({field: "journey", msg: "Select an EHR journey"});
+    if (inputs.bed_count <= 0) issues.push({field: "beds", msg: "Enter bed count"});
+    if (inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche <= 0 && flagships.length === 0) issues.push({field: "systems", msg: "Add at least one legacy system"});
+    return issues;
+  }, [providerType, inputs, flagships]);
+
   // Facility portfolio: additional systems and staff from non-acute facilities
   const portfolioImpact = useMemo(() => {
     let addEnt = 0, addDep = 0, addNic = 0, addStaff = 0, addCost = 0, addSites = 0;
@@ -2520,15 +2529,6 @@ function ROICalculator() {
 
   const dim=!sOk, an=sOk;
 
-
-  const getValidationIssues = useCallback(() => {
-    const issues = [];
-    if (!providerType) issues.push({field: "provider", msg: "Select a provider type"});
-    if (!inputs.journey) issues.push({field: "journey", msg: "Select an EHR journey"});
-    if (inputs.bed_count <= 0) issues.push({field: "beds", msg: "Enter bed count"});
-    if (inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche <= 0 && flagships.length === 0) issues.push({field: "systems", msg: "Add at least one legacy system"});
-    return issues;
-  }, [providerType, inputs, flagships]);
 
   const resultsPage = <div>
     {/* Journey context banner */}
