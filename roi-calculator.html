@@ -528,7 +528,7 @@ const EXCESS_BED_DAYS_PER_BED = 0.32;  // Bates/Classen: 1.74-3.15 excess days p
 
 
 // ── US Reimbursement & Compliance Constants ──
-// CMS Penalty Programmes (verified from CMS programme pages, FY2025/2026)
+// CMS Penalty Programs (verified from CMS program pages, FY2025/2026)
 const CMS_HRRP_MAX_PENALTY = 0.03;          // 3% max HRRP penalty (Section 1886(q) SSA)
 const CMS_HRRP_AVG_PENALTY = 0.0033;        // 0.33% average penalty (Advisory Board FY2025)
 const CMS_HAC_PENALTY = 0.01;               // 1% HAC Reduction Program (bottom quartile)
@@ -1213,7 +1213,7 @@ function ROICalculator() {
     user_org: leadForm.org || "",
     user_role: leadForm.role || "",
 
-    // Programme inputs
+    // Program inputs
     journey: isArchiveOnly ? "Archive only" : "Migration + archiving",
     bed_count: inputs.bed_count,
     org_count: inputs.org_count,
@@ -1513,9 +1513,9 @@ function ROICalculator() {
     });
     y += 36;
 
-    // Programme inputs
+    // Program inputs
     doc.setFontSize(12); doc.setFont("helvetica","bold"); setC(TEAL);
-    doc.text("Programme Inputs", ml, y); y += 2;
+    doc.text("Program Inputs", ml, y); y += 2;
     doc.autoTable({
       startY: y,
       margin: { left: ml, right: mr },
@@ -1618,7 +1618,7 @@ function ROICalculator() {
       head: [["Category", "Annual impact", "Source"]],
       body: [
         ["HRRP penalty avoidance", fmtK(r.hrrpReduction) + "/yr", "CMS FY2025 (0.33% avg)"],
-        ["HAC penalty avoidance", fmtK(r.hacReduction) + "/yr", "CMS HAC programme (1%)"],
+        ["HAC penalty avoidance", fmtK(r.hacReduction) + "/yr", "CMS HAC program (1%)"],
         ["VBP improvement", fmtK(r.vbpImprovement) + "/yr", "CMS VBP (2% pool)"],
         ["Denial recovery", fmtK(r.denialRecovery) + "/yr", "HFMA/MDaudit 2024"],
         ["Malpractice premium reduction", fmtK(r.malpracticeReduction) + "/yr", "Modelled (8% reduction)"],
@@ -1768,7 +1768,7 @@ function ROICalculator() {
     doc.setFillColor(TEAL[0],TEAL[1],TEAL[2]);
     doc.roundedRect(ml, ctaY, cw, 12, 2, 2, "F");
     doc.setFontSize(8); doc.setFont("helvetica","bold"); setC(WHITE);
-    doc.text("To discuss your programme, contact the " + PDF_COMPANY_NAME + " team.", pw / 2, ctaY + 5, { align: "center" });
+    doc.text("To discuss your program, contact the " + PDF_COMPANY_NAME + " team.", pw / 2, ctaY + 5, { align: "center" });
     doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.setTextColor(190,230,220);
     doc.text("All assumptions documented in the methodology report. Every figure is adjustable.", pw / 2, ctaY + 9, { align: "center" });
 
@@ -2027,7 +2027,7 @@ function ROICalculator() {
       <div style={{padding:"12px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`,fontSize:12,color:C.textMuted,lineHeight:1.6}}>
         {providerType === "critical_access" && "Critical Access Hospitals are exempt from HRRP penalties but benefit from reduced operational costs and improved care coordination."}
         {providerType === "community" && "Community hospitals face moderate CMS penalty exposure. EHR consolidation typically yields the strongest ROI through decommission savings and reduced denials."}
-        {providerType === "regional" && "Regional centers face full CMS penalty exposure across HRRP, HAC, and VBP programmes. The case for consolidation includes both cost reduction and penalty avoidance."}
+        {providerType === "regional" && "Regional centers face full CMS penalty exposure across HRRP, HAC, and VBP programs. The case for consolidation includes both cost reduction and penalty avoidance."}
         {providerType === "academic" && "Academic centers carry the highest system complexity (40-200+ legacy applications). The ROI case includes research system integration and GME compliance alongside financial savings."}
         {providerType === "multi_hospital" && "Multi-hospital systems post-M&A typically have 2-3x the normal legacy system count. Consolidation eliminates duplicate infrastructure across facilities."}
       </div>
@@ -2443,7 +2443,7 @@ function ROICalculator() {
         <div style={{flex:"1 1 200px"}}><label style={{fontSize:13,fontWeight:600,color:C.textMid,marginBottom:5,display:"flex",alignItems:"center"}}>Data quality<InfoTip text="How clean is your legacy data? Poor quality increases clinician time wasted, support tickets, and patient records request turnaround."/></label>
           <select value={inputs.data_quality_level} onChange={e=>{update("data_quality_level",e.target.value);touch(3);}} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,fontFamily:"inherit"}}><option value="CLEAN">Clean</option><option value="MIXED">Mixed</option><option value="POOR">Poor</option></select></div>
       </div>
-      <AnimatedSlider label={<span>Decommission target<InfoTip text="What % of legacy systems do you plan to retire? 60-80% is typical as most programmes retain a few for standalone or long-retention use."/></span>} value={inputs.decom_retire_rate} min={0} max={1} step={0.05} display={`${Math.round(inputs.decom_retire_rate*100)}%`} onChange={v=>{update("decom_retire_rate",v);touch(3);}} suffix=""/>
+      <AnimatedSlider label={<span>Decommission target<InfoTip text="What % of legacy systems do you plan to retire? 60-80% is typical as most programs retain a few for standalone or long-retention use."/></span>} value={inputs.decom_retire_rate} min={0} max={1} step={0.05} display={`${Math.round(inputs.decom_retire_rate*100)}%`} onChange={v=>{update("decom_retire_rate",v);touch(3);}} suffix=""/>
       <AnimatedSlider label={<span>Bed occupancy rate<InfoTip text="Average bed occupancy. National average is 65% (AHA 2023). Critical access hospitals may be 40-50%; urban academic centres 75-85%. This drives admission volume, revenue estimates, and ADE calculations."/></span>} value={occupancyRate} min={0.30} max={0.95} step={0.01} display={`${Math.round(occupancyRate*100)}%`} onChange={v=>{setOccupancyRate(v);touch(3);}} suffix=""/>
 
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
@@ -2755,7 +2755,7 @@ function ROICalculator() {
       </Callout>
 
       <EvidenceDropdown title="Evidence & methodology">
-        <strong>CMS penalties:</strong> HRRP 3% cap (Section 1886(q) SSA, FY2025). HAC 1% (bottom quartile). VBP 2% withhold. Rates verified from CMS programme pages.<br/><br/>
+        <strong>CMS penalties:</strong> HRRP 3% cap (Section 1886(q) SSA, FY2025). HAC 1% (bottom quartile). VBP 2% withhold. Rates verified from CMS program pages.<br/><br/>
         <strong>Attribution:</strong> Pattar et al (JAMA 2025, 116 RCTs): 17% readmission reduction from EHR interventions. Vest et al (JAMIA 2019): 0.8pp from single-vendor EHR. Model uses scenario-adjusted fractions (15-35%). Denial recovery: 4.8% net revenue loss (HFMA), 30% attributed to documentation fragmentation, 20% recoverable through consolidation.<br/><br/>
         <strong>Quality:</strong> Malpractice 5% reduction (CRICO: 30% of claims involve communication failure). Excess bed days: Bates/Classen ADEs. Duplicate testing: Banker et al 2024.
       </EvidenceDropdown>
@@ -2934,7 +2934,7 @@ function ROICalculator() {
             <option value="" style={{color:"#1b2433"}}>Your role</option>
             <option value="CIO/CCIO" style={{color:"#1b2433"}}>CIO / CCIO</option>
             <option value="CTO" style={{color:"#1b2433"}}>CTO / Technical Director</option>
-            <option value="Programme Lead" style={{color:"#1b2433"}}>Programme / Project Lead</option>
+            <option value="Program Lead" style={{color:"#1b2433"}}>Program / Project Lead</option>
             <option value="Digital Lead" style={{color:"#1b2433"}}>Digital Transformation Lead</option>
             <option value="IG/DPO" style={{color:"#1b2433"}}>IG Lead / DPO</option>
             <option value="Finance" style={{color:"#1b2433"}}>Finance / Business Case</option>
@@ -2946,7 +2946,7 @@ function ROICalculator() {
           color:(!leadForm.name||!leadForm.email)?"rgba(255,255,255,0.4)":C.accent,
           border:"none",borderRadius:999,fontSize:15,fontWeight:700,cursor:(!leadForm.name||!leadForm.email)?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:8
         }} className="roi-cta">{leadSending ? "Generating report..." : "Download PDF report"}</button>
-        <p style={{fontSize:11,opacity:.4,marginTop:12}}>{EMAIL_ENDPOINT ? "Your report will also be emailed to you. " : ""}We may reach out to see if we can help with your programme.</p>
+        <p style={{fontSize:11,opacity:.4,marginTop:12}}>{EMAIL_ENDPOINT ? "Your report will also be emailed to you. " : ""}We may reach out to see if we can help with your program.</p>
       </Card>
     )}
 
@@ -3003,8 +3003,8 @@ function ROICalculator() {
               <tr><td style={{padding:"6px 10px",fontWeight:600}}>Safety reduction</td><td style={{padding:"6px 10px",textAlign:"center"}}>15%</td><td style={{padding:"6px 10px",textAlign:"center"}}>25%</td><td style={{padding:"6px 10px",textAlign:"center"}}>35%</td></tr>
             </tbody>
           </table></div>
-          <p style={{margin:"8px 0 4px"}}><strong>Decom scaling</strong> adjusts how many of your planned retirements actually happen {" - "} Conservative assumes 85% (programme delays, contractual holdups), Stretch assumes 10% overachievement. <Md s="No published benchmark. User sets their own target and this scales it."/></p>
-          <p style={{margin:"4px 0"}}><strong>Time realization</strong> {" - "} the fraction of freed clinician time that translates into measurable capacity. IHI productive ward reported 20-40%. <Bm s="IHI productive ward programme; IHI operational efficiency framework."/></p>
+          <p style={{margin:"8px 0 4px"}}><strong>Decom scaling</strong> adjusts how many of your planned retirements actually happen {" - "} Conservative assumes 85% (program delays, contractual holdups), Stretch assumes 10% overachievement. <Md s="No published benchmark. User sets their own target and this scales it."/></p>
+          <p style={{margin:"4px 0"}}><strong>Time realization</strong> {" - "} the fraction of freed clinician time that translates into measurable capacity. IHI productive ward reported 20-40%. <Bm s="IHI productive ward program; IHI operational efficiency framework."/></p>
           <p style={{margin:"4px 0"}}><strong>Safety reduction</strong> {" - "} avoidable medication errors from system consolidation. AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data, Gate et al 2023 found 25-50% reductions. <Ev s="AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data; Gate et al 2023."/></p>
         </S>
 
@@ -3027,7 +3027,7 @@ function ROICalculator() {
         <S title="3. Decommission savings">
           <p style={{margin:"0 0 8px"}}>The primary financial benefit: retiring legacy systems eliminates their annual running costs.</p>
           <F>1. Set decom target (default 75%)<br/>2. rawDecom = totalSystems {"\u00d7"} decomTarget {"\u00d7"} scenarioMultiplier<br/>3. Systems retired pro-rata across tiers<br/>4. decomSave = (entRetired {"\u00d7"} entCost) + (depRetired {"\u00d7"} depCost) + (nicRetired {"\u00d7"} nicCost) + flagshipSave</F>
-          <p style={{margin:"8px 0 4px"}}><strong>75% default decom target</strong> {" - "} most EHR migration programmes plan to retire 60-80% of legacy systems. Some are retained for long-retention data or functions not covered by the new EHR. Validated against real health system data where ~32 of 42 systems were candidates for retirement. <Bm s="EHR programme consensus; validated against benchmarked health system application footprint."/></p>
+          <p style={{margin:"8px 0 4px"}}><strong>75% default decom target</strong> {" - "} most EHR migration programs plan to retire 60-80% of legacy systems. Some are retained for long-retention data or functions not covered by the new EHR. Validated against real health system data where ~32 of 42 systems were candidates for retirement. <Bm s="EHR program consensus; validated against benchmarked health system application footprint."/></p>
           <p style={{margin:"4px 0"}}><strong>Named flagship systems</strong> flagged as {"\u201c"}Retire{"\u201d"} are decommissioned at their full stated contract value, scaled by the scenario multiplier.</p>
         </S>
 
@@ -3066,7 +3066,7 @@ function ROICalculator() {
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Comm. failure in claims</td><td style={{padding:"6px 10px",textAlign:"center"}}>30%</td><td style={{padding:"6px 10px"}}>CRICO 2016 (23,658 claims)</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Excess bed day cost</td><td style={{padding:"6px 10px",textAlign:"center"}}>$3,132/day</td><td style={{padding:"6px 10px"}}>KFF/AHA 2023</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Denial rate (initial)</td><td style={{padding:"6px 10px",textAlign:"center"}}>11.8%</td><td style={{padding:"6px 10px"}}>Kodiak Solutions 2024</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>HRRP avg penalty</td><td style={{padding:"6px 10px",textAlign:"center"}}>0.33%</td><td style={{padding:"6px 10px"}}>CMS FY2025 programme data</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>HRRP avg penalty</td><td style={{padding:"6px 10px",textAlign:"center"}}>0.33%</td><td style={{padding:"6px 10px"}}>CMS FY2025 program data</td></tr>
               <tr><td style={{padding:"6px 10px"}}>Duplicate test rate</td><td style={{padding:"6px 10px",textAlign:"center"}}>20-30%</td><td style={{padding:"6px 10px"}}>ONC / expert consensus</td></tr>
             </tbody>
           </table></div>
@@ -3076,14 +3076,14 @@ function ROICalculator() {
         </S>
 
         <S title="8. Reimbursement and compliance methodology">
-          <p style={{margin:"0 0 8px"}}>CMS penalty avoidance and revenue cycle impact are modelled from verified programme rates and provider-specific multipliers.</p>
+          <p style={{margin:"0 0 8px"}}>CMS penalty avoidance and revenue cycle impact are modelled from verified program rates and provider-specific multipliers.</p>
           <F>hrrpReduction = medicareDrg {"\u00d7"} 0.33% {"\u00d7"} safetyFactor {"\u00d7"} penaltyWeight<br/>hacReduction = medicareDrg {"\u00d7"} 1% {"\u00d7"} 25% quartile {"\u00d7"} safetyFactor<br/>vbpImprovement = medicareDrg {"\u00d7"} 2% {"\u00d7"} 15% score {"\u00d7"} qualityBonus<br/>denialRecovery = revenue {"\u00d7"} 4.8% {"\u00d7"} 20% recoverable {"\u00d7"} decomFactor</F>
-          <p style={{margin:"8px 0 4px"}}><strong>HRRP 3% cap, 0.33% average</strong> {" - "} Hospital Readmissions Reduction Program. Section 1886(q) SSA. ~78% of hospitals penalised in FY2025. Average penalty 0.33% (Advisory Board). <Ev s="CMS HRRP programme page; Advisory Board FY2025 analysis."/></p>
+          <p style={{margin:"8px 0 4px"}}><strong>HRRP 3% cap, 0.33% average</strong> {" - "} Hospital Readmissions Reduction Program. Section 1886(q) SSA. ~78% of hospitals penalised in FY2025. Average penalty 0.33% (Advisory Board). <Ev s="CMS HRRP program page; Advisory Board FY2025 analysis."/></p>
           <p style={{margin:"4px 0"}}><strong>HAC 1% bottom quartile</strong> {" - "} Hospital-Acquired Condition Reduction Program. Bottom 25% of hospitals lose 1% of total Medicare payments. <Ev s="CMS HAC Reduction Program; 42 CFR 412.170-172."/></p>
-          <p style={{margin:"4px 0"}}><strong>VBP 2% withhold</strong> {" - "} Value-Based Purchasing. Budget neutral: 2% withheld from all, redistributed based on performance. ~$1.7bn redistributed FY2026. <Ev s="CMS VBP programme; AHA fact sheet 2025."/></p>
+          <p style={{margin:"4px 0"}}><strong>VBP 2% withhold</strong> {" - "} Value-Based Purchasing. Budget neutral: 2% withheld from all, redistributed based on performance. ~$1.7bn redistributed FY2026. <Ev s="CMS VBP program; AHA fact sheet 2025."/></p>
           <p style={{margin:"4px 0"}}><strong>11.8% denial rate</strong> {" - "} Initial claim denial rate (Kodiak Solutions 2024). Net revenue loss of 4.8% after appeals (HFMA Pulse Survey). Average denied inpatient claim value $10,000 (MDaudit 2024). <Ev s="Kodiak Solutions 2024; HFMA Pulse Survey; MDaudit 2024."/></p>
           <p style={{margin:"4px 0"}}><strong>Malpractice $2,200/bed</strong> {" - "} Institutional premium allocation. Total US malpractice system cost $55.6bn (Mello et al, Health Affairs 2010). 8% premium reduction from consolidation is a modelled assumption. <Md s="$2,200/bed is modelled. 8% reduction is assumption based on CRICO communication failure data."/></p>
-          <p style={{margin:"4px 0"}}><strong>Provider type multipliers</strong> affect Medicare %, denial factor, penalty exposure, and quality bonus weighting. Critical access hospitals have limited HRRP exposure; academic centres have higher denial rates due to case complexity. <Md s="Provider multipliers are modelled estimates based on CMS programme eligibility rules."/></p>
+          <p style={{margin:"4px 0"}}><strong>Provider type multipliers</strong> affect Medicare %, denial factor, penalty exposure, and quality bonus weighting. Critical access hospitals have limited HRRP exposure; academic centres have higher denial rates due to case complexity. <Md s="Provider multipliers are modelled estimates based on CMS program eligibility rules."/></p>
         </S>
 
         <S title="9. Complexity and data quality adjustments">
@@ -3109,12 +3109,12 @@ function ROICalculator() {
 
         <S title="11. What is included and excluded">
           <p style={{margin:"0 0 8px"}}><strong>Included:</strong> Decommission savings (licensing, hosting, support costs eliminated), clinician time capacity value (hours freed, valued at blended rate with realization discount), CMS penalty avoidance (HRRP, HAC, VBP), denial recovery, malpractice premium reduction, excess bed day cost avoidance, and duplicate testing reduction.</p>
-          <p style={{margin:"4px 0"}}><strong>Excluded:</strong> EHR implementation costs (covered separately), parallel-run costs (too variable to model), data migration costs (one-off programme budget), implementation disruption period (12-24 months of potential performance degradation per NYU Langone and VA studies), and staffing increases during transition (20%+ per VA experience).</p>
+          <p style={{margin:"4px 0"}}><strong>Excluded:</strong> EHR implementation costs (covered separately), parallel-run costs (too variable to model), data migration costs (one-off program budget), implementation disruption period (12-24 months of potential performance degradation per NYU Langone and VA studies), and staffing increases during transition (20%+ per VA experience).</p>
           <p style={{margin:"4px 0"}}>The 3-year total assumes flat annual savings. In practice, savings may increase in years 2-3 as more systems are retired, or decrease as easy wins are captured first.</p>
         </S>
 
         <div style={{marginTop:12,padding:"10px 14px",background:C.bg,borderRadius:8,fontSize:11,color:C.textMuted,lineHeight:1.6}}>
-          All formulas sourced from peer-reviewed literature and federal programme data. Tier costs calibrated against KLAS 2025 market data. CMS penalties verified from programme pages. All figures are user-overridable. See the evidence audit document for complete citations.
+          All formulas sourced from peer-reviewed literature and federal program data. Tier costs calibrated against KLAS 2025 market data. CMS penalties verified from program pages. All figures are user-overridable. See the evidence audit document for complete citations.
         </div>
       </Card>;
     })()}
@@ -3193,9 +3193,10 @@ function ROICalculator() {
   const fontBody = "'FK Grotesk Neue','FK Grotesk','Inter','Helvetica Neue',Helvetica,sans-serif";
 
   return <div style={{fontFamily:fontBody,background:C.bg,minHeight:"100vh",color:C.text,lineHeight:1.55,fontWeight:400,border:"1px solid #f7faf9",borderRadius:20,overflow:"hidden"}}>
-    <div style={{maxWidth:900,margin:"0 auto",padding:"16px 24px 0"}}><div style={{display:"flex",gap:4,marginBottom:20}}>
+    <div style={{background:C.surface,borderBottom:"1px solid "+C.borderLight,marginBottom:20}}>
+    <div style={{maxWidth:900,margin:"0 auto",padding:"0 24px"}}><div style={{display:"flex",gap:0}}>
       {[
-        { k: "inputs", l: "Your programme", n: "1" },
+        { k: "inputs", l: "Your program", n: "1" },
         { k: "results", l: "ROI estimate", n: "2" },
       ].map(p => {
         const isCurrent = page === p.k || (page === "calculating" && p.k === "results");
@@ -3203,12 +3204,12 @@ function ROICalculator() {
           <button type="button" key={p.k} className="roi-tab"
             onClick={() => page !== "calculating" && setPage(p.k)}
             style={{
-              flex: 1, padding: "11px 8px", border: "none",
+              flex: 1, padding: "14px 8px", border: "none",
               borderBottom: isCurrent ? `3px solid ${C.accent}` : "3px solid transparent",
-              background: isCurrent ? C.surface : "transparent",
+              background: "transparent",
               cursor: page === "calculating" ? "default" : "pointer",
               fontFamily: fontBody, fontSize: 14, fontWeight: isCurrent ? 700 : 500,
-              color: isCurrent ? C.accent : C.textMuted, borderRadius: "8px 8px 0 0",
+              color: isCurrent ? C.accent : C.textMuted,
             }}>
             <span style={{
               display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -3221,6 +3222,7 @@ function ROICalculator() {
         );
       })}
     </div></div>
+    </div>
     <div style={{maxWidth:900,margin:"0 auto",padding:"0 16px 80px"}}>{page==="inputs"?inputPage:page==="calculating"?calculatingPage:resultsPage}</div>
   </div>;
 }
