@@ -6,7 +6,7 @@
   <title>EPR Migration and Archiving - ROI Calculator</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background: transparent; overflow-x: hidden; }
+    body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background: #EEF6F4; overflow-x: hidden; }
 
 /* ═══════════════════════════════════════════════════════════════
    ROI Calculator — Animations & Interactions
@@ -487,7 +487,7 @@ const fmtNum = n => Math.round(n).toLocaleString("en-GB");
    ═══════════════════════════════════════════════════════════════════════ */
 
 const C = {
-  bg:"#FFFFFF",surface:"#ffffff",border:"#d4e0dd",borderLight:"#e8efec",
+  bg:"#EEF6F4",surface:"#ffffff",border:"#d4e0dd",borderLight:"#e8efec",
   text:"#0F4146",textMid:"#3d5a5e",textMuted:"#6e8a8e",
   accent:"#0F4146",accentLight:"#EEF7F1",accentPale:"#f6fbf8",
   green:"#0F4146",greenPale:"#EEF7F1",
@@ -586,6 +586,26 @@ function TogglePill({active, onToggle, labelA, labelB, labelAText, labelBText}) 
         {o.l}
       </button>
     ))}
+  </div>;
+}
+function SIcon({name,size,color}){
+  const s=size||20,cl=color||"currentColor";
+  const icons={
+    unlock:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>,
+    clock:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+    shield:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>,
+    chart:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  };
+  return icons[name]||null;
+}
+function EvidenceDropdown({title,children}){
+  const [open,setOpen] = React.useState(false);
+  return <div style={{marginTop:10}}>
+    <button onClick={(e)=>{e.stopPropagation();setOpen(!open);}} style={{background:"none",border:"none",cursor:"pointer",padding:"6px 0",fontSize:12,fontWeight:600,color:C.textMid,display:"flex",alignItems:"center",gap:6,fontFamily:"inherit"}}>
+      <span style={{transform:open?"rotate(90deg)":"rotate(0deg)",transition:"transform .2s",fontSize:10}}>{"\u25B6"}</span>
+      {title||"Evidence & methodology"}
+    </button>
+    {open && <div style={{padding:"10px 14px",background:"#f8fafb",borderRadius:8,border:"1px solid "+C.borderLight,fontSize:12,color:C.textMid,lineHeight:1.6,marginTop:4}}>{children}</div>}
   </div>;
 }
 function LockedConnector(){return<div style={{display:"flex",justifyContent:"center",padding:"8px 0"}}><div style={{width:2,height:28,background:C.border}}/></div>;}
@@ -1713,7 +1733,7 @@ function ROICalculator() {
     {/* CTA */}
     <div ref={refCta} style={{animation:step>=3?"fade-in .4s ease":"none",opacity:step<3?0.3:1,pointerEvents:step<3?"none":"auto",transition:"opacity .4s"}}>
       <button type="button" className="roi-cta" onClick={() => {
-          setPage("calculating"); setCalcStep(0); setScenarioMode(null);
+          setPage("calculating"); setCalcStep(0); setScenarioMode("EXPECTED");
           scrollToTop();
           setTimeout(() => setCalcStep(1), 400);
           setTimeout(() => setCalcStep(2), 1100);
@@ -1794,7 +1814,11 @@ function ROICalculator() {
     </div>
 
     {/* Decom – tiered breakdown */}
-    <Card dimmed={dim}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Legacy decommission savings</h3>
+    <Card dimmed={dim} style={{borderLeft:"4px solid #0F4146"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+        <SIcon name="unlock" size={20} color="#0F4146"/>
+        <div style={{display:"flex",alignItems:"center",flex:1}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legacy decommission savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Annual costs eliminated when systems are switched off.</p>
       <div style={{overflowX:"auto",marginBottom:16}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}><thead><tr>
@@ -1814,10 +1838,17 @@ function ROICalculator() {
         <span style={{margin:"0 8px",color:C.textMuted}}>|</span>
         Estate {fmtK(r.totalEstate)}/yr {"→"} {Math.round(r.decomSave/Math.max(1,r.totalEstate)*100)}% reduction
       </Callout>
+      <EvidenceDropdown title="Evidence & methodology">
+        System costs modelled per tier: Enterprise (£200k base + £500/bed), Departmental (£55k + £120/bed), Standalone (£10k + £15/bed), capped at market rates. Named systems use NHS contract-derived pricing.
+      </EvidenceDropdown>
     </Card><LockedConnector/>
 
     {/* Clinician time */}
-    <Card dimmed={dim}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3>
+    <Card dimmed={dim} style={{borderLeft:"4px solid #e67e22"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+        <SIcon name="clock" size={20} color="#e67e22"/>
+        <div style={{display:"flex",alignItems:"center",flex:1}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
       <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:16}}>
         <OverridableStat label="Clinical staff" computed={calc(inputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on NHS workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/IG staff per organisation (20 base + 0.12/bed, capped at 80).`}/>
@@ -1826,6 +1857,10 @@ function ROICalculator() {
         <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at the NHS blended rate of £55/hr (Agenda for Change mid-band including on-costs). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity, since not all freed time converts to measurable output. This represents capacity redirected to patient care, not a direct cash saving.`}/>
       </div>
       <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"£"}55 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong></Callout>
+      <EvidenceDropdown title="Evidence & methodology">
+        <strong>Sources:</strong> <a href="https://pubmed.ncbi.nlm.nih.gov/20463369/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Westbrook et al JAMIA 2010</a> (context-switching costs). HIMSS Analytics (65% active user rate). NHS Digital workforce data. Blended hourly rate £45 (NHS AfC bands).<br/><br/>
+        <strong>Formula:</strong> Active users (65%) x switch penalty (0.04/additional system) x base minutes x data quality x complexity. Only {Math.round(r.realisation*100)}% of freed time counted as realisable capacity.
+      </EvidenceDropdown>
     </Card><LockedConnector/>
 
     {/* Clinical safety */}
@@ -1833,7 +1868,7 @@ function ROICalculator() {
     <Card dimmed={dim} style={{border:"1px solid #e0c4cf",background:"#faf5f7"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
         <span style={{fontSize:20}}>{"🛡️"}</span>
-        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Patient safety context":"Patient safety case for migration"}</h3>
+        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Patient safety context":"Patient safety case for migration"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Supporting evidence</span>
         <InfoTip text={`Source: Camacho et al 2024 (BMJ Quality & Safety). Per-bed rates from ~100K acute beds nationally, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). NOT included in financial totals.`}/>
       </div>
       <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EPR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
@@ -1844,16 +1879,14 @@ function ROICalculator() {
           {label:"Excess bed days",bl:Math.round(r.safetyBedDaysAvoided/(SCENARIO[am].safety||0.25)),av:r.safetyBedDaysAvoided,avl:"potentially avoidable",sub:"from adverse medication events"},
         ].map((m,i)=><div key={i} style={{flex:"1 1 150px",minWidth:140,padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:`1px solid ${C.rose}18`}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:6}}>{m.label}</div>
-          <div style={{fontSize:26,fontWeight:800,color:C.rose}}>{an?fmtNum(m.bl):0}<span style={{fontSize:13,fontWeight:600}}>/yr</span></div>
+          <div style={{fontSize:26,fontWeight:800,color:C.rose}}>{"↓"} {an?fmtNum(m.av):0}<span style={{fontSize:13,fontWeight:500}}> {m.avl}</span></div>
           <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>{m.sub}</div>
-          <div style={{marginTop:8,fontSize:12,color:C.rose,fontWeight:600}}>{"↓"} {an?fmtNum(m.av):0} {m.avl}</div>
+          <div style={{marginTop:8,fontSize:11,color:C.textMid}}>of {an?fmtNum(m.bl):0} baseline/yr</div>
         </div>)}
       </div>
-      {/* Litigation context */}
-      <div style={{padding:"12px 16px",background:"#fff",borderRadius:8,border:`1px solid ${C.rose}15`,fontSize:12,lineHeight:1.6,color:C.textMid}}>
-        <strong style={{color:C.text}}>Evidence & litigation context</strong><br/>
-        Camacho et al 2024 (BMJ Quality & Safety): 1.8M medication errors at NHS care transitions/yr, 31,500 patients harmed, 36,500 excess bed days. NHS trusts collectively pay <strong>{"£"}3.6bn/yr</strong> in clinical negligence settlements (NAO, October 2025). CNST contributions are directly influenced by claims history {"\u2013"} fewer medication errors means fewer potential claims and lower premiums. Every patient harmed by an information gap is a potential negligence claim.
-      </div>
+      <EvidenceDropdown title="Evidence & litigation context">
+        NHS Patient Safety Strategy. HSSIB investigations: communication failure contributes to a significant proportion of clinical incidents. NHS Resolution annual report: £2.6bn in clinical negligence costs (2023-24). Every patient harmed by fragmented records is a potential negligence claim and CQC risk.
+      </EvidenceDropdown>
     </Card><LockedConnector/>
     </div>}
 
@@ -1907,6 +1940,12 @@ function ROICalculator() {
         <span>Range: <strong>{fmtK(rCon.total3)}</strong> {"–"} <strong>{fmtK(rStr.total3)}</strong></span>
       </div>
     </Card>
+
+    <div style={{display:"flex",justifyContent:"center",marginTop:24,marginBottom:16}}>
+      <button type="button" onClick={()=>{setPage("inputs");setStep(0);setScenarioMode("EXPECTED");setFlagships([]);scrollToTop();}} style={{padding:"10px 24px",border:"1px solid "+C.border,borderRadius:999,background:"#fff",color:C.textMid,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+        {"\u21BB"} New case
+      </button>
+    </div>
 
     {/* Lead gen */}
     {!dim && !leadSubmitted && (
