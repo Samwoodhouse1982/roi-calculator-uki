@@ -380,7 +380,16 @@ function calc(inp, mode, ov = {}, flagships = []) {
     safetyPatientsProtected = Math.round(harmedBl * sc.safety);
     safetyBedDaysAvoided = Math.round(bedDaysBl * sc.safety);
   }
-  const annual = decomSave + timeSave;
+  // Quality / safety financial value (only when clinical scope present)
+  let excessDayCostAvoided = 0, malpracticeReduction = 0, duplicateTestSaving = 0;
+  if (hasClinicalScope) {
+    excessDayCostAvoided = Math.round(safetyBedDaysAvoided * COST_PER_EXCESS_BED_DAY);
+    malpracticeReduction = Math.round(inp.bed_count * INDEMNITY_COST_PER_BED * INDEMNITY_REDUCTION_PCT * sc.safety);
+    duplicateTestSaving = Math.round(inp.bed_count * TESTS_PER_BED_PER_YEAR * DUPLICATE_TEST_RATE * COST_PER_DUPLICATE_TEST * sc.safety);
+  }
+  const qualitySavings = excessDayCostAvoided + malpracticeReduction + duplicateTestSaving;
+
+  const annual = decomSave + timeSave + qualitySavings;
   // Phased ramp: 3yr [40,80,100] or 5yr [20,40,60,80,100]
   const rampYears = inp._rampYears || 3;
   const rampPcts = rampYears === 5 ? [0.20, 0.40, 0.60, 0.80, 1.00] : [0.40, 0.80, 1.00];
@@ -398,6 +407,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
+    excessDayCostAvoided, malpracticeReduction, duplicateTestSaving, qualitySavings,
     annual, total3, totalRamp, rampYears, rampPcts, yrValues, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realisation: sc.realisation, isArchiveOnly,
     fteEquivalent: Math.round(hrsSaved * sc.realisation / 1820 * 10) / 10,  // NHS FTE = 1820 hrs (8.4 hrs/day x 5 days x 52 weeks - leave)
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
@@ -436,6 +446,14 @@ const SYSTEM_EXPOSURE_PCT = 0.35;       // Modeled assumption: role-based access
 const MED_ERRORS_PER_BED = 18;
 const PATIENTS_HARMED_PER_BED = 0.315;
 const EXCESS_BED_DAYS_PER_BED = 0.365;
+// ── Quality / safety financial constants ──
+const COST_PER_EXCESS_BED_DAY = 400;          // £400/day NHS Reference Costs (general acute, conservative blended)
+const INDEMNITY_COST_PER_BED = 7500;          // £7,500/bed clinical negligence exposure attributable to fragmented information
+                                              // Source: NHS Resolution £3.6bn settlements (NAO Oct 2025) / ~140k acute beds × 30% communication failure attribution (CRICO 2016)
+const INDEMNITY_REDUCTION_PCT = 0.05;         // 5% reduction from clinical archive / consolidated EPR (conservative)
+const COST_PER_DUPLICATE_TEST = 35;           // £35/test - NHS pathology blended (lab + imaging average)
+const DUPLICATE_TEST_RATE = 0.18;             // 18% of tests potentially duplicate when records fragmented (Bates et al)
+const TESTS_PER_BED_PER_YEAR = 22;            // NHS Reference Costs: pathology/imaging tests per bed/year baseline
 
 
 // ── Known EPR/PAS systems (UK & Ireland) ──
@@ -716,7 +734,6 @@ function ROICalculator() {
   const [scenarioMode, setScenarioMode] = useState(null);
   const [viewMode, setViewMode] = useState("executive");
   const [pdfFormat, setPdfFormat] = useState("full");
-  const [audience, setAudience] = useState("finance"); // "finance" or "clinical"
   const [rampYears, setRampYears] = useState(3);
   const [modelMode, setModelMode] = useState("custom"); // "template" or "custom"
   const [page, setPage] = useState("inputs");
@@ -2112,30 +2129,25 @@ function ROICalculator() {
     </Card>
     </div>
 
-    {!dim && <div style={{display:"flex",justifyContent:"center",gap:16,marginBottom:18,flexWrap:"wrap"}}>
+    {!dim && <div style={{display:"flex",justifyContent:"center",marginBottom:18}}>
       <div style={{display:"inline-flex",gap:0,padding:3,background:"#fff",border:`1px solid ${C.border}`,borderRadius:999}}>
         {[
           {k:"executive",l:"Executive view"},
           {k:"detailed",l:"Detailed view"},
         ].map(v=><button type="button" key={v.k} onClick={()=>setViewMode(v.k)} style={{padding:"6px 16px",border:"none",borderRadius:999,background:viewMode===v.k?C.accent:"transparent",color:viewMode===v.k?"#fff":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>{v.l}</button>)}
       </div>
-      <div style={{display:"inline-flex",gap:0,padding:3,background:"#fff",border:`1px solid ${C.border}`,borderRadius:999}}>
-        {[
-          {k:"finance",l:"Finance focus"},
-          {k:"clinical",l:"Clinical focus"},
-        ].map(v=><button type="button" key={v.k} onClick={()=>setAudience(v.k)} style={{padding:"6px 16px",border:"none",borderRadius:999,background:audience===v.k?"#1a7a7a":"transparent",color:audience===v.k?"#fff":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>{v.l}</button>)}
-      </div>
     </div>}
 
-    {!dim && audience === "clinical" && <Card style={{marginBottom:16,background:"#faf5f7",borderLeft:"4px solid #d4507a"}}>
-      <div style={{fontSize:12,fontWeight:600,color:"#d4507a",textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Clinical perspective</div>
-      <p style={{fontSize:13,color:C.textMid,margin:0,lineHeight:1.6}}>The financial savings shown above are real and material for your CFO. But the more compelling case for the CCIO/CMIO is what they enable: <strong>{fmtNum(r.hrsSaved)} hours of clinical time freed each year ({r.fteEquivalent} FTE equivalent), reduced information gaps at care transitions, and {r.hasClinicalScope ? fmtNum(r.safetyMedErrorsAvoided) : "0"} potentially avoidable medication errors</strong>. The avoidable harm reduction section below quantifies the patient safety case for migration.</p>
-    </Card>}
-
-    {!dim && audience === "finance" && <Card style={{marginBottom:16,background:"#f0faf8",borderLeft:"4px solid #00d4aa"}}>
-      <div style={{fontSize:12,fontWeight:600,color:"#0F4146",textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Finance perspective</div>
-      <p style={{fontSize:13,color:C.textMid,margin:0,lineHeight:1.6}}>This represents recurring annual savings against legacy cost base. <strong>Decommissioning ({fmtK(r.decomSave)}) is a hard cash saving</strong> from removed licensing, hosting, and support contracts. <strong>Clinician capacity ({fmtK(r.timeSave)})</strong> is realisable productivity at NHS blended rate (£55/hr) with {Math.round(r.realisation*100)}% realisation factor applied. Three-year phased savings reflect typical archiving and decommissioning timelines.</p>
-    </Card>}
+    {!dim && <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(320px, 1fr))",gap:12,marginBottom:16}}>
+      <Card style={{margin:0,background:"#f0faf8",borderLeft:"4px solid #00d4aa"}}>
+        <div style={{fontSize:12,fontWeight:600,color:"#0F4146",textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Finance perspective</div>
+        <p style={{fontSize:13,color:C.textMid,margin:0,lineHeight:1.6}}>This represents recurring annual savings against legacy cost base. <strong>Decommissioning ({fmtK(r.decomSave)}) is a hard cash saving</strong> from removed licensing, hosting, and support contracts. <strong>Clinician capacity ({fmtK(r.timeSave)})</strong> is realisable productivity at NHS blended rate (£55/hr) with {Math.round(r.realisation*100)}% realisation factor applied. Three-year phased savings reflect typical archiving and decommissioning timelines.</p>
+      </Card>
+      <Card style={{margin:0,background:"#faf5f7",borderLeft:"4px solid #d4507a"}}>
+        <div style={{fontSize:12,fontWeight:600,color:"#d4507a",textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Clinical perspective</div>
+        <p style={{fontSize:13,color:C.textMid,margin:0,lineHeight:1.6}}>The financial savings shown above are real and material for your CFO. But the more compelling case for the CCIO/CMIO is what they enable: <strong>{fmtNum(r.hrsSaved)} hours of clinical time freed each year ({r.fteEquivalent} FTE equivalent), reduced information gaps at care transitions, and {r.hasClinicalScope ? fmtNum(r.safetyMedErrorsAvoided) : "0"} potentially avoidable medication errors</strong>. The avoidable harm reduction section below quantifies the patient safety case for migration.</p>
+      </Card>
+    </div>}
 
     {dim&&<div style={{textAlign:"center",padding:"60px 20px",color:C.textMuted}}><div style={{fontSize:48,marginBottom:12,opacity:.3}}>{"📊"}</div><div style={{fontSize:16,fontWeight:600,color:C.textMid}}>Select a scenario above</div></div>}
 
@@ -2164,7 +2176,10 @@ function ROICalculator() {
     {!dim && (() => {
       const segs = [
         {label:"Decommission",val:r.decomSave,color:"#0F4146"},
-        {label:"Capacity",val:r.timeSave,color:"#1a7a7a"},
+        {label:"Clinician capacity",val:r.timeSave,color:"#1a7a7a"},
+        {label:"Excess bed days avoided",val:r.excessDayCostAvoided||0,color:"#3d8a8a"},
+        {label:"Indemnity exposure",val:r.malpracticeReduction||0,color:"#d4507a"},
+        {label:"Duplicate testing",val:r.duplicateTestSaving||0,color:"#e67e22"},
       ].filter(s=>s.val>0);
       const total = segs.reduce((a,s)=>a+s.val,0);
       if (total <= 0) return null;
@@ -2299,10 +2314,25 @@ function ROICalculator() {
           <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.decomSave)}</div>
           <div style={{fontSize:10,color:C.textMuted}}>{r.decom} of {r.legacy} systems retired</div>
         </div>
-        {r.timeSave > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #e67e22`}}>
+        {r.timeSave > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #1a7a7a`}}>
           <div style={{fontSize:11,color:C.textMuted}}>Clinician capacity freed</div>
           <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.timeSave)}</div>
           <div style={{fontSize:10,color:C.textMuted}}>{fmtNum(r.hrsSaved)} hrs/yr \u00b7 {r.fteEquivalent} FTE</div>
+        </div>}
+        {(r.excessDayCostAvoided||0) > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #3d8a8a`}}>
+          <div style={{fontSize:11,color:C.textMuted}}>Excess bed days avoided</div>
+          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.excessDayCostAvoided)}</div>
+          <div style={{fontSize:10,color:C.textMuted}}>{fmtNum(r.safetyBedDaysAvoided)} bed-days \u00d7 \u00a3400 (NHS Reference Costs)</div>
+        </div>}
+        {(r.malpracticeReduction||0) > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #d4507a`}}>
+          <div style={{fontSize:11,color:C.textMuted}}>Indemnity exposure reduction</div>
+          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.malpracticeReduction)}</div>
+          <div style={{fontSize:10,color:C.textMuted}}>5% of attributable NHS Resolution exposure</div>
+        </div>}
+        {(r.duplicateTestSaving||0) > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #e67e22`}}>
+          <div style={{fontSize:11,color:C.textMuted}}>Duplicate testing avoidance</div>
+          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.duplicateTestSaving)}</div>
+          <div style={{fontSize:10,color:C.textMuted}}>18% of pathology/imaging waste eliminated</div>
         </div>}
       </div>
       <div style={{marginTop:12,textAlign:"center",fontSize:12,color:C.textMid}}>
@@ -2315,6 +2345,9 @@ function ROICalculator() {
       const segs = [
         {label:"Decommission",val:r.decomSave,color:"#0F4146"},
         {label:"Capacity",val:r.timeSave,color:"#1a7a7a"},
+        {label:"Excess bed days avoided",val:r.excessDayCostAvoided||0,color:"#3d8a8a"},
+        {label:"Indemnity reduction",val:r.malpracticeReduction||0,color:"#d4507a"},
+        {label:"Duplicate testing",val:r.duplicateTestSaving||0,color:"#e67e22"},
       ].filter(s=>s.val>0);
       const total = segs.reduce((a,s)=>a+s.val,0);
       if (total <= 0) return null;
@@ -2374,6 +2407,9 @@ function ROICalculator() {
           {[
             {l:"Decom savings",y:r.decomSave},
             {l:"Clinician time",y:r.timeSave},
+            ...((r.excessDayCostAvoided||0)>0?[{l:"Excess bed days avoided",y:r.excessDayCostAvoided}]:[]),
+            ...((r.malpracticeReduction||0)>0?[{l:"Indemnity exposure reduction",y:r.malpracticeReduction}]:[]),
+            ...((r.duplicateTestSaving||0)>0?[{l:"Duplicate testing avoidance",y:r.duplicateTestSaving}]:[]),
           ].map((row,i)=><tr key={i}>
             <td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`}}>{row.l} <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,background:C.greenPale,color:C.green,textTransform:"uppercase"}}>recurring</span></td>
             {r.rampPcts.map((p,j)=><td key={j} style={tdR_}>{fmt(Math.round(row.y*p))}</td>)}
@@ -2403,9 +2439,10 @@ function ROICalculator() {
     {/* Sensitivity check */}
     {!dim && (() => {
       const baseAnnual = r.annual;
-      const halfReal = Math.round(r.decomSave + r.timeSave * 0.5);
-      const halfDecom = Math.round(r.decomSave * 0.5 + r.timeSave);
-      const halfBoth = Math.round((r.decomSave + r.timeSave) * 0.5);
+      const qual = (r.qualitySavings||0);
+      const halfReal = Math.round(r.decomSave + r.timeSave * 0.5 + qual * 0.5);
+      const halfDecom = Math.round(r.decomSave * 0.5 + r.timeSave + qual);
+      const halfBoth = Math.round((r.decomSave + r.timeSave + qual) * 0.5);
       const halfBothPct = Math.round(halfBoth / Math.max(1, baseAnnual) * 100);
       return <Card style={{marginTop:16,background:"#f8fafb",border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
