@@ -2046,7 +2046,7 @@ function ROICalculator() {
       </div>
 
       <div style={{padding:"10px 14px",background:"#f0faf8",borderRadius:8,border:"1px solid #c3ddd3",fontSize:12,color:C.teal,lineHeight:1.5,marginBottom:16}}>
-        <strong>Why this matters:</strong> Your organization type sets the baseline for bed count, system complexity, and which CMS programs apply. Academic centers include research and GME modules. IDN/multi-hospital adds network consolidation savings.
+        <strong>Why this matters:</strong> Your organization type sets the baseline for bed count, system complexity, and which CMS programs apply. Academic centers include research and Graduate Medical Education (GME) modules. IDN/multi-hospital adds network consolidation savings.
       </div>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Primary reimbursement model</div>
       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
@@ -2064,7 +2064,7 @@ function ROICalculator() {
         {providerType === "critical_access" && "Critical Access Hospitals are exempt from HRRP penalties but benefit from reduced operational costs and improved care coordination."}
         {providerType === "community" && "Community hospitals face moderate CMS penalty exposure. EHR consolidation typically yields the strongest ROI through decommission savings and reduced denials."}
         {providerType === "regional" && "Regional centers face full CMS penalty exposure across HRRP, HAC, and VBP programs. The case for consolidation includes both cost reduction and penalty avoidance."}
-        {providerType === "academic" && "Academic centers carry the highest system complexity (40-200+ legacy applications). The ROI case includes research system integration and GME compliance alongside financial savings."}
+        {providerType === "academic" && "Academic centers carry the highest system complexity (40-200+ legacy applications). The ROI case includes research system decommission, Graduate Medical Education (GME) compliance efficiency, and teaching overhead reduction alongside financial savings."}
         {providerType === "multi_hospital" && "Multi-hospital systems post-M&A typically have 2-3x the normal legacy system count. Consolidation eliminates duplicate infrastructure across facilities."}
       </div>
     </Card>
@@ -2695,10 +2695,10 @@ function ROICalculator() {
           </div>
         </div>
         <div style={{fontSize:12,color:C.textMuted,marginBottom:16}}>Builds from {fmtK(Math.round(total*r.rampPcts[0]))} in Year 1 to {fmtK(total)}/yr at steady state</div>
-        <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:24,marginBottom:16,height:maxH+30}}>
+        <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-evenly",gap:16,marginBottom:16,height:maxH+30,padding:"0 20px"}}>
           {years.map((yr,yi)=>{
             const h = Math.round(maxH * yr.pct);
-            return <div key={yi} style={{display:"flex",flexDirection:"column",alignItems:"center",width:80}}>
+            return <div key={yi} style={{display:"flex",flexDirection:"column",alignItems:"center",flex:1,maxWidth:160,minWidth:60}}>
               <div style={{fontSize:12,fontWeight:700,color:C.accent,marginBottom:4}}>{fmtK(Math.round(total*yr.pct))}</div>
               <div style={{width:"100%",height:h,borderRadius:"6px 6px 0 0",overflow:"hidden",display:"flex",flexDirection:"column-reverse"}}>
                 {segs.map((s,si)=><div key={si} style={{width:"100%",height:`${s.val/total*100}%`,background:s.color,minHeight:s.val>0?2:0}} title={`${s.label}: ${fmtK(Math.round(s.val*yr.pct))}`}/>)}
@@ -2810,7 +2810,7 @@ function ROICalculator() {
     {/* Academic module - conditional */}
     {r.isAcademic && <Card dimmed={dim}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{"🎓"} Academic medical center module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and GME compliance obligations.</p>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and Graduate Medical Education (GME) compliance obligations.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
@@ -2821,7 +2821,7 @@ function ROICalculator() {
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>GME compliance efficiency</div>
           <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.gmeEfficiency):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>ACGME reporting, residency tracking</div>
+          <div style={{fontSize:11,color:C.textMuted}}>ACGME reporting, residency tracking, procedure logging</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Teaching workflow savings</div>
@@ -2836,7 +2836,7 @@ function ROICalculator() {
       </Callout>
 
       <EvidenceDropdown title="Evidence & methodology">
-        Research system count: 3.5 per 100 beds (IRB, CTMS, biobank, research repositories, specialty registries). GME efficiency: 25% reduction in ACGME compliance overhead from unified reporting. Teaching overhead: 12% additional complexity for teaching workflows, 30% addressable. All figures are modelled estimates.
+        <strong>Research systems:</strong> ~3.5 per 100 beds (IRB, CTMS, biobank, research repositories, specialty registries). Retiring these eliminates standalone licensing and reduces integration burden with the clinical record.<br/><br/><strong>Graduate Medical Education (GME):</strong> Teaching hospitals must report to ACGME (Accreditation Council for Graduate Medical Education) on resident case volumes, procedure logs, duty hours, and milestone assessments. This data is often scattered across legacy scheduling, case logging, and evaluation systems. Consolidating these into the archive reduces compliance reporting overhead by an estimated 25%, calculated as: beds x $850/bed x 25% efficiency.<br/><br/><strong>Teaching overhead:</strong> Teaching workflows add ~12% complexity to clinical systems (registrar supervision, case-based learning, simulation scheduling). 30% of this overhead is addressable through consolidation. All figures are modelled estimates.
       </EvidenceDropdown>
     </Card>}
     {r.isAcademic && <LockedConnector/>}
