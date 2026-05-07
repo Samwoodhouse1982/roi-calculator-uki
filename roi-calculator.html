@@ -593,14 +593,14 @@ const CORPORATE_STAFF_PER_BED = 0.10;  // Scales with size, caps at ~100 for lar
 const BLENDED_HOURLY_RATE = 65;
 const WORKING_WEEKS = 48;
 const TICKETS_PER_SYSTEM = 2.5;
-const SWITCH_PENALTY_PER_SYSTEM = 0.04;  // Bartek et al JIMI 2023: 3% switch cost (beta=0.03); 4% conservative for multi-system switching
+const SWITCH_PENALTY_PER_SYSTEM = 0.04;  // <a href="https://pubmed.ncbi.nlm.nih.gov/37015304/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Bartek et al JIMI 2023</a>: 3% switch cost (beta=0.03); 4% conservative for multi-system switching
 const SURVIVING_SYSTEM_TICKET_FACTOR = 0.6;
 const SAR_BASE_DAYS = 3.0;              // Base coordination overhead (cross-LHD, redaction, quality review)
 const SAR_DAYS_PER_SYSTEM_BEFORE = 0.8;  // Per-system search, extraction, reconciliation
 const SAR_DAYS_PER_SYSTEM_AFTER = 0.15;
 
 // Clinical engagement factors
-const ACTIVE_USER_PCT = 0.65;           // Sinsky et al 2016 (49% physician time on EHR); KLAS Arch Collaborative (500k+ clinicians). 65% conservative
+const ACTIVE_USER_PCT = 0.65;           // <a href="https://pubmed.ncbi.nlm.nih.gov/27595430/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Sinsky et al 2016</a> (49% physician time on EHR); KLAS Arch Collaborative (500k+ clinicians). 65% conservative
 const SYSTEM_EXPOSURE_PCT = 0.35;       // Modeled assumption: role-based access patterns mean each clinician touches ~1/3 of the legacy estate
 const MED_ERRORS_PER_BED = 14;  // ACSQHC sentinel event data
 const PATIENTS_HARMED_PER_BED = 3.2;   // AIHW admin data: 5.4% of separations; ~60 seps/bed at ALOS 5.5 * 5.4% = 3.2
@@ -635,7 +635,7 @@ const AU_CYBER_BREACH_AVG_COST = 4710000;       // A$4.71m avg AU healthcare bre
 
 // ── Readmission Constants (AU) ──
 const AU_READMISSION_RATE = 0.12;               // 12% 30-day unplanned readmission (AIHW 2023-24)
-const AU_READMIT_REDUCTION = 0.006;             // 0.6pp absolute reduction (Vest et al JAMIA 2019, conservative)
+const AU_READMIT_REDUCTION = 0.006;             // 0.6pp absolute reduction (<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7792753/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Vest et al JAMIA 2019</a>, conservative)
 const AU_READMIT_COST = 11500;                  // A$11,500 avg readmission cost (IHACPA NWAU-derived)
 const AU_READMIT_FRAGMENTATION_ATTRIBUTION = 0.30; // 30% attributable to information fragmentation
 
@@ -921,7 +921,7 @@ function ResultSection({ title, icon, defaultOpen, children, dimmed, accent }) {
   </div>;
 }
 
-function ResultCard({ label, value, sub, bg, border, valueColor, icon, dimmed }) {
+function ResultCard({ label, value, sub, bg, border, valueColor, icon, dimmed, info }) {
   return (
     <div className="roi-result" style={{
       background: bg, border: `1px solid ${border}`, borderRadius: 12,
@@ -929,8 +929,8 @@ function ResultCard({ label, value, sub, bg, border, valueColor, icon, dimmed })
       opacity: dimmed ? 0.3 : 1, filter: dimmed ? "grayscale(.5)" : "none",
       transition: "all .3s",
     }}>
-      <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".01em", color: C.textMid, marginBottom: 2 }}>
-        {icon && <span style={{ marginRight: 6 }}>{icon}</span>}{label}
+      <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".01em", color: C.textMid, marginBottom: 2, display: "flex", alignItems: "center" }}>
+        {icon && <span style={{ marginRight: 6 }}>{icon}</span>}{label}{info && <InfoTip text={info}/>}
       </div>
       <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-.5px", color: valueColor, margin: "4px 0" }}>{value}</div>
       {sub && <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.4 }}>{sub}</div>}
@@ -1079,6 +1079,8 @@ function ROICalculator() {
   const avgBedsPerHospital = inputs.org_count > 0 ? Math.round(inputs.bed_count / inputs.org_count) : 0;
   const [activePreset, setActivePreset] = useState(null);
   const [scenarioMode, setScenarioMode] = useState(null);
+  const [viewMode, setViewMode] = useState("executive"); // "executive" or "detailed"
+  const [pdfFormat, setPdfFormat] = useState("full"); // "full" or "board"
   const [page, setPage] = useState("inputs");
   const [calcStep, setCalcStep] = useState(0);
   const [step, setStep] = useState(0);
@@ -1228,7 +1230,7 @@ function ROICalculator() {
   }, [touch]);
 
   // Facility types beyond acute care
-  // Statewide portfolio defaults (based on NSW SDPR scope)
+  // Statewide portfolio defaults (NSW SDPR scope - parameters proxy other states; adjust bed counts and facility mix as needed)
   const STATEWIDE_PORTFOLIO = {
     community_health: 500, outpatient: 150, oral_health: 60,
     pathology_lab: 50, pathology_collection: 150,
@@ -1591,6 +1593,182 @@ function ROICalculator() {
       tryCdn(0);
     });
   }, []);
+
+  // ── Board summary PDF (2 pages) ──
+  const generateBoardPDF = useCallback(async () => {
+    let jsPDF;
+    try { jsPDF = await loadJsPDF(); } catch (e) {
+      alert("Unable to load the PDF library. Please try again or contact your IT team.");
+      return null;
+    }
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const pw = 210, ph = 297, ml = 16, mr = 16, cw = pw - ml - mr;
+    let y = 0;
+    const scenarioLabel = am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected";
+    const dateStr = new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"});
+    const TEAL = [15,65,70], WHITE = [255,255,255], SEAFOAM = [190,250,240];
+    const GRAY = [61,90,94], LTBG = [238,247,241], DARK = [31,41,55], MID = [110,138,142];
+    const setC = (clr) => { doc.setTextColor(clr[0],clr[1],clr[2]); };
+    const fmtKp = (v) => "A$" + (Math.abs(v)>=1e6 ? (v/1e6).toFixed(1)+"M" : Math.round(v/1e3)+"k");
+
+    // Page 1
+    doc.setFillColor(TEAL[0],TEAL[1],TEAL[2]); doc.rect(0,0,pw,50,"F");
+    doc.setFillColor(SEAFOAM[0],SEAFOAM[1],SEAFOAM[2]); doc.rect(0,50,pw,1.5,"F");
+    setC(WHITE); doc.setFontSize(9); doc.setFont("helvetica","normal");
+    doc.text("BOARD SUMMARY", ml, 14);
+    doc.setFontSize(22); doc.setFont("helvetica","bold");
+    doc.text("ROI Estimate", ml, 26);
+    doc.setFontSize(11); doc.setFont("helvetica","normal");
+    doc.text("Galen Clinical Archive  |  " + dateStr + "  |  " + scenarioLabel + " scenario", ml, 36);
+    
+    y = 64;
+    setC(DARK); doc.setFontSize(10); doc.setFont("helvetica","bold");
+    doc.text("ESTIMATED ANNUAL SAVINGS AT STEADY STATE", ml, y);
+    y += 8;
+    setC(TEAL); doc.setFontSize(36); doc.setFont("helvetica","bold");
+    doc.text(fmtKp(r.annualWithReimbursement), ml, y+4);
+    setC(MID); doc.setFontSize(10); doc.setFont("helvetica","normal");
+    doc.text("per year", ml + doc.getTextWidth(fmtKp(r.annualWithReimbursement)) + 4, y+4);
+    
+    y += 18;
+    setC(DARK); doc.setFontSize(10); doc.setFont("helvetica","bold");
+    doc.text((r.rampN || 3) + "-YEAR PHASED TOTAL", ml, y);
+    y += 7;
+    setC([46,124,108]); doc.setFontSize(20);
+    doc.text(fmtKp(r.total3WithReimbursement), ml, y+2);
+    
+    y += 14;
+    const cardW = (cw - 12) / 4;
+    const cards = [
+      { l: "Decommission", v: r.decomSave, c: [15,65,70] },
+      { l: "Capacity", v: r.timeSave, c: [230,126,34] },
+      { l: r.isAgedCare?"Funding":"ABF & Quality", v: (r.reimbursementImpact||0) + (r.qualitySavings||0), c: [0,212,170] },
+      { l: "Avoidable harm", v: r.malpracticeReduction || 0, c: [212,80,122] },
+    ];
+    cards.forEach((card, i) => {
+      const x = ml + i * (cardW + 4);
+      doc.setFillColor(LTBG[0],LTBG[1],LTBG[2]);
+      doc.roundedRect(x, y, cardW, 22, 2, 2, "F");
+      doc.setFillColor(card.c[0],card.c[1],card.c[2]);
+      doc.rect(x, y, 1.5, 22, "F");
+      setC(MID); doc.setFontSize(8); doc.setFont("helvetica","normal");
+      doc.text(card.l, x + 4, y + 7);
+      setC(card.c); doc.setFontSize(13); doc.setFont("helvetica","bold");
+      doc.text(fmtKp(card.v), x + 4, y + 16);
+    });
+    y += 28;
+    
+    setC(DARK); doc.setFontSize(11); doc.setFont("helvetica","bold");
+    doc.text("Your organisation", ml, y);
+    y += 6;
+    setC(GRAY); doc.setFontSize(9); doc.setFont("helvetica","normal");
+    const sectorLabel = r.isAgedCare?"Aged Care Provider":r.isNDIS?"NDIS Provider":"Hospital / Health Service";
+    const orgLines = [
+      [`Sector: ${sectorLabel}`, `Reimbursement: ${({"public":"Public (ABF)","private":"Private","mixed":"Mixed"})[reimbursementModel] || reimbursementModel}`],
+      [`Beds in scope: ${(inputs.bed_count||0).toLocaleString()}`, `Facilities: ${inputs.org_count}`],
+      [`Legacy systems: ${r.legacy} (${r.decom} retired)`, `Clinical staff: ${(r.clinicians||0).toLocaleString()}`],
+      [`Hours freed/yr: ${(r.hrsSaved||0).toLocaleString()}`, `FTE equivalent: ${r.fteEquivalent || 0}`],
+    ];
+    orgLines.forEach(line => {
+      doc.text(line[0], ml, y);
+      doc.text(line[1], ml + cw/2, y);
+      y += 5;
+    });
+    y += 4;
+    
+    setC(DARK); doc.setFontSize(11); doc.setFont("helvetica","bold");
+    doc.text("Robustness check", ml, y);
+    y += 6;
+    setC(GRAY); doc.setFontSize(9); doc.setFont("helvetica","normal");
+    const halfBoth = Math.round((r.decomSave + r.timeSave + (r.reimbursementImpact||0) + (r.qualitySavings||0) + (r.mergeSavings||0)) * 0.5);
+    doc.text("Even if both realisation and decommission rates halve simultaneously,", ml, y);
+    y += 5;
+    doc.text(`projected annual savings remain ${fmtKp(halfBoth)} - demonstrating a robust business case.`, ml, y);
+    y += 5;
+    
+    doc.setDrawColor(15,65,70); doc.setLineWidth(0.6);
+    doc.line(ml, ph - 14, pw - mr, ph - 14);
+    doc.setFontSize(7); setC(MID);
+    doc.text("Galen Clinical Archive  |  Board Summary  |  " + dateStr, ml, ph - 10);
+    doc.text("Page 1 of 2", pw - mr, ph - 10, { align: "right" });
+    doc.setFillColor(SEAFOAM[0],SEAFOAM[1],SEAFOAM[2]); doc.rect(0, ph - 4, pw, 4, "F");
+
+    // Page 2
+    doc.addPage();
+    doc.setFillColor(TEAL[0],TEAL[1],TEAL[2]); doc.rect(0,0,pw,18,"F");
+    setC(WHITE); doc.setFontSize(11); doc.setFont("helvetica","bold");
+    doc.text("ROI Estimate \u00b7 Components & Methodology", ml, 12);
+    
+    y = 28;
+    setC(DARK); doc.setFontSize(13); doc.setFont("helvetica","bold");
+    doc.text("Components of annual savings", ml, y);
+    y += 8;
+    
+    const components = [
+      { l: "Legacy decommission", v: r.decomSave, sub: r.decom + " of " + r.legacy + " systems retired" },
+      { l: "Clinician capacity", v: r.timeSave, sub: (r.hrsSaved||0).toLocaleString() + " hrs/yr \u00b7 " + (r.fteEquivalent||0) + " FTE equivalent" },
+    ];
+    if ((r.reimbursementImpact||0) > 0) components.push({ l: r.isAgedCare?"AN-ACC funding & efficiency":"ABF efficiency & revenue", v: r.reimbursementImpact, sub: r.isAgedCare?"AN-ACC accuracy + agency reduction + compliance":"NWAU recovery + denial reduction + private revenue" });
+    if ((r.qualitySavings||0) > 0) components.push({ l: "Quality & avoidable harm", v: r.qualitySavings, sub: "Indemnity + excess bed days + duplicate testing" });
+    if ((r.mergeSavings||0) > 0) components.push({ l: "Network consolidation", v: r.mergeSavings, sub: "Duplicate elimination + standardisation" });
+    
+    components.forEach(comp => {
+      doc.setDrawColor(220,224,228); doc.setLineWidth(0.3);
+      doc.line(ml, y, ml + cw, y);
+      y += 6;
+      setC(DARK); doc.setFontSize(10); doc.setFont("helvetica","bold");
+      doc.text(comp.l, ml, y);
+      doc.text(fmtKp(comp.v), ml + cw, y, { align: "right" });
+      y += 5;
+      setC(MID); doc.setFontSize(8); doc.setFont("helvetica","normal");
+      doc.text(comp.sub, ml, y);
+      y += 7;
+    });
+    doc.line(ml, y, ml + cw, y);
+    y += 6;
+    setC(TEAL); doc.setFontSize(11); doc.setFont("helvetica","bold");
+    doc.text("Total annual", ml, y);
+    doc.text(fmtKp(r.annualWithReimbursement), ml + cw, y, { align: "right" });
+    y += 14;
+    
+    setC(DARK); doc.setFontSize(11); doc.setFont("helvetica","bold");
+    doc.text("Evidence base", ml, y);
+    y += 6;
+    setC(GRAY); doc.setFontSize(8); doc.setFont("helvetica","normal");
+    const methLines = [
+      "Peer-reviewed: Bartek et al JIMI 2023 (EHR task switching), Vest et al JAMIA 2019 (readmission",
+      "reduction from EHR consolidation), Sinsky et al 2016 (clinician EHR time burden).",
+      "Government / regulatory: IHACPA NEP 2025-26 (A$7,258/NWAU), ACSQHC Standards 1 and 6.",
+      "State indemnity schemes: VMIA 2025-26 (VIC), icare (NSW). KLAS Arch Collaborative.",
+      "All assumptions documented in Full Report. Methodology v3.0 - last reviewed May 2026.",
+    ];
+    methLines.forEach(line => { doc.text(line, ml, y); y += 4; });
+    y += 6;
+    
+    doc.setFillColor(TEAL[0],TEAL[1],TEAL[2]);
+    doc.roundedRect(ml, y, cw, 28, 3, 3, "F");
+    setC(WHITE); doc.setFontSize(13); doc.setFont("helvetica","bold");
+    doc.text("Next step", ml + 6, y + 9);
+    doc.setFontSize(9); doc.setFont("helvetica","normal");
+    doc.text("Schedule a 30-minute walkthrough with a Galen specialist to validate these figures", ml + 6, y + 16);
+    doc.text("against your specific legacy estate and contract structure.", ml + 6, y + 21);
+    y += 34;
+    
+    setC(MID); doc.setFontSize(7); doc.setFont("helvetica","italic");
+    const disc = "Indicative estimates based on industry benchmarks and your inputs. Not a binding savings target. Actual outcomes vary by organisation. Validate independently before investment decisions.";
+    const discLines = doc.splitTextToSize(disc, cw);
+    doc.text(discLines, ml, y);
+    
+    doc.setDrawColor(15,65,70); doc.setLineWidth(0.6);
+    doc.line(ml, ph - 14, pw - mr, ph - 14);
+    doc.setFontSize(7); setC(MID);
+    doc.text("Galen Clinical Archive  |  Board Summary  |  " + dateStr, ml, ph - 10);
+    doc.text("Page 2 of 2", pw - mr, ph - 10, { align: "right" });
+    doc.setFillColor(SEAFOAM[0],SEAFOAM[1],SEAFOAM[2]); doc.rect(0, ph - 4, pw, 4, "F");
+    
+    doc.save("Galen_ROI_Board_Summary_" + new Date().toISOString().split("T")[0] + ".pdf");
+    return null;
+  }, [r, am, reimbursementModel, inputs]);
 
   const generatePDF = useCallback(async (returnBlob) => {
     let jsPDF;
@@ -2842,25 +3020,38 @@ function ROICalculator() {
         : "Migrating to a single EMR improves patient safety at care transitions. Archiving legacy systems eliminates ongoing costs, while ensuring historical information can be accessed, in context, by clinicians at the point of care."}</div>
     </div>
 
-    {/* Scenario chooser */}
-    <Card style={{marginBottom:dim?16:24,border:dim?`2px solid ${C.accent}`:`1px solid ${C.border}`,boxShadow:dim?`0 0 0 4px ${C.accent}22`:"none"}}>
-      <div style={{fontSize:14,fontWeight:700,color:C.accent,marginBottom:10,display:"flex",alignItems:"center",gap:8}}>
-        {dim&&<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:24,height:24,borderRadius:"50%",background:C.accent,color:"#fff",fontSize:12,fontWeight:800}}>1</span>}
-        {dim ? "Choose scenario to unlock results" : "Scenario"}
+    {/* Scenario chooser - sticky with comparison strip */}
+    <div style={{position:"sticky",top:0,zIndex:50,background:C.bg,paddingTop:8,paddingBottom:8,marginBottom:16,marginLeft:-24,marginRight:-24,paddingLeft:24,paddingRight:24,borderBottom:`1px solid ${C.borderLight}`}}>
+    <Card style={{marginBottom:0,border:dim?`2px solid ${C.accent}`:`1px solid ${C.border}`,boxShadow:dim?`0 0 0 4px ${C.accent}22`:"0 1px 3px rgba(0,0,0,0.05)",padding:"12px 16px"}}>
+      <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:8,textTransform:"uppercase",letterSpacing:".05em"}}>
+        {dim ? "Choose scenario to unlock results" : "Annual savings by scenario \u00b7 click to switch"}
       </div>
-      <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:6,letterSpacing:0.5}}>BENEFIT SCENARIOS</div>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>
+      <div style={{display:"flex",gap:6,marginBottom:8}}>
         {[
-            { k: "CONSERVATIVE", l: "Conservative", s: "Lower-bound", e: "\ud83d\udee1\ufe0f" },
-            { k: "EXPECTED", l: "Expected", s: "Best estimate", e: "\ud83d\udcca" },
-            { k: "STRETCH", l: "Stretch", s: "Upside", e: "\ud83d\ude80" },
-          ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:80,padding:"12px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode===s.k?C.accentPale:"#fff"}}>
-          <div style={{fontSize:18,marginBottom:2}}>{s.e}</div>
-          <div style={{fontSize:13,fontWeight:scenarioMode===s.k?700:500,color:scenarioMode===s.k?C.accent:C.textMid}}>{s.l}</div>
-          <div style={{fontSize:10,color:C.textMuted}}>{s.s}</div>
+            { k: "CONSERVATIVE", l: "Conservative", s: "Lower-bound", res: rCon },
+            { k: "EXPECTED", l: "Expected", s: "Best estimate", res: rExp },
+            { k: "STRETCH", l: "Stretch", s: "Upside", res: rStr },
+          ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:90,padding:"10px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:8,cursor:"pointer",background:scenarioMode===s.k?C.accentPale:"#fff",transition:"all .15s"}}>
+          <div style={{fontSize:11,fontWeight:600,color:scenarioMode===s.k?C.accent:C.textMuted,textTransform:"uppercase",letterSpacing:".03em",marginBottom:2}}>{s.l}</div>
+          <div style={{fontSize:18,fontWeight:800,color:scenarioMode===s.k?C.accent:C.text}}>{fmtK(s.res.annualWithReimbursement)}</div>
+          <div style={{fontSize:10,color:C.textMuted,marginTop:1}}>{s.s} \u00b7 /yr</div>
         </button>)}
       </div>
-      <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:6,letterSpacing:0.5}}>RISK SCENARIOS</div>
+    </Card>
+    </div>
+
+    {!dim && <div style={{display:"flex",justifyContent:"center",marginBottom:18}}>
+      <div style={{display:"inline-flex",gap:0,padding:3,background:"#fff",border:`1px solid ${C.border}`,borderRadius:999}}>
+        {[
+          {k:"executive",l:"Executive view"},
+          {k:"detailed",l:"Detailed view"},
+        ].map(v=><button type="button" key={v.k} onClick={()=>setViewMode(v.k)} style={{padding:"6px 16px",border:"none",borderRadius:999,background:viewMode===v.k?C.accent:"transparent",color:viewMode===v.k?"#fff":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>{v.l}</button>)}
+      </div>
+    </div>}
+
+    {/* Risk scenarios in detailed view only */}
+    {viewMode === "detailed" && !dim && <Card style={{marginBottom:16,border:`1px solid ${C.border}`}}>
+      <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:8,letterSpacing:0.5}}>RISK SCENARIOS \u00b7 STRESS TEST</div>
       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
         <button type="button" onClick={()=>{if(scenarioMode==="DELAYED"||scenarioMode==="PARTIAL")setScenarioMode("EXPECTED")}} className="roi-scenario" style={{flex:"1 1 0",minWidth:80,padding:"10px 8px",textAlign:"center",border:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accentPale:"#fff"}}>
           <div style={{fontSize:16,marginBottom:2}}>{"\u2714\uFE0F"}</div>
@@ -2876,7 +3067,7 @@ function ROICalculator() {
           <div style={{fontSize:10,color:C.textMuted}}>{s.s}</div>
         </button>)}
       </div>
-    </Card>
+    </Card>}
 
     {dim&&<div style={{textAlign:"center",padding:"60px 20px",color:C.textMuted}}><div style={{fontSize:48,marginBottom:12,opacity:.3}}>{"📊"}</div><div style={{fontSize:16,fontWeight:600,color:C.textMid}}>Select a scenario above</div></div>}
 
@@ -3016,7 +3207,7 @@ function ROICalculator() {
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
       <ResultCard dimmed={dim} label="Legacy decommission" value={an?fmtK(r.decomSave):"\u2013"} sub={an?r.decom+" of "+r.legacy+" systems retired":""} bg={C.greenPale} border="#c3ddd3" valueColor="#0F4146" />
       <ResultCard dimmed={dim} label={r.isAgedCare?"Places capacity":r.isNDIS?"Staff capacity":"Clinical capacity"} value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"\u2013"} sub={an?fmtK(r.timeSave)+"/yr value":""} bg="#e8faf6" border="#b0e8dc" valueColor="#1a8a7a" />
-      <ResultCard dimmed={dim} label={r.isAgedCare?"Funding & efficiency":r.isNDIS?"Revenue & efficiency":"ABF efficiency & revenue"} value={an?fmtK(r.reimbursementImpact):"\u2013"} sub={an?(r.isAgedCare?"AN-ACC + agency + compliance":r.isNDIS?"Claims + utilisation + compliance + retention":"ABF efficiency"+(r.privateRevRecovery>0?" + private revenue":"")):"\u2013"} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
+      <ResultCard dimmed={dim} info={r.isAgedCare?"AN-ACC: Australian National Aged Care Classification - the funding model for residential aged care.":r.isNDIS?"NDIS: National Disability Insurance Scheme":"ABF: Activity-Based Funding. NWAU: National Weighted Activity Unit. NEP: National Efficient Price per NWAU (A$7,258 for 2025-26 per IHACPA Determination)."} label={r.isAgedCare?"Funding & efficiency":r.isNDIS?"Revenue & efficiency":"ABF efficiency & revenue"} value={an?fmtK(r.reimbursementImpact):"\u2013"} sub={an?(r.isAgedCare?"AN-ACC + agency + compliance":r.isNDIS?"Claims + utilisation + compliance + retention":"ABF efficiency"+(r.privateRevRecovery>0?" + private revenue":"")):"\u2013"} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
       {r.qualitySavings > 0 && <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"\u2013"} sub={an?(r.isAgedCare?"Avoidable harm reduction":r.isNDIS?"":"Indemnity + bed days + testing + legal + readmission"):"\u2013"} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />}
       {r.academicSavings > 0 && <ResultCard dimmed={dim} label="Academic programme" value={an?fmtK(r.academicSavings):"\u2013"} sub={an?"Research + teaching + compliance":""} bg="#eef0f8" border="#c4cce0" valueColor="#2c3e6b" />}
       {r.mergeSavings > 0 && <ResultCard dimmed={dim} label="Network consolidation" value={an?fmtK(r.mergeSavings):"\u2013"} sub={an?r.duplicateSystems+" duplicate systems":""} bg="#f0eefa" border="#c4c0e8" valueColor="#6c5ce7" />}
@@ -3062,6 +3253,7 @@ function ROICalculator() {
       </div>;
     })()}
 
+    {viewMode === "detailed" && <>
         {/* Decom - tiered breakdown */}
     <Card dimmed={dim}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
@@ -3192,6 +3384,35 @@ function ROICalculator() {
 
     </>}
 
+    {/* Clinical safety */}
+    {r.hasClinicalScope && <div>
+    <Card dimmed={dim} style={{border:"1px solid #f0c4d4",background:"#fdf5f8"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+        <span style={{fontSize:20}}>{"🛡️"}</span>
+        <div style={{display:"flex",alignItems:"center"}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Avoidable harm reduction":"Avoidable harm reduction (clinical case for migration)"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Additional value · not in financial total</span></div>
+        <InfoTip text={`Source: ACSQHC (Australian Commission on Safety and Quality in Health Care) safety reports; AIHW hospital statistics; QAHCS (Wilson et al 1995). Per-bed rates from Australian public hospital data, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). Supporting evidence for the quality and cost avoidance estimates above.`}/>
+      </div>
+      <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EMR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
+      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
+        {[
+          {label:"Medication errors",bl:r.safetyMedErrorsBaseline,av:r.safetyMedErrorsAvoided,avl:"potentially avoidable",sub:"at admission, transfer, or discharge"},
+          {label:"Patients harmed",bl:Math.round(r.safetyPatientsProtected/(SCENARIO[am].safety||0.25)),av:r.safetyPatientsProtected,avl:"potentially protected",sub:"by medication errors during handoffs"},
+          {label:"Excess bed days",bl:Math.round(r.safetyBedDaysAvoided/(SCENARIO[am].safety||0.25)),av:r.safetyBedDaysAvoided,avl:"potentially avoidable",sub:"from adverse medication events"},
+        ].map((m,i)=><div key={i} style={{flex:"1 1 150px",minWidth:140,padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:`1px solid ${C.rose}18`}}>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:6}}>{m.label}</div>
+          <div style={{fontSize:26,fontWeight:800,color:C.rose}}>{"↓"} {an?fmtNum(m.av):0}<span style={{fontSize:13,fontWeight:500}}> {m.avl}</span></div>
+          <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>{m.sub}</div>
+          <div style={{marginTop:8,fontSize:11,color:C.textMid}}>of {an?fmtNum(m.bl):0} baseline/yr</div>
+        </div>)}
+      </div>
+      <EvidenceDropdown title="Evidence & litigation context">
+        <a href="https://www.safetyandquality.gov.au/our-work/communicating-safety" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>ACSQHC</a>: ~10% of separations involve an adverse event; communication failure contributes to 35% of clinical incidents. State indemnity schemes (icare NSW, VMIA VIC) link claims to fragmented information. Accreditation risk under ACSQHC Standards 1 and 6.
+      </EvidenceDropdown>
+    </Card><LockedConnector/>
+    </div>}
+    <LockedConnector/>
+
+
     {/* Aged care safety */}
     {sector === "aged_care" && r.acHarmAvoidance > 0 && <Card style={{border:"1px solid #f0c4d4",background:"#fdf5f8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
@@ -3280,34 +3501,6 @@ function ROICalculator() {
         AIHW 2023-24: 12% unplanned 30-day readmission rate. Vest et al JAMIA 2019: 0.6pp reduction from EMR consolidation. 30% fragmentation attribution. Cost A$11,500/readmission (IHACPA NWAU-derived).
       </EvidenceDropdown>
     </Card>}
-    <LockedConnector/>
-
-    {/* Clinical safety */}
-    {r.hasClinicalScope && <div>
-    <Card dimmed={dim} style={{border:"1px solid #f0c4d4",background:"#fdf5f8"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-        <span style={{fontSize:20}}>{"🛡️"}</span>
-        <div style={{display:"flex",alignItems:"center"}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Patient safety context":"Patient safety case for migration"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Supporting evidence</span></div>
-        <InfoTip text={`Source: ACSQHC (Australian Commission on Safety and Quality in Health Care) safety reports; AIHW hospital statistics; QAHCS (Wilson et al 1995). Per-bed rates from Australian public hospital data, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). Supporting evidence for the quality and cost avoidance estimates above.`}/>
-      </div>
-      <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EMR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
-      <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
-        {[
-          {label:"Medication errors",bl:r.safetyMedErrorsBaseline,av:r.safetyMedErrorsAvoided,avl:"potentially avoidable",sub:"at admission, transfer, or discharge"},
-          {label:"Patients harmed",bl:Math.round(r.safetyPatientsProtected/(SCENARIO[am].safety||0.25)),av:r.safetyPatientsProtected,avl:"potentially protected",sub:"by medication errors during handoffs"},
-          {label:"Excess bed days",bl:Math.round(r.safetyBedDaysAvoided/(SCENARIO[am].safety||0.25)),av:r.safetyBedDaysAvoided,avl:"potentially avoidable",sub:"from adverse medication events"},
-        ].map((m,i)=><div key={i} style={{flex:"1 1 150px",minWidth:140,padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:`1px solid ${C.rose}18`}}>
-          <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:6}}>{m.label}</div>
-          <div style={{fontSize:26,fontWeight:800,color:C.rose}}>{"↓"} {an?fmtNum(m.av):0}<span style={{fontSize:13,fontWeight:500}}> {m.avl}</span></div>
-          <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>{m.sub}</div>
-          <div style={{marginTop:8,fontSize:11,color:C.textMid}}>of {an?fmtNum(m.bl):0} baseline/yr</div>
-        </div>)}
-      </div>
-      <EvidenceDropdown title="Evidence & litigation context">
-        <a href="https://www.safetyandquality.gov.au/our-work/communicating-safety" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>ACSQHC</a>: ~10% of separations involve an adverse event; communication failure contributes to 35% of clinical incidents. State indemnity schemes (icare NSW, VMIA VIC) link claims to fragmented information. Accreditation risk under ACSQHC Standards 1 and 6.
-      </EvidenceDropdown>
-    </Card><LockedConnector/>
-    </div>}
     <LockedConnector/>
 
     {/* Operational efficiency */}
@@ -3401,6 +3594,42 @@ function ROICalculator() {
     </Card>}
     {r.isMultiHospital && <LockedConnector/>}
 
+    </>}
+
+    {viewMode === "executive" && <Card style={{marginBottom:24,background:"#f8fafb",border:`1px dashed ${C.border}`}}>
+      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:10}}>Components of annual savings</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))",gap:10}}>
+        <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #0F4146`}}>
+          <div style={{fontSize:11,color:C.textMuted}}>Decommission savings</div>
+          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.decomSave)}</div>
+          <div style={{fontSize:10,color:C.textMuted}}>{r.decom} of {r.legacy} systems retired</div>
+        </div>
+        {r.timeSave > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #e67e22`}}>
+          <div style={{fontSize:11,color:C.textMuted}}>Clinician capacity freed</div>
+          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.timeSave)}</div>
+          <div style={{fontSize:10,color:C.textMuted}}>{fmtNum(r.hrsSaved)} hrs/yr \u00b7 {r.fteEquivalent} FTE</div>
+        </div>}
+        {(r.reimbursementImpact||0) > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #00d4aa`}}>
+          <div style={{fontSize:11,color:C.textMuted}}>{r.isAgedCare?"AN-ACC funding":r.isNDIS?"Claims & utilisation":"ABF efficiency"}</div>
+          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.reimbursementImpact)}</div>
+          <div style={{fontSize:10,color:C.textMuted}}>{r.isAgedCare?"Funding accuracy + agency":r.isNDIS?"Claims + retention":"NWAU recovery + denials"}</div>
+        </div>}
+        {(r.qualitySavings||0) > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #d4507a`}}>
+          <div style={{fontSize:11,color:C.textMuted}}>Quality &amp; safety</div>
+          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.qualitySavings)}</div>
+          <div style={{fontSize:10,color:C.textMuted}}>Indemnity + excess days + duplicates</div>
+        </div>}
+        {(r.mergeSavings||0) > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #2c3e6b`}}>
+          <div style={{fontSize:11,color:C.textMuted}}>Network consolidation</div>
+          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.mergeSavings)}</div>
+          <div style={{fontSize:10,color:C.textMuted}}>Duplicate elimination + standardisation</div>
+        </div>}
+      </div>
+      <div style={{marginTop:12,textAlign:"center",fontSize:12,color:C.textMid}}>
+        For methodology, evidence, and breakdown by component, switch to <button type="button" onClick={()=>setViewMode("detailed")} style={{background:"none",border:"none",color:C.accent,fontWeight:600,cursor:"pointer",textDecoration:"underline",padding:0,fontFamily:"inherit",fontSize:12}}>Detailed view</button>
+      </div>
+    </Card>}
+
     {/* KPIs */}
     <Card dimmed={dim} style={{background:C.surface,border:`1px solid ${C.border}`}}>
       <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Projected KPI improvements</h3>
@@ -3430,6 +3659,44 @@ function ROICalculator() {
       </div>
     </Card><LockedConnector/>
 
+    {/* Sensitivity check */}
+    {!dim && (() => {
+      const baseAnnual = r.annualWithReimbursement;
+      const halfReal = Math.round(r.decomSave + r.timeSave * 0.5 + (r.reimbursementImpact||0) * 0.5 + (r.qualitySavings||0) * 0.5 + (r.mergeSavings||0) * 0.5);
+      const halfDecom = Math.round(r.decomSave * 0.5 + r.timeSave + (r.reimbursementImpact||0) + (r.qualitySavings||0) + (r.mergeSavings||0));
+      const halfBoth = Math.round((r.decomSave + r.timeSave + (r.reimbursementImpact||0) + (r.qualitySavings||0) + (r.mergeSavings||0)) * 0.5);
+      const halfBothPct = Math.round(halfBoth / Math.max(1, baseAnnual) * 100);
+      return <Card style={{marginTop:16,background:"#f8fafb",border:`1px solid ${C.borderLight}`}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+          <h3 style={{fontSize:14,fontWeight:700,margin:0,color:C.text}}>Sensitivity check</h3>
+          <span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146"}}>How robust is your number?</span>
+        </div>
+        <p style={{fontSize:12,color:C.textMuted,margin:"0 0 14px"}}>If our key assumptions are off, your savings would still look like this:</p>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))",gap:10}}>
+          <div style={{padding:"12px",background:"#fff",borderRadius:8,border:`1px solid ${C.border}`}}>
+            <div style={{fontSize:11,color:C.textMuted}}>Your estimate</div>
+            <div style={{fontSize:20,fontWeight:800,color:C.accent}}>{fmtK(baseAnnual)}/yr</div>
+            <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>Expected scenario, current assumptions</div>
+          </div>
+          <div style={{padding:"12px",background:"#fff",borderRadius:8,border:`1px solid ${C.border}`}}>
+            <div style={{fontSize:11,color:C.textMuted}}>If realisation rate halves</div>
+            <div style={{fontSize:20,fontWeight:800,color:C.text}}>{fmtK(halfReal)}/yr</div>
+            <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>Capacity + quality at 50% of model</div>
+          </div>
+          <div style={{padding:"12px",background:"#fff",borderRadius:8,border:`1px solid ${C.border}`}}>
+            <div style={{fontSize:11,color:C.textMuted}}>If decom rate halves</div>
+            <div style={{fontSize:20,fontWeight:800,color:C.text}}>{fmtK(halfDecom)}/yr</div>
+            <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>Half the systems retired</div>
+          </div>
+          <div style={{padding:"12px",background:"#fff",borderRadius:8,border:`1px solid ${C.border}`}}>
+            <div style={{fontSize:11,color:C.textMuted}}>If both halve simultaneously</div>
+            <div style={{fontSize:20,fontWeight:800,color:C.text}}>{fmtK(halfBoth)}/yr</div>
+            <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>Worst-case stress test ({halfBothPct}% of base)</div>
+          </div>
+        </div>
+        <p style={{fontSize:11,color:C.textMuted,marginTop:12,marginBottom:0,fontStyle:"italic"}}>Even at the most pessimistic stress test, your savings remain meaningful. This demonstrates the robustness of the underlying business case.</p>
+      </Card>;
+    })()}
 
     <div style={{display:"flex",justifyContent:"center",marginTop:24,marginBottom:16}}>
       <button type="button" onClick={()=>{setPage("inputs");setStep(0);setScenarioMode("EXPECTED");setFlagships([]);scrollToTop();}} style={{padding:"10px 24px",border:"1px solid "+C.border,borderRadius:999,background:"#fff",color:C.textMid,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
@@ -3462,11 +3729,19 @@ function ROICalculator() {
             <option value="Other" style={{color:"#1b2433"}}>Other</option>
           </select>
         </div>
-        <button type="button" onClick={submitLead} disabled={!leadForm.name||!leadForm.email||leadSending} style={{
-          padding:"14px 32px",background:(!leadForm.name||!leadForm.email)?"rgba(255,255,255,0.15)":"#fff",
-          color:(!leadForm.name||!leadForm.email)?"rgba(255,255,255,0.4)":C.accent,
-          border:"none",borderRadius:999,fontSize:15,fontWeight:700,cursor:(!leadForm.name||!leadForm.email)?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:8
-        }} className="roi-cta">{leadSending ? "Generating report..." : "Download PDF report"}</button>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          <div style={{display:"inline-flex",gap:0,padding:3,background:"rgba(255,255,255,0.1)",borderRadius:999}}>
+            {[
+              {k:"full",l:"Full report"},
+              {k:"board",l:"Board summary (2pp)"},
+            ].map(f=><button type="button" key={f.k} onClick={()=>setPdfFormat(f.k)} style={{padding:"6px 14px",border:"none",borderRadius:999,background:pdfFormat===f.k?"#fff":"transparent",color:pdfFormat===f.k?C.accent:"rgba(255,255,255,0.7)",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>{f.l}</button>)}
+          </div>
+        </div>
+        <button type="button" onClick={pdfFormat==="board"?(async()=>{await generateBoardPDF();setLeadSubmitted(true);}):submitLead} disabled={pdfFormat!=="board"&&(!leadForm.name||!leadForm.email||leadSending)} style={{
+          padding:"14px 32px",background:(pdfFormat!=="board"&&(!leadForm.name||!leadForm.email))?"rgba(255,255,255,0.15)":"#fff",
+          color:(pdfFormat!=="board"&&(!leadForm.name||!leadForm.email))?"rgba(255,255,255,0.4)":C.accent,
+          border:"none",borderRadius:999,fontSize:15,fontWeight:700,cursor:(pdfFormat!=="board"&&(!leadForm.name||!leadForm.email))?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:8,marginTop:12
+        }} className="roi-cta">{leadSending ? "Generating report..." : (pdfFormat==="board"?"Download board summary":"Download PDF report")}</button>
         <p style={{fontSize:11,opacity:.4,marginTop:12}}>{EMAIL_ENDPOINT ? "Your report will also be emailed to you. " : ""}We may reach out to see if we can help with your programme.</p>
       </Card>
     )}
@@ -3641,6 +3916,11 @@ function ROICalculator() {
     })()}
 
     </>}
+
+    {/* Methodology version */}
+    <div style={{maxWidth:900,margin:"24px auto 0",padding:"0 24px",fontSize:11,color:C.textMuted,textAlign:"center"}}>
+      Methodology v3.0 — last reviewed May 2026 — next review November 2026
+    </div>
 
     {/* Disclaimer */}
     <div style={{marginTop:24,padding:"16px 20px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`,fontSize:11,color:C.textMuted,lineHeight:1.7}}>
