@@ -120,20 +120,23 @@ export function SplashScreen({ onStart }) {
         </p>
 
         <button onClick={onStart} style={{
-          padding: '24px 72px', borderRadius: 60, border: '2px solid #00d4aa',
-          background: 'rgba(0,212,170,0.1)', color: '#00d4aa',
-          fontSize: 24, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-          letterSpacing: 1, transition: 'all 0.3s',
-          boxShadow: '0 0 40px rgba(0,212,170,0.15), inset 0 0 40px rgba(0,212,170,0.05)',
-          animation: 'splashPulse 3s ease-in-out infinite',
+          padding: '36px 96px', borderRadius: 80, border: '3px solid #00d4aa',
+          background: 'rgba(0,212,170,0.18)', color: '#fff',
+          fontSize: 38, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+          letterSpacing: 2, transition: 'all 0.3s',
+          textTransform: 'uppercase',
+          boxShadow: '0 0 80px rgba(0,212,170,0.35), inset 0 0 60px rgba(0,212,170,0.08)',
+          animation: 'splashPulseBig 2s ease-in-out infinite',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
         }}>
-          Discover your ROI
+          <span style={{fontSize: 18, fontWeight: 600, color: '#00d4aa', letterSpacing: 6}}>TAP TO START</span>
+          <span style={{fontSize: 36, fontWeight: 800, color: '#fff', letterSpacing: 1}}>Discover your ROI</span>
         </button>
 
         <style>{`
-          @keyframes splashPulse {
-            0%, 100% { box-shadow: 0 0 40px rgba(0,212,170,0.15), inset 0 0 40px rgba(0,212,170,0.05); }
-            50% { box-shadow: 0 0 60px rgba(0,212,170,0.3), inset 0 0 60px rgba(0,212,170,0.1); }
+          @keyframes splashPulseBig {
+            0%, 100% { box-shadow: 0 0 80px rgba(0,212,170,0.35), inset 0 0 60px rgba(0,212,170,0.08); transform: scale(1); }
+            50% { box-shadow: 0 0 120px rgba(0,212,170,0.55), inset 0 0 80px rgba(0,212,170,0.15); transform: scale(1.02); }
           }
         `}</style>
 
