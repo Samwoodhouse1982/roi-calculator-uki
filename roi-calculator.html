@@ -2630,7 +2630,19 @@ function ROICalculator() {
       const years = r.rampPcts.map((p,i) => ({pct:p,label:"Year "+(i+1)}));
       const maxH = 200;
       return <Card style={{marginBottom:16}}>
-        <div style={{fontSize:13,fontWeight:700,color:C.textMid,marginBottom:4}}>{r.rampYears}-year savings projection</div>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.textMid}}>{r.rampYears}-year savings projection</div>
+          <div style={{display:"flex",gap:0}}>
+            {[{k:3,l:"3-yr"},{k:5,l:"5-yr"}].map(o =>
+              <button type="button" key={o.k} onClick={()=>setInputs(p=>({...p,_rampYears:o.k}))} style={{
+                padding:"4px 12px",fontSize:11,fontWeight:r.rampYears===o.k?700:500,
+                border:"1px solid "+C.accent,borderRadius:o.k===3?"6px 0 0 6px":"0 6px 6px 0",
+                background:r.rampYears===o.k?C.accent:"#fff",color:r.rampYears===o.k?"#fff":C.accent,
+                cursor:"pointer",fontFamily:"inherit",marginLeft:o.k===5?-1:0
+              }}>{o.l}</button>
+            )}
+          </div>
+        </div>
         <div style={{fontSize:12,color:C.textMuted,marginBottom:16}}>Builds from {fmtK(Math.round(total*r.rampPcts[0]))} in Year 1 to {fmtK(total)}/yr at steady state</div>
         <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:24,marginBottom:16,height:maxH+30}}>
           {years.map((yr,yi)=>{
