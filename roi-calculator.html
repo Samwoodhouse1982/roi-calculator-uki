@@ -2615,6 +2615,45 @@ function ROICalculator() {
       </div>;
     })()}
 
+    {/* Year-by-year stacked bar chart */}
+    {!dim && (() => {
+      const segs = [
+        {label:"Decommission",val:r.decomSave,color:"#0F4146"},
+        {label:"Capacity",val:r.timeSave,color:"#1a7a7a"},
+        {label:"Reimbursement",val:r.reimbursementImpact,color:"#00d4aa"},
+        {label:"Quality",val:r.qualitySavings,color:"#d4507a"},
+        ...(r.academicSavings>0?[{label:"Academic",val:r.academicSavings,color:"#534AB7"}]:[]),
+        ...(r.mergeSavings>0?[{label:"M&A",val:r.mergeSavings,color:"#2c3e6b"}]:[]),
+      ].filter(s=>s.val>0);
+      const total = segs.reduce((a,s)=>a+s.val,0);
+      if (total <= 0) return null;
+      const years = r.rampPcts.map((p,i) => ({pct:p,label:"Year "+(i+1)}));
+      const maxH = 200;
+      return <Card style={{marginBottom:16}}>
+        <div style={{fontSize:13,fontWeight:700,color:C.textMid,marginBottom:4}}>{r.rampYears}-year savings projection</div>
+        <div style={{fontSize:12,color:C.textMuted,marginBottom:16}}>Builds from {fmtK(Math.round(total*r.rampPcts[0]))} in Year 1 to {fmtK(total)}/yr at steady state</div>
+        <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:24,marginBottom:16,height:maxH+30}}>
+          {years.map((yr,yi)=>{
+            const h = Math.round(maxH * yr.pct);
+            return <div key={yi} style={{display:"flex",flexDirection:"column",alignItems:"center",width:80}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.accent,marginBottom:4}}>{fmtK(Math.round(total*yr.pct))}</div>
+              <div style={{width:"100%",height:h,borderRadius:"6px 6px 0 0",overflow:"hidden",display:"flex",flexDirection:"column-reverse"}}>
+                {segs.map((s,si)=><div key={si} style={{width:"100%",height:`${s.val/total*100}%`,background:s.color,minHeight:s.val>0?2:0}} title={`${s.label}: ${fmtK(Math.round(s.val*yr.pct))}`}/>)}
+              </div>
+              <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginTop:6}}>{yr.label}</div>
+              <div style={{fontSize:10,color:C.textMuted}}>{Math.round(yr.pct*100)}%</div>
+            </div>;
+          })}
+        </div>
+        <div style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center"}}>
+          {segs.map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:C.textMid}}>
+            <div style={{width:8,height:8,borderRadius:2,background:s.color}}/>{s.label}
+          </div>)}
+        </div>
+      </Card>;
+    })()}
+
+
     {/* Decom - tiered breakdown */}
     <Card dimmed={dim}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
@@ -2828,44 +2867,6 @@ function ROICalculator() {
         </div>
       </div>
     </Card><LockedConnector/>
-
-    {/* Year-by-year stacked bar chart */}
-    {!dim && (() => {
-      const segs = [
-        {label:"Decommission",val:r.decomSave,color:"#0F4146"},
-        {label:"Capacity",val:r.timeSave,color:"#1a7a7a"},
-        {label:"Reimbursement",val:r.reimbursementImpact,color:"#00d4aa"},
-        {label:"Quality",val:r.qualitySavings,color:"#d4507a"},
-        ...(r.academicSavings>0?[{label:"Academic",val:r.academicSavings,color:"#534AB7"}]:[]),
-        ...(r.mergeSavings>0?[{label:"M&A",val:r.mergeSavings,color:"#2c3e6b"}]:[]),
-      ].filter(s=>s.val>0);
-      const total = segs.reduce((a,s)=>a+s.val,0);
-      if (total <= 0) return null;
-      const years = r.rampPcts.map((p,i) => ({pct:p,label:"Year "+(i+1)}));
-      const maxH = 200;
-      return <Card style={{marginBottom:16}}>
-        <div style={{fontSize:13,fontWeight:700,color:C.textMid,marginBottom:4}}>{r.rampYears}-year savings projection</div>
-        <div style={{fontSize:12,color:C.textMuted,marginBottom:16}}>Builds from {fmtK(Math.round(total*r.rampPcts[0]))} in Year 1 to {fmtK(total)}/yr at steady state</div>
-        <div style={{display:"flex",alignItems:"flex-end",justifyContent:"center",gap:24,marginBottom:16,height:maxH+30}}>
-          {years.map((yr,yi)=>{
-            const h = Math.round(maxH * yr.pct);
-            return <div key={yi} style={{display:"flex",flexDirection:"column",alignItems:"center",width:80}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.accent,marginBottom:4}}>{fmtK(Math.round(total*yr.pct))}</div>
-              <div style={{width:"100%",height:h,borderRadius:"6px 6px 0 0",overflow:"hidden",display:"flex",flexDirection:"column-reverse"}}>
-                {segs.map((s,si)=><div key={si} style={{width:"100%",height:`${s.val/total*100}%`,background:s.color,minHeight:s.val>0?2:0}} title={`${s.label}: ${fmtK(Math.round(s.val*yr.pct))}`}/>)}
-              </div>
-              <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginTop:6}}>{yr.label}</div>
-              <div style={{fontSize:10,color:C.textMuted}}>{Math.round(yr.pct*100)}%</div>
-            </div>;
-          })}
-        </div>
-        <div style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center"}}>
-          {segs.map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:C.textMid}}>
-            <div style={{width:8,height:8,borderRadius:2,background:s.color}}/>{s.label}
-          </div>)}
-        </div>
-      </Card>;
-    })()}
 
     {/* Year-by-year */}
     <Card dimmed={dim}>
