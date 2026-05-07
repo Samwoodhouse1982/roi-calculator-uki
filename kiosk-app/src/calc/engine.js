@@ -5,17 +5,17 @@ export const CORPORATE_STAFF_PER_BED = 0.15;  // Scales with size, caps at ~120 
 export const BLENDED_HOURLY_RATE = 95;
 export const WORKING_WEEKS = 50;
 export const TICKETS_PER_SYSTEM = 2.5;
-export const SWITCH_PENALTY_PER_SYSTEM = 0.04;
+export const SWITCH_PENALTY_PER_SYSTEM = 0.04;  // Bartek et al JIMI 2023: beta=0.03; 4% conservative
 export const SURVIVING_SYSTEM_TICKET_FACTOR = 0.6;
 export const SAR_BASE_DAYS = 1.5;
 export const SAR_DAYS_PER_SYSTEM_BEFORE = 0.4;
 export const SAR_DAYS_PER_SYSTEM_AFTER = 0.15;
 
 // Clinical engagement factors
-export const ACTIVE_USER_PCT = 0.65;           // 65% of total staff are regular EHR/system users
+export const ACTIVE_USER_PCT = 0.65;  // Sinsky 2016; KLAS Arch Collaborative           // 65% of total staff are regular EHR/system users
                                                 // Remainder: porters, HCAs, casual/bank, non-clinical support
-                                                // Evidence: HIMSS analytics ~60-70% active EHR users in typical US hospital
-export const SYSTEM_EXPOSURE_PCT = 0.35;       // Average clinician interacts with ~35% of legacy systems
+                                                // Evidence: Sinsky 2016/KLAS analytics ~60-70% active EHR users in typical US hospital
+export const SYSTEM_EXPOSURE_PCT = 0.35;  // Modeled: role-based access       // Average clinician interacts with ~35% of legacy systems
                                                 // An oncologist uses 4-5 of 15 systems, not all 15
                                                 // Nurses touch more (40-50%), specialists fewer (20-30%)
                                                 // 35% is the blended average across roles
