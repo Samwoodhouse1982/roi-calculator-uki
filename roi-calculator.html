@@ -406,7 +406,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
   // Denial rate reduction (FFS pathway)
   const estAnnualRevenue = estAnnualRevenueCalc; // from admissions-based model above
   const denialBaseline = estAnnualRevenue * DENIAL_NET_REVENUE_LOSS;
-  const denialRecovery = Math.round(denialBaseline * 0.20 * sc.decom_pct * (inp._denialWeight || 1.0));
+  const denialRecovery = Math.round(denialBaseline * DENIAL_FRAGMENTATION_ATTRIBUTION * 0.20 * sc.decom_pct * (inp._denialWeight || 1.0));
 
   // Malpractice premium reduction (modelled assumption)
   const malpracticePremium = inp.bed_count * MALPRACTICE_AVG_PREMIUM_PER_BED;
@@ -537,7 +537,8 @@ const CMS_VBP_REDISTRIBUTION = 1700000000;  // $1.7bn redistributed FY2026
 
 // Revenue Cycle / Denial Benchmarks (HFMA, MDaudit, Kodiak Solutions 2024-2025)
 const DENIAL_RATE_BASELINE = 0.118;          // 11.8% initial denial rate (Kodiak 2024)
-const DENIAL_NET_REVENUE_LOSS = 0.048;       // 4.8% net revenue lost to denials (HFMA Pulse Survey)
+const DENIAL_NET_REVENUE_LOSS = 0.048;
+const DENIAL_FRAGMENTATION_ATTRIBUTION = 0.30; // 30% of denials are documentation/fragmentation-related (HFMA denial reason analysis)       // 4.8% net revenue lost to denials (HFMA Pulse Survey)
 const DENIAL_AVG_INPATIENT = 10000;          // $10,000 avg denied inpatient claim (MDaudit 2024)
 const DENIAL_RECOVERY_PER_BN = 10000000;     // $10m recoverable per $1bn revenue (Advisory Board 2024)
 
@@ -2671,7 +2672,7 @@ function ROICalculator() {
 
       <EvidenceDropdown title="Evidence & methodology">
         <strong>CMS penalties:</strong> HRRP 3% cap (Section 1886(q) SSA, FY2025). HAC 1% (bottom quartile). VBP 2% withhold. Rates verified from CMS programme pages.<br/><br/>
-        <strong>Attribution:</strong> Pattar et al (JAMA 2025, 116 RCTs): 17% readmission reduction from EHR interventions. Vest et al (JAMIA 2019): 0.8pp from single-vendor EHR. Model uses scenario-adjusted fractions (15-35%). Denial recovery: 20% of 4.8% revenue loss (HFMA).<br/><br/>
+        <strong>Attribution:</strong> Pattar et al (JAMA 2025, 116 RCTs): 17% readmission reduction from EHR interventions. Vest et al (JAMIA 2019): 0.8pp from single-vendor EHR. Model uses scenario-adjusted fractions (15-35%). Denial recovery: 4.8% net revenue loss (HFMA), 30% attributed to documentation fragmentation, 20% recoverable through consolidation.<br/><br/>
         <strong>Quality:</strong> Malpractice 5% reduction (CRICO: 30% of claims involve communication failure). Excess bed days: Bates/Classen ADEs. Duplicate testing: Banker et al 2024.
       </EvidenceDropdown>
     </Card><LockedConnector/>
