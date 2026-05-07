@@ -408,7 +408,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const denialBaseline = estAnnualRevenue * DENIAL_NET_REVENUE_LOSS;
   const denialRecovery = Math.round(denialBaseline * DENIAL_FRAGMENTATION_ATTRIBUTION * 0.20 * sc.decom_pct * (inp._denialWeight || 1.0));
 
-  // Malpractice premium reduction (modelled assumption)
+  // Malpractice premium reduction (modeled assumption)
   const malpracticePremium = inp.bed_count * MALPRACTICE_AVG_PREMIUM_PER_BED;
   const malpracticeReduction = Math.round(malpracticePremium * 0.05 * sc.safety); // 5% reduction — conservative (CRICO: 30% of claims involve comms failure)
 
@@ -439,11 +439,11 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const duplicateElimination = Math.round(duplicateSystemCost * sc.decom_pct);
   const duplicateInfraCost = isMultiHospital ? inp.org_count * DUPLICATE_INFRA_COST_PER_FACILITY : 0;
   const infraConsolidation = Math.round(duplicateInfraCost * 0.60 * sc.decom_pct); // 60% consolidatable
-  const standardisationSave = isMultiHospital ? Math.round(totalEstate * CROSS_FACILITY_STANDARDISATION_PCT * sc.decom_pct) : 0;
+  const standardizationSave = isMultiHospital ? Math.round(totalEstate * CROSS_FACILITY_STANDARDIZATION_PCT * sc.decom_pct) : 0;
 
   // Module totals
   const academicSavings = researchDecomSave + gmeEfficiency + teachingOverhead;
-  const mergeSavings = duplicateElimination + infraConsolidation + standardisationSave;
+  const mergeSavings = duplicateElimination + infraConsolidation + standardizationSave;
 
   // Total reimbursement impact
   const reimbursementImpact = hrrpReduction + hacReduction + vbpImprovement + denialRecovery;
@@ -498,7 +498,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     gmeComplianceCost, gmeEfficiency, teachingOverhead, academicSavings,
     // M&A module
     isMultiHospital, duplicateSystems, duplicateSystemCost, duplicateElimination,
-    duplicateInfraCost, infraConsolidation, standardisationSave, mergeSavings,
+    duplicateInfraCost, infraConsolidation, standardizationSave, mergeSavings,
     annualWithReimbursement, total3WithReimbursement, yr1R, yr2R, yr3R,
   };
 }
@@ -589,9 +589,9 @@ const TEACHING_OVERHEAD_PCT = 0.12;             // 12% additional system complex
 // ── M&A / Multi-Hospital Constants ──
 const DUPLICATE_SYSTEM_RATE = 0.35;             // 35% of systems are duplicated across facilities post-M&A
 const DUPLICATE_INFRA_COST_PER_FACILITY = 250000; // Per-facility duplicate infrastructure (data center, network, help desk)
-const CROSS_FACILITY_STANDARDISATION_PCT = 0.15; // 15% of operational costs addressable through standardisation
+const CROSS_FACILITY_STANDARDIZATION_PCT = 0.15; // 15% of operational costs addressable through standardization
 
-// Provider type multipliers (modelled assumptions, clearly labelled)
+// Provider type multipliers (modeled assumptions, clearly labeled)
 
 const PROVIDER_PRESET_MAP = {
   critical_access: "SMALL",
@@ -937,7 +937,7 @@ function ROICalculator() {
   // ── Integration config (developer: replace these values) ──
   const HUBSPOT_PORTAL_ID = "";   // Set US portal ID
   const HUBSPOT_FORM_GUID = "";   // Set US form GUID
-  const HUBSPOT_REGION = "na1";  // US data centre
+  const HUBSPOT_REGION = "na1";  // US data center
   const EMAIL_ENDPOINT = "";      // e.g. "https://your-worker.your-domain.workers.dev/send-report"
 
   // ── PDF branding ──
@@ -1323,7 +1323,7 @@ function ROICalculator() {
     duplicate_systems: r.duplicateSystems,
     duplicate_elimination: r.duplicateElimination,
     infra_consolidation: r.infraConsolidation,
-    standardisation_save: r.standardisationSave,
+    standardization_save: r.standardizationSave,
     merge_savings: r.mergeSavings,
     three_year_with_reimbursement: r.total3WithReimbursement,
     galen_migration_cost: galenMigrationCost,
@@ -1436,7 +1436,7 @@ function ROICalculator() {
 
     // Colors
     const TEAL = [15,65,70], WHITE = [255,255,255], SEAFOAM = [190,250,240];
-    const GREY = [61,90,94], LTBG = [238,247,241], TEALBG = [232,250,246];
+    const GRAY = [61,90,94], LTBG = [238,247,241], TEALBG = [232,250,246];
     const DARK = [31,41,55], MID = [110,138,142];
     const setC = (c) => { doc.setTextColor(c[0],c[1],c[2]); };
 
@@ -1503,7 +1503,7 @@ function ROICalculator() {
     doc.setFontSize(8); doc.setFont("helvetica","bold"); setC(TEAL);
     doc.text("Organization:", metaCol1, y);
     doc.text("Prepared for:", metaCol2, y);
-    doc.setFont("helvetica","normal"); setC(GREY);
+    doc.setFont("helvetica","normal"); setC(GRAY);
     const orgLines = doc.splitTextToSize(leadForm.org || "Not specified", metaW);
     doc.text(orgLines[0], metaCol1, y + 4);
     doc.text(doc.splitTextToSize(leadForm.name || "Not specified", metaW)[0], metaCol2, y + 4);
@@ -1511,7 +1511,7 @@ function ROICalculator() {
     doc.setFont("helvetica","bold"); setC(TEAL);
     doc.text("Scenario:", metaCol1, y);
     doc.text("Date:", metaCol2, y);
-    doc.setFont("helvetica","normal"); setC(GREY);
+    doc.setFont("helvetica","normal"); setC(GRAY);
     doc.text(scenarioLabel, metaCol1, y + 4);
     doc.text(dateStr, metaCol2, y + 4);
     y += 8;
@@ -1531,7 +1531,7 @@ function ROICalculator() {
       const cx = ml + i * (cardW + 4);
       doc.setFillColor(cd.bg[0],cd.bg[1],cd.bg[2]);
       doc.roundedRect(cx, y, cardW, 28, 3, 3, "F");
-      doc.setFontSize(6.5); doc.setFont("helvetica","bold"); setC(GREY);
+      doc.setFontSize(6.5); doc.setFont("helvetica","bold"); setC(GRAY);
       doc.text(cd.label, cx + cardW/2, y + 7, { align: "center" });
       doc.setFontSize(18); doc.setFont("helvetica","bold"); setC(TEAL);
       doc.text(cd.value, cx + cardW/2, y + 17, { align: "center" });
@@ -1625,7 +1625,7 @@ function ROICalculator() {
         ],
       });
       const safetyEnd = doc.lastAutoTable.finalY + 2;
-      doc.setFontSize(7); doc.setFont("helvetica","normal"); setC(GREY);
+      doc.setFontSize(7); doc.setFont("helvetica","normal"); setC(GRAY);
       const litigNote = "Context: CRICO analysis of 23,658 malpractice claims found communication failures in 30% of cases, contributing to 1,744 deaths and $1.7bn in costs over 5 years. Mello et al (Health Affairs 2010) estimated total US malpractice system cost at $55.6bn. Safety metrics are not included in the financial ROI total.";
       doc.text(doc.splitTextToSize(litigNote, cw - 16), ml + 6, safetyEnd + 2);
       // Resize safety box to fit
@@ -1648,7 +1648,7 @@ function ROICalculator() {
         ["HAC penalty avoidance", fmtK(r.hacReduction) + "/yr", "CMS HAC program (1%)"],
         ["VBP improvement", fmtK(r.vbpImprovement) + "/yr", "CMS VBP (2% pool)"],
         ["Denial recovery", fmtK(r.denialRecovery) + "/yr", "HFMA/MDaudit 2024"],
-        ["Malpractice premium reduction", fmtK(r.malpracticeReduction) + "/yr", "Modelled (8% reduction)"],
+        ["Malpractice premium reduction", fmtK(r.malpracticeReduction) + "/yr", "Modeled (8% reduction)"],
         ["Excess bed day cost avoided", fmtK(r.excessDayCostAvoided) + "/yr", "KFF/AHA 2023 ($3,132/day)"],
         ["Duplicate testing reduction", fmtK(r.duplicateReduction) + "/yr", "ONC (25% duplicate rate)"],
         [{ content: "Total reimbursement & quality", styles: { fontStyle: "bold", fillColor: LTBG } },
@@ -1708,7 +1708,7 @@ function ROICalculator() {
         body: [
           ["Duplicate system elimination", fmtK(r.duplicateElimination) + "/yr", r.duplicateSystems + " duplicates across " + inputs.org_count + " facilities"],
           ["Infrastructure consolidation", fmtK(r.infraConsolidation) + "/yr", "$250k/facility for DC, network, help desk"],
-          ["Cross-facility standardization", fmtK(r.standardisationSave) + "/yr", "Formulary, order sets, protocols"],
+          ["Cross-facility standardization", fmtK(r.standardizationSave) + "/yr", "Formulary, order sets, protocols"],
           [{ content: "M&A module total", styles: { fontStyle: "bold", fillColor: LTBG } },
            { content: fmtK(r.mergeSavings) + "/yr", styles: { fontStyle: "bold", textColor: TEAL, fillColor: LTBG } },
            { content: "", styles: { fillColor: LTBG } }],
@@ -1744,7 +1744,7 @@ function ROICalculator() {
     doc.roundedRect(ml, y, cw, 14, 2, 2, "F");
     doc.setFontSize(8); doc.setFont("helvetica","bold"); setC(TEAL);
     doc.text("Range across scenarios:", ml + 4, y + 5);
-    doc.setFont("helvetica","normal"); setC(GREY);
+    doc.setFont("helvetica","normal"); setC(GRAY);
     doc.text(fmtK(rCon.total3WithReimbursement) + " (conservative)  to  " + fmtK(rStr.total3WithReimbursement) + " (stretch) — including reimbursement & quality impact. All figures are user-overridable.", ml + 4, y + 10);
     y += 22;
 
@@ -1782,7 +1782,7 @@ function ROICalculator() {
     doc.roundedRect(ml, y, cw, 28, 2, 2, "F");
     doc.setFontSize(7); doc.setFont("helvetica","bold"); setC(MID);
     doc.text("Important disclaimer", ml + 4, y + 5);
-    doc.setFont("helvetica","normal"); setC(GREY);
+    doc.setFont("helvetica","normal"); setC(GRAY);
     const disclaimerText = "This report presents indicative estimates only, generated from real-world data where available alongside generalized assumptions and industry-level benchmarks. It does not constitute a guaranteed ROI, a binding savings target, or professional financial, legal, or clinical advice. Actual outcomes will vary based on your organization's specific circumstances, contract terms, implementation approach, and operational factors not captured by this model. All projected figures should be independently validated before being used to support investment decisions. No liability is accepted for decisions made in reliance on these estimates.";
     const disclaimerLines = doc.splitTextToSize(disclaimerText, cw - 8);
     doc.text(disclaimerLines, ml + 4, y + 9);
@@ -2460,7 +2460,7 @@ function ROICalculator() {
               <div style={{fontSize:14,fontWeight:700,color:C.text}}>legacy systems{flagships.length > 0 ? ` (incl. ${flagships.length} named)` : ""}</div>
             </div>
             <div style={{fontSize:12,color:C.textMuted,marginTop:4}}>
-              Estate: ~{fmtK(estEstate)}/yr {hasCustomCost ? "" : "(modelled estimate) "}running costs
+              Estate: ~{fmtK(estEstate)}/yr {hasCustomCost ? "" : "(modeled estimate) "}running costs
             </div>
           </div>
           {!hasCustomCost && costMode === "estimate" && <div style={{marginTop:8,padding:"12px 16px",background:"#fef9ec",borderRadius:8,border:"1px solid #f0dca0",fontSize:13,color:"#7a6520",lineHeight:1.6}}>
@@ -2487,7 +2487,7 @@ function ROICalculator() {
           <select value={inputs.data_quality_level} onChange={e=>{update("data_quality_level",e.target.value);touch(3);}} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1px solid ${C.border}`,fontSize:14,fontFamily:"inherit"}}><option value="CLEAN">Clean</option><option value="MIXED">Mixed</option><option value="POOR">Poor</option></select></div>
       </div>
       <AnimatedSlider label={<span>Decommission target<InfoTip text="What % of legacy systems do you plan to retire? 60-80% is typical as most programs retain a few for standalone or long-retention use."/></span>} value={inputs.decom_retire_rate} min={0} max={1} step={0.05} display={`${Math.round(inputs.decom_retire_rate*100)}%`} onChange={v=>{update("decom_retire_rate",v);touch(3);}} suffix=""/>
-      <AnimatedSlider label={<span>Bed occupancy rate<InfoTip text="Average bed occupancy. National average is 65% (AHA 2023). Critical access hospitals may be 40-50%; urban academic centres 75-85%. This drives admission volume, revenue estimates, and ADE calculations."/></span>} value={occupancyRate} min={0.30} max={0.95} step={0.01} display={`${Math.round(occupancyRate*100)}%`} onChange={v=>{setOccupancyRate(v);touch(3);}} suffix=""/>
+      <AnimatedSlider label={<span>Bed occupancy rate<InfoTip text="Average bed occupancy. National average is 65% (AHA 2023). Critical access hospitals may be 40-50%; urban academic centers 75-85%. This drives admission volume, revenue estimates, and ADE calculations."/></span>} value={occupancyRate} min={0.30} max={0.95} step={0.01} display={`${Math.round(occupancyRate*100)}%`} onChange={v=>{setOccupancyRate(v);touch(3);}} suffix=""/>
 
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
@@ -2770,7 +2770,7 @@ function ROICalculator() {
         <OverridableStat label="Mins wasted / wk" computed={calc(calcInputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on AMIA 2019 workflow studies and Brigham & Women's time-motion research.`}/>
         <Stat label="Hours freed / yr" info="Total hours of clinician time freed annually across the entire workforce. Formula: active users (65% of staff) x (minutes wasted per week minus residual after archiving) x 48 working weeks, divided by 60. This represents the aggregate time currently spent navigating between legacy systems that could be redirected to patient care." value={an?<AnimatedNum value={r.hrsSaved} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Result: ${fmtNum(r.hrsSaved)} hours per year.`}/>
         <Stat label="FTE equivalent" value={an?r.fteEquivalent.toFixed(1):"-"} color={C.amber} info={`The freed clinician time equates to ${r.fteEquivalent.toFixed(1)} full-time equivalents (based on 2,080 hours per FTE per year at ${Math.round(r.realization*100)}% realization). This is not headcount reduction — it represents capacity redirected to patient care.`}/>
-        <Stat label="Capacity value" info="The dollar value of freed clinician time. Formula: hours freed per year x $95 blended hourly rate (weighted across physicians, nurses, pharmacists, and allied health) x the scenario realization rate. The realization rate (20-40% depending on scenario) reflects that not all freed time becomes productive output. This is not a headcount reduction; it represents capacity redirected to patient care." value={an?<AnimatedK value={r.timeSave} active={an}/>:"-"} sub={`${Math.round(r.realization*100)}% realization`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at the BLS median blended rate of $95/hr (BLS median clinical compensation including benefits). Only ${Math.round(r.realization*100)}% is counted as realisable capacity, since not all freed time converts to measurable output. This represents capacity redirected to patient care, not a direct cash saving.`}/>
+        <Stat label="Capacity value" info="The dollar value of freed clinician time. Formula: hours freed per year x $95 blended hourly rate (weighted across physicians, nurses, pharmacists, and allied health) x the scenario realization rate. The realization rate (20-40% depending on scenario) reflects that not all freed time becomes productive output. This is not a headcount reduction; it represents capacity redirected to patient care." value={an?<AnimatedK value={r.timeSave} active={an}/>:"-"} sub={`${Math.round(r.realization*100)}% realization`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at the BLS median blended rate of $95/hr (BLS median clinical compensation including benefits). Only ${Math.round(r.realization*100)}% is counted as realizable capacity, since not all freed time converts to measurable output. This represents capacity redirected to patient care, not a direct cash saving.`}/>
       </div>
       <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"$"}95 {"×"} {Math.round(r.realization*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong></Callout>
       <EvidenceDropdown title="Evidence & methodology">
@@ -2783,7 +2783,7 @@ function ROICalculator() {
     {/* Reimbursement & compliance impact */}
     <Card dimmed={dim} style={{borderLeft:"4px solid #00d4aa"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Reimbursement & compliance impact</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Estimated annual impact from CMS penalty avoidance, denial reduction, and quality improvements. These are modelled estimates with improvement rates attributed to EHR consolidation as a contributing factor, not sole cause. Actual attribution will depend on your implementation scope and existing infrastructure.</p>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Estimated annual impact from CMS penalty avoidance, denial reduction, and quality improvements. These are modeled estimates with improvement rates attributed to EHR consolidation as a contributing factor, not sole cause. Actual attribution will depend on your implementation scope and existing infrastructure.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
@@ -2850,7 +2850,7 @@ function ROICalculator() {
       </Callout>
 
       <EvidenceDropdown title="Evidence & methodology">
-        <strong>Research systems:</strong> ~3.5 per 100 beds (IRB, CTMS, biobank, research repositories, specialty registries). Retiring these eliminates standalone licensing and reduces integration burden with the clinical record.<br/><br/><strong>Graduate Medical Education (GME):</strong> Teaching hospitals must report to ACGME (Accreditation Council for Graduate Medical Education) on resident case volumes, procedure logs, duty hours, and milestone assessments. This data is often scattered across legacy scheduling, case logging, and evaluation systems. Consolidating these into the archive reduces compliance reporting overhead by an estimated 25%, calculated as: beds x $850/bed x 25% efficiency.<br/><br/><strong>Teaching overhead:</strong> Teaching workflows add ~12% complexity to clinical systems (registrar supervision, case-based learning, simulation scheduling). 30% of this overhead is addressable through consolidation. All figures are modelled estimates.
+        <strong>Research systems:</strong> ~3.5 per 100 beds (IRB, CTMS, biobank, research repositories, specialty registries). Retiring these eliminates standalone licensing and reduces integration burden with the clinical record.<br/><br/><strong>Graduate Medical Education (GME):</strong> Teaching hospitals must report to ACGME (Accreditation Council for Graduate Medical Education) on resident case volumes, procedure logs, duty hours, and milestone assessments. This data is often scattered across legacy scheduling, case logging, and evaluation systems. Consolidating these into the archive reduces compliance reporting overhead by an estimated 25%, calculated as: beds x $850/bed x 25% efficiency.<br/><br/><strong>Teaching overhead:</strong> Teaching workflows add ~12% complexity to clinical systems (registrar supervision, case-based learning, simulation scheduling). 30% of this overhead is addressable through consolidation. All figures are modeled estimates.
       </EvidenceDropdown>
     </Card>}
     {r.isAcademic && <LockedConnector/>}
@@ -2873,7 +2873,7 @@ function ROICalculator() {
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Cross-facility standardization</div>
-          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.standardisationSave):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.standardizationSave):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>Formulary, order sets, protocols</div>
         </div>
       </div>
@@ -3048,7 +3048,7 @@ function ROICalculator() {
       const Ev = ({s}) => <Tag label="Evidence-based" color={C.green} source={s}/>;
       const Bm = ({s}) => <Tag label="Industry benchmark" color="#1a7a7a" source={s}/>;
       const Bn = ({s}) => <Tag label="Benchmarked" color="#8a6d2b" source={s}/>;
-      const Md = ({s}) => <Tag label="Modelled estimate" color={C.textMuted} source={s}/>;
+      const Md = ({s}) => <Tag label="Modeled estimate" color={C.textMuted} source={s}/>;
       const F = ({children}) => <div style={{padding:"12px 16px",background:C.bg,borderRadius:8,margin:"10px 0",fontFamily:"'FK Grotesk Neue','FK Grotesk',monospace",fontSize:12,color:C.text,lineHeight:1.6}}>{children}</div>;
 
       return <Card style={{marginTop:20}}>
@@ -3102,11 +3102,11 @@ function ROICalculator() {
           <p style={{margin:"8px 0 4px"}}><strong>3.2 staff per bed</strong> {" - "} BLS Occupational Employment and Wage Statistics show 2.8-3.5 clinical full-time equivalents (FTEs) per acute bed (doctors, nurses, allied health professionals (AHPs), pharmacists). <Ev s="BLS OEWS 2023; MGMA staffing benchmarks."/></p>
           <p style={{margin:"4px 0"}}><strong>12 min/wk base</strong> (migration path) {" - "} Westbrook et al 2010 (JAMIA) found nurses interrupted 3-6 times/hour by system-switching. Nuffield Trust 2020 estimated 15-20 min/day lost to system navigation. Our 12 min/week is conservative (reducible portion only). Archive-only uses 5 min/wk. <Ev s="Westbrook et al 2010 (JAMIA); Nuffield Trust 2020 system navigation study."/></p>
           <p style={{margin:"4px 0"}}><strong>+4% per system</strong> {" - "} each additional legacy system adds cognitive overhead. At 42 systems (as in the benchmarked Trust), this produces ~10 min/day wasted, consistent with published studies. <Md s="First-principles switching cost model. Validated against benchmarked Trust (42 systems)."/></p>
-          <p style={{margin:"4px 0"}}><strong>{"$"}95/hr blended rate</strong> {" - "} BLS median hourly compensation for clinical staff including benefits (OEWS 2023). RN ~$45-55/hr, physicians ~$120-180/hr, AHPs ~$35-65/hr. Blended $95/hr weighted towards nursing as the largest user group. <Ev s="BLS OEWS 2023; MGMA physician compensation report 2024."/></p>
+          <p style={{margin:"4px 0"}}><strong>{"$"}95/hr blended rate</strong> {" - "} BLS median hourly compensation for clinical staff including benefits (OEWS 2023). RN ~$45-55/hr, physicians ~$120-180/hr, AHPs ~$35-65/hr. Blended $95/hr weighted toward nursing as the largest user group. <Ev s="BLS OEWS 2023; MGMA physician compensation report 2024."/></p>
         </S>
 
         <S title="5. Support tickets & patient records request (SAR) turnaround">
-          <p style={{margin:"0 0 8px"}}><strong>Tickets:</strong> 2.5 per system/month baseline (IT Infrastructure Library / ITIL service desk metrics). Surviving systems generate 40% fewer tickets due to consolidated support. <Bm s="ITIL service desk reporting in US health systems; 0.6 factor is a modelled estimate."/></p>
+          <p style={{margin:"0 0 8px"}}><strong>Tickets:</strong> 2.5 per system/month baseline (IT Infrastructure Library / ITIL service desk metrics). Surviving systems generate 40% fewer tickets due to consolidated support. <Bm s="ITIL service desk reporting in US health systems; 0.6 factor is a modeled estimate."/></p>
           <p style={{margin:"4px 0"}}><strong>Patient records request turnaround:</strong> 1.5 day base + 0.4 days per system (before), 0.15 days per surviving system (after). The HIPAA Privacy Rule requires searching all systems where patient data may be held. At 42 systems, this produces ~18 working days per SAR {" - "} consistent with reports from health systems with fragmented EHR estates. <Md s="Consistent with HIM department reports. Validated against benchmarked health system data."/></p>
         </S>
 
@@ -3141,14 +3141,14 @@ function ROICalculator() {
         </S>
 
         <S title="8. Reimbursement and compliance methodology">
-          <p style={{margin:"0 0 8px"}}>CMS penalty avoidance and revenue cycle impact are modelled from verified program rates and provider-specific multipliers.</p>
+          <p style={{margin:"0 0 8px"}}>CMS penalty avoidance and revenue cycle impact are modeled from verified program rates and provider-specific multipliers.</p>
           <F>hrrpReduction = medicareDrg {"\u00d7"} 0.33% {"\u00d7"} safetyFactor {"\u00d7"} penaltyWeight<br/>hacReduction = medicareDrg {"\u00d7"} 1% {"\u00d7"} 25% quartile {"\u00d7"} safetyFactor<br/>vbpImprovement = medicareDrg {"\u00d7"} 2% {"\u00d7"} 15% score {"\u00d7"} qualityBonus<br/>denialRecovery = revenue {"\u00d7"} 4.8% {"\u00d7"} 20% recoverable {"\u00d7"} decomFactor</F>
           <p style={{margin:"8px 0 4px"}}><strong>HRRP 3% cap, 0.33% average</strong> {" - "} Hospital Readmissions Reduction Program. Section 1886(q) SSA. ~78% of hospitals penalised in FY2025. Average penalty 0.33% (Advisory Board). <Ev s="CMS HRRP program page; Advisory Board FY2025 analysis."/></p>
           <p style={{margin:"4px 0"}}><strong>HAC 1% bottom quartile</strong> {" - "} Hospital-Acquired Condition Reduction Program. Bottom 25% of hospitals lose 1% of total Medicare payments. <Ev s="CMS HAC Reduction Program; 42 CFR 412.170-172."/></p>
           <p style={{margin:"4px 0"}}><strong>VBP 2% withhold</strong> {" - "} Value-Based Purchasing. Budget neutral: 2% withheld from all, redistributed based on performance. ~$1.7bn redistributed FY2026. <Ev s="CMS VBP program; AHA fact sheet 2025."/></p>
           <p style={{margin:"4px 0"}}><strong>11.8% denial rate</strong> {" - "} Initial claim denial rate (Kodiak Solutions 2024). Net revenue loss of 4.8% after appeals (HFMA Pulse Survey). Average denied inpatient claim value $10,000 (MDaudit 2024). <Ev s="Kodiak Solutions 2024; HFMA Pulse Survey; MDaudit 2024."/></p>
-          <p style={{margin:"4px 0"}}><strong>Malpractice $2,200/bed</strong> {" - "} Institutional premium allocation. Total US malpractice system cost $55.6bn (Mello et al, Health Affairs 2010). 8% premium reduction from consolidation is a modelled assumption. <Md s="$2,200/bed is modelled. 8% reduction is assumption based on CRICO communication failure data."/></p>
-          <p style={{margin:"4px 0"}}><strong>Provider type multipliers</strong> affect Medicare %, denial factor, penalty exposure, and quality bonus weighting. Critical access hospitals have limited HRRP exposure; academic centres have higher denial rates due to case complexity. <Md s="Provider multipliers are modelled estimates based on CMS program eligibility rules."/></p>
+          <p style={{margin:"4px 0"}}><strong>Malpractice $2,200/bed</strong> {" - "} Institutional premium allocation. Total US malpractice system cost $55.6bn (Mello et al, Health Affairs 2010). 8% premium reduction from consolidation is a modeled assumption. <Md s="$2,200/bed is modeled. 8% reduction is assumption based on CRICO communication failure data."/></p>
+          <p style={{margin:"4px 0"}}><strong>Provider type multipliers</strong> affect Medicare %, denial factor, penalty exposure, and quality bonus weighting. Critical access hospitals have limited HRRP exposure; academic centers have higher denial rates due to case complexity. <Md s="Provider multipliers are modeled estimates based on CMS program eligibility rules."/></p>
         </S>
 
         <S title="9. Complexity and data quality adjustments">
@@ -3161,7 +3161,7 @@ function ROICalculator() {
             </tbody>
           </table></div>
           <p style={{margin:"8px 0 4px"}}><strong>Complexity</strong> reflects how bespoke and integrated your legacy systems are. Low means off-the-shelf with simple interfaces. High means heavily customised systems with deep integrations and complex data models. Higher complexity increases both per-system costs (more expensive to run) and clinician time wasted (harder to navigate). <Md s="Designed to produce approximately +/-30% variation around baseline, consistent with observed range across US health systems."/></p>
-          <p style={{margin:"4px 0"}}><strong>Data quality</strong> affects how long clinicians spend searching for information. Clean data means well-structured records with consistent coding. Poor data means duplicate records, missing fields, and inconsistent formats. Poor quality roughly doubles the effort of finding information compared to clean data. <Md s="Modelled estimate. Poor data approximately doubles effort vs clean data."/></p>
+          <p style={{margin:"4px 0"}}><strong>Data quality</strong> affects how long clinicians spend searching for information. Clean data means well-structured records with consistent coding. Poor data means duplicate records, missing fields, and inconsistent formats. Poor quality roughly doubles the effort of finding information compared to clean data. <Md s="Modeled estimate. Poor data approximately doubles effort vs clean data."/></p>
         </S>
 
         <S title="10. How the three input modes work">
@@ -3216,7 +3216,7 @@ function ROICalculator() {
     {/* Disclaimer */}
     <div style={{marginTop:24,padding:"16px 20px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`,fontSize:11,color:C.textMuted,lineHeight:1.7}}>
       <div style={{fontWeight:700,fontSize:12,marginBottom:4,color:C.textMid}}>Important disclaimer</div>
-      This report presents indicative estimates only, generated from real-world data where available alongside generalized assumptions and industry-level benchmarks. It does not constitute a guaranteed ROI, a binding savings target, or professional financial, legal, or clinical advice. Actual outcomes will vary based on your organization{"'"}s specific circumstances, contract terms, implementation approach, and operational factors not captured by this model. All projected figures, including decommission savings, reimbursement impact, and quality metrics, are scenario-modelled approximations and should be independently validated before being used to support investment decisions. No liability is accepted for decisions made in reliance on these estimates. Consult qualified advisors for guidance specific to your organization.
+      This report presents indicative estimates only, generated from real-world data where available alongside generalized assumptions and industry-level benchmarks. It does not constitute a guaranteed ROI, a binding savings target, or professional financial, legal, or clinical advice. Actual outcomes will vary based on your organization{"'"}s specific circumstances, contract terms, implementation approach, and operational factors not captured by this model. All projected figures, including decommission savings, reimbursement impact, and quality metrics, are scenario-modeled approximations and should be independently validated before being used to support investment decisions. No liability is accepted for decisions made in reliance on these estimates. Consult qualified advisors for guidance specific to your organization.
     </div>
 
     <button type="button" onClick={()=>{setPage("inputs");scrollToTop();}} className="roi-btn" style={{marginTop:20,padding:"12px 28px",background:"#fff",color:C.textMid,border:`1px solid ${C.border}`,borderRadius:999,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"←"} Edit inputs</button>
@@ -3225,8 +3225,8 @@ function ROICalculator() {
   /* ── CALCULATING PAGE ──────────────────────────────────── */
 
   const calcSteps = [
-    {label:"Analysing your legacy estate"},
-    {label:"Modelling decommission savings"},
+    {label:"Analyzing your legacy estate"},
+    {label:"Modeling decommission savings"},
     {label:"Estimating clinician time impact"},
   ];
 
