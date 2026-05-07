@@ -908,12 +908,12 @@ function OverridableStat({label,computed,override,onOverride,prefix,suffix,step:
 }
 
 function Stat({label,value,sub,color,info}){return<div style={{minWidth:130,flex:"1 1 130px"}}><div style={{fontSize:12,fontWeight:600,color:C.textMuted,letterSpacing:".01em",display:"flex",alignItems:"center"}}>{label}{info&&<InfoTip text={info}/>}</div><div style={{fontSize:26,fontWeight:800,color:color||C.text,letterSpacing:"-.5px",margin:"2px 0"}}>{value}</div>{sub&&<div style={{fontSize:12,color:C.textMuted}}>{sub}</div>}</div>;}
-function ResultSection({ title, icon, defaultOpen, children, dimmed, accent }) {
+function ResultSection({ title, icon, svgIcon, defaultOpen, children, dimmed, accent }) {
   const [open, setOpen] = React.useState(defaultOpen || false);
   if (dimmed) return null;
   return <div style={{marginBottom:12}}>
     <button type="button" onClick={()=>setOpen(!open)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"12px 16px",background:open?(accent||C.accent)+"08":"#fff",border:`1px solid ${open?(accent||C.accent)+"30":C.borderLight}`,borderRadius:open?"10px 10px 0 0":10,cursor:"pointer",transition:"all .2s"}}>
-      {icon && <span style={{fontSize:16}}>{icon}</span>}
+      {svgIcon ? <SIcon name={svgIcon} size={18} color={accent||C.accent}/> : icon && <span style={{fontSize:16}}>{icon}</span>}
       <span style={{flex:1,textAlign:"left",fontSize:14,fontWeight:600,color:open?(accent||C.accent):C.textMid}}>{title}</span>
       <span style={{fontSize:12,color:C.textMuted,transition:"transform .2s",transform:open?"rotate(180deg)":"rotate(0)"}}>{"▼"}</span>
     </button>
@@ -985,6 +985,13 @@ function SIcon({name,size,color}){
     graduation:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M22 10l-10-5L2 10l10 5 10-5z"/><path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/><line x1="22" y1="10" x2="22" y2="16"/></svg>,
     building:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><line x1="9" y1="6" x2="9" y2="6.01"/><line x1="15" y1="6" x2="15" y2="6.01"/><line x1="9" y1="10" x2="9" y2="10.01"/><line x1="15" y1="10" x2="15" y2="10.01"/><line x1="9" y1="14" x2="9" y2="14.01"/><line x1="15" y1="14" x2="15" y2="14.01"/><path d="M9 18h6"/></svg>,
     chart:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+    home:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+    hospital:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="9" y1="12" x2="9" y2="12.01"/><line x1="9" y1="15" x2="9" y2="15.01"/><line x1="9" y1="18" x2="9" y2="18.01"/></svg>,
+    calendar:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+    mail:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+    search:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+    network:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v3M12 10l-7 7M12 10l7 7"/></svg>,
+    heart:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
   };
   return icons[name]||null;
 }
@@ -1061,7 +1068,7 @@ function ROICalculator() {
   const [trancheMode, setTrancheMode] = useState(false);
   const [showFacilities, setShowFacilities] = useState(null);
   const [showBedDetail, setShowBedDetail] = useState(false);
-  const [modelMode, setModelMode] = useState("template");
+  const [modelMode, setModelMode] = useState("custom");
   const [chartTip, setChartTip] = useState(null); // "template", "custom"
   const [portfolioOv, setPortfolioOv] = useState({systems:null, cost:null});
   const [tranches, setTranches] = useState([
@@ -2284,6 +2291,19 @@ function ROICalculator() {
     )}
 
 
+    {/* Editor mode toggle */}
+    <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
+      {[{k:"template",label:"Quick summary"},{k:"custom",label:"Full editor"}].map(m =>
+        <button type="button" key={m.k} onClick={()=>setModelMode(m.k)} style={{
+          padding:"10px 24px",fontSize:14,fontWeight:modelMode===m.k?700:500,
+          border:"1px solid "+C.accent,borderRadius:m.k==="template"?"999px 0 0 999px":"0 999px 999px 0",
+          background:modelMode===m.k?C.accent:"#fff",color:modelMode===m.k?"#fff":C.accent,
+          cursor:"pointer",fontFamily:"inherit"
+        }}>{m.label}</button>
+      )}
+    </div>
+
+    {modelMode === "custom" && <>
     {/* STEP 0 - Provider profile */}
     <Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
@@ -2292,16 +2312,16 @@ function ROICalculator() {
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20}}>
         {[
-          {k:"statewide",l:"Statewide Programme",d:"All districts, 200+ hospitals, single EMR",e:"🏥"},
-          {k:"aged_care",l:"Residential Aged Care",d:"Aged care homes with residential places",e:"🏠"},
-          {k:"ndis_provider",l:"NDIS Provider",d:"Disability support with active participants",e:"♿"},
-          {k:"state_network",l:"LHD / Health Service",d:"Single district, multiple facilities",e:"🏢"},
-          {k:"tertiary",l:"Tertiary Referral / Teaching",d:"Major teaching hospital, research",e:"🎓"},
-          {k:"metropolitan",l:"Metropolitan Hospital",d:"300-600 beds, complex integrations",e:"🏥"},
-          {k:"regional",l:"Regional Hospital",d:"100-300 beds, district systems",e:"🏥"},
-          {k:"rural_remote",l:"Rural / Remote Hospital",d:"Small facility, standalone systems",e:"🏥"},
+          {k:"statewide",l:"Statewide Programme",d:"All districts, 200+ hospitals, single EMR",icon:"hospital"},
+          {k:"aged_care",l:"Residential Aged Care",d:"Aged care homes with residential places",icon:"home"},
+          {k:"ndis_provider",l:"NDIS Provider",d:"Disability support with active participants",icon:"heart"},
+          {k:"state_network",l:"LHD / Health Service",d:"Single district, multiple facilities",icon:"building"},
+          {k:"tertiary",l:"Tertiary Referral / Teaching",d:"Major teaching hospital, research",icon:"graduation"},
+          {k:"metropolitan",l:"Metropolitan Hospital",d:"300-600 beds, complex integrations",icon:"hospital"},
+          {k:"regional",l:"Regional Hospital",d:"100-300 beds, district systems",icon:"hospital"},
+          {k:"rural_remote",l:"Rural / Remote Hospital",d:"Small facility, standalone systems",icon:"home"},
         ].map(p=><button type="button" key={p.k} onClick={()=>{setProviderType(p.k);const pk=PROVIDER_PRESET_MAP[p.k];if(pk)applyPreset(pk);if(p.k==="aged_care")setOccupancyRate(0.92);else if(p.k==="ndis_provider")setOccupancyRate(0.70);else setOccupancyRate(0.90);}} className="roi-preset" style={{width:"100%",padding:"12px 14px",textAlign:"left",border:providerType===p.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:providerType===p.k?C.accentPale:"#fff",cursor:"pointer"}}>
-          <div style={{fontSize:13,fontWeight:700,color:providerType===p.k?C.accent:C.text}}>{p.e} {p.l}</div>
+          <div style={{fontSize:13,fontWeight:700,color:providerType===p.k?C.accent:C.text,display:"flex",alignItems:"center",gap:8}}><SIcon name={p.icon} size={18} color={providerType===p.k?C.accent:C.textMid}/>{p.l}</div>
           <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{p.d}</div>
         </button>)}
       </div>
@@ -2338,14 +2358,14 @@ function ROICalculator() {
       </div>
       <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
         {[
-          {k:"HAVE_EPR",icon:"✅",title:"We have an enterprise EMR",desc:"Already on Epic, Oracle Health or similar, and looking to archive and decommission legacy systems.",focus:"Archiving + decommission savings"},
-          {k:"EVALUATING",icon:"🔍",title:"We’re evaluating enterprise EMRs",desc:"Assessing migration to a single EMR platform and need the full case for migration and archiving.",focus:"Migration safety + archiving savings"},
+          {k:"HAVE_EPR",svgIcon:"shield",title:"We have an enterprise EMR",desc:"Already on Epic, Oracle Health or similar, and looking to archive and decommission legacy systems.",focus:"Archiving + decommission savings"},
+          {k:"EVALUATING",svgIcon:"search",title:"We’re evaluating enterprise EMRs",desc:"Assessing migration to a single EMR platform and need the full case for migration and archiving.",focus:"Migration safety + archiving savings"},
         ].map(j=><button type="button" key={j.k} onClick={()=>{update("journey",j.k);touch(0);if(modelMode){setTimeout(()=>scrollTo(ref1),200);}}} className="roi-btn" style={{
           flex:"1 1 240px",minWidth:0,padding:"18px 20px",textAlign:"left",cursor:"pointer",
           border:inputs.journey===j.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:12,
           background:inputs.journey===j.k?C.accentPale:"#fff",transition:"all .15s"
         }}>
-          <div style={{fontSize:24,marginBottom:8}}>{j.icon}</div>
+          <div style={{marginBottom:10,display:"flex",alignItems:"center"}}><SIcon name={j.svgIcon} size={28} color={inputs.journey===j.k?C.accent:C.textMid}/></div>
           <div style={{fontSize:15,fontWeight:700,color:inputs.journey===j.k?C.accent:C.text,marginBottom:4}}>{j.title}</div>
           <div style={{fontSize:13,color:C.textMuted,lineHeight:1.5,marginBottom:8}}>{j.desc}</div>
           <div style={{fontSize:12,fontWeight:600,color:inputs.journey===j.k?C.accent:C.textMid,padding:"4px 10px",background:inputs.journey===j.k?`${C.accent}15`:C.bg,borderRadius:6,display:"inline-block"}}>{j.focus}</div>
@@ -2353,18 +2373,7 @@ function ROICalculator() {
       </div>
     </Card>
     <LockedConnector/>
-
-    {/* Editor mode toggle */}
-    <div style={{display:"flex",borderRadius:10,overflow:"hidden",border:`1px solid ${C.border}`,marginBottom:16}}>
-      {[{k:"template",label:"Quick summary"},{k:"custom",label:"Full editor"}].map(m =>
-        <button key={m.k} type="button" onClick={()=>setModelMode(m.k)} style={{
-          flex:1, padding:"12px 16px", border:"none", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"inherit",
-          background: modelMode===m.k ? C.accent : "#fff",
-          color: modelMode===m.k ? "#fff" : C.textMid,
-          transition:"all .2s"
-        }}>{m.label}</button>
-      )}
-    </div>
+    </>}
 
     {/* TEMPLATE SUMMARY */}
     {modelMode === "template" && (() => {
@@ -3007,7 +3016,7 @@ function ROICalculator() {
     {/* Journey context banner */}
     <div style={{marginBottom:16,padding:"18px 22px",borderRadius:12,background:isArchiveOnly?C.greenPale:C.rosePale,border:`1px solid ${isArchiveOnly?"#c3e6cb":C.rose+"22"}`}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-        <span style={{fontSize:22}}>{isArchiveOnly?"💰":"🛡️"}</span>
+        <SIcon name={isArchiveOnly?"dollar":"shield"} size={22} color={isArchiveOnly?C.green:C.rose}/>
         <div style={{fontSize:15,fontWeight:700,color:isArchiveOnly?C.green:C.rose}}>{isArchiveOnly?"Archiving + decommission":"Migration + archiving"}</div>
       </div>
       <div style={{fontSize:14,color:C.text,lineHeight:1.6}}>
@@ -3069,7 +3078,7 @@ function ROICalculator() {
       </div>
     </Card>}
 
-    {dim&&<div style={{textAlign:"center",padding:"60px 20px",color:C.textMuted}}><div style={{fontSize:48,marginBottom:12,opacity:.3}}>{"📊"}</div><div style={{fontSize:16,fontWeight:600,color:C.textMid}}>Select a scenario above</div></div>}
+    {dim&&<div style={{textAlign:"center",padding:"60px 20px",color:C.textMuted}}><SIcon name="chart" size={48} color={C.textMuted}/><div style={{height:12}}/><div style={{fontSize:16,fontWeight:600,color:C.textMid}}>Select a scenario above</div></div>}
 
     {!dim && overrideCount > 0 && (
       <div style={{
@@ -3089,7 +3098,7 @@ function ROICalculator() {
 
 
 
-    {!dim && galenMigrationCost > 0 && <ResultSection defaultOpen={true} title="Archiving investment case" icon="🔓" dimmed={dim}>
+    {!dim && galenMigrationCost > 0 && <ResultSection defaultOpen={true} title="Archiving investment case" svgIcon="unlock" dimmed={dim}>
       <p style={{fontSize:13,color:C.textMid,margin:"0 0 14px",lineHeight:1.5}}>
         Without a clinical archive, legacy systems cannot be safely switched off. The Galen Clinical Archive is the enabling investment that makes <strong style={{color:C.green}}>{fmtK(r.decomSave)}/yr</strong> in decommission savings possible.
       </p>
@@ -3115,7 +3124,7 @@ function ROICalculator() {
       </div>
     </ResultSection>}
 
-    {!dim && trancheMode && tranches.length > 1 && <ResultSection defaultOpen={true} title={"Tranche rollout timeline ("+tranches.length+" tranches)"} icon="📅" dimmed={dim}>
+    {!dim && trancheMode && tranches.length > 1 && <ResultSection defaultOpen={true} title={"Tranche rollout timeline ("+tranches.length+" tranches)"} svgIcon="calendar" dimmed={dim}>
       {(() => {
         const ramp3 = [0.40, 0.80, 1.00];
         const maxYr = Math.max(...tranches.map(t => t.yearOffset)) + 3;
@@ -3388,7 +3397,7 @@ function ROICalculator() {
     {r.hasClinicalScope && <div>
     <Card dimmed={dim} style={{border:"1px solid #f0c4d4",background:"#fdf5f8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-        <span style={{fontSize:20}}>{"🛡️"}</span>
+        <SIcon name="shield" size={20} color={C.rose}/>
         <div style={{display:"flex",alignItems:"center"}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Avoidable harm reduction":"Avoidable harm reduction (clinical case for migration)"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Additional value · not in financial total</span></div>
         <InfoTip text={`Source: ACSQHC (Australian Commission on Safety and Quality in Health Care) safety reports; AIHW hospital statistics; QAHCS (Wilson et al 1995). Per-bed rates from Australian public hospital data, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). Supporting evidence for the quality and cost avoidance estimates above.`}/>
       </div>
@@ -3708,7 +3717,7 @@ function ROICalculator() {
     {!dim && !leadSubmitted && (
       <Card style={{marginTop:20,background:`linear-gradient(135deg,${C.navy} 0%,${C.navyMid} 100%)`,border:"none",color:"#fff"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
-          <span style={{fontSize:24}}>{"📩"}</span>
+          <SIcon name="mail" size={24} color="#fff"/>
           <h3 style={{fontSize:18,fontWeight:800,margin:0}}>Get this breakdown in your inbox</h3>
         </div>
         <p style={{fontSize:13,opacity:.7,marginBottom:20}}>Download a formatted summary ready to share with your team or board.</p>
