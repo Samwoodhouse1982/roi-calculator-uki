@@ -3695,8 +3695,8 @@ function ROICalculator() {
   const fontBody = "'FK Grotesk Neue','FK Grotesk','Inter','Helvetica Neue',Helvetica,sans-serif";
 
   return <div style={{fontFamily:fontBody,background:C.bg,minHeight:"100vh",color:C.text,lineHeight:1.55,fontWeight:400,border:"1px solid #f7faf9",borderRadius:20,overflow:"hidden"}}>
-    <div style={{maxWidth:900,margin:"0 auto",padding:"16px 24px 0"}}>
-    <div style={{display:"flex",gap:4,marginBottom:20}}>
+    <div style={{background:C.teal,marginBottom:20}}>
+    <div style={{maxWidth:900,margin:"0 auto",padding:"0 24px"}}><div style={{display:"flex",gap:0}}>
       {[
         { k: "inputs", l: "Your programme", n: "1" },
         { k: "results", l: "ROI estimate", n: "2" },
@@ -3706,24 +3706,24 @@ function ROICalculator() {
           <button type="button" key={p.k} className="roi-tab"
             onClick={() => page !== "calculating" && setPage(p.k)}
             style={{
-              flex: 1, padding: "11px 8px", border: "none",
-              borderBottom: isCurrent ? `3px solid ${C.accent}` : "3px solid transparent",
-              background: isCurrent ? C.surface : "transparent",
+              flex: 1, padding: "16px 8px", border: "none",
+              borderBottom: isCurrent ? "3px solid #fff" : "3px solid transparent",
+              background: "transparent",
               cursor: page === "calculating" ? "default" : "pointer",
               fontFamily: fontBody, fontSize: 14, fontWeight: isCurrent ? 700 : 500,
-              color: isCurrent ? C.accent : C.textMuted, borderRadius: "8px 8px 0 0",
+              color: isCurrent ? "#fff" : "rgba(255,255,255,0.5)",
             }}>
             <span style={{
               display: "inline-flex", alignItems: "center", justifyContent: "center",
               width: 22, height: 22, borderRadius: "50%",
-              background: isCurrent ? C.accent : C.border, color: "#fff",
+              background: isCurrent ? "#fff" : "rgba(255,255,255,0.2)", color: isCurrent ? C.teal : "rgba(255,255,255,0.7)",
               fontSize: 11, fontWeight: 700, marginRight: 6,
             }}>{p.n}</span>
             {p.l}
           </button>
         );
       })}
-    </div></div>
+    </div></div></div>
     <div style={{maxWidth:900,margin:"0 auto",padding:"0 16px 80px"}}>{page==="inputs"?inputPage:page==="calculating"?calculatingPage:resultsPage}</div>
   </div>;
 }
