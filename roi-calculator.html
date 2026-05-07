@@ -814,6 +814,20 @@ function Stepper({value,onChange,min,max,step,sub,large}){
     <button type="button" onClick={()=>onChange(Math.min(max,value+(step||1)))} style={{width:large?44:36,height:large?44:36,border:"1px solid "+C.borderLight,borderRadius:"0 8px 8px 0",background:"#fff",cursor:"pointer",fontSize:18,fontWeight:700,color:C.textMid,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"}}>+</button>
   </div>;
 }
+function SIcon({name,size,color}){
+  const s=size||20,cl=color||"currentColor";
+  const icons={
+    unlock:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>,
+    clock:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+    dollar:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+    shield:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>,
+    graduation:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M22 10l-10-5L2 10l10 5 10-5z"/><path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/><line x1="22" y1="10" x2="22" y2="16"/></svg>,
+    building:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><line x1="9" y1="6" x2="9" y2="6.01"/><line x1="15" y1="6" x2="15" y2="6.01"/><line x1="9" y1="10" x2="9" y2="10.01"/><line x1="15" y1="10" x2="15" y2="10.01"/><line x1="9" y1="14" x2="9" y2="14.01"/><line x1="15" y1="14" x2="15" y2="14.01"/><path d="M9 18h6"/></svg>,
+    chart:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+    heart:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>,
+  };
+  return icons[name]||null;
+}
 function EvidenceDropdown({title,children}){
   const [open,setOpen] = React.useState(false);
   return <div style={{marginTop:10}}>
@@ -2587,7 +2601,7 @@ function ROICalculator() {
     {/* Journey context banner */}
     <div style={{marginBottom:16,padding:"18px 22px",borderRadius:12,background:isArchiveOnly?C.greenPale:C.rosePale,border:`1px solid ${isArchiveOnly?"#c3e6cb":C.rose+"22"}`}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-        <span style={{fontSize:22}}>{isArchiveOnly?"💰":"🛡️"}</span>
+        <SIcon name={isArchiveOnly?"dollar":"shield"} size={22} color={C.accent}/>
         <div style={{fontSize:15,fontWeight:700,color:isArchiveOnly?C.green:C.rose}}>{isArchiveOnly?"Archiving + decommission":"Migration + archiving"}</div>
       </div>
       <div style={{fontSize:14,color:C.text,lineHeight:1.6}}>
@@ -2735,7 +2749,7 @@ function ROICalculator() {
     {/* Decom - tiered breakdown */}
     <Card dimmed={dim} style={{borderLeft:"4px solid #0F4146"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <span style={{fontSize:20}}>{"\uD83D\uDD13"}</span>
+        <SIcon name="unlock" size={20} color="#0F4146"/>
         <div style={{display:"flex",alignItems:"center",flex:1}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legacy decommission savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Annual costs eliminated when systems are switched off.</p>
@@ -2762,7 +2776,7 @@ function ROICalculator() {
     {/* Clinician time */}
     <Card dimmed={dim} style={{borderLeft:"4px solid #e67e22"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <span style={{fontSize:20}}>{"\u23F1\uFE0F"}</span>
+        <SIcon name="clock" size={20} color="#e67e22"/>
         <div style={{display:"flex",alignItems:"center",flex:1}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
@@ -2776,7 +2790,7 @@ function ROICalculator() {
       <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"$"}95 {"×"} {Math.round(r.realization*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong></Callout>
       <EvidenceDropdown title="Evidence & methodology">
         <strong>Sources:</strong> AMIA 2019 workflow studies, Brigham & Women's time-motion research (context-switching costs). HIMSS Analytics (65% active user rate). BLS workforce data (3.2 staff/bed, $95/hr blended rate).<br/><br/>
-        <strong>Formula:</strong> Active users (65% of staff who regularly use clinical systems) x base minutes wasted per week (8 mins for organizations with an EHR, 12 for those evaluating). Each additional legacy system a clinician must navigate adds a 4% increase to their wasted time (the "switch penalty" from Westbrook et al: context-switching between applications costs measurable cognitive overhead). This is capped at 4x to prevent unrealistic projections at extreme system counts. Only {Math.round(r.realization*100)}% of freed time is counted as realizable capacity.
+        <strong>Formula:</strong> Active users (65% of staff who regularly use clinical systems) x base minutes wasted per week (8 mins for organizations with an EHR, 12 for those evaluating). Each additional legacy system a clinician must navigate adds a 4% increase to their wasted time (the "switch penalty" from <a href="https://pubmed.ncbi.nlm.nih.gov/20463369/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Westbrook et al</a>: context-switching between applications costs measurable cognitive overhead). This is capped at 4x to prevent unrealistic projections at extreme system counts. Only {Math.round(r.realization*100)}% of freed time is counted as realizable capacity.
       </EvidenceDropdown>
     </Card><LockedConnector/>
 
@@ -2816,15 +2830,15 @@ function ROICalculator() {
       </div>}
       <EvidenceDropdown title="Evidence & methodology">
         <strong>CMS penalty programs:</strong> Hospital Readmissions Reduction Program (HRRP): up to 3% of Medicare base DRG payments withheld for excess readmissions (Section 1886(q) SSA, FY2025). Hospital-Acquired Conditions (HAC) Reduction Program: bottom-quartile hospitals lose 1% of Medicare payments. Value-Based Purchasing (VBP): up to 2% of payments withheld and redistributed based on quality scores. Rates verified from CMS program pages.<br/><br/>
-        <strong>Attribution:</strong> Pattar et al (JAMA 2025, 116 RCTs): 17% readmission reduction from EHR interventions. Vest et al (JAMIA 2019): 0.8pp from single-vendor EHR. Model uses scenario-adjusted fractions (15-35%). Denial recovery: 4.8% net revenue loss (HFMA), 30% attributed to documentation fragmentation, 20% recoverable through consolidation.<br/><br/>
-        <strong>Quality & safety:</strong> Malpractice premium reduction: 5% of premiums (conservative). CRICO Strategies 2016 found that 30% of malpractice claims involve communication failure, of which fragmented clinical information is a major contributor. Excess bed days: based on Adverse Drug Event (ADE) rates from Bates et al and Classen studies, valued at $3,132 per excess day (KFF/AHA 2023). Duplicate testing: 25% of lab tests and 28% of imaging studies are duplicates when records are fragmented (ONC/PMC studies; Banker et al 2024).
+        <strong>Attribution:</strong> Pattar et al (JAMA 2025, 116 RCTs): 17% readmission reduction from EHR interventions. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7792753/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Vest et al (JAMIA 2019)</a>: 0.8pp from single-vendor EHR. Model uses scenario-adjusted fractions (15-35%). Denial recovery: 4.8% net revenue loss (HFMA), 30% attributed to documentation fragmentation, 20% recoverable through consolidation.<br/><br/>
+        <strong>Quality & safety:</strong> Malpractice premium reduction: 5% of premiums (conservative). <a href="https://www.rmf.harvard.edu/Malpractice-Data/Annual-Benchmark-Reports/Benchmark-Reports" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>CRICO Strategies 2016</a> found that 30% of malpractice claims involve communication failure, of which fragmented clinical information is a major contributor. Excess bed days: based on Adverse Drug Event (ADE) rates from Bates et al and Classen studies, valued at $3,132 per excess day (KFF/AHA 2023). Duplicate testing: 25% of lab tests and 28% of imaging studies are duplicates when records are fragmented (ONC/PMC studies; Banker et al 2024).
       </EvidenceDropdown>
     </Card><LockedConnector/>
 
 
     {/* Academic module - conditional */}
     {r.isAcademic && <Card dimmed={dim}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{"🎓"} Academic medical center module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}><SIcon name="graduation" size={18} color="#534AB7"/> Academic medical center module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and Graduate Medical Education (GME) compliance obligations.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -2858,7 +2872,7 @@ function ROICalculator() {
 
     {/* M&A module - conditional */}
     {r.isMultiHospital && <Card dimmed={dim}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{"🏢"} Multi-hospital / M&A consolidation module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}><SIcon name="building" size={18} color="#2c3e6b"/> Multi-hospital / M&A consolidation module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Savings from eliminating duplicate systems and infrastructure across {inputs.org_count} facilities post-merger.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -2894,7 +2908,7 @@ function ROICalculator() {
     {r.hasClinicalScope && <div>
     <Card dimmed={dim} style={{border:"1px solid #e0c4cf",background:"#faf5f7"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-        <span style={{fontSize:20}}>{"🛡️"}</span>
+        <SIcon name="shield" size={20} color="#d4507a"/>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Patient safety context":"Patient safety case for migration"}</h3>
         <span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Supporting evidence</span>
         <InfoTip text={`Source: AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data. Per-bed rates from ~100K acute beds nationally, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). NOT included in financial totals.`}/>
@@ -2913,7 +2927,7 @@ function ROICalculator() {
         </div>)}
       </div>
       <EvidenceDropdown title="Evidence & litigation context">
-        <strong>The connection between fragmented records and patient harm:</strong> When a clinician cannot see a patient's complete history (because records are spread across multiple legacy systems), they make decisions with incomplete information. This leads to: missed allergies and drug interactions, duplicated or unnecessary tests, delayed diagnoses, and communication failures at handoffs.<br/><br/><strong>The evidence:</strong> AHRQ Patient Safety Indicators document over 250,000 adverse events at care transitions annually. The Joint Commission identifies communication failure as a root cause in 70% of sentinel events. EHR fragmentation contributes to an estimated 40% of these cases.<br/><br/><strong>The financial exposure:</strong> US health systems face approximately $55 billion per year in malpractice liability (Coverys/PIAA). Each adverse event from fragmented records is a potential malpractice claim and a CMS quality score impact. Fewer adverse events directly reduces claims, lowers malpractice premiums, and improves performance on CMS penalty programs (HRRP, HAC, VBP).
+        <strong>The connection between fragmented records and patient harm:</strong> When a clinician cannot see a patient's complete history (because records are spread across multiple legacy systems), they make decisions with incomplete information. This leads to: missed allergies and drug interactions, duplicated or unnecessary tests, delayed diagnoses, and communication failures at handoffs.<br/><br/><strong>The evidence:</strong> <a href="https://qualityindicators.ahrq.gov/measures/psi_resources" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>AHRQ Patient Safety Indicators</a> document over 250,000 adverse events at care transitions annually. The Joint Commission identifies communication failure as a root cause in 70% of sentinel events. EHR fragmentation contributes to an estimated 40% of these cases.<br/><br/><strong>The financial exposure:</strong> US health systems face approximately $55 billion per year in malpractice liability (Coverys/PIAA). Each adverse event from fragmented records is a potential malpractice claim and a CMS quality score impact. Fewer adverse events directly reduces claims, lowers malpractice premiums, and improves performance on CMS penalty programs (HRRP, HAC, VBP).
       </EvidenceDropdown>
     </Card><LockedConnector/>
     </div>}
@@ -2928,7 +2942,7 @@ function ROICalculator() {
           <div style={{fontSize:13,color:C.textMid}}>of {r.legacy}</div>
           <div style={{marginTop:8,display:"inline-block",padding:"4px 12px",borderRadius:20,background:C.green,color:"#fff",fontSize:13,fontWeight:700}}>{Math.round(r.decom/Math.max(1,r.legacy)*100)}%</div>
           <div style={{marginTop:10,fontSize:11,color:C.textMid}}>{Math.max(0,r.decom-1)} attack surfaces eliminated</div>
-          <div style={{fontSize:10,color:C.textMuted}}>Avg breach: $10.93m (IBM/Ponemon 2024)</div>
+          <div style={{fontSize:10,color:C.textMuted}}>Avg breach: $10.93m (<a href="https://www.ibm.com/reports/data-breach" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>IBM/Ponemon 2024</a>)</div>
         </div>
         <div style={{flex:"1 1 200px",minWidth:240,padding:"18px 20px",background:"#e8faf6",borderRadius:10}}>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:14,fontWeight:700}}>Support tickets (monthly)</span></div>
@@ -3127,7 +3141,7 @@ function ROICalculator() {
             <thead><tr style={{background:C.accent,color:"#fff"}}><th style={{padding:"6px 10px",textAlign:"left"}}>Metric</th><th style={{padding:"6px 10px"}}>Value</th><th style={{padding:"6px 10px"}}>Source</th></tr></thead>
             <tbody>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Readmission reduction (EHR)</td><td style={{padding:"6px 10px",textAlign:"center"}}>17% relative</td><td style={{padding:"6px 10px"}}>Pattar et al, JAMA 2025 (116 RCTs)</td></tr>
-              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Single-vendor EHR effect</td><td style={{padding:"6px 10px",textAlign:"center"}}>0.8pp absolute</td><td style={{padding:"6px 10px"}}>Vest et al, JAMIA 2019</td></tr>
+              <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Single-vendor EHR effect</td><td style={{padding:"6px 10px",textAlign:"center"}}>0.8pp absolute</td><td style={{padding:"6px 10px"}}><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7792753/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Vest et al, JAMIA 2019</a></td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Patients harmed (Medicare)</td><td style={{padding:"6px 10px",textAlign:"center"}}>25% of admits</td><td style={{padding:"6px 10px"}}>HHS OIG 2022</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Comm. failure in claims</td><td style={{padding:"6px 10px",textAlign:"center"}}>30%</td><td style={{padding:"6px 10px"}}>CRICO 2016 (23,658 claims)</td></tr>
               <tr style={{borderBottom:`1px solid ${C.borderLight}`}}><td style={{padding:"6px 10px"}}>Excess bed day cost</td><td style={{padding:"6px 10px",textAlign:"center"}}>$3,132/day</td><td style={{padding:"6px 10px"}}>KFF/AHA 2023</td></tr>
