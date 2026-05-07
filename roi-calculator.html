@@ -6,7 +6,7 @@
   <title>EMR (Electronic Medical Record) Migration and Archiving - ROI Calculator</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background: transparent; overflow-x: hidden; }
+    body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background: #EEF6F4; overflow-x: hidden; }
 
 /* ═══════════════════════════════════════════════════════════════
    ROI Calculator - Animations & Interactions
@@ -609,7 +609,7 @@ const FRAGMENTATION_ATTRIBUTION = 0.35;  // 35% of preventable AEs attributable 
 
 
 // ── Australian ABF & Efficiency Constants ──
-// Validated against AIHW 2023-24, IHACPA 2024-25 Determination, VMIA 2025-26, QAHCS, Productivity Commission May 2024
+// Validated against AIHW 2023-24, <a href="https://www.ihacpa.gov.au/resources/national-efficient-price-determination-2024-25" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>IHACPA 2024-25</a> Determination, VMIA 2025-26, QAHCS, Productivity Commission May 2024
 const AU_AVG_ALOS = 5.5;                       // Average overnight ALOS, days (AIHW 2023-24: 5.7 public, 5.2 private)
 const AU_NWAU_PRICE = 6465;                    // National Efficient Price per NWAU (IHACPA 2024-25 Determination)
 const AU_NWAU_PER_SEPARATION = 1.5;            // Average NWAUs per acute overnight separation (derived from IHACPA price weights)
@@ -631,7 +631,7 @@ const AU_EDISCOVERY_CASES_PER_100_BEDS = 8;    // Lower than US (less litigious)
 const AU_EDISCOVERY_HRS_PER_CASE_BEFORE = 24;  // 3 days: searching across fragmented legacy systems
 const AU_EDISCOVERY_HRS_PER_CASE_AFTER = 5;    // Single archive search
 const AU_EDISCOVERY_HOURLY_RATE = 45;           // HIM / health information staff (AU rates)
-const AU_CYBER_BREACH_AVG_COST = 4710000;       // A$4.71m avg AU healthcare breach (IBM/Ponemon 2024 AU report)
+const AU_CYBER_BREACH_AVG_COST = 4710000;       // A$4.71m avg AU healthcare breach (<a href="https://www.ibm.com/reports/data-breach" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>IBM/Ponemon 2024</a> AU report)
 
 // ── Readmission Constants (AU) ──
 const AU_READMISSION_RATE = 0.12;               // 12% 30-day unplanned readmission (AIHW 2023-24)
@@ -842,7 +842,7 @@ const fmtNum = n => Math.round(n).toLocaleString("en-AU");
    ═══════════════════════════════════════════════════════════════════════ */
 
 const C = {
-  bg:"#FFFFFF",surface:"#ffffff",border:"#d4e0dd",borderLight:"#e8efec",
+  bg:"#EEF6F4",surface:"#ffffff",border:"#d4e0dd",borderLight:"#e8efec",
   text:"#0F4146",textMid:"#3d5a5e",textMuted:"#6e8a8e",
   accent:"#0F4146",accentLight:"#EEF7F1",accentPale:"#f6fbf8",
   green:"#0F4146",greenPale:"#EEF7F1",
@@ -975,6 +975,19 @@ function Stepper({ value, onChange, min, max, step, label, sub, large }) {
   </div>;
 }
 
+function SIcon({name,size,color}){
+  const s=size||20,cl=color||"currentColor";
+  const icons={
+    unlock:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>,
+    clock:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+    dollar:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+    shield:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>,
+    graduation:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M22 10l-10-5L2 10l10 5 10-5z"/><path d="M6 12v5c0 0 3 3 6 3s6-3 6-3v-5"/><line x1="22" y1="10" x2="22" y2="16"/></svg>,
+    building:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><line x1="9" y1="6" x2="9" y2="6.01"/><line x1="15" y1="6" x2="15" y2="6.01"/><line x1="9" y1="10" x2="9" y2="10.01"/><line x1="15" y1="10" x2="15" y2="10.01"/><line x1="9" y1="14" x2="9" y2="14.01"/><line x1="15" y1="14" x2="15" y2="14.01"/><path d="M9 18h6"/></svg>,
+    chart:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  };
+  return icons[name]||null;
+}
 function EvidenceDropdown({title,children}){
   const [open,setOpen] = React.useState(false);
   return <div style={{marginTop:10}}>
@@ -1048,7 +1061,8 @@ function ROICalculator() {
   const [trancheMode, setTrancheMode] = useState(false);
   const [showFacilities, setShowFacilities] = useState(null);
   const [showBedDetail, setShowBedDetail] = useState(false);
-  const [modelMode, setModelMode] = useState("template"); // "template", "custom"
+  const [modelMode, setModelMode] = useState("template");
+  const [chartTip, setChartTip] = useState(null); // "template", "custom"
   const [portfolioOv, setPortfolioOv] = useState({systems:null, cost:null});
   const [tranches, setTranches] = useState([
     { name: "Tranche A", bedPct: 0.16, yearOffset: 0 },
@@ -2273,7 +2287,7 @@ function ROICalculator() {
 
       {/* Calculate button */}
             <button type="button" className="roi-cta" onClick={() => {
-          setPage("calculating"); setCalcStep(0); setScenarioMode(null);
+          setPage("calculating"); setCalcStep(0); setScenarioMode("EXPECTED");
           scrollToTop();
           setTimeout(() => setCalcStep(1), 400);
           setTimeout(() => setCalcStep(2), 1100);
@@ -2790,7 +2804,7 @@ function ROICalculator() {
     {/* CTA */}
     <div ref={refCta} style={{animation:step>=2?"fade-in .4s ease":"none",opacity:step<2?0.3:1,pointerEvents:step<2?"none":"auto",transition:"opacity .4s"}}>
       <button type="button" className="roi-cta" onClick={() => {
-          setPage("calculating"); setCalcStep(0); setScenarioMode(null);
+          setPage("calculating"); setCalcStep(0); setScenarioMode("EXPECTED");
           scrollToTop();
           setTimeout(() => setCalcStep(1), 400);
           setTimeout(() => setCalcStep(2), 1100);
@@ -3051,7 +3065,7 @@ function ROICalculator() {
         {/* Decom - tiered breakdown */}
     <Card dimmed={dim}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <span style={{fontSize:20}}>{"\uD83D\uDD13"}</span>
+        <span style={{fontSize:20}}>unlock" size={20} color="#0F4146"/>
         <div style={{display:"flex",alignItems:"center",flex:1}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legacy decommission savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Annual costs eliminated when systems are switched off.</p>
@@ -3081,7 +3095,7 @@ function ROICalculator() {
     {/* Clinician time */}
     <Card dimmed={dim}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <span style={{fontSize:20}}>{"\u23F1\uFE0F"}</span>
+        <span style={{fontSize:20}}>clock" size={20} color="#e67e22"/>
         <div style={{display:"flex",alignItems:"center",flex:1}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
@@ -3290,7 +3304,7 @@ function ROICalculator() {
         </div>)}
       </div>
       <EvidenceDropdown title="Evidence & litigation context">
-        ACSQHC: ~10% of separations involve an adverse event; communication failure contributes to 35% of clinical incidents. State indemnity schemes (icare NSW, VMIA VIC) link claims to fragmented information. Accreditation risk under ACSQHC Standards 1 and 6.
+        <a href="https://www.safetyandquality.gov.au/our-work/communicating-safety" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>ACSQHC</a>: ~10% of separations involve an adverse event; communication failure contributes to 35% of clinical incidents. State indemnity schemes (icare NSW, VMIA VIC) link claims to fragmented information. Accreditation risk under ACSQHC Standards 1 and 6.
       </EvidenceDropdown>
     </Card><LockedConnector/>
     </div>}
@@ -3323,7 +3337,7 @@ function ROICalculator() {
     </Card><LockedConnector/></>}
 
         {r.isAcademic && <Card dimmed={dim}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{"🎓"} Teaching hospital module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}><SIcon name="graduation" size={18} color="#534AB7"/> Teaching hospital module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and registrar training and teaching compliance.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -3357,7 +3371,7 @@ function ROICalculator() {
 
     {/* M&A module - conditional */}
     {r.isMultiHospital && <Card dimmed={dim}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{"🏢"} Network consolidation module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}><SIcon name="building" size={18} color="#2c3e6b"/> Network consolidation module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Savings from eliminating duplicate systems and infrastructure across {inputs.org_count} facilities post-merger.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -3416,6 +3430,12 @@ function ROICalculator() {
       </div>
     </Card><LockedConnector/>
 
+
+    <div style={{display:"flex",justifyContent:"center",marginTop:24,marginBottom:16}}>
+      <button type="button" onClick={()=>{setPage("inputs");setStep(0);setScenarioMode("EXPECTED");setFlagships([]);scrollToTop();}} style={{padding:"10px 24px",border:"1px solid "+C.border,borderRadius:999,background:"#fff",color:C.textMid,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+        {"\u21BB"} New case
+      </button>
+    </div>
 
     {/* Lead gen */}
     {!dim && !leadSubmitted && (
