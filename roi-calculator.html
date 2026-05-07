@@ -894,6 +894,7 @@ function ROICalculator() {
   const [calcStep, setCalcStep] = useState(0);
   const [step, setStep] = useState(0);
   const [modelMode, setModelMode] = useState("custom");
+  const [chartTip, setChartTip] = useState(null);
   const [thinking, setThinking] = useState(false);
 
   // Per-org breakdowns (optional, for multi-org)
@@ -2700,14 +2701,27 @@ function ROICalculator() {
             const h = Math.round(maxH * yr.pct);
             return <div key={yi} style={{display:"flex",flexDirection:"column",alignItems:"center",flex:1,maxWidth:160,minWidth:60}}>
               <div style={{fontSize:12,fontWeight:700,color:C.accent,marginBottom:4}}>{fmtK(Math.round(total*yr.pct))}</div>
-              <div style={{width:"100%",height:h,borderRadius:"6px 6px 0 0",overflow:"hidden",display:"flex",flexDirection:"column-reverse"}}>
-                {segs.map((s,si)=><div key={si} style={{width:"100%",height:`${s.val/total*100}%`,background:s.color,minHeight:s.val>0?2:0}} title={`${s.label}: ${fmtK(Math.round(s.val*yr.pct))}`}/>)}
+              <div style={{width:"100%",height:h,borderRadius:"6px 6px 0 0",overflow:"hidden",display:"flex",flexDirection:"column-reverse",cursor:"pointer"}}
+                onClick={()=>setChartTip(chartTip&&chartTip.yr===yi?null:{yr:yi,segs:segs.map(s=>({label:s.label,val:Math.round(s.val*yr.pct),color:s.color})),total:Math.round(total*yr.pct),label:yr.label})}
+                onMouseEnter={()=>setChartTip({yr:yi,segs:segs.map(s=>({label:s.label,val:Math.round(s.val*yr.pct),color:s.color})),total:Math.round(total*yr.pct),label:yr.label})}
+                onMouseLeave={()=>setChartTip(null)}>
+                {segs.map((s,si)=><div key={si} style={{width:"100%",height:`${s.val/total*100}%`,background:s.color,minHeight:s.val>0?2:0,transition:"opacity .15s",opacity:chartTip&&chartTip.yr===yi?0.85:1}}/>)}
               </div>
               <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginTop:6}}>{yr.label}</div>
               <div style={{fontSize:10,color:C.textMuted}}>{Math.round(yr.pct*100)}%</div>
             </div>;
           })}
         </div>
+        {chartTip && <div style={{padding:"12px 16px",background:C.surface,borderRadius:10,border:"1px solid "+C.borderLight,marginBottom:12,boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.accent,marginBottom:8}}>{chartTip.label}: {fmtK(chartTip.total)}</div>
+          {chartTip.segs.filter(s=>s.val>0).map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"3px 0",fontSize:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <div style={{width:10,height:10,borderRadius:2,background:s.color}}/>
+              <span style={{color:C.textMid}}>{s.label}</span>
+            </div>
+            <span style={{fontWeight:600,color:C.text}}>{fmtK(s.val)}</span>
+          </div>)}
+        </div>}
         <div style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center"}}>
           {segs.map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:C.textMid}}>
             <div style={{width:8,height:8,borderRadius:2,background:s.color}}/>{s.label}
