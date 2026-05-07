@@ -222,7 +222,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const currentReadmissions = Math.round(medicareAdmissions * READMISSION_RATE_MEDICARE);
   const readmissionsAvoided = Math.round(medicareAdmissions * READMIT_REDUCTION_EHR * READMIT_FRAGMENTATION_ATTRIBUTION * sc.safety);
   // Only count readmission cost avoidance under VBC/mixed (FFS readmissions = revenue, not cost)
-  const vbcWeight = inp._qualityBonus || 0;
+  const vbcWeight = inp._qualityBonus != null ? inp._qualityBonus : 0;
   const readmissionCostAvoidance = Math.round(readmissionsAvoided * READMIT_COST_PER_ADMISSION * vbcWeight);
 
   // HAC penalty exposure (bottom quartile = 1% of all Medicare payments)
@@ -307,6 +307,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
+    fteEquivalent: Math.round(hrsSaved * sc.realization / 2080 * 10) / 10,
     annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realization: sc.realization, isArchiveOnly,
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
     flagshipCount, flagshipRetireCount,

@@ -250,7 +250,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Row label="Full-time equivalent (FTE)" value={fmtFte(fte)} accent />
         <Row label="Capacity value" value={fmtK(seg.capacity) + "/yr"} accent />
         <Methodology>
-          <strong>Method:</strong> Of {fmtNum(r.totalStaff)} total staff, {fmtNum(r.clinicians)} (65%) are regular system users. Each navigates ~{r.systemsPerUser} of {r.legacy} systems (35% exposure). Switch penalty of 4% per system applies only to touched systems. Hours freed valued at $95/hr blended rate with {Math.round((r.realization || 0.3) * 100)}% realization. Evidence: HIMSS analytics, Westbrook et al JAMIA 2010.
+          <strong>Method:</strong> Of {fmtNum(r.totalStaff)} total staff, {fmtNum(r.clinicians)} (65%) are regular system users. Each navigates ~{r.systemsPerUser} of {r.legacy} systems (35% exposure). Switch penalty of 4% per system applies only to touched systems. Hours freed valued at $95/hr blended rate with {Math.round((r.realization || 0.3) * 100)}% realization. Evidence: HIMSS analytics, <a href="https://pubmed.ncbi.nlm.nih.gov/20463369/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Westbrook et al JAMIA 2010</a>.
         </Methodology>
       </Card>
     </div>
@@ -266,7 +266,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         {r.denialRecovery > 0 && <Row label="Denial recovery" value={fmtK(r.denialRecovery)} />}
         <Row label="Total reimbursement impact" value={fmtK(seg.reimb) + "/yr"} accent />
         <Methodology>
-          <strong>Method:</strong> CMS penalty programs: Hospital Readmissions Reduction Program (HRRP, 3% max), Hospital-Acquired Condition Reduction (HAC, 1%), Value-Based Purchasing (VBP, 2% withhold) modeled from FY2025 data. Denial recovery at 4.8% net revenue loss (HFMA 2024). Better documentation from system consolidation reduces penalties and denials. Evidence: Pattar et al JAMA 2025, Vest et al JAMIA 2019.
+          <strong>Method:</strong> CMS penalty programs: Hospital Readmissions Reduction Program (HRRP, 3% max), Hospital-Acquired Condition Reduction (HAC, 1%), Value-Based Purchasing (VBP, 2% withhold) modeled from FY2025 data. Denial recovery at 4.8% net revenue loss (HFMA 2024). Better documentation from system consolidation reduces penalties and denials. Evidence: Pattar et al JAMA 2025, <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7792753/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Vest et al JAMIA 2019</a>.
         </Methodology>
       </Card>
     </div>}
@@ -283,7 +283,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         {r.malpracticeReduction > 0 && <Row label="Malpractice reduction" value={fmtK(r.malpracticeReduction) + "/yr"} />}
         {(r.qualitySavings || 0) > 0 && <Row label="Total cost avoidance" value={fmtK(r.qualitySavings) + "/yr"} accent />}
         <Methodology>
-          <strong>Method:</strong> ADE rates from AHRQ PSI data and HHS OIG 2022 (25% of Medicare patients experience adverse events). Excess bed day cost: $3,132/day (KFF/AHA 2023). Medication errors: Bates et al (1.8 preventable ADEs per 100 admissions). Communication failures: 30% of malpractice claims (CRICO 2016).<br/><br/><strong>Classification:</strong> Cost avoidance. These represent harm that doesn't occur, not direct budget reductions. Contributes through reduced length of stay, fewer readmissions, and lower liability.
+          <strong>Method:</strong> ADE rates from AHRQ PSI data and HHS OIG 2022 (25% of Medicare patients experience adverse events). Excess bed day cost: $3,132/day (KFF/AHA 2023). Medication errors: Bates et al (1.8 preventable ADEs per 100 admissions). Communication failures: 30% of malpractice claims (<a href="https://www.rmf.harvard.edu/Malpractice-Data/Annual-Benchmark-Reports/Benchmark-Reports" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>CRICO 2016</a>).<br/><br/><strong>Classification:</strong> Cost avoidance. These represent harm that doesn't occur, not direct budget reductions. Contributes through reduced length of stay, fewer readmissions, and lower liability.
         </Methodology>
       </Card>
     </div>
@@ -328,7 +328,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         </div>
       </div>
       <Methodology>
-        <strong>Method:</strong> e-Discovery: {r.litigationCases} cases/yr (~12 per 100 beds). Records assembly: 28 hrs/case (3.5 days) across fragmented systems vs 6 hrs consolidated. HIM staff: $55/hr. Cyber: avg healthcare breach $10.93m (IBM/Ponemon 2023). 90% of health systems attacked in 2024. Each legacy system on unsupported OS is an attack vector.
+        <strong>Method:</strong> e-Discovery: {r.litigationCases} cases/yr (~12 per 100 beds). Records assembly: 28 hrs/case (3.5 days) across fragmented systems vs 6 hrs consolidated. HIM staff: $55/hr. Cyber: avg healthcare breach $10.93m (<a href="https://www.ibm.com/reports/data-breach" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>IBM/Ponemon 2023</a>). 90% of health systems attacked in 2024. Each legacy system on unsupported OS is an attack vector.
       </Methodology>
     </Card>
 
@@ -407,7 +407,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         </MCard>
 
         <MCard color={C.purple} title="Patient safety" num="04">
-          ADE rates from AHRQ Patient Safety Indicators and HHS OIG 2022 (25% of Medicare patients experience adverse events). Preventable ADEs: 1.8 per 100 admissions (Bates et al). Excess bed day cost: $3,132/day (KFF/AHA 2023). Readmission avoidance: Vest et al JAMIA 2019 found 0.8pp absolute reduction in 30-day readmissions from single-vendor EHR consolidation; we apply 30% fragmentation attribution. Communication failures account for 30% of malpractice claims (CRICO 2016). These are cost avoidance figures: harm that doesn't occur, not direct budget reductions.
+          ADE rates from <a href="https://qualityindicators.ahrq.gov/measures/psi_resources" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>AHRQ Patient Safety Indicators</a> and HHS OIG 2022 (25% of Medicare patients experience adverse events). Preventable ADEs: 1.8 per 100 admissions (Bates et al). Excess bed day cost: $3,132/day (KFF/AHA 2023). Readmission avoidance: Vest et al JAMIA 2019 found 0.8pp absolute reduction in 30-day readmissions from single-vendor EHR consolidation; we apply 30% fragmentation attribution. Communication failures account for 30% of malpractice claims (CRICO 2016). These are cost avoidance figures: harm that doesn't occur, not direct budget reductions.
         </MCard>
 
         <MCard color="#8e44ad" title="Network savings" num="05">
