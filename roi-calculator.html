@@ -359,7 +359,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(totalStaff * ACTIVE_USER_PCT);
   const systemsPerUser = Math.max(2, Math.round(legacy * SYSTEM_EXPOSURE_PCT));
   const switchPenalty = Math.max(0, systemsPerUser - 1) * SWITCH_PENALTY_PER_SYSTEM;
-  const baseMin = isArchiveOnly ? 5 : 12;
+  const baseMin = isArchiveOnly ? 8 : 12; // Westbrook et al 2020: 5-12 mins/day on legacy lookups even with live EMR; 8 mins/week conservative
   const cappedPenalty = Math.min(switchPenalty, 4.0); // Cap: prevents >60 min/wk at extreme system counts
   const minsWasted = ov.minsWasted != null ? ov.minsWasted : Math.round(baseMin * dq * cx * (1 + cappedPenalty));
   const residual = isArchiveOnly ? 1 : 2;
@@ -447,7 +447,16 @@ function calc(inp, mode, ov = {}, flagships = []) {
 
   // Total reimbursement impact
   const reimbursementImpact = hrrpReduction + hacReduction + vbpImprovement + denialRecovery;
-  const qualitySavings = malpracticeReduction + excessDayCostAvoided + duplicateReduction;
+  // Readmission cost avoidance (VBC/mixed models)
+  const isVBC = inp._reimbursementModel === "vbc" || inp._reimbursementModel === "mixed";
+  const usReadmissionRate = 0.156; // CMS 15.6% 30-day all-cause
+  const usReadmitReduction = 0.008; // Vest et al JAMIA 2019: 0.8pp
+  const usReadmitAttribution = 0.30;
+  const usReadmitCostPer = 16000; // CMS avg readmission cost
+  const usReadmissionsAvoided = isVBC ? Math.round(admissionsPerYear * usReadmitReduction * usReadmitAttribution * sc.safety) : 0;
+  const usReadmissionCostAvoidance = usReadmissionsAvoided * usReadmitCostPer;
+
+  const qualitySavings = malpracticeReduction + excessDayCostAvoided + duplicateReduction + usReadmissionCostAvoidance;
 
   const annual = decomSave + timeSave;
   const annualWithReimbursement = annual + reimbursementImpact + qualitySavings + academicSavings + mergeSavings;
@@ -646,7 +655,24 @@ const COST_CATEGORIES = [
   { key: "hosting", label: "Hosting / infrastructure", pct: 0.20 },
   { key: "support", label: "Support & maintenance", pct: 0.20 },
   { key: "interfaces", label: "Interfaces / integrations", pct: 0.15 },
-  { key: "other", label: "Other (training, admin)", pct: 0.10 },
+  { key: "other", label: "Other (training, admin)", pct: 0.10 },,
+  { label: "Cerner PathNet", baseCost: 120000, perBed: 200, cat: "departmental" },
+  { label: "SoftLab", baseCost: 90000, perBed: 150, cat: "departmental" },
+  { label: "Pyxis MedStation", baseCost: 80000, perBed: 180, cat: "departmental" },
+  { label: "GE Centricity Cardio", baseCost: 150000, perBed: 250, cat: "departmental" },
+  { label: "Merge PACS", baseCost: 100000, perBed: 180, cat: "departmental" },
+  { label: "K2/Perigen Perinatal", baseCost: 85000, perBed: 120, cat: "departmental" },
+  { label: "SurgiNet/SIS", baseCost: 95000, perBed: 160, cat: "departmental" },
+  { label: "Vocera Communications", baseCost: 45000, perBed: 80, cat: "standalone" },
+  { label: "Rauland Responder", baseCost: 40000, perBed: 70, cat: "standalone" },
+  { label: "Kronos/UKG Workforce", baseCost: 55000, perBed: 60, cat: "standalone" },
+  { label: "Healthstream LMS", baseCost: 30000, perBed: 40, cat: "standalone" },
+  { label: "Cerner CommunityWorks", baseCost: 200000, perBed: 400, cat: "enterprise" },
+  { label: "CPSI/TruBridge", baseCost: 180000, perBed: 350, cat: "enterprise" },
+  { label: "Evident Thrive", baseCost: 150000, perBed: 300, cat: "enterprise" },
+  { label: "McKesson Paragon", baseCost: 160000, perBed: 320, cat: "enterprise" },
+  { label: "ICNet Infection Control", baseCost: 60000, perBed: 90, cat: "standalone" },
+  { label: "BD Pyxis Analytics", baseCost: 50000, perBed: 75, cat: "standalone" }
 ];
 function tierCatMatch(sysCat, tier) {
   if (tier === "enterprise") return sysCat === "enterprise";
@@ -2019,6 +2045,9 @@ function ROICalculator() {
         </button>)}
       </div>
 
+      <div style={{padding:"10px 14px",background:"#f0faf8",borderRadius:8,border:"1px solid #c3ddd3",fontSize:12,color:C.teal,lineHeight:1.5,marginBottom:16}}>
+        <strong>Why this matters:</strong> Your organization type sets the baseline for bed count, system complexity, and which CMS programs apply. Academic centers include research and GME modules. IDN/multi-hospital adds network consolidation savings.
+      </div>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Primary reimbursement model</div>
       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
         {[
@@ -2238,6 +2267,9 @@ function ROICalculator() {
         </div>
       )}
     </Card></div>
+      <div style={{padding:"10px 14px",background:"#f0faf8",borderRadius:8,border:"1px solid #c3ddd3",fontSize:12,color:C.teal,lineHeight:1.5,marginTop:12}}>
+        <strong>Why this matters:</strong> Bed count drives staffing (3.2 per bed), admissions, revenue, and safety metrics. Hospital count scales corporate overhead and network consolidation opportunities.
+      </div>
     {step<1?<ContinuePrompt onClick={()=>goTo(1,ref2)} label="Next: legacy systems"/>:<LockedConnector/>}
 
     {/* STEP 2 - Tiered legacy systems */}
@@ -2436,6 +2468,9 @@ function ROICalculator() {
         </>;
       })()}
     </Card></div>
+      <div style={{padding:"10px 14px",background:"#f0faf8",borderRadius:8,border:"1px solid #c3ddd3",fontSize:12,color:C.teal,lineHeight:1.5,marginTop:12}}>
+        <strong>Why this matters:</strong> Each legacy system has an annual cost (licensing, support, infrastructure) that is permanently eliminated when archived. More systems = larger decommission savings and more clinician time freed from context-switching.
+      </div>
     {step<2?<ContinuePrompt onClick={()=>goTo(2,ref3)} label="Next: fine-tune"/>:<LockedConnector/>}
 
     {/* STEP 4 - Fine-tune */}
@@ -2683,7 +2718,7 @@ function ROICalculator() {
 
 
     {/* Decom - tiered breakdown */}
-    <Card dimmed={dim}>
+    <Card dimmed={dim} style={{borderLeft:"4px solid #0F4146"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
         <span style={{fontSize:20}}>{"\uD83D\uDD13"}</span>
         <div style={{display:"flex",alignItems:"center",flex:1}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legacy decommission savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
@@ -2710,7 +2745,7 @@ function ROICalculator() {
     </Card><LockedConnector/>
 
     {/* Clinician time */}
-    <Card dimmed={dim}>
+    <Card dimmed={dim} style={{borderLeft:"4px solid #e67e22"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
         <span style={{fontSize:20}}>{"\u23F1\uFE0F"}</span>
         <div style={{display:"flex",alignItems:"center",flex:1}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
@@ -2732,7 +2767,7 @@ function ROICalculator() {
 
 
     {/* Reimbursement & compliance impact */}
-    <Card dimmed={dim}>
+    <Card dimmed={dim} style={{borderLeft:"4px solid #00d4aa"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Reimbursement & compliance impact</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Estimated annual impact from CMS penalty avoidance, denial reduction, and quality improvements. These are modelled estimates with improvement rates attributed to EHR consolidation as a contributing factor, not sole cause. Actual attribution will depend on your implementation scope and existing infrastructure.</p>
 
@@ -2761,6 +2796,9 @@ function ROICalculator() {
         Combined total: <strong style={{color:C.accent}}>{fmtK(r.annualWithReimbursement)}/yr</strong>
       </Callout>
 
+      {r.isVBC && <div style={{padding:"10px 14px",background:"#f0f8ff",borderRadius:8,border:"1px solid #b0d4f1",fontSize:12,color:"#2c5282",lineHeight:1.5,marginBottom:10}}>
+        <strong>Value-Based Care note:</strong> Your VBC/ACO contracts amplify the impact of quality improvements. Better documentation through consolidated systems directly improves quality scores, shared savings calculations, and readmission penalties.
+      </div>}
       <EvidenceDropdown title="Evidence & methodology">
         <strong>CMS penalties:</strong> HRRP 3% cap (Section 1886(q) SSA, FY2025). HAC 1% (bottom quartile). VBP 2% withhold. Rates verified from CMS program pages.<br/><br/>
         <strong>Attribution:</strong> Pattar et al (JAMA 2025, 116 RCTs): 17% readmission reduction from EHR interventions. Vest et al (JAMIA 2019): 0.8pp from single-vendor EHR. Model uses scenario-adjusted fractions (15-35%). Denial recovery: 4.8% net revenue loss (HFMA), 30% attributed to documentation fragmentation, 20% recoverable through consolidation.<br/><br/>
@@ -2922,6 +2960,12 @@ function ROICalculator() {
         <span>Range: <strong>{fmtK(rCon.total3)}</strong> {"-"} <strong>{fmtK(rStr.total3)}</strong></span>
       </div>
     </Card>
+
+    <div style={{display:"flex",justifyContent:"center",marginTop:24,marginBottom:16}}>
+      <button type="button" onClick={()=>{setPage("inputs");setStep(0);setScenarioMode(null);setFlagships([]);scrollToTop();}} style={{padding:"10px 24px",border:"1px solid "+C.border,borderRadius:999,background:"#fff",color:C.textMid,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+        {"\u21BB"} New case
+      </button>
+    </div>
 
     {/* Lead gen */}
     {!dim && !leadSubmitted && (
