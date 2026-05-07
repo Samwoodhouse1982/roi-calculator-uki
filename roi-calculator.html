@@ -420,15 +420,15 @@ const CORPORATE_STAFF_PER_BED = 0.12;  // Scales with size, caps at ~80 for larg
 const BLENDED_HOURLY_RATE = 55;
 const WORKING_WEEKS = 48;
 const TICKETS_PER_SYSTEM = 2.5;
-const SWITCH_PENALTY_PER_SYSTEM = 0.04;
+const SWITCH_PENALTY_PER_SYSTEM = 0.04;  // Bartek et al JIMI 2023: 3% switch cost (beta=0.03); 4% conservative
 const SURVIVING_SYSTEM_TICKET_FACTOR = 0.6;
 const SAR_BASE_DAYS = 1.5;
 const SAR_DAYS_PER_SYSTEM_BEFORE = 0.4;
 const SAR_DAYS_PER_SYSTEM_AFTER = 0.15;
 
 // Clinical engagement factors
-const ACTIVE_USER_PCT = 0.65;           // 65% of total staff are regular EPR/system users
-const SYSTEM_EXPOSURE_PCT = 0.35;       // Average clinician interacts with ~35% of legacy systems
+const ACTIVE_USER_PCT = 0.65;           // Sinsky et al 2016; KLAS Arch Collaborative (500k+ clinicians). 65% conservative
+const SYSTEM_EXPOSURE_PCT = 0.35;       // Modeled assumption: role-based access patterns
 const MED_ERRORS_PER_BED = 18;
 const PATIENTS_HARMED_PER_BED = 0.315;
 const EXCESS_BED_DAYS_PER_BED = 0.365;
@@ -1858,7 +1858,7 @@ function ROICalculator() {
       </div>
       <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"£"}55 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong></Callout>
       <EvidenceDropdown title="Evidence & methodology">
-        <strong>Sources:</strong> <a href="https://pubmed.ncbi.nlm.nih.gov/20463369/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Westbrook et al JAMIA 2010</a> (context-switching costs). HIMSS Analytics (65% active user rate). NHS Digital workforce data. Blended hourly rate £45 (NHS AfC bands).<br/><br/>
+        <strong>Sources:</strong> <a href="https://pubmed.ncbi.nlm.nih.gov/20463369/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Westbrook et al JAMIA 2010</a> (context-switching costs). Sinsky et al 2016; KLAS Arch Collaborative (65% active user rate). NHS Digital workforce data. Blended hourly rate £45 (NHS AfC bands).<br/><br/>
         <strong>Formula:</strong> Active users (65%) x switch penalty (0.04/additional system) x base minutes x data quality x complexity. Only {Math.round(r.realisation*100)}% of freed time counted as realisable capacity.
       </EvidenceDropdown>
     </Card><LockedConnector/>
