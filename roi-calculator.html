@@ -1971,7 +1971,7 @@ function ROICalculator() {
         </div>
       </Card>
       <button type="button" className="roi-cta" onClick={() => {
-        setPage("calculating"); setCalcStep(0); setScenarioMode(null); scrollToTop();
+        setPage("calculating"); setCalcStep(0); setScenarioMode("EXPECTED"); scrollToTop();
         setTimeout(() => setCalcStep(1), 400);
         setTimeout(() => setCalcStep(2), 1100);
         setTimeout(() => setCalcStep(3), 1800);
@@ -2499,7 +2499,7 @@ function ROICalculator() {
         return <>
           <button type="button" className={canCalc ? "roi-cta" : "roi-cta"} onClick={() => {
             if (!canCalc) return;
-            setPage("calculating"); setCalcStep(0); setScenarioMode(null);
+            setPage("calculating"); setCalcStep(0); setScenarioMode("EXPECTED");
             scrollToTop();
             setTimeout(() => setCalcStep(1), 400);
             setTimeout(() => setCalcStep(2), 1100);
