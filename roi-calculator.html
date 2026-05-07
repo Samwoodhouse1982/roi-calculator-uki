@@ -2000,12 +2000,19 @@ function ROICalculator() {
         What type of organization are you?
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20}}>
+        {/* Multi-Hospital full-width at top */}
+        {(() => { const p = {k:"multi_hospital",l:"Multi-Hospital System / IDN",d:"Post-M&A, multiple facilities, consolidated legacy estate",e:"🏢"};
+          return <button type="button" key={p.k} onClick={()=>{setProviderType(p.k);const pk=PROVIDER_PRESET_MAP[p.k];if(pk)applyPreset(pk);}} className="roi-preset" style={{gridColumn:"1 / -1",width:"100%",padding:"14px 16px",textAlign:"left",border:providerType===p.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:providerType===p.k?C.accentPale:"#fff",cursor:"pointer"}}>
+            <div style={{fontSize:14,fontWeight:700,color:providerType===p.k?C.accent:C.text}}>{p.e} {p.l}</div>
+            <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{p.d}</div>
+          </button>;
+        })()}
+        {/* Remaining 4 in descending order */}
         {[
-          {k:"critical_access",l:"Critical Access / Rural",d:"≤25 beds, limited legacy estate",e:"🏥"},
-          {k:"community",l:"Community Hospital",d:"100-400 beds, moderate complexity",e:"🏨"},
-          {k:"regional",l:"Regional Medical Center",d:"400-1,000 beds, multiple service lines",e:"🏗️"},
           {k:"academic",l:"Academic Medical Center",d:"Teaching hospital, research systems",e:"🎓"},
-          {k:"multi_hospital",l:"Multi-Hospital System / IDN",d:"Post-M&A, multiple facilities",e:"🏢"},
+          {k:"regional",l:"Regional Medical Center",d:"400-1,000 beds, multiple service lines",e:"🏗️"},
+          {k:"community",l:"Community Hospital",d:"100-400 beds, moderate complexity",e:"🏨"},
+          {k:"critical_access",l:"Critical Access / Rural",d:"≤25 beds, limited legacy estate",e:"🏥"},
         ].map(p=><button type="button" key={p.k} onClick={()=>{setProviderType(p.k);const pk=PROVIDER_PRESET_MAP[p.k];if(pk)applyPreset(pk);}} className="roi-preset" style={{width:"100%",padding:"12px 14px",textAlign:"left",border:providerType===p.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:providerType===p.k?C.accentPale:"#fff",cursor:"pointer"}}>
           <div style={{fontSize:13,fontWeight:700,color:providerType===p.k?C.accent:C.text}}>{p.e} {p.l}</div>
           <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{p.d}</div>
