@@ -1101,8 +1101,8 @@ function ROICalculator() {
 
   // Flagship systems (named high-cost outliers outside the tiers)
   const [flagships, setFlagships] = useState([]);
-  const addFlagship = useCallback((sys, tier) => { const s = sys || {}; const sc = s.baseCost ? systemCost(s, inputs.bed_count) : (s.cost || 250000); setFlagships(p => [...p, {name:s.label||"", cost:sc, retire:true, known:s.label||"", items:defaultLineItems(sc), showItems:false, tier:tier||null}]); if (tier) { updateTier(tier, Math.max(0, inputs.tiers[tier] - 1)); } }, [inputs.bed_count, inputs.tiers]);
-  const removeFlagship = useCallback((i) => { setFlagships(p => { const f = p[i]; if (f && f.tier) { updateTier(f.tier, (inputs.tiers[f.tier]||0) + 1); } return p.filter((_,j)=>j!==i); }); }, [inputs.tiers]);
+  const addFlagship = useCallback((sys, tier) => { const s = sys || {}; const sc = s.baseCost ? systemCost(s, inputs.bed_count) : (s.cost || 250000); setFlagships(p => [...p, {name:s.label||"", cost:sc, retire:true, known:s.label||"", items:defaultLineItems(sc), showItems:false, tier:tier||null}]); }, [inputs.bed_count]);
+  const removeFlagship = useCallback(i => setFlagships(p => p.filter((_,j)=>j!==i)), []);
   const updateFlagship = useCallback((i, k, v) => { setFlagships(p => p.map((f,j)=>j===i?{...f,[k]:v}:f)); setActivePreset(null); }, []);
   const updateLineItem = useCallback((i, key, val) => {
     setFlagships(p => p.map((f,j) => {
@@ -2656,7 +2656,7 @@ function ROICalculator() {
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:step>=1?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>4</span>
         Legacy systems
-        <span style={{marginLeft:"auto",display:"inline-flex",alignItems:"center",justifyContent:"center",minWidth:36,height:24,borderRadius:12,padding:"0 10px",background:C.accent,color:"#fff",fontSize:14,fontWeight:800,lineHeight:1}}>{totalSystems + flagships.filter(f=>!f.tier).length + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)}</span>
+        <span style={{marginLeft:"auto",display:"inline-flex",alignItems:"center",justifyContent:"center",minWidth:36,height:24,borderRadius:12,padding:"0 10px",background:C.accent,color:"#fff",fontSize:14,fontWeight:800,lineHeight:1}}>{totalSystems + flagships.length + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)}</span>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 12px"}}>How many legacy systems in each tier? Default costs are modelled from Australian state contract data, scaled to your bed count. <strong style={{color:C.textMid}}>Click any tier cost to override it</strong>, name specific systems within a tier, or switch to {"\u201c"}I know my spend{"\u201d"} if you have your total.</p>
 
@@ -2682,9 +2682,9 @@ function ROICalculator() {
               style={{flex:"1 1 200px",maxWidth:260,padding:"12px 14px",border:`2px solid ${C.accent}`,borderRadius:999,fontSize:18,fontWeight:700,fontFamily:"inherit"}}/>
             <span style={{fontSize:13,color:C.textMid}}>/yr across all legacy systems</span>
           </div>
-          {knownAnnualSpend > 0 && (totalSystems + flagships.filter(f=>!f.tier).length) > 0 && (
+          {knownAnnualSpend > 0 && (totalSystems + flagships.length) > 0 && (
             <div style={{marginTop:12,fontSize:13,color:C.textMid,lineHeight:1.6}}>
-              {fmtK(knownAnnualSpend)}/yr will be distributed across your {totalSystems + flagships.filter(f=>!f.tier).length} systems
+              {fmtK(knownAnnualSpend)}/yr will be distributed across your {totalSystems + flagships.length} systems
               {flagships.length > 0 ? ` (${fmtK(flagships.reduce((s,f)=>s+(f.cost||0),0))} in named systems, remainder by tier)` : ""}
               . Costs are weighted 5:2:1 across tiers. Click any tier cost below to override.
             </div>
@@ -2730,28 +2730,29 @@ function ROICalculator() {
               </div>
               <AnimatedSlider value={inputs.tiers[t.tier]} min={0} max={t.max} step={1} onChange={v=>{updateTier(t.tier,v);touch(2);}} hideRange label={<span style={{fontSize:12,color:C.textMuted}}>{t.hint}</span>}/>
 
-              {/* Named systems for this tier */}
-              {flagships.filter(f=>f.tier===t.tier).length > 0 && <div style={{marginTop:8}}>
-                {flagships.map((f,fi) => f.tier===t.tier ? <div key={fi} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",background:"#fff",borderRadius:6,border:`1px solid ${C.borderLight}`,marginBottom:4}}>
-                  <span style={{fontSize:11,fontWeight:600,color:t.color,flex:1}}>{f.name||"Custom system"}</span>
-                  <span style={{fontSize:12,fontWeight:700,color:t.color}}>{fmtK(f.cost)}/yr</span>
-                  <button type="button" onClick={()=>removeFlagship(fi)} style={{border:"none",background:"none",color:C.textMuted,cursor:"pointer",fontSize:12,padding:"2px 4px"}}>{"×"}</button>
-                </div> : null)}
-              </div>}
-
-              {/* Add named system button */}
               {(() => {
                 const _ttm = sector === "aged_care" ? TIER_TYPE_MAP_AC : sector === "ndis" ? TIER_TYPE_MAP_NDIS : TIER_TYPE_MAP_HOSPITAL;
                 const tierTypes = _ttm[t.tier] || [];
-                const tierSystems = knownSystems.filter(s => tierTypes.includes(s.type));
-                return tierSystems.length > 0 && <details style={{marginTop:6}}>
-                  <summary style={{fontSize:11,color:C.accent,cursor:"pointer",fontWeight:600,listStyle:"none",display:"flex",alignItems:"center",gap:4}}>
-                    Name a specific system to refine cost
+                const tierSys = knownSystems.filter(s => tierTypes.includes(s.type));
+                const selNames = flagships.map(f => f.known || f.name);
+                if (!tierSys.length) return null;
+                return <details style={{marginTop:8}}>
+                  <summary style={{fontSize:12,fontWeight:600,color:C.accent,cursor:"pointer",padding:"4px 0"}}>
+                    Name specific systems
+                    {(() => { const n = tierSys.filter(s => selNames.includes(s.label)).length; return n > 0 ? " ("+n+" selected)" : ""; })()}
                   </summary>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:6}}>
-                    {tierSystems.map(sys => <button type="button" key={sys.label} onClick={()=>{addFlagship(sys,t.tier);touch(2);}} style={{padding:"5px 10px",fontSize:10,fontWeight:600,border:`1px solid ${C.borderLight}`,borderRadius:6,background:"#fff",cursor:"pointer",color:C.textMid}}>
-                      {sys.label} <span style={{color:C.textMuted}}>({fmtK(systemCost(sys,inputs.bed_count))})</span>
-                    </button>)}
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}>
+                    {tierSys.map(sys => {
+                      const sel = selNames.includes(sys.label);
+                      return <button type="button" key={sys.label} onClick={()=>{
+                        if (sel) { setFlagships(p => p.filter(f => (f.known||f.name) !== sys.label)); }
+                        else { addFlagship(sys, t.tier); }
+                        touch(2);
+                      }} style={{padding:"6px 10px",fontSize:11,fontWeight:sel?700:500,border:"1px solid "+(sel?C.accent:C.borderLight),borderRadius:8,background:sel?C.accentPale:"#fff",color:sel?C.accent:C.textMid,cursor:"pointer",fontFamily:"inherit"}}>
+                        {sel ? "\u2713 " : ""}{sys.label}
+                        <span style={{fontSize:10,color:C.textMuted,marginLeft:4}}>~{fmtK(systemCost(sys, inputs.bed_count))}</span>
+                      </button>;
+                    })}
                   </div>
                 </details>;
               })()}
@@ -2817,14 +2818,84 @@ function ROICalculator() {
           <div style={{marginTop:12,padding:"10px 14px",background:C.accentPale,borderRadius:8,display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
             <span style={{fontSize:13,fontWeight:600,color:C.textMid}}>Totals:</span>
             <span style={{fontSize:13,color:C.textMid}}>{inputs.tiers.enterprise} enterprise, {inputs.tiers.departmental} departmental, {inputs.tiers.niche} standalone{(portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems) > 0 ? `, +${(portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)} non-acute` : ""}</span>
-            <span style={{fontSize:20,fontWeight:800,color:C.accent,marginLeft:"auto"}}>{totalSystems + flagships.filter(f=>!f.tier).length + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)}</span>
+            <span style={{fontSize:20,fontWeight:800,color:C.accent,marginLeft:"auto"}}>{totalSystems + flagships.length + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)}</span>
           </div>
         </div>
       )}
 
+      <button type="button" onClick={()=>{
+        const cost = Math.round((150000 + inputs.bed_count * 400) / 1000) * 1000;
+        setFlagships(p => [...p, {name:"", cost:cost, retire:true, known:"", items:defaultLineItems(cost), showItems:false, tier:null}]);
+        touch(2);
+      }} style={{marginTop:12,border:"none",background:"none",color:C.accent,fontSize:13,fontWeight:700,cursor:"pointer",padding:"8px 0",display:"flex",alignItems:"center",gap:6,fontFamily:"inherit"}}>
+        + Add a custom / unlisted system
+      </button>
 
+      {flagships.length > 0 && <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:8}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginTop:4}}>Named systems ({flagships.length})</div>
+        {flagships.map((f, i) => (
+          <div key={"f"+i} style={{padding:"10px 14px",background:C.bg,borderRadius:8,border:"1px solid "+C.borderLight,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            {f.known ? (
+              <div style={{flex:"1 1 160px",fontSize:13,fontWeight:700,color:C.text,padding:"6px 0"}}>
+                {f.known}
+                {f.tier && <span style={{fontSize:10,fontWeight:500,color:C.textMuted,marginLeft:6,padding:"2px 6px",background:"#fff",borderRadius:4}}>{f.tier}</span>}
+              </div>
+            ) : (
+              <input type="text" placeholder="System name" value={f.name} onChange={e => updateFlagship(i,"name",e.target.value)}
+                style={{flex:"1 1 160px",padding:"6px 10px",border:"1px solid "+C.borderLight,borderRadius:8,fontSize:13,fontFamily:"inherit"}}/>
+            )}
+            <div style={{display:"flex",alignItems:"center",gap:4}}>
+              <span style={{fontSize:12,color:C.textMuted}}>{"A$"}</span>
+              <input type="number" value={f.cost} min={0} step={10000}
+                onChange={e => updateFlagship(i,"cost",parseInt(e.target.value)||0)}
+                style={{width:110,padding:"6px 8px",border:"1px solid "+C.borderLight,borderRadius:8,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
+              <span style={{fontSize:11,color:C.textMuted}}>/yr</span>
+            </div>
+            <label style={{display:"flex",alignItems:"center",gap:4,fontSize:12,color:C.textMid,cursor:"pointer"}}>
+              <input type="checkbox" checked={f.retire} onChange={e => updateFlagship(i,"retire",e.target.checked)} style={{accentColor:C.accent}}/> Retire
+            </label>
+            <button type="button" onClick={() => removeFlagship(i)} style={{border:"none",background:"none",color:C.textMuted,fontSize:16,cursor:"pointer",padding:"4px 8px"}} title="Remove">{"\u2715"}</button>
+          </div>
+        ))}
+      </div>}
 
-      {(totalSystems + flagships.filter(f=>!f.tier).length) > 0 && (() => {
+      <button type="button" onClick={()=>{
+        const cost = Math.round((100000 + inputs.bed_count * 300) / 1000) * 1000;
+        setFlagships(p => [...p, {name:"", cost:cost, retire:true, known:"", items:defaultLineItems(cost), showItems:false, tier:null}]);
+        touch(2);
+      }} style={{marginTop:12,border:"none",background:"none",color:C.accent,fontSize:13,fontWeight:700,cursor:"pointer",padding:"8px 0",display:"flex",alignItems:"center",gap:6,fontFamily:"inherit"}}>
+        + Add a custom / unlisted system
+      </button>
+
+      {flagships.length > 0 && <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:8}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginTop:4}}>Named systems ({flagships.length})</div>
+        {flagships.map((f, i) => (
+          <div key={"f"+i} style={{padding:"10px 14px",background:C.bg,borderRadius:8,border:"1px solid "+C.borderLight,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            {f.known ? (
+              <div style={{flex:"1 1 160px",fontSize:13,fontWeight:700,color:C.text,padding:"6px 0"}}>
+                {f.known}
+                {f.tier && <span style={{fontSize:10,fontWeight:500,color:C.textMuted,marginLeft:6,padding:"2px 6px",background:"#fff",borderRadius:4}}>{f.tier}</span>}
+              </div>
+            ) : (
+              <input type="text" placeholder="System name" value={f.name} onChange={e => updateFlagship(i,"name",e.target.value)}
+                style={{flex:"1 1 160px",padding:"6px 10px",border:"1px solid "+C.borderLight,borderRadius:8,fontSize:13,fontFamily:"inherit"}}/>
+            )}
+            <div style={{display:"flex",alignItems:"center",gap:4}}>
+              <span style={{fontSize:12,color:C.textMuted}}>{"A$"}</span>
+              <input type="number" value={f.cost} min={0} step={10000}
+                onChange={e => updateFlagship(i,"cost",parseInt(e.target.value)||0)}
+                style={{width:110,padding:"6px 8px",border:"1px solid "+C.borderLight,borderRadius:8,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
+              <span style={{fontSize:11,color:C.textMuted}}>/yr</span>
+            </div>
+            <label style={{display:"flex",alignItems:"center",gap:4,fontSize:12,color:C.textMid,cursor:"pointer"}}>
+              <input type="checkbox" checked={f.retire} onChange={e => updateFlagship(i,"retire",e.target.checked)} style={{accentColor:C.accent}}/> Retire
+            </label>
+            <button type="button" onClick={() => removeFlagship(i)} style={{border:"none",background:"none",color:C.textMuted,fontSize:16,cursor:"pointer",padding:"4px 8px"}} title="Remove">{"\u2715"}</button>
+          </div>
+        ))}
+      </div>}
+
+      {(totalSystems + flagships.length) > 0 && (() => {
         const estEstate = costMode === "known" && knownAnnualSpend > 0 ? knownAnnualSpend :
           inputs.tiers.enterprise * (tierCostEdits.enterprise != null ? tierCostEdits.enterprise : tierCost("enterprise",inputs.bed_count,CX[inputs.complexity_level]))
           + inputs.tiers.departmental * (tierCostEdits.departmental != null ? tierCostEdits.departmental : tierCost("departmental",inputs.bed_count,CX[inputs.complexity_level]))
@@ -2834,15 +2905,15 @@ function ROICalculator() {
         return <>
           <div style={{marginTop:16,padding:"14px 18px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <div style={{fontSize:34,fontWeight:800,color:C.accent,lineHeight:1}}>{totalSystems + flagships.filter(f=>!f.tier).length + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)}</div>
-              <div style={{fontSize:14,fontWeight:700,color:C.text}}>legacy systems{flagships.filter(f=>!f.tier).length > 0 ? ` (${flagships.filter(f=>!f.tier).length} with named costs)` : ""}{flagships.filter(f=>f.tier).length > 0 ? ` (${flagships.filter(f=>f.tier).length} named in tiers)` : ""}</div>
+              <div style={{fontSize:34,fontWeight:800,color:C.accent,lineHeight:1}}>{totalSystems + flagships.length + (portfolioOv.systems != null ? portfolioOv.systems : portfolioImpact.addSystems)}</div>
+              <div style={{fontSize:14,fontWeight:700,color:C.text}}>legacy systems{flagships.length > 0 ? ` (incl. ${flagships.length} named)` : ""}</div>
             </div>
             <div style={{fontSize:12,color:C.textMuted,marginTop:4}}>
               Estate: ~{fmtK(estEstate + (portfolioOv.cost != null ? portfolioOv.cost : portfolioImpact.addCost))}/yr {hasCustomCost ? "" : "(modelled estimate) "}running costs
             </div>
           </div>
           {!hasCustomCost && costMode === "estimate" && <div style={{marginTop:8,padding:"12px 16px",background:"#f0faf8",borderRadius:8,border:"1px solid #b0e0d8",fontSize:13,color:"#0F4146",lineHeight:1.6}}>
-            <strong>Know your actual costs?</strong> Click any tier cost above to override, switch to {'"'}I know my spend{'"'}, or name specific systems within each tier. Real contract values give the most accurate ROI.
+            <strong>Know your actual costs?</strong> Click any tier cost above to override, switch to {'"'}I know my spend{'"'}, or add named systems below. Real contract values give the most accurate ROI.
           </div>}
         </>;
       })()}
