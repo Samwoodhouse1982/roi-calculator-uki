@@ -408,7 +408,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
     excessDayCostAvoided, malpracticeReduction, duplicateTestSaving, qualitySavings,
-    annual, total3, totalRamp, rampYears, rampPcts, yrValues, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realisation: sc.realisation, isArchiveOnly,
+    annual, total3, totalRamp, rampYears, rampPcts, yrValues, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realisation: sc.realisation, decomFactor: sc.decom_pct, safetyFactor: sc.safety, isArchiveOnly,
     fteEquivalent: Math.round(hrsSaved * sc.realisation / 1820 * 10) / 10,  // NHS FTE = 1820 hrs (8.4 hrs/day x 5 days x 52 weeks - leave)
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
     flagshipCount, flagshipRetireCount,
@@ -740,6 +740,7 @@ function ROICalculator() {
   const [activePreset, setActivePreset] = useState(null);
   const [scenarioMode, setScenarioMode] = useState(null);
   const [viewMode, setViewMode] = useState("executive");
+  const [showFormulas, setShowFormulas] = useState(false);
   const [pdfFormat, setPdfFormat] = useState("full");
   const [rampYears, setRampYears] = useState(3);
   const [modelMode, setModelMode] = useState("custom"); // "template" or "custom"
@@ -2211,6 +2212,9 @@ function ROICalculator() {
             {s.label} {fmtK(s.val)} ({Math.round(s.val/total*100)}%)
           </div>)}
         </div>
+        <div style={{display:"flex",justifyContent:"center",marginTop:8}}>
+          <button type="button" onClick={()=>setShowFormulas(true)} style={{background:"none",border:"none",color:C.accent,fontSize:11,fontWeight:600,cursor:"pointer",textDecoration:"underline",padding:"4px 8px",fontFamily:"inherit"}}>Why these numbers?</button>
+        </div>
       </div>;
     })()}
 
@@ -2723,6 +2727,101 @@ function ROICalculator() {
     </div>
 
     <button type="button" onClick={()=>{setPage("inputs");scrollToTop();}} className="roi-btn" style={{marginTop:20,padding:"12px 28px",background:"#fff",color:C.textMid,border:`1px solid ${C.border}`,borderRadius:999,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"←"} Edit inputs</button>
+
+    {/* Formula stack modal - "Why these numbers?" */}
+    {showFormulas && (() => {
+      const sc = {decom_pct:r.decomFactor, realisation:r.realisation, safety:r.safetyFactor};
+      const dq = DQ[inputs.data_quality_level];
+      const cx = CX[inputs.complexity_level];
+      const residual = r.isArchiveOnly ? 1 : 2;
+      const reducible = Math.max(0, r.minsWasted - residual);
+      const switchSysCount = Math.max(0, r.systemsPerUser - 1);
+      const switchPenaltyPct = Math.min(switchSysCount * 4, 400);
+      const frag = r.hasClinicalScope ? (0.6 + Math.min(r.legacy, 20) / 20 * 0.6) : 0;
+      const FormulaSection = ({color, title, total, formula, plug, source}) => (
+        <div style={{marginBottom:16,padding:"14px 16px",background:"#fff",borderRadius:10,border:`1px solid ${C.borderLight}`,borderLeft:`4px solid ${color}`}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:8,flexWrap:"wrap",gap:8}}>
+            <div style={{fontSize:14,fontWeight:700,color:C.text}}>{title}</div>
+            <div style={{fontSize:18,fontWeight:800,color}}>{fmtK(total)}/yr</div>
+          </div>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4}}>Formula</div>
+          <div style={{fontSize:12,color:C.textMid,marginBottom:10,fontFamily:"ui-monospace,monospace",lineHeight:1.5,padding:"6px 8px",background:C.bg,borderRadius:4}}>{formula}</div>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4}}>Your numbers</div>
+          <div style={{fontSize:12,color:C.text,marginBottom:10,fontFamily:"ui-monospace,monospace",lineHeight:1.6,padding:"6px 8px",background:`${color}11`,borderRadius:4}}>{plug}</div>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4}}>Source</div>
+          <div style={{fontSize:11,color:C.textMid,lineHeight:1.5,fontStyle:"italic"}}>{source}</div>
+        </div>
+      );
+      return <div onClick={()=>setShowFormulas(false)} style={{position:"fixed",inset:0,background:"rgba(27,36,51,0.7)",zIndex:200,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto",backdropFilter:"blur(4px)"}}>
+        <div onClick={e=>e.stopPropagation()} style={{maxWidth:760,width:"100%",background:"#f8fafb",borderRadius:14,padding:"24px 28px",boxShadow:"0 20px 60px rgba(0,0,0,0.25)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <h2 style={{fontSize:22,fontWeight:800,color:C.text,margin:0}}>Why these numbers?</h2>
+            <button type="button" onClick={()=>setShowFormulas(false)} style={{border:"none",background:"none",fontSize:24,color:C.textMid,cursor:"pointer",padding:"4px 12px",lineHeight:1}}>{"✕"}</button>
+          </div>
+          <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px",lineHeight:1.6}}>Annual recurring savings of <strong style={{color:C.accent}}>{fmtK(r.annual)}</strong> for the <strong>{am === "CONSERVATIVE" ? "Conservative" : am === "STRETCH" ? "Stretch" : "Expected"}</strong> scenario, broken down below. Every figure here flows from your specific inputs and the constants documented in our methodology report.</p>
+
+          <FormulaSection
+            color="#0F4146"
+            title="1. Decommission savings"
+            total={r.decomSave}
+            formula={"Σ (tier_count × tier_cost) × decom_rate × scenario.decom + retired_flagships × scenario.decom"}
+            plug={`(${r.entDecom} ent × ${fmtK(r.entCost)} + ${r.depDecom} dep × ${fmtK(r.depCost)} + ${r.nicDecom} std × ${fmtK(r.nicCost)}) + ${r.flagshipRetireCount} retired flagship${r.flagshipRetireCount===1?"":"s"} × scenario.decom (${(sc.decom_pct*100).toFixed(0)}%) = ${fmtK(r.decomSave)}/yr`}
+            source={"User-defined contract values OR tier benchmarks: Enterprise (£300k base + £700/bed), Departmental (£75k + £160/bed), Standalone (£14k + £20/bed). Scaled by complexity (×"+cx+") for "+inputs.complexity_level.toLowerCase()+" complexity. Decom rate "+(inputs.decom_retire_rate*100).toFixed(0)+"% reflects typical % of legacy systems retired in NHS migrations (60-80% normal range)."}
+          />
+
+          <FormulaSection
+            color="#1a7a7a"
+            title="2. Clinician capacity freed"
+            total={r.timeSave}
+            formula={"clinicians × (mins/wk - residual) × working_weeks / 60 × £55 × scenario.realisation"}
+            plug={`${fmtNum(r.clinicians)} active clinicians × ${reducible} reducible mins/wk (${r.minsWasted} - ${residual} residual) × 48 working wks / 60 = ${fmtNum(r.hrsSaved)} hrs × £55/hr × ${(sc.realisation*100).toFixed(0)}% realisation = ${fmtK(r.timeSave)}/yr`}
+            source={"Mins/wk derived: "+r.baseMin+" base × "+dq+" data quality ("+inputs.data_quality_level.toLowerCase()+") × "+cx+" complexity × (1 + "+(switchPenaltyPct/100).toFixed(2)+" switch penalty for "+r.systemsPerUser+" systems/user). Active clinicians = total staff (beds × 2.8 + corp/org) × 65% active (Sinsky 2016, KLAS Arch Collab). Switch penalty: Bartek et al JIMI 2023 (PRIMARY: 2.78M EHR audit-log events; β=0.03), Westbrook 2010 corroborates. Hourly rate £55 = NHS AfC mid-band incl. on-costs."}
+          />
+
+          {(r.excessDayCostAvoided||0) > 0 && <FormulaSection
+            color="#3d8a8a"
+            title="3. Excess bed days avoided"
+            total={r.excessDayCostAvoided}
+            formula={"beds × 0.365 days/bed × fragmentation × data_quality × scenario.safety × £400/day"}
+            plug={`${fmtNum(inputs.bed_count)} beds × 0.365 × ${frag.toFixed(2)} fragmentation × ${dq} dq × ${(sc.safety*100).toFixed(0)}% scenario.safety = ${fmtNum(r.safetyBedDaysAvoided)} bed-days × £400 = ${fmtK(r.excessDayCostAvoided)}/yr`}
+            source={"£400/bed-day: NHS Reference Costs (general acute conservative blended; critical care is £1,500+). 0.365 excess days per bed: NHS Patient Safety Strategy benchmarks. Fragmentation factor scales with legacy count ("+r.legacy+" systems = "+frag.toFixed(2)+"x), capped at 1.2x at 20+ systems."}
+          />}
+
+          {(r.malpracticeReduction||0) > 0 && <FormulaSection
+            color="#d4507a"
+            title="4. Indemnity exposure reduction"
+            total={r.malpracticeReduction}
+            formula={"beds × £7,500 indemnity attribution × 5% reduction × scenario.safety"}
+            plug={`${fmtNum(inputs.bed_count)} beds × £7,500 × 5% × ${(sc.safety*100).toFixed(0)}% = ${fmtK(r.malpracticeReduction)}/yr`}
+            source={"£7,500/bed: derived from NHS Resolution £3.6bn 2024/25 settlements (NAO Oct 2025) ÷ ~140k acute beds × 30% communication failure attribution (CRICO 2016). 5% reduction = conservative estimate from consolidated EPR / clinical archive (peer-reviewed benchmarks: 5-15% range)."}
+          />}
+
+          {(r.duplicateTestSaving||0) > 0 && <FormulaSection
+            color="#e67e22"
+            title="5. Duplicate testing avoidance"
+            total={r.duplicateTestSaving}
+            formula={"beds × 22 tests/yr × 18% duplicate rate × £35/test × scenario.safety"}
+            plug={`${fmtNum(inputs.bed_count)} beds × 22 tests × 18% × £35 × ${(sc.safety*100).toFixed(0)}% = ${fmtK(r.duplicateTestSaving)}/yr`}
+            source={"22 tests/bed/yr: NHS Reference Costs pathology + imaging baseline. 18% duplicate rate: Bates et al (when records are fragmented). £35/test: NHS pathology blended (lab + imaging average)."}
+          />}
+
+          <div style={{marginTop:16,padding:"14px 18px",background:C.accent,color:"#fff",borderRadius:10}}>
+            <div style={{fontSize:12,fontWeight:700,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,opacity:0.85}}>Total annual recurring</div>
+            <div style={{fontSize:24,fontWeight:800}}>{fmtK(r.annual)}/yr</div>
+            <div style={{fontSize:12,marginTop:6,opacity:0.85}}>= {fmtK(r.decomSave)} decom + {fmtK(r.timeSave)} capacity{r.qualitySavings>0?` + ${fmtK(r.qualitySavings)} quality`:""}</div>
+          </div>
+
+          <div style={{marginTop:14,fontSize:11,color:C.textMuted,lineHeight:1.6,fontStyle:"italic"}}>
+            All scenario factors: <strong>{am === "CONSERVATIVE" ? "Conservative" : am === "STRETCH" ? "Stretch" : "Expected"}</strong> = decom ×{sc.decom_pct.toFixed(2)}, realisation ×{sc.realisation.toFixed(2)}, safety ×{sc.safety.toFixed(2)}. Switch scenarios above to see how the numbers shift.
+          </div>
+
+          <div style={{marginTop:14,display:"flex",justifyContent:"center"}}>
+            <button type="button" onClick={()=>setShowFormulas(false)} style={{padding:"10px 24px",background:C.accent,color:"#fff",border:"none",borderRadius:999,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Close</button>
+          </div>
+        </div>
+      </div>;
+    })()}
+
   </div>;
 
   /* ── CALCULATING PAGE ──────────────────────────────────── */
