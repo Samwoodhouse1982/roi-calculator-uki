@@ -1113,6 +1113,18 @@ function ROICalculator() {
     // Page 1
     doc.setFillColor(TEAL[0],TEAL[1],TEAL[2]); doc.rect(0,0,pw,50,"F");
     doc.setFillColor(SEAFOAM[0],SEAFOAM[1],SEAFOAM[2]); doc.rect(0,50,pw,1.5,"F");
+
+    // Logo (top-right corner of front page)
+    if (PDF_LOGO_BASE64) {
+      try {
+        const logoW = PDF_LOGO_WIDTH;
+        const logoH = logoW / PDF_LOGO_ASPECT;
+        const logoX = pw - logoW - 5;
+        const logoY = 5;
+        doc.addImage(PDF_LOGO_BASE64, PDF_LOGO_FORMAT, logoX, logoY, logoW, logoH);
+      } catch (e) { console.warn("Logo failed:", e); }
+    }
+
     setC(WHITE); doc.setFontSize(9); doc.setFont("helvetica","normal");
     doc.text("BOARD SUMMARY", ml, 14);
     doc.setFontSize(22); doc.setFont("helvetica","bold");
@@ -1257,6 +1269,21 @@ function ROICalculator() {
     doc.text("Page 2 of 2", pw - mr, ph - 10, { align: "right" });
     doc.setFillColor(SEAFOAM[0],SEAFOAM[1],SEAFOAM[2]); doc.rect(0, ph - 4, pw, 4, "F");
     
+    // Add footer logo to all pages except the first
+    if (PDF_LOGO_BASE64) {
+      const totalPages = doc.internal.getNumberOfPages();
+      const fLogoW = PDF_LOGO_FOOTER_W;
+      const fLogoH = fLogoW / PDF_LOGO_ASPECT;
+      for (let p = 2; p <= totalPages; p++) {
+        doc.setPage(p);
+        try {
+          const bandH = 10;
+          doc.setFillColor(TEAL[0], TEAL[1], TEAL[2]);
+          doc.rect(0, ph - bandH, pw, bandH, "F");
+          doc.addImage(PDF_LOGO_BASE64, PDF_LOGO_FORMAT, pw - fLogoW - 5, ph - bandH + (bandH - fLogoH) / 2, fLogoW, fLogoH);
+        } catch (e) {}
+      }
+    }
     doc.save("Galen_ROI_Board_Summary_" + new Date().toISOString().split("T")[0] + ".pdf");
     return null;
   }, [r, am, inputs]);
