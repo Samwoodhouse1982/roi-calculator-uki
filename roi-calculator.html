@@ -3060,8 +3060,10 @@ function ROICalculator() {
     {/* Clinical safety */}
     {r.hasClinicalScope && <div>
     <Card dimmed={dim} style={{border:"1px solid #e0c4cf",background:"#faf5f7"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-        <SIcon name="shield" size={20} color="#d4507a"/>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:4}}>
+        <div style={{width:40,height:40,borderRadius:10,background:"#d4507a15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <SIcon name="shield" size={22} color="#d4507a"/>
+        </div>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Avoidable harm reduction":"Avoidable harm reduction (clinical case for migration)"}</h3>
         <span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Additional value · not in financial total</span>
         <InfoTip text={`Source: AHRQ Patient Safety Indicators; Joint Commission Sentinel Event data. Per-bed rates from ~100K acute beds nationally, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). NOT included in financial totals.`}/>
