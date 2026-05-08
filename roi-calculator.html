@@ -1006,7 +1006,7 @@ function EvidenceDropdown({title,children}){
   const [open,setOpen] = React.useState(false);
   return <div style={{marginTop:10}}>
     <button onClick={(e)=>{e.stopPropagation();setOpen(!open);}} style={{background:"none",border:"none",cursor:"pointer",padding:"6px 0",fontSize:12,fontWeight:600,color:C.textMid,display:"flex",alignItems:"center",gap:6,fontFamily:"inherit"}}>
-      <span style={{transform:open?"rotate(90deg)":"rotate(0deg)",transition:"transform .2s",fontSize:10}}>{"\u25B6"}</span>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{transform:open?"rotate(90deg)":"rotate(0deg)",transition:"transform .2s",flexShrink:0}}><polyline points="9 18 15 12 9 6"/></svg>
       {title||"Evidence & methodology"}
     </button>
     {open && <div style={{padding:"10px 14px",background:"#f8fafb",borderRadius:8,border:"1px solid "+C.borderLight,fontSize:12,color:C.textMid,lineHeight:1.6,marginTop:4}}>{children}</div>}
@@ -3106,15 +3106,15 @@ function ROICalculator() {
       <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:8,letterSpacing:0.5}}>RISK SCENARIOS \u00b7 STRESS TEST</div>
       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
         <button type="button" onClick={()=>{if(scenarioMode==="DELAYED"||scenarioMode==="PARTIAL")setScenarioMode("EXPECTED")}} className="roi-scenario" style={{flex:"1 1 0",minWidth:80,padding:"10px 8px",textAlign:"center",border:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accentPale:"#fff"}}>
-          <div style={{fontSize:16,marginBottom:2}}>{"\u2714\uFE0F"}</div>
+          <div style={{marginBottom:2,display:"flex",justifyContent:"center"}}><SIcon name="shield" size={18} color={scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accent:C.textMid}/></div>
           <div style={{fontSize:12,fontWeight:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?700:500,color:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accent:C.textMid}}>None</div>
           <div style={{fontSize:10,color:C.textMuted}}>No risk applied</div>
         </button>
         {[
-            { k: "DELAYED", l: "12-month delay", s: "Programme slips 1 year", e: "\u23f3" },
-            { k: "PARTIAL", l: "Partial decom", s: "Only 50% systems retired", e: "\u26a0\ufe0f" },
+            { k: "DELAYED", l: "12-month delay", s: "Programme slips 1 year", svgIcon: "clock" },
+            { k: "PARTIAL", l: "Partial decom", s: "Only 50% systems retired", svgIcon: "alert" },
           ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(scenarioMode===s.k?"EXPECTED":s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:100,padding:"10px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid #2c3e6b`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode===s.k?"#eef0f8":"#fff"}}>
-          <div style={{fontSize:16,marginBottom:2}}>{s.e}</div>
+          <div style={{marginBottom:2,display:"flex",justifyContent:"center"}}><SIcon name={s.svgIcon} size={18} color={scenarioMode===s.k?"#2c3e6b":C.textMid}/></div>
           <div style={{fontSize:12,fontWeight:scenarioMode===s.k?700:500,color:scenarioMode===s.k?"#2c3e6b":C.textMid}}>{s.l}</div>
           <div style={{fontSize:10,color:C.textMuted}}>{s.s}</div>
         </button>)}
@@ -3365,7 +3365,6 @@ function ROICalculator() {
         {/* Decom - tiered breakdown */}
     <Card dimmed={dim}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <SIcon name="unlock" size={20} color="#0F4146"/>
         <div style={{display:"flex",alignItems:"center",flex:1,gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#0F414615",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="unlock" size={22} color="#0F4146"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legacy decommission savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Annual costs eliminated when systems are switched off.</p>
@@ -3395,7 +3394,6 @@ function ROICalculator() {
     {/* Clinician time */}
     <Card dimmed={dim}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <SIcon name="clock" size={20} color="#e67e22"/>
         <div style={{display:"flex",alignItems:"center",flex:1,gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#1a8a7a15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="clock" size={22} color="#1a8a7a"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
