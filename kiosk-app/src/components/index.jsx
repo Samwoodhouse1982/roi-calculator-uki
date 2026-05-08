@@ -104,19 +104,23 @@ export function InfoTip({ text }) {
 }
 
 export function BigChoice({ options, value, onChange }) {
-  return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-    {options.map(opt => <button key={opt.key} onClick={() => onChange(opt.key)} style={{
-      width: "100%", padding: "28px 32px", textAlign: "left",
-      border: value === opt.key ? `3px solid ${C.accent}` : `1px solid ${C.border}`,
-      borderRadius: 22, background: value === opt.key ? C.accentPale : C.surface,
-      cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", gap: 20
-    }}>
-      {opt.iconKey ? <Icon name={opt.iconKey} size={36} stroke={value === opt.key ? C.accent : C.textMid} /> : opt.icon && <span style={{ fontSize: 40 }}>{opt.icon}</span>}
-      <div>
-        <div style={{ fontSize: F.h3, fontWeight: 700, color: value === opt.key ? C.accent : C.text }}>{opt.label}</div>
-        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 4, lineHeight: 1.4 }}>{opt.desc}</div>
-      </div>
-    </button>)}
+  return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+    {options.map((opt, i) => {
+      const isLastOdd = options.length % 2 === 1 && i === options.length - 1;
+      return <button key={opt.key} onClick={() => onChange(opt.key)} style={{
+        gridColumn: isLastOdd ? "1 / -1" : "auto",
+        padding: "32px 30px", textAlign: "left", cursor: "pointer",
+        border: value === opt.key ? `3px solid ${C.accent}` : `1px solid ${C.border}`,
+        borderRadius: 22, background: value === opt.key ? C.accentPale : C.surface,
+        transition: "all .2s", display: "flex", flexDirection: "column", alignItems: "flex-start"
+      }}>
+        <div style={{ marginBottom: 14 }}>
+          {opt.iconKey ? <Icon name={opt.iconKey} size={42} stroke={value === opt.key ? C.accent : C.textMid} /> : opt.icon && <span style={{ fontSize: 42 }}>{opt.icon}</span>}
+        </div>
+        <div style={{ fontSize: F.h3, fontWeight: 700, color: value === opt.key ? C.accent : C.text, marginBottom: 8, lineHeight: 1.2 }}>{opt.label}</div>
+        <div style={{ fontSize: F.small, color: C.textMuted, lineHeight: 1.5 }}>{opt.desc}</div>
+      </button>;
+    })}
   </div>;
 }
 
