@@ -749,7 +749,7 @@ function ROICalculator() {
 
   // Flagship systems (named high-cost outliers outside the tiers)
   const [flagships, setFlagships] = useState([]);
-  const addFlagship = useCallback((sys, tier) => { const s = sys || {}; const sc = s.baseCost ? systemCost(s, inputs.bed_count) : (s.cost || 250000); setFlagships(p => [...p, {name:s.label||"", cost:sc, retire:true, known:s.label||"", items:defaultLineItems(sc), showItems:false, tier:tier||null}]); if (tier && inputs.tiers[tier] > 0) { setInputs(p => ({...p, tiers: {...p.tiers, [tier]: p.tiers[tier] - 1}})); } }, [inputs.bed_count, inputs.tiers]);
+  const addFlagship = useCallback((sys, tier) => { const s = sys || {}; const sc = s.baseCost ? systemCost(s, inputs.bed_count) : (s.cost || 250000); setFlagships(p => [...p, {name:s.label||"", cost:sc, retire:true, known:s.label||"", items:defaultLineItems(sc), showItems:false, tier:tier||null}]); }, [inputs.bed_count]);
   const removeFlagship = useCallback(i => setFlagships(p => p.filter((_,j)=>j!==i)), []);
   const updateFlagship = useCallback((i, k, v) => { setFlagships(p => p.map((f,j)=>j===i?{...f,[k]:v}:f)); setActivePreset(null); }, []);
   const updateLineItem = useCallback((i, key, val) => {
