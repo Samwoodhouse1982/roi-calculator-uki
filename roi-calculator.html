@@ -2295,14 +2295,14 @@ function ROICalculator() {
       </div>
       <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
         {[
-          {k:"HAVE_EPR",icon:"✅",title:"We have an enterprise EHR",desc:"Already on Epic, Oracle/Cerner or similar, and looking to archive and decommission legacy systems.",focus:"Archiving + decommission savings"},
-          {k:"EVALUATING",icon:"🔍",title:"We’re evaluating enterprise EHRs",desc:"Assessing migration to a single platform and need the full case for migration and archiving.",focus:"Migration safety + archiving savings"},
+          {k:"HAVE_EPR",svgIcon:"shield",title:"We have an enterprise EHR",desc:"Already on Epic, Oracle/Cerner or similar, and looking to archive and decommission legacy systems.",focus:"Archiving + decommission savings"},
+          {k:"EVALUATING",svgIcon:"search",title:"We’re evaluating enterprise EHRs",desc:"Assessing migration to a single platform and need the full case for migration and archiving.",focus:"Migration safety + archiving savings"},
         ].map(j=><button type="button" key={j.k} onClick={()=>{update("journey",j.k);touch(0);setTimeout(()=>scrollTo(ref1),200);}} className="roi-btn" style={{
           flex:"1 1 240px",minWidth:0,padding:"18px 20px",textAlign:"left",cursor:"pointer",
           border:inputs.journey===j.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:12,
           background:inputs.journey===j.k?C.accentPale:"#fff",transition:"all .15s"
         }}>
-          <div style={{fontSize:24,marginBottom:8}}>{j.icon}</div>
+          <div style={{marginBottom:10,display:"flex",alignItems:"center"}}><SIcon name={j.svgIcon} size={28} color={inputs.journey===j.k?C.accent:C.textMid}/></div>
           <div style={{fontSize:15,fontWeight:700,color:inputs.journey===j.k?C.accent:C.text,marginBottom:4}}>{j.title}</div>
           <div style={{fontSize:13,color:C.textMuted,lineHeight:1.5,marginBottom:8}}>{j.desc}</div>
           <div style={{fontSize:12,fontWeight:600,color:inputs.journey===j.k?C.accent:C.textMid,padding:"4px 10px",background:inputs.journey===j.k?`${C.accent}15`:C.bg,borderRadius:6,display:"inline-block"}}>{j.focus}</div>
@@ -2857,7 +2857,7 @@ function ROICalculator() {
       </div>
     </div>}
 
-    {dim&&<div style={{textAlign:"center",padding:"60px 20px",color:C.textMuted}}><div style={{fontSize:48,marginBottom:12,opacity:.3}}>{"📊"}</div><div style={{fontSize:16,fontWeight:600,color:C.textMid}}>Select a scenario above</div></div>}
+    {dim&&<div style={{textAlign:"center",padding:"60px 20px",color:C.textMuted}}><div style={{marginBottom:12,opacity:.3,display:"flex",justifyContent:"center"}}><SIcon name="chart" size={48} color={C.textMuted}/></div><div style={{fontSize:16,fontWeight:600,color:C.textMid}}>Select a scenario above</div></div>}
 
     {!dim && overrideCount > 0 && (
       <div style={{
@@ -2978,7 +2978,7 @@ function ROICalculator() {
     <Card dimmed={dim} style={{borderLeft:"4px solid #0F4146"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
         <SIcon name="unlock" size={20} color="#0F4146"/>
-        <div style={{display:"flex",alignItems:"center",flex:1}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legacy decommission savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+        <div style={{display:"flex",alignItems:"center",flex:1,gap:10}}><SIcon name="unlock" size={20} color="#0F4146"/><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legacy decommission savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Annual costs eliminated when systems are switched off.</p>
       <div style={{overflowX:"auto",marginBottom:16}}>
@@ -3328,7 +3328,7 @@ function ROICalculator() {
     {!dim && !leadSubmitted && (
       <Card style={{marginTop:20,background:`linear-gradient(135deg,${C.navy} 0%,${C.navyMid} 100%)`,border:"none",color:"#fff"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
-          <span style={{fontSize:24}}>{"📩"}</span>
+          <SIcon name="mail" size={24} color="#fff"/>
           <h3 style={{fontSize:18,fontWeight:800,margin:0}}>Get this breakdown in your inbox</h3>
         </div>
         <p style={{fontSize:13,opacity:.7,marginBottom:20}}>Download a formatted summary ready to share with your team or board.</p>
