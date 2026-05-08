@@ -3247,23 +3247,49 @@ function ROICalculator() {
 
     {/* Year-by-year */}
     <Card dimmed={dim}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{r.rampYears}-year phased breakdown</h3>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>({fmtK(r.decomSave)} + {fmtK(r.timeSave)}) {"×"} 3 = <strong style={{color:C.green}}>{fmtK(r.total3)}</strong></p>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:8}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}><SIcon name="calendar" size={20} color={C.accent}/><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{r.rampYears}-year phased breakdown</h3></div>
+        <div style={{display:"inline-flex",gap:0,padding:3,background:"#f8fafb",border:`1px solid ${C.border}`,borderRadius:999}}>
+          {[3,5].map(yr=><button type="button" key={yr} onClick={()=>setInputs(p=>({...p,_rampYears:yr}))} style={{padding:"4px 12px",border:"none",borderRadius:999,background:r.rampYears===yr?C.accent:"transparent",color:r.rampYears===yr?"#fff":C.textMid,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{yr}-year</button>)}
+        </div>
+      </div>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>({fmtK(r.annualWithReimbursement)}/yr at steady state) phased over {r.rampYears} years = <strong style={{color:C.green}}>{fmtK(r.total3WithReimbursement)}</strong></p>
       <div style={{overflowX:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}><thead><tr>
-          <th style={th_}>Benefit</th><th style={{...th_,textAlign:"right"}}>Year 1</th><th style={{...th_,textAlign:"right"}}>Year 2</th><th style={{...th_,textAlign:"right"}}>Year 3</th>
+          <th style={th_}>Benefit</th>
+          {r.rampPcts.map((_,i)=><th key={i} style={{...th_,textAlign:"right"}}>Y{i+1}</th>)}
+          <th style={{...th_,textAlign:"right",color:C.accent}}>Total</th>
         </tr></thead><tbody>
           {[
             {l:"Decommission",v:r.decomSave},
             {l:"Clinician capacity",v:r.timeSave},
-            {l:"Reimbursement",v:r.reimbursementImpact},
-            {l:"Quality & safety",v:r.qualitySavings},
+            ...(r.reimbursementImpact>0?[{l:"Reimbursement",v:r.reimbursementImpact}]:[]),
+            ...(r.qualitySavings>0?[{l:"Quality & safety",v:r.qualitySavings}]:[]),
             ...(r.academicSavings>0?[{l:"Academic",v:r.academicSavings}]:[]),
             ...(r.mergeSavings>0?[{l:"M&A consolidation",v:r.mergeSavings}]:[]),
-          ].filter(row=>row.v>0).map((row,i)=><tr key={i}><td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`}}>{row.l}</td><td style={tdR_}>{fmtK(Math.round(row.v*r.y1Pct))}</td><td style={tdR_}>{fmtK(Math.round(row.v*r.y2Pct))}</td><td style={tdR_}>{fmtK(Math.round(row.v*r.y3Pct))}</td></tr>)}
-          <tr style={{background:C.bg}}><td style={{padding:"12px",fontWeight:700}}>Total</td><td style={{...tdR_,fontWeight:700}}>{fmtK(r.yr1R)}</td><td style={{...tdR_,fontWeight:700}}>{fmtK(r.yr2R)}</td><td style={{...tdR_,fontWeight:700}}>{fmtK(r.yr3R)}</td></tr>
-          <tr style={{background:C.bg}}><td style={{padding:"12px",fontWeight:600,color:C.textMid}}>Ramp</td><td style={{...tdR_,color:C.textMid}}>{Math.round(r.y1Pct*100)}%</td><td style={{...tdR_,color:C.textMid}}>{Math.round(r.y2Pct*100)}%</td><td style={{...tdR_,color:C.textMid}}>{Math.round(r.y3Pct*100)}%</td></tr>
-          <tr style={{background:C.bg}}><td style={{padding:"12px",fontWeight:600,color:C.textMid}}>Cumulative</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmtK(r.yr1R)}</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmtK(r.yr1R+r.yr2R)}</td><td style={{...tdR_,fontWeight:800,color:C.green,fontSize:15}}>{fmtK(r.total3WithReimbursement)}</td></tr>
+          ].filter(row=>row.v>0).map((row,i)=><tr key={i}>
+            <td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`}}>{row.l}</td>
+            {r.rampPcts.map((p,j)=><td key={j} style={tdR_}>{fmtK(Math.round(row.v*p))}</td>)}
+            <td style={{...tdR_,fontWeight:600,color:C.accent}}>{fmtK(Math.round(row.v * r.rampPcts.reduce((a,b)=>a+b,0)))}</td>
+          </tr>)}
+          <tr style={{background:C.bg}}>
+            <td style={{padding:"12px",fontWeight:700}}>Total</td>
+            {r.rampPcts.map((p,i)=><td key={i} style={{...tdR_,fontWeight:700}}>{fmtK(Math.round(r.annualWithReimbursement*p))}</td>)}
+            <td style={{...tdR_,fontWeight:800,color:C.green,fontSize:15}}>{fmtK(r.total3WithReimbursement)}</td>
+          </tr>
+          <tr style={{background:C.bg}}>
+            <td style={{padding:"12px",fontWeight:600,color:C.textMid}}>Ramp</td>
+            {r.rampPcts.map((p,i)=><td key={i} style={{...tdR_,color:C.textMid}}>{Math.round(p*100)}%</td>)}
+            <td></td>
+          </tr>
+          <tr style={{background:C.bg}}>
+            <td style={{padding:"12px",fontWeight:600,color:C.textMid}}>Cumulative</td>
+            {r.rampPcts.map((_,i)=>{
+              const cum = Math.round(r.annualWithReimbursement * r.rampPcts.slice(0,i+1).reduce((a,b)=>a+b,0));
+              return <td key={i} style={{...tdR_,fontWeight:600,color:C.textMid}}>{fmtK(cum)}</td>;
+            })}
+            <td></td>
+          </tr>
         </tbody></table>
       </div>
       <div style={{marginTop:14,padding:"10px 14px",background:C.bg,borderRadius:6,fontSize:12,color:C.textMuted,display:"flex",gap:16,flexWrap:"wrap"}}>
