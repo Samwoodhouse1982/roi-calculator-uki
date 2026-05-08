@@ -665,6 +665,13 @@ function SIcon({name,size,color}){
     clock:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
     shield:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>,
     chart:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+    search:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+    dollar:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+    pound:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M18 7c0-2.5-2.5-4-5-4s-5 1.5-5 4c0 2 .5 3 .5 6.5 0 1.5-.5 2.5-1.5 3.5h11"/><path d="M5 17v3h14v-3"/><line x1="6" y1="13" x2="14" y2="13"/></svg>,
+    mail:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+    home:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+    hospital:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>,
+    building:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><line x1="9" y1="6" x2="9" y2="6.01"/><line x1="15" y1="6" x2="15" y2="6.01"/><line x1="9" y1="10" x2="9" y2="10.01"/><line x1="15" y1="10" x2="15" y2="10.01"/><line x1="9" y1="14" x2="9" y2="14.01"/><line x1="15" y1="14" x2="15" y2="14.01"/><path d="M9 18h6"/></svg>,
   };
   return icons[name]||null;
 }
@@ -994,9 +1001,9 @@ function ROICalculator() {
 
     // Scenario comparison
     scenarios: {
-      conservative: { annual: rCon.annual, total3: rCon.total3, decom: rCon.decomSave, time: rCon.timeSave },
-      expected:     { annual: rExp.annual, total3: rExp.total3, decom: rExp.decomSave, time: rExp.timeSave },
-      stretch:      { annual: rStr.annual, total3: rStr.total3, decom: rStr.decomSave, time: rStr.timeSave },
+      conservative: { annual: rCon.annual, total3: rCon.total3, decom: rCon.decomSave, time: rCon.timeSave, quality: rCon.qualitySavings },
+      expected:     { annual: rExp.annual, total3: rExp.total3, decom: rExp.decomSave, time: rExp.timeSave, quality: rExp.qualitySavings },
+      stretch:      { annual: rStr.annual, total3: rStr.total3, decom: rStr.decomSave, time: rStr.timeSave, quality: rStr.qualitySavings },
     },
 
     // Support & SAR
@@ -1007,17 +1014,27 @@ function ROICalculator() {
     sar_days_after: r.sarDaysAfter,
     sar_reduction_pct: r.sarReductionPct,
 
-    // Patient safety (not in financial totals)
+    // Patient safety (counts; in financial totals where indicated)
     safety_med_errors_baseline: r.safetyMedErrorsBaseline,
     safety_med_errors_avoided: r.safetyMedErrorsAvoided,
     safety_patients_protected: r.safetyPatientsProtected,
     safety_bed_days_avoided: r.safetyBedDaysAvoided,
+
+    // Quality / safety financial value (included in annual)
+    excess_bed_day_cost_avoided: r.excessDayCostAvoided,
+    indemnity_exposure_reduction: r.malpracticeReduction,
+    duplicate_testing_avoidance: r.duplicateTestSaving,
+    quality_savings_total: r.qualitySavings,
 
     // Formatted values (ready to drop into templates)
     fmt: {
       annual_savings: fmtK(r.annual),
       three_year_total: fmtK(r.total3),
       decom_savings: fmtK(r.decomSave),
+      excess_bed_day_cost_avoided: fmtK(r.excessDayCostAvoided||0),
+      indemnity_exposure_reduction: fmtK(r.malpracticeReduction||0),
+      duplicate_testing_avoidance: fmtK(r.duplicateTestSaving||0),
+      quality_savings_total: fmtK(r.qualitySavings||0),
       time_savings: fmtK(r.timeSave),
       total_estate: fmtK(r.totalEstate),
       hours_freed: fmtNum(r.hrsSaved),
@@ -1475,7 +1492,7 @@ function ROICalculator() {
     doc.setFontSize(8); doc.setFont("helvetica","bold"); setC(TEAL);
     doc.text("Range across scenarios:", ml + 4, y + 5);
     doc.setFont("helvetica","normal"); setC(GREY);
-    doc.text(fmtK(rCon.total3) + " (conservative)  to  " + fmtK(rStr.total3) + " (stretch). Phased: 40% Year 1, 80% Year 2, 100% Year 3. All figures are user-overridable.", ml + 4, y + 10);
+    doc.text(fmtK(rCon.total3) + " (conservative)  to  " + fmtK(rStr.total3) + " (stretch). Phased over " + r.rampYears + " years (" + r.rampPcts.map(p => Math.round(p*100) + "%").join(", ") + "). All figures are user-overridable.", ml + 4, y + 10);
     y += 22;
 
     // Scenario comparison mini-table
@@ -1489,8 +1506,9 @@ function ROICalculator() {
         body: [
           ["Decom savings", fmtK(rCon.decomSave) + "/yr", fmtK(r.decomSave) + "/yr", fmtK(rStr.decomSave) + "/yr"],
           ["Time savings", fmtK(rCon.timeSave) + "/yr", fmtK(r.timeSave) + "/yr", fmtK(rStr.timeSave) + "/yr"],
+          ...(r.qualitySavings > 0 ? [["Quality / safety", fmtK(rCon.qualitySavings) + "/yr", fmtK(r.qualitySavings) + "/yr", fmtK(rStr.qualitySavings) + "/yr"]] : []),
           [{ content: "Annual total", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.annual) + "/yr", styles: { fontStyle: "bold" } }, { content: fmtK(r.annual) + "/yr", styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.annual) + "/yr", styles: { fontStyle: "bold" } }],
-          [{ content: "3-year total", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.total3), styles: { fontStyle: "bold" } }, { content: fmtK(r.total3), styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.total3), styles: { fontStyle: "bold" } }],
+          [{ content: r.rampYears + "-year total", styles: { fontStyle: "bold" } }, { content: fmtK(rCon.total3), styles: { fontStyle: "bold" } }, { content: fmtK(r.total3), styles: { fontStyle: "bold", textColor: TEAL } }, { content: fmtK(rStr.total3), styles: { fontStyle: "bold" } }],
         ],
         headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
         styles: { fontSize: 8.5, cellPadding: { top: 2.2, bottom: 2.2, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
@@ -1748,14 +1766,14 @@ function ROICalculator() {
       </div>
       <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
         {[
-          {k:"HAVE_EPR",icon:"✅",title:"We have an enterprise EPR",desc:"Already on Epic, Oracle/Cerner or similar, and looking to archive and decommission legacy systems.",focus:"Archiving + decommission savings"},
-          {k:"EVALUATING",icon:"🔍",title:"We’re evaluating enterprise EPRs (FDP-supported)",desc:"Assessing migration to a single platform under the Frontline Digitisation Programme. Need the full case for migration and archiving.",focus:"FDP migration + archiving savings"},
+          {k:"HAVE_EPR",svgIcon:"shield",title:"We have an enterprise EPR",desc:"Already on Epic, Oracle/Cerner or similar, and looking to archive and decommission legacy systems.",focus:"Archiving + decommission savings"},
+          {k:"EVALUATING",svgIcon:"search",title:"We’re evaluating enterprise EPRs (FDP-supported)",desc:"Assessing migration to a single platform under the Frontline Digitisation Programme. Need the full case for migration and archiving.",focus:"FDP migration + archiving savings"},
         ].map(j=><button type="button" key={j.k} onClick={()=>{update("journey",j.k);touch(0);setTimeout(()=>scrollTo(ref1),200);}} className="roi-btn" style={{
           flex:"1 1 240px",minWidth:0,padding:"18px 20px",textAlign:"left",cursor:"pointer",
           border:inputs.journey===j.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:12,
           background:inputs.journey===j.k?C.accentPale:"#fff",transition:"all .15s"
         }}>
-          <div style={{fontSize:24,marginBottom:8}}>{j.icon}</div>
+          <div style={{marginBottom:10,display:"flex",alignItems:"center"}}><SIcon name={j.svgIcon} size={28} color={inputs.journey===j.k?C.accent:C.textMid}/></div>
           <div style={{fontSize:15,fontWeight:700,color:inputs.journey===j.k?C.accent:C.text,marginBottom:4}}>{j.title}</div>
           <div style={{fontSize:13,color:C.textMuted,lineHeight:1.5,marginBottom:8}}>{j.desc}</div>
           <div style={{fontSize:12,fontWeight:600,color:inputs.journey===j.k?C.accent:C.textMid,padding:"4px 10px",background:inputs.journey===j.k?`${C.accent}15`:C.bg,borderRadius:6,display:"inline-block"}}>{j.focus}</div>
@@ -2096,7 +2114,7 @@ function ROICalculator() {
     {/* Journey context banner */}
     <div style={{marginBottom:16,padding:"18px 22px",borderRadius:12,background:isArchiveOnly?C.greenPale:C.rosePale,border:`1px solid ${isArchiveOnly?"#c3e6cb":C.rose+"22"}`}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-        <span style={{fontSize:22}}>{isArchiveOnly?"💰":"🛡️"}</span>
+        <SIcon name={isArchiveOnly?"pound":"shield"} size={24} color={isArchiveOnly?C.green:"#d4507a"}/>
         <div style={{fontSize:15,fontWeight:700,color:isArchiveOnly?C.green:C.rose}}>{isArchiveOnly?"Archiving + decommission":"Migration + archiving"}</div>
       </div>
       <div style={{fontSize:14,color:C.text,lineHeight:1.6}}>
@@ -2149,7 +2167,7 @@ function ROICalculator() {
       </Card>
     </div>}
 
-    {dim&&<div style={{textAlign:"center",padding:"60px 20px",color:C.textMuted}}><div style={{fontSize:48,marginBottom:12,opacity:.3}}>{"📊"}</div><div style={{fontSize:16,fontWeight:600,color:C.textMid}}>Select a scenario above</div></div>}
+    {dim&&<div style={{textAlign:"center",padding:"60px 20px",color:C.textMuted}}><div style={{marginBottom:12,opacity:.3,display:"flex",justifyContent:"center"}}><SIcon name="chart" size={48} color={C.textMuted}/></div><div style={{fontSize:16,fontWeight:600,color:C.textMid}}>Select a scenario above</div></div>}
 
     {!dim && overrideCount > 0 && (
       <div style={{
@@ -2169,7 +2187,7 @@ function ROICalculator() {
     {/* Headline cards */}
     <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
       <ResultCard dimmed={dim} label={`Total savings (${r.rampYears}-year)`} value={an?<AnimatedK value={r.totalRamp} active={an}/>:"–"} sub={an?`Phased over ${r.rampYears} years (${r.rampPcts.map(p=>Math.round(p*100)+"%").join("/")})`:""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
-      <ResultCard dimmed={dim} label="Annual recurring" value={an?<AnimatedK value={r.annual} active={an}/>:"–"} sub={an?`${fmtK(r.decomSave)} decom + ${fmtK(r.timeSave)} time`:""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
+      <ResultCard dimmed={dim} label="Annual recurring" value={an?<AnimatedK value={r.annual} active={an}/>:"–"} sub={an?(r.qualitySavings>0 ? `${fmtK(r.decomSave)} decom + ${fmtK(r.timeSave)} time + ${fmtK(r.qualitySavings)} quality` : `${fmtK(r.decomSave)} decom + ${fmtK(r.timeSave)} time`):""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
       <ResultCard dimmed={dim} label="Clinician time (annual)" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={an?<span>{fmtNum(r.hrsSaved)} hrs/yr, {Math.round(r.realisation*100)}% realisation</span>:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
     </div>
 
@@ -2236,14 +2254,14 @@ function ROICalculator() {
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
       <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:16}}>
         <OverridableStat label="Clinical staff" computed={calc(inputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on NHS workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/IG staff per organisation (20 base + 0.12/bed, capped at 80).`}/>
-        <OverridableStat label="Mins wasted / wk" computed={calc(inputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on Westbrook et al 2010 and Nuffield Trust 2020.`}/>
+        <OverridableStat label="Mins wasted / wk" computed={calc(inputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on Bartek et al JIMI 2023 (PRIMARY: 2.78M EHR events, β=0.03), corroborated by Westbrook et al 2010 and Nuffield Trust 2020.`}/>
         <Stat label="Hours freed / yr" value={an?<AnimatedNum value={r.hrsSaved} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Result: ${fmtNum(r.hrsSaved)} hours per year.`}/>
         <Stat label="FTE equivalent" value={an?(r.fteEquivalent||0).toFixed(1):"–"} color={C.amber} info="Freed clinician time expressed as full-time equivalents (NHS FTE = 1,820 hrs/yr). Capacity redirected to patient care, not headcount reduction."/>
         <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at the NHS blended rate of £55/hr (Agenda for Change mid-band including on-costs). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity, since not all freed time converts to measurable output. This represents capacity redirected to patient care, not a direct cash saving.`}/>
       </div>
       <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"£"}55 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong></Callout>
       <EvidenceDropdown title="Evidence & methodology">
-        <strong>Sources:</strong> <a href="https://pubmed.ncbi.nlm.nih.gov/20463369/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Westbrook et al JAMIA 2010</a> (context-switching costs). Sinsky et al 2016; KLAS Arch Collaborative (65% active user rate). NHS Digital workforce data. Blended hourly rate £45 (NHS AfC bands).<br/><br/>
+        <strong>Sources:</strong> <a href="https://pubmed.ncbi.nlm.nih.gov/37015304/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Bartek et al JIMI 2023</a> (PRIMARY - 2.78M EHR audit-log events; β=0.03 switch-cost). <a href="https://pubmed.ncbi.nlm.nih.gov/20463369/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Westbrook et al JAMIA 2010</a> (corroborating). Sinsky et al 2016; KLAS Arch Collaborative (500k+ clinicians, 65% active user rate). NHS Digital workforce data. Blended hourly rate £55/hr (NHS Agenda for Change mid-band including on-costs).<br/><br/>
         <strong>Formula:</strong> Active users (65%) x switch penalty (0.04/additional system) x base minutes x data quality x complexity. Only {Math.round(r.realisation*100)}% of freed time counted as realisable capacity.
       </EvidenceDropdown>
     </Card><LockedConnector/>
@@ -2252,7 +2270,7 @@ function ROICalculator() {
     {r.hasClinicalScope && <div>
     <Card dimmed={dim} style={{border:"1px solid #e0c4cf",background:"#faf5f7"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-        <span style={{fontSize:20}}>{"🛡️"}</span>
+        <SIcon name="shield" size={20} color="#d4507a"/>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Avoidable harm reduction":"Avoidable harm reduction (clinical case for migration)"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Supporting evidence</span>
         <InfoTip text={`Source: Camacho et al 2024 (BMJ Quality & Safety). Per-bed rates from ~100K acute beds nationally, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). NOT included in financial totals.`}/>
       </div>
@@ -2397,7 +2415,7 @@ function ROICalculator() {
           {[3,5].map(yr=><button type="button" key={yr} onClick={()=>setRampYears(yr)} style={{padding:"4px 12px",border:"none",borderRadius:999,background:rampYears===yr?C.accent:"transparent",color:rampYears===yr?"#fff":C.textMid,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{yr}-year</button>)}
         </div>
       </div>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>({fmtK(r.decomSave)} + {fmtK(r.timeSave)}) phased over {r.rampYears} years = <strong style={{color:C.green}}>{fmtK(r.totalRamp)}</strong></p>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{r.qualitySavings>0 ? `(${fmtK(r.decomSave)} + ${fmtK(r.timeSave)} + ${fmtK(r.qualitySavings)}) phased over ${r.rampYears} years` : `(${fmtK(r.decomSave)} + ${fmtK(r.timeSave)}) phased over ${r.rampYears} years`} = <strong style={{color:C.green}}>{fmtK(r.totalRamp)}</strong></p>
       <div style={{overflowX:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}><thead><tr>
           <th style={th_}>Benefit</th>
@@ -2504,7 +2522,7 @@ function ROICalculator() {
     {!dim && !leadSubmitted && (
       <Card style={{marginTop:20,background:`linear-gradient(135deg,${C.navy} 0%,${C.navyMid} 100%)`,border:"none",color:"#fff"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
-          <span style={{fontSize:24}}>{"📩"}</span>
+          <SIcon name="mail" size={24} color="#fff"/>
           <h3 style={{fontSize:18,fontWeight:800,margin:0}}>Get this breakdown in your inbox</h3>
         </div>
         <p style={{fontSize:13,opacity:.7,marginBottom:20}}>Download a formatted summary ready to share with your team or board.</p>
@@ -2627,7 +2645,7 @@ function ROICalculator() {
           <p style={{margin:"0 0 8px"}}>Time freed when clinicians no longer switch between multiple legacy systems.</p>
           <F>corpPerOrg = min(80, 20 + bedsPerOrg {"\u00d7"} 0.12)<br/>totalStaff = beds {"\u00d7"} 2.8 + orgs {"\u00d7"} corpPerOrg<br/>clinicians = totalStaff {"\u00d7"} 65% (active system users)<br/>systemsPerUser = legacy {"\u00d7"} 35% (exposure per clinician)<br/>minsWasted = baseMin {"\u00d7"} DQ {"\u00d7"} CX {"\u00d7"} (1 + switchPenalty)<br/>switchPenalty = min(max(0, systemsPerUser - 1) {"\u00d7"} 0.04, 4.0)<br/>hrsSaved = clinicians {"\u00d7"} (minsWasted - residual) {"\u00d7"} 48wks / 60<br/>timeSave = hrsSaved {"\u00d7"} {"\u00a3"}55/hr {"\u00d7"} realisationRate</F>
           <p style={{margin:"8px 0 4px"}}><strong>2.8 staff per bed</strong> {" - "} NHS workforce stats 2023/24 show 2.6-3.0 clinical full-time equivalents (FTEs) per acute bed (doctors, nurses, allied health professionals (AHPs), pharmacists). <Ev s="NHS Digital workforce statistics 2023/24; Lord Carter operational productivity review."/></p>
-          <p style={{margin:"4px 0"}}><strong>12 min/wk base</strong> (migration path) {" - "} Westbrook et al 2010 (JAMIA) found nurses interrupted 3-6 times/hour by system-switching. Nuffield Trust 2020 estimated 15-20 min/day lost to system navigation. Our 12 min/week is conservative (reducible portion only). Archive-only uses 5 min/wk. <Ev s="Westbrook et al 2010 (JAMIA); Nuffield Trust 2020 system navigation study."/></p>
+          <p style={{margin:"4px 0"}}><strong>12 min/wk base</strong> (migration path) {" - "} Bartek et al JIMI 2023 (PRIMARY: 2.78M EHR audit log events; β=0.03 task-switching cost coefficient). Westbrook et al 2010 (JAMIA) corroborates: nurses interrupted 3-6 times/hour by system-switching. Nuffield Trust 2020 estimated 15-20 min/day lost to system navigation. Our 12 min/week is conservative (reducible portion only). Archive-only uses 5 min/wk. <Ev s="Bartek et al JIMI 2023 (PRIMARY); Westbrook et al 2010 (JAMIA); Nuffield Trust 2020 system navigation study."/></p>
           <p style={{margin:"4px 0"}}><strong>+4% per system</strong> {" - "} each additional legacy system adds cognitive overhead. At 42 systems (as in the benchmarked Trust), this produces ~10 min/day wasted, consistent with published studies. <Md s="First-principles switching cost model. Validated against benchmarked Trust (42 systems)."/></p>
           <p style={{margin:"4px 0"}}><strong>{"\u00a3"}55/hr blended rate</strong> {" - "} NHS Agenda for Change (AfC) mid-band including on-costs. Band 5 nurse ~{"\u00a3"}40-45/hr, consultants ~{"\u00a3"}80-120/hr. Weighted towards nursing (largest user group). <Ev s="NHS Employers Agenda for Change pay scales 2024/25."/></p>
         </S>
