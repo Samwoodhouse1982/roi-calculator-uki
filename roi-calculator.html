@@ -2477,8 +2477,26 @@ function ROICalculator() {
     })()}
 
     <div style={{display:"flex",justifyContent:"center",marginTop:24,marginBottom:16}}>
-      <button type="button" onClick={()=>{setPage("inputs");setStep(0);setScenarioMode("EXPECTED");setFlagships([]);scrollToTop();}} style={{padding:"10px 24px",border:"1px solid "+C.border,borderRadius:999,background:"#fff",color:C.textMid,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
-        {"\u21BB"} New case
+      <button type="button" onClick={()=>{
+        if (!confirm("Start over with default inputs? Your current entries will be cleared.")) return;
+        setInputs({...PRESETS.TYPICAL.data, data_types:{...PRESETS.TYPICAL.data.data_types}, tiers:{...PRESETS.TYPICAL.data.tiers}});
+        setActivePreset(null);
+        setFlagships([]);
+        resetOv();
+        setTierCostEdits({enterprise:null,departmental:null,niche:null});
+        setEditingTierCost(null);
+        setCostMode("estimate");
+        setKnownAnnualSpend(null);
+        setPerOrgBeds(false);
+        setPerOrgSystems(false);
+        setStep(0);
+        setScenarioMode(null);
+        setLeadSubmitted(false);
+        setLeadForm({name:"",email:"",org:"",role:""});
+        setPage("inputs");
+        scrollToTop();
+      }} style={{padding:"12px 28px",border:`1px solid ${C.accent}`,borderRadius:999,background:C.accent,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+        {"\u21BB"} Start over
       </button>
     </div>
 
@@ -2686,28 +2704,7 @@ function ROICalculator() {
       This report presents indicative estimates only, generated from generalised assumptions and industry-level benchmarks. It does not constitute a guaranteed ROI, a binding savings target, or professional financial, legal, or clinical advice. Actual outcomes will vary based on your organisation{"'"}s specific circumstances, contract terms, implementation approach, and operational factors not captured by this model. All projected figures, including decommission savings and quality metrics, are scenario-modelled approximations and should be independently validated before being used to support investment decisions. No liability is accepted for decisions made in reliance on these estimates. Consult qualified advisors for guidance specific to your organisation.
     </div>
 
-    <div style={{display:"flex",gap:12,justifyContent:"center",marginTop:20,flexWrap:"wrap"}}>
-      <button type="button" onClick={()=>{setPage("inputs");scrollToTop();}} className="roi-btn" style={{padding:"12px 28px",background:"#fff",color:C.textMid,border:`1px solid ${C.border}`,borderRadius:999,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"←"} Edit inputs</button>
-      <button type="button" onClick={()=>{
-        if (!confirm("Start over with default inputs? Your current entries will be cleared.")) return;
-        setInputs({...PRESETS.TYPICAL.data, data_types:{...PRESETS.TYPICAL.data.data_types}, tiers:{...PRESETS.TYPICAL.data.tiers}});
-        setActivePreset(null);
-        setFlagships([]);
-        resetOv();
-        setTierCostEdits({enterprise:null,departmental:null,niche:null});
-        setEditingTierCost(null);
-        setCostMode("estimate");
-        setKnownAnnualSpend(null);
-        setPerOrgBeds(false);
-        setPerOrgSystems(false);
-        setStep(0);
-        setScenarioMode(null);
-        setLeadSubmitted(false);
-        setLeadForm({name:"",email:"",org:"",role:""});
-        setPage("inputs");
-        scrollToTop();
-      }} className="roi-btn" style={{padding:"12px 28px",background:C.accent,color:"#fff",border:`1px solid ${C.accent}`,borderRadius:999,fontSize:14,fontWeight:700,cursor:"pointer"}}>{"↻"} Start over</button>
-    </div>
+    <button type="button" onClick={()=>{setPage("inputs");scrollToTop();}} className="roi-btn" style={{marginTop:20,padding:"12px 28px",background:"#fff",color:C.textMid,border:`1px solid ${C.border}`,borderRadius:999,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"←"} Edit inputs</button>
   </div>;
 
   /* ── CALCULATING PAGE ──────────────────────────────────── */
