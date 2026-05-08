@@ -482,7 +482,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
-    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, yr4R, yr5R, rampYears, rampPcts, realization: sc.realization, isArchiveOnly,
+    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, yr4R, yr5R, rampYears, rampPcts, realization: sc.realization, decomFactor: sc.decom_pct, safetyFactor: sc.safety, isArchiveOnly,
     fteEquivalent: Math.round(hrsSaved * sc.realization / 2080 * 10) / 10,
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
     flagshipCount, flagshipRetireCount,
@@ -906,6 +906,7 @@ function ROICalculator() {
   const [activePreset, setActivePreset] = useState(null);
   const [scenarioMode, setScenarioMode] = useState(null);
   const [viewMode, setViewMode] = useState("executive"); // "executive" or "detailed"
+  const [showFormulas, setShowFormulas] = useState(false);
   const [pdfFormat, setPdfFormat] = useState("full"); // "full" or "board"
   const [page, setPage] = useState("inputs");
   const [calcStep, setCalcStep] = useState(0);
@@ -2884,6 +2885,9 @@ function ROICalculator() {
             {s.label} {fmtK(s.val)}
           </div>)}
         </div>
+        <div style={{display:"flex",justifyContent:"center",marginTop:8}}>
+          <button type="button" onClick={()=>setShowFormulas(true)} style={{background:"none",border:"none",color:C.accent,fontSize:11,fontWeight:600,cursor:"pointer",textDecoration:"underline",padding:"4px 8px",fontFamily:"inherit"}}>Why these numbers?</button>
+        </div>
       </div>;
     })()}
 
@@ -3534,6 +3538,107 @@ function ROICalculator() {
     </div>
 
     <button type="button" onClick={()=>{setPage("inputs");scrollToTop();}} className="roi-btn" style={{marginTop:20,padding:"12px 28px",background:"#fff",color:C.textMid,border:`1px solid ${C.border}`,borderRadius:999,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"←"} Edit inputs</button>
+
+    {/* Formula stack modal - "Why these numbers?" */}
+    {showFormulas && (() => {
+      const sc = {decom_pct:r.decomFactor, realization:r.realization, safety:r.safetyFactor};
+      const dq = DQ[inputs.data_quality_level];
+      const cx = CX[inputs.complexity_level];
+      const residual = r.isArchiveOnly ? 1 : 2;
+      const reducible = Math.max(0, r.minsWasted - residual);
+      const FormulaSection = ({color, title, total, formula, plug, source}) => (
+        <div style={{marginBottom:16,padding:"14px 16px",background:"#fff",borderRadius:10,border:`1px solid ${C.borderLight}`,borderLeft:`4px solid ${color}`}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:8,flexWrap:"wrap",gap:8}}>
+            <div style={{fontSize:14,fontWeight:700,color:C.text}}>{title}</div>
+            <div style={{fontSize:18,fontWeight:800,color}}>{fmtK(total)}/yr</div>
+          </div>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4}}>Formula</div>
+          <div style={{fontSize:12,color:C.textMid,marginBottom:10,fontFamily:"ui-monospace,monospace",lineHeight:1.5,padding:"6px 8px",background:C.bg,borderRadius:4}}>{formula}</div>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4}}>Your numbers</div>
+          <div style={{fontSize:12,color:C.text,marginBottom:10,fontFamily:"ui-monospace,monospace",lineHeight:1.6,padding:"6px 8px",background:`${color}11`,borderRadius:4}}>{plug}</div>
+          <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4}}>Source</div>
+          <div style={{fontSize:11,color:C.textMid,lineHeight:1.5,fontStyle:"italic"}}>{source}</div>
+        </div>
+      );
+      return <div onClick={()=>setShowFormulas(false)} style={{position:"fixed",inset:0,background:"rgba(27,36,51,0.7)",zIndex:200,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px",overflowY:"auto",backdropFilter:"blur(4px)"}}>
+        <div onClick={e=>e.stopPropagation()} style={{maxWidth:760,width:"100%",background:"#f8fafb",borderRadius:14,padding:"24px 28px",boxShadow:"0 20px 60px rgba(0,0,0,0.25)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <h2 style={{fontSize:22,fontWeight:800,color:C.text,margin:0}}>Why these numbers?</h2>
+            <button type="button" onClick={()=>setShowFormulas(false)} style={{border:"none",background:"none",fontSize:24,color:C.textMid,cursor:"pointer",padding:"4px 12px",lineHeight:1}}>{"✕"}</button>
+          </div>
+          <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px",lineHeight:1.6}}>Annual savings of <strong style={{color:C.accent}}>{fmtK(r.annualWithReimbursement)}</strong> for the <strong>{am === "CONSERVATIVE" ? "Conservative" : am === "STRETCH" ? "Stretch" : "Expected"}</strong> scenario, broken down below. Every figure flows from your specific inputs and the constants documented in our methodology report.</p>
+
+          <FormulaSection
+            color="#0F4146"
+            title="1. Decommission savings"
+            total={r.decomSave}
+            formula={"Σ (tier_count × tier_cost) × decom_rate × scenario.decom + retired_flagships × scenario.decom"}
+            plug={`(${r.entDecom} ent × ${fmtK(r.entCost)} + ${r.depDecom} dep × ${fmtK(r.depCost)} + ${r.nicDecom} std × ${fmtK(r.nicCost)}) + ${r.flagshipRetireCount} retired flagship${r.flagshipRetireCount===1?"":"s"} × scenario.decom (${(sc.decom_pct*100).toFixed(0)}%) = ${fmtK(r.decomSave)}/yr`}
+            source={"User-defined contract values OR tier benchmarks. Scaled by complexity (×"+cx+") for "+inputs.complexity_level.toLowerCase()+" complexity. Decom rate "+(inputs.decom_retire_rate*100).toFixed(0)+"% reflects typical % of legacy systems retired in EHR migrations (60-80% normal range)."}
+          />
+
+          <FormulaSection
+            color="#1a7a7a"
+            title="2. Clinician capacity freed"
+            total={r.timeSave}
+            formula={"clinicians × (mins/wk - residual) × working_weeks / 60 × $95 × scenario.realization"}
+            plug={`${fmtNum(r.clinicians)} active clinicians × ${reducible} reducible mins/wk (${r.minsWasted} - ${residual} residual) × 50 working wks / 60 = ${fmtNum(r.hrsSaved)} hrs × $95/hr × ${(sc.realization*100).toFixed(0)}% realization = ${fmtK(r.timeSave)}/yr`}
+            source={"Mins/wk derived: "+r.baseMin+" base × "+dq+" data quality ("+inputs.data_quality_level.toLowerCase()+") × "+cx+" complexity × (1 + switch penalty for "+r.systemsPerUser+" systems/user). Active clinicians = total staff (beds × 3.2) × 65% active (Sinsky 2016, KLAS Arch Collab). Switch penalty: Bartek et al JIMI 2023 (PRIMARY: 2.78M EHR audit-log events; β=0.03). Hourly rate $95 = AHA blended (RN/MD/tech weighted)."}
+          />
+
+          {(r.reimbursementImpact||0) > 0 && <FormulaSection
+            color="#00d4aa"
+            title="3. Reimbursement impacts"
+            total={r.reimbursementImpact}
+            formula={"HRRP penalty reduction + HAC penalty reduction + VBP improvement + Denial recovery"}
+            plug={`HRRP: ${fmtK(r.hrrpReduction)}/yr (Medicare DRG ${fmtK(r.medicareDrg)} × 0.69% avg penalty × scenario.safety)\nHAC: ${fmtK(r.hacReduction)}/yr (DRG × 1% × 25% bottom-quartile probability)\nVBP: ${fmtK(r.vbpImprovement)}/yr (DRG × 2% withhold pool × 15% improvement)\nDenial: ${fmtK(r.denialRecovery)}/yr (revenue × 4.8% denial rate × fragmentation attribution)\n= ${fmtK(r.reimbursementImpact)}/yr total`}
+            source={"HRRP: CMS Section 1886(q) Social Security Act (3% max penalty, 0.69% avg). HAC: CMS HAC Reduction Program (1% Medicare reduction for bottom 25%). VBP: CMS Hospital Value-Based Purchasing (2% withhold). Denial: HFMA/AHIP industry data ($262bn annually denied, 4.8% net loss). Fragmentation attribution from Vest et al JAMIA 2019."}
+          />}
+
+          {(r.qualitySavings||0) > 0 && <FormulaSection
+            color="#d4507a"
+            title="4. Quality / safety financial value"
+            total={r.qualitySavings}
+            formula={"Malpractice reduction + Excess bed days avoided + Duplicate testing reduction + Readmission cost avoidance (VBC only)"}
+            plug={`Malpractice: ${fmtK(r.malpracticeReduction)}/yr (${fmtNum(inputs.bed_count)} beds × $8,500 premium × 5% reduction × scenario.safety)\nExcess bed days: ${fmtK(r.excessDayCostAvoided)}/yr (${fmtNum(r.excessDaysAvoided)} days × $3,132/day)\nDuplicate testing: ${fmtK(r.duplicateReduction)}/yr (${fmtNum(inputs.bed_count)} beds × $8,500 lab/imaging × 25% duplicate × 50% addressable × scenario.decom)\n${r.isVBC?"Readmissions: "+fmtK(r.usReadmissionCostAvoidance)+"/yr ("+fmtNum(r.usReadmissionsAvoided)+" avoided × $16,000/each)":"Readmissions: $0 (FFS model — readmissions are billable revenue)"}\n= ${fmtK(r.qualitySavings)}/yr total`}
+            source={"Malpractice: Mello et al Health Affairs 2010 ($55.6bn system cost), NPDB 2023 ($4.8bn settlements), TDC 2025 ($4bn inflation impact). $8,500/bed = 50% of inflation-adjusted estimate (conservative). CRICO 2016: 30% of malpractice claims involve communication failure. Bed days: HCUP/AHRQ ~$3,132/day acute. Duplicate testing: ONC/RAND 25% duplicate rate, $43bn/yr national. Readmissions: CMS 15.6% baseline, Vest et al 0.8pp reduction at 30% attribution."}
+          />}
+
+          {(r.academicSavings||0) > 0 && <FormulaSection
+            color="#534AB7"
+            title="5. Academic medical center savings"
+            total={r.academicSavings}
+            formula={"Research system decom + GME compliance efficiency + Teaching overhead reduction"}
+            plug={`Research decom: ${fmtK(r.researchDecomSave)}/yr (${r.researchSystems} research systems × 60% retirable × scenario.decom)\nGME efficiency: ${fmtK(r.gmeEfficiency)}/yr (${fmtNum(inputs.bed_count)} beds compliance cost × 25% efficiency)\nTeaching overhead: ${fmtK(r.teachingOverhead)}/yr (12% extra complexity × 30% addressable)\n= ${fmtK(r.academicSavings)}/yr total`}
+            source={"AAMC research administration cost benchmarks. ACGME GME compliance. Teaching hospital overhead: AHA Annual Survey teaching premium. Conservative addressability factors applied."}
+          />}
+
+          {(r.mergeSavings||0) > 0 && <FormulaSection
+            color="#2c3e6b"
+            title="6. M&A / Multi-hospital consolidation"
+            total={r.mergeSavings}
+            formula={"Duplicate system elimination + Infrastructure consolidation + Cross-facility standardization"}
+            plug={`Duplicate elimination: ${fmtK(r.duplicateElimination)}/yr (${r.duplicateSystems} duplicate systems × ${fmtK(r.blendedCost)} blended cost)\nInfra consolidation: ${fmtK(r.infraConsolidation)}/yr (${inputs.org_count} facilities × 60% consolidatable)\nStandardization: ${fmtK(r.standardizationSave)}/yr (5% of total estate value)\n= ${fmtK(r.mergeSavings)}/yr total`}
+            source={"Multi-hospital systems typically run 30% duplicate IT footprint post-acquisition (Deloitte, KLAS M&A Best Practices). Infrastructure consolidation: AHA Hospital IT Survey post-merger benchmarks."}
+          />}
+
+          <div style={{marginTop:16,padding:"14px 18px",background:C.accent,color:"#fff",borderRadius:10}}>
+            <div style={{fontSize:12,fontWeight:700,textTransform:"uppercase",letterSpacing:".05em",marginBottom:6,opacity:0.85}}>Total annual</div>
+            <div style={{fontSize:24,fontWeight:800}}>{fmtK(r.annualWithReimbursement)}/yr</div>
+            <div style={{fontSize:12,marginTop:6,opacity:0.85}}>= {fmtK(r.decomSave)} decom + {fmtK(r.timeSave)} capacity{r.reimbursementImpact>0?` + ${fmtK(r.reimbursementImpact)} reimb`:""}{r.qualitySavings>0?` + ${fmtK(r.qualitySavings)} quality`:""}{r.academicSavings>0?` + ${fmtK(r.academicSavings)} academic`:""}{r.mergeSavings>0?` + ${fmtK(r.mergeSavings)} M&A`:""}</div>
+          </div>
+
+          <div style={{marginTop:14,fontSize:11,color:C.textMuted,lineHeight:1.6,fontStyle:"italic"}}>
+            Scenario factors: <strong>{am === "CONSERVATIVE" ? "Conservative" : am === "STRETCH" ? "Stretch" : "Expected"}</strong> = decom ×{sc.decom_pct.toFixed(2)}, realization ×{sc.realization.toFixed(2)}, safety ×{sc.safety.toFixed(2)}. Switch scenarios above to see how the numbers shift.
+          </div>
+
+          <div style={{marginTop:14,display:"flex",justifyContent:"center"}}>
+            <button type="button" onClick={()=>setShowFormulas(false)} style={{padding:"10px 24px",background:C.accent,color:"#fff",border:"none",borderRadius:999,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Close</button>
+          </div>
+        </div>
+      </div>;
+    })()}
+
   </div>;
 
   /* ── CALCULATING PAGE ──────────────────────────────────── */
