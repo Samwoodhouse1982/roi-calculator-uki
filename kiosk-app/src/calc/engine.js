@@ -308,7 +308,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
     fteEquivalent: Math.round(hrsSaved * sc.realization / 2080 * 10) / 10,
-    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realization: sc.realization, isArchiveOnly,
+    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, realization: sc.realization, decomFactor: sc.decom_pct, safetyFactor: sc.safety, isArchiveOnly,
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
     flagshipCount, flagshipRetireCount,
     // Reimbursement & compliance

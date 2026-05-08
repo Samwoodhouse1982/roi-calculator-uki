@@ -27,13 +27,30 @@ function AnimK({ value }) {
   return <span style={{ display: "inline-block", transition: "transform .2s", transform: done ? "scale(1)" : "scale(1)", animation: done ? "numPulse .4s ease-out" : "none" }}>{fmtK(val)}</span>;
 }
 
-function Methodology({ children }) {
+function Methodology({ children, formula, plug, source }) {
   const [open, setOpen] = useState(false);
+  // If new props provided, use the structured layout; otherwise fall back to children
+  const structured = formula || plug || source;
   return <div style={{ marginTop: 8 }}>
     <div onClick={() => setOpen(!open)} style={{ fontSize: F.tiny, color: C.accent, cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
       <span style={{ transition: "transform .2s", transform: open ? "rotate(90deg)" : "none" }}>▶</span> How we calculated this
     </div>
-    {open && <div style={{ marginTop: 8, padding: "14px 18px", background: C.bg, borderRadius: 14, fontSize: F.tiny, color: C.textMid, lineHeight: 1.7, border: `1px solid ${C.borderLight}` }}>{children}</div>}
+    {open && <div style={{ marginTop: 8, padding: "14px 18px", background: C.bg, borderRadius: 14, fontSize: F.tiny, color: C.textMid, lineHeight: 1.7, border: `1px solid ${C.borderLight}` }}>
+      {structured ? <>
+        {formula && <>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Formula</div>
+          <div style={{ fontFamily: "ui-monospace,monospace", fontSize: F.tiny, color: C.text, background: C.surface, padding: "8px 10px", borderRadius: 6, marginBottom: 12, lineHeight: 1.6 }}>{formula}</div>
+        </>}
+        {plug && <>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Your numbers</div>
+          <div style={{ fontFamily: "ui-monospace,monospace", fontSize: F.tiny, color: C.text, background: C.accentPale, padding: "8px 10px", borderRadius: 6, marginBottom: 12, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{plug}</div>
+        </>}
+        {source && <>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Source</div>
+          <div style={{ fontSize: F.tiny, color: C.textMid, fontStyle: "italic", lineHeight: 1.6 }}>{source}</div>
+        </>}
+      </> : children}
+    </div>}
   </div>;
 }
 
@@ -216,9 +233,13 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
           </div>;
         })()}
 
-        <Methodology>
-          <strong>Method:</strong> {projYears}-year phased ramp: Year 1 at 40%, Year 2 at 80%, Years 3{projYears === 5 ? " to 5" : ""} at 100%. Reflects progressive legacy system retirement. Data is migrated and interfaces decommissioned over time. {projYears === 5 ? "Years 4 and 5 represent steady-state savings with all targeted systems fully retired." : ""} Each savings category scales proportionally.
-        </Methodology>
+        <Methodology
+          formula={"steady_state_annual \u00d7 ramp_percent[year]"}
+          plug={projYears === 5 
+            ? `Year 1: ${fmtK(totalAnnual)} \u00d7 20% = ${fmtK(Math.round(totalAnnual * 0.20))}\nYear 2: ${fmtK(totalAnnual)} \u00d7 40% = ${fmtK(Math.round(totalAnnual * 0.40))}\nYear 3: ${fmtK(totalAnnual)} \u00d7 60% = ${fmtK(Math.round(totalAnnual * 0.60))}\nYear 4: ${fmtK(totalAnnual)} \u00d7 80% = ${fmtK(Math.round(totalAnnual * 0.80))}\nYear 5: ${fmtK(totalAnnual)} \u00d7 100% = ${fmtK(totalAnnual)}`
+            : `Year 1: ${fmtK(totalAnnual)} \u00d7 40% = ${fmtK(Math.round(totalAnnual * 0.40))}\nYear 2: ${fmtK(totalAnnual)} \u00d7 80% = ${fmtK(Math.round(totalAnnual * 0.80))}\nYear 3: ${fmtK(totalAnnual)} \u00d7 100% = ${fmtK(totalAnnual)}`}
+          source={"Phased ramp reflects progressive legacy system retirement. Data is migrated and interfaces decommissioned over time. Year 1 captures early-phase savings as the highest-cost systems are retired first; later years reach steady state once all targeted systems are fully retired."}
+        />
       </Card>
     </div>
 
@@ -231,9 +252,11 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Row label="Systems retired" value={r.decom} />
         <Row label="Total estate cost" value={fmtK(r.totalEstate) + "/yr"} />
         <Row label="Annual savings from retirement" value={fmtK(r.decomSave) + "/yr"} accent />
-        <Methodology>
-          <strong>Method:</strong> Each legacy system is classified into enterprise, departmental, or standalone tiers with bed-scaled annual costs (KLAS 2025, Becker's benchmarks). The decommission target ({Math.round(r.decom / Math.max(1, r.legacy) * 100)}% of {r.legacy} systems) determines how many are retired. Savings = sum of annual costs of retired systems.
-        </Methodology>
+        <Methodology
+          formula={"\u03a3 (tier_count \u00d7 tier_cost) \u00d7 decom_rate \u00d7 scenario.decom + retired_flagships \u00d7 scenario.decom"}
+          plug={`${r.entDecom} enterprise \u00d7 ${fmtK(r.entCost)} + ${r.depDecom} departmental \u00d7 ${fmtK(r.depCost)} + ${r.nicDecom} standalone \u00d7 ${fmtK(r.nicCost)}\n${r.flagshipRetireCount > 0 ? `+ ${r.flagshipRetireCount} retired flagship${r.flagshipRetireCount === 1 ? "" : "s"} \u00d7 scenario.decom (${Math.round((r.decomFactor||1) * 100)}%)` : ""}\n= ${fmtK(r.decomSave)}/yr (${Math.round(r.decom / Math.max(1, r.legacy) * 100)}% of ${r.legacy} systems retired)`}
+          source={"Tier costs use bed-scaled annual benchmarks: Enterprise ($300k base + $700/bed), Departmental ($75k + $160/bed), Standalone ($14k + $20/bed). Sources: KLAS 2025 EHR & vendor benchmarks, Becker's Hospital Review IT spend reports, AHA Hospital IT Survey."}
+        />
       </Card>
     </div>
 
@@ -249,9 +272,11 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Row label="Hours freed per year" value={fmtNum(r.hrsSaved)} />
         <Row label="Full-time equivalent (FTE)" value={fmtFte(fte)} accent />
         <Row label="Capacity value" value={fmtK(seg.capacity) + "/yr"} accent />
-        <Methodology>
-          <strong>Method:</strong> Of {fmtNum(r.totalStaff)} total staff, {fmtNum(r.clinicians)} (65%) are regular system users. Each navigates ~{r.systemsPerUser} of {r.legacy} systems (35% exposure). Switch penalty of 4% per system applies only to touched systems. Hours freed valued at $95/hr blended rate with {Math.round((r.realization || 0.3) * 100)}% realization. Evidence: HIMSS analytics, <a href="https://pubmed.ncbi.nlm.nih.gov/20463369/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Westbrook et al JAMIA 2010</a>.
-        </Methodology>
+        <Methodology
+          formula={"clinicians \u00d7 (mins/wk - residual) \u00d7 working_weeks / 60 \u00d7 $95 \u00d7 scenario.realization"}
+          plug={`${fmtNum(r.clinicians)} active clinicians \u00d7 ${Math.max(0, r.minsWasted - 2)} reducible mins/wk (${r.minsWasted} - 2 residual) \u00d7 50 working wks / 60\n= ${fmtNum(r.hrsSaved)} hrs \u00d7 $95/hr \u00d7 ${Math.round((r.realization || 0.3) * 100)}% realization\n= ${fmtK(r.timeSave)}/yr`}
+          source={"Active clinicians = total staff (beds \u00d7 3.2) \u00d7 65% active rate (Sinsky et al 2016, KLAS Arch Collaborative 500k+ clinicians). Each clinician touches ~35% of legacy estate (role-based access, modeled). Switch penalty 4% per system: Bartek et al JIMI 2023 (PRIMARY: 2.78M EHR audit-log events, \u03b2=0.03), corroborated by Westbrook et al JAMIA 2010. $95/hr blended: AHA RN/MD/tech weighted."}
+        />
       </Card>
     </div>
 
@@ -265,9 +290,11 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         {r.vbpImprovement > 0 && <Row label="Value-Based Purchasing (VBP) opportunity" value={fmtK(r.vbpImprovement)} />}
         {r.denialRecovery > 0 && <Row label="Denial recovery" value={fmtK(r.denialRecovery)} />}
         <Row label="Total reimbursement impact" value={fmtK(seg.reimb) + "/yr"} accent />
-        <Methodology>
-          <strong>Method:</strong> CMS penalty programs: Hospital Readmissions Reduction Program (HRRP, 3% max), Hospital-Acquired Condition Reduction (HAC, 1%), Value-Based Purchasing (VBP, 2% withhold) modeled from FY2025 data. Denial recovery at 4.8% net revenue loss (HFMA 2024). Better documentation from system consolidation reduces penalties and denials. Evidence: Pattar et al JAMA 2025, <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7792753/" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>Vest et al JAMIA 2019</a>.
-        </Methodology>
+        <Methodology
+          formula={"HRRP penalty reduction + HAC penalty reduction + VBP improvement + Denial recovery"}
+          plug={`HRRP: ${fmtK(r.hrrpReduction)}/yr (Medicare DRG ${fmtK(r.medicareDrg)} \u00d7 0.69% avg penalty \u00d7 scenario.safety)\nHAC: ${fmtK(r.hacReduction)}/yr (DRG \u00d7 1% \u00d7 25% bottom-quartile probability)\nVBP: ${fmtK(r.vbpImprovement)}/yr (DRG \u00d7 2% withhold \u00d7 15% improvement potential)\nDenials: ${fmtK(r.denialRecovery)}/yr (revenue \u00d7 4.8% denial rate \u00d7 fragmentation attribution)\n= ${fmtK(seg.reimb)}/yr total`}
+          source={"HRRP: CMS Section 1886(q) Social Security Act (3% max penalty, 0.69% avg). HAC: CMS HAC Reduction Program (1% reduction for bottom 25%). VBP: CMS Hospital Value-Based Purchasing (2% withhold pool). Denials: HFMA 2024 + AHIP industry data ($262bn annually denied, 4.8% net loss). Fragmentation attribution: Vest et al JAMIA 2019."}
+        />
       </Card>
     </div>}
 
@@ -282,9 +309,11 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         {r.readmissionsAvoided > 0 && <Row label={"Readmissions avoided (" + r.readmissionsAvoided + " patients)"} value={r.readmissionCostAvoidance > 0 ? fmtK(r.readmissionCostAvoidance) + "/yr" : "quality metric"} />}
         {r.malpracticeReduction > 0 && <Row label="Malpractice reduction" value={fmtK(r.malpracticeReduction) + "/yr"} />}
         {(r.qualitySavings || 0) > 0 && <Row label="Total cost avoidance" value={fmtK(r.qualitySavings) + "/yr"} accent />}
-        <Methodology>
-          <strong>Method:</strong> ADE rates from AHRQ PSI data and HHS OIG 2022 (25% of Medicare patients experience adverse events). Excess bed day cost: $3,132/day (KFF/AHA 2023). Medication errors: Bates et al (1.8 preventable ADEs per 100 admissions). Communication failures: 30% of malpractice claims (<a href="https://www.rmf.harvard.edu/Malpractice-Data/Annual-Benchmark-Reports/Benchmark-Reports" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>CRICO 2016</a>).<br/><br/><strong>Classification:</strong> Cost avoidance. These represent harm that doesn't occur, not direct budget reductions. Contributes through reduced length of stay, fewer readmissions, and lower liability.
-        </Methodology>
+        <Methodology
+          formula={"Excess bed days \u00d7 $3,132/day + Malpractice premium \u00d7 5% \u00d7 scenario.safety + Readmissions avoided \u00d7 $16,000"}
+          plug={`Excess bed days: ${fmtNum(r.safetyBedDaysAvoided || 0)} days \u00d7 $3,132 = ${fmtK(r.excessDayCostAvoided || 0)}/yr\n${r.malpracticeReduction > 0 ? `Malpractice: beds \u00d7 $8,500 premium \u00d7 5% reduction \u00d7 scenario.safety = ${fmtK(r.malpracticeReduction)}/yr\n` : ""}${r.readmissionCostAvoidance > 0 ? `Readmissions: ${r.readmissionsAvoided} avoided \u00d7 $16,000 = ${fmtK(r.readmissionCostAvoidance)}/yr\n` : ""}= ${fmtK(r.qualitySavings || 0)}/yr total`}
+          source={"Excess bed days: HCUP/AHRQ ($3,132/day acute). Medication errors: Bates et al (1.8 preventable ADEs per 100 admits). Communication failures contribute to 30% of malpractice claims (CRICO 2016). Malpractice premium: Mello et al Health Affairs 2010, NPDB 2023, TDC Group 2025. Readmissions: CMS 15.6% baseline, Vest et al JAMIA 2019 (0.8pp reduction from EHR consolidation). Classification: cost avoidance \u2014 these represent harm that doesn't occur, not direct budget reductions."}
+        />
       </Card>
     </div>
 
@@ -306,9 +335,11 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
           <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 8 }}>{r.sarDaysBefore} days → {r.sarDaysAfter} days</div>
         </div>
       </div>
-      <Methodology>
-        <strong>Method:</strong> Ticket baseline: {r.legacy} systems x 2.5 tickets/system/month, adjusted for data quality. Surviving systems generate 60% of baseline tickets (simplified support model). Records request turnaround: base 1.5 days + 0.4 days per system (before) vs 0.15 days per surviving system (after). Based on AHIMA benchmarks for multi-source record assembly and HIPAA-compliant release timelines.
-      </Methodology>
+      <Methodology
+        formula={"Tickets/mo: legacy \u00d7 2.5 \u00d7 dq_factor (before) vs surviving \u00d7 2.5 \u00d7 60% (after). SAR: 1.5 base + 0.4/system (before) vs 0.15/surviving (after)"}
+        plug={`Tickets baseline: ${r.legacy} legacy systems \u00d7 2.5/mo = ${fmtNum(r.ticketsBaselineMonthly)}/month\nTickets after: ${r.legacy - r.decom} surviving \u00d7 2.5/mo \u00d7 60% = ${fmtNum(r.ticketsAfter)}/month (${r.ticketsReductionPct}% reduction)\nRecords request: ${r.sarDaysBefore}d \u2192 ${r.sarDaysAfter}d (${r.sarReductionPct}% faster)`}
+        source={"Ticket benchmarks: AHIMA support volume studies (2.5 tickets/system/month average for legacy clinical systems). Surviving system factor: post-archive systems run with reduced ticket volume due to consolidated access. SAR/records request: AHIMA multi-source record assembly benchmarks, HIPAA-compliant release timelines."}
+      />
     </Card>
 
     {/* Legal & compliance */}
@@ -327,9 +358,11 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
           <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 6 }}>attack surfaces eliminated</div>
         </div>
       </div>
-      <Methodology>
-        <strong>Method:</strong> e-Discovery: {r.litigationCases} cases/yr (~12 per 100 beds). Records assembly: 28 hrs/case (3.5 days) across fragmented systems vs 6 hrs consolidated. HIM staff: $55/hr. Cyber: avg healthcare breach $10.93m (<a href="https://www.ibm.com/reports/data-breach" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>IBM/Ponemon 2023</a>). 90% of health systems attacked in 2024. Each legacy system on unsupported OS is an attack vector.
-      </Methodology>
+      <Methodology
+        formula={"e-Discovery: cases \u00d7 (28h before - 6h after) \u00d7 $55/hr. Cyber: legacy systems eliminated = attack surfaces removed"}
+        plug={`e-Discovery: ${r.litigationCases} cases/yr \u00d7 22 hrs saved/case \u00d7 $55/hr = ${fmtK(r.ediscoverySaving || 0)}/yr\nCyber: ${r.cyberSystemsRetired} attack surfaces eliminated`}
+        source={"e-Discovery: ~12 litigation cases per 100 beds typical for US hospitals. Records assembly: 28 hrs/case (3.5 days) across fragmented systems vs 6 hrs from consolidated archive. HIM staff rate: $55/hr (BLS 2024). Cyber: avg healthcare breach $10.93m (IBM/Ponemon 2023). 90% of health systems attacked in 2024. Each legacy system on unsupported OS is an attack vector."}
+      />
     </Card>
 
     {/* Network consolidation - only for multi-hospital/IDN */}
@@ -343,9 +376,11 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         {r.infraConsolidation > 0 && <Row label="Infrastructure consolidation" value={fmtK(r.infraConsolidation)} />}
         {r.standardizationSave > 0 && <Row label="Cross-facility standardization" value={fmtK(r.standardizationSave)} />}
         <Row label="Total network savings" value={fmtK(seg.network) + "/yr"} accent />
-        <Methodology>
-          <strong>Method:</strong> Duplicate system rate: ~30% of legacy systems are replicated across facilities in an IDN (CHIME Digital Health Survey). Infrastructure consolidation: each facility carries ~$350k/yr in duplicate hosting, interfaces, and support, of which 60% is consolidatable. Cross-facility standardization: 15% of operational costs addressable through unified workflows. All scaled by the decommission target.
-        </Methodology>
+        <Methodology
+          formula={"Duplicates: legacy \u00d7 30% \u00d7 blended_cost \u00d7 scenario.decom + Infra: facilities \u00d7 $350k \u00d7 60% + Standardization: estate \u00d7 15%"}
+          plug={`Duplicates: ${r.duplicateSystems} duplicate systems \u00d7 ${fmtK(r.blendedCost)} = ${fmtK(r.duplicateElimination)}/yr\nInfra: ${r.org_count} facilities \u00d7 $350k \u00d7 60% consolidatable = ${fmtK(r.infraConsolidation)}/yr\nStandardization: ${fmtK(r.totalEstate)} estate \u00d7 5% = ${fmtK(r.standardizationSave)}/yr\n= ${fmtK(seg.network)}/yr total`}
+          source={"Duplicate system rate: ~30% of legacy systems are replicated across facilities in an IDN (CHIME Digital Health Survey, KLAS M&A Best Practices). Infrastructure benchmarks: AHA Hospital IT Survey post-merger. Cross-facility standardization: Deloitte healthcare M&A studies."}
+        />
       </Card>
     </div>}
 
@@ -358,9 +393,11 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         {r.gmeEfficiency > 0 && <Row label="Graduate Medical Education (GME) compliance" value={fmtK(r.gmeEfficiency)} />}
         {r.teachingOverhead > 0 && <Row label="Teaching program overhead" value={fmtK(r.teachingOverhead)} />}
         <Row label="Total academic savings" value={fmtK(seg.academic) + "/yr"} accent />
-        <Methodology>
-          <strong>Method:</strong> Academic medical centers maintain additional legacy systems for research databases, GME tracking, and teaching program administration. Decommission savings calculated at the same tier-based rates, with additional compliance efficiency from consolidated audit trails. Based on AAMC benchmarks for academic system overhead.
-        </Methodology>
+        <Methodology
+          formula={"Research decom + GME compliance efficiency + Teaching overhead reduction"}
+          plug={`Research decom: ${r.researchSystems} research systems \u00d7 60% retirable \u00d7 scenario.decom = ${fmtK(r.researchDecomSave)}/yr\nGME efficiency: beds compliance \u00d7 25% improvement = ${fmtK(r.gmeEfficiency)}/yr\nTeaching overhead: 12% extra complexity \u00d7 30% addressable = ${fmtK(r.teachingOverhead)}/yr\n= ${fmtK(seg.academic)}/yr total`}
+          source={"Research administration: AAMC benchmarks. GME compliance: ACGME requirements. Teaching hospital overhead: AHA Annual Survey teaching premium (~12% above non-teaching). Conservative addressability factors applied to reflect that consolidated audit trails reduce but do not eliminate complexity."}
+        />
       </Card>
     </div>}
 
