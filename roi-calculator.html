@@ -3845,9 +3845,37 @@ function ROICalculator() {
       </Card>;
     })()}
 
-    <div style={{display:"flex",justifyContent:"center",marginTop:24,marginBottom:16}}>
-      <button type="button" onClick={()=>{setPage("inputs");setStep(0);setScenarioMode("EXPECTED");setFlagships([]);scrollToTop();}} style={{padding:"10px 24px",border:"1px solid "+C.border,borderRadius:999,background:"#fff",color:C.textMid,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
-        {"\u21BB"} New case
+    <div style={{display:"flex",justifyContent:"center",gap:12,marginTop:24,marginBottom:16,flexWrap:"wrap"}}>
+      <button type="button" onClick={()=>{setPage("inputs");scrollToTop();}} style={{padding:"10px 24px",border:"1px solid "+C.border,borderRadius:999,background:"#fff",color:C.textMid,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+        {"\u2190"} Edit inputs
+      </button>
+      <button type="button" onClick={()=>{
+        if (!confirm("Start over with default inputs? Your current entries will be cleared.")) return;
+        setInputs({...PRESETS.TYPICAL.data, tiers:{...PRESETS.TYPICAL.data.tiers}});
+        setActivePreset(null);
+        setFlagships([]);
+        resetOv();
+        setTierCostEdits({enterprise:null,departmental:null,niche:null});
+        setEditingTierCost(null);
+        setCostMode("estimate");
+        setKnownAnnualSpend(null);
+        setPerOrgBeds(false);
+        setPerOrgSystems(false);
+        setGalenMigrationCost(0);
+        setGalenAnnualCost(0);
+        setReimbursementModel("mixed");
+        setTrancheMode(false);
+        setMergerMode(false);
+        setMergerOrgs([]);
+        setFacilityPortfolio({});
+        setStep(0);
+        setScenarioMode(null);
+        setLeadSubmitted(false);
+        setLeadForm({name:"",email:"",org:"",role:""});
+        setPage("inputs");
+        scrollToTop();
+      }} style={{padding:"10px 24px",border:"1px solid "+C.accent,borderRadius:999,background:C.accent,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+        {"\u21BB"} Start over
       </button>
     </div>
 
