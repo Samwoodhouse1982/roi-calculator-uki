@@ -95,17 +95,17 @@ export function SplashScreen({ onStart }) {
         background: 'radial-gradient(ellipse at 30% 50%, rgba(0,212,170,0.06) 0%, transparent 60%), radial-gradient(ellipse at 70% 30%, rgba(0,180,255,0.04) 0%, transparent 50%)',
       }} />
 
-      <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 900, padding: '60px 64px', marginTop: '18vh',
+      <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 1000, padding: '75px 80px', marginTop: '14vh',
       }}>
 
         <div style={{
-          fontSize: 16, fontWeight: 600, letterSpacing: 8, textTransform: 'uppercase',
-          color: '#00d4aa', marginBottom: 40, opacity: 0.7,
+          fontSize: 20, fontWeight: 600, letterSpacing: 10, textTransform: 'uppercase',
+          color: '#00d4aa', marginBottom: 50, opacity: 0.7,
         }}>RLDatix Galen Clinical Archive</div>
 
         <h1 style={{
-          fontSize: 64, fontWeight: 800, lineHeight: 1.15, color: '#fff',
-          margin: '0 0 24px', letterSpacing: '-1px',
+          fontSize: 80, fontWeight: 800, lineHeight: 1.15, color: '#fff',
+          margin: '0 0 30px', letterSpacing: '-1.25px',
         }}>
           Decommission legacy systems.
           <br />
@@ -113,24 +113,23 @@ export function SplashScreen({ onStart }) {
         </h1>
 
         <p style={{
-          fontSize: 22, fontWeight: 400, color: 'rgba(255,255,255,0.5)',
-          lineHeight: 1.6, margin: '0 0 60px', maxWidth: 600, marginLeft: 'auto', marginRight: 'auto',
+          fontSize: 28, fontWeight: 400, color: 'rgba(255,255,255,0.5)',
+          lineHeight: 1.6, margin: '0 auto 75px', maxWidth: 750,
         }}>
           See exactly how much your health system could save by retiring legacy applications and consolidating clinical data into a single archive.
         </p>
 
         <button onClick={onStart} style={{
-          padding: '36px 96px', borderRadius: 80, border: '3px solid #00d4aa',
+          display: 'block', margin: '0 auto',
+          padding: '30px 90px', borderRadius: 80, border: '3px solid #00d4aa',
           background: 'rgba(0,212,170,0.18)', color: '#fff',
-          fontSize: 38, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
-          letterSpacing: 2, transition: 'all 0.3s',
+          fontSize: 30, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+          letterSpacing: 4, transition: 'all 0.3s',
           textTransform: 'uppercase',
           boxShadow: '0 0 80px rgba(0,212,170,0.35), inset 0 0 60px rgba(0,212,170,0.08)',
           animation: 'splashPulseBig 2s ease-in-out infinite',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
         }}>
-          <span style={{fontSize: 18, fontWeight: 600, color: '#00d4aa', letterSpacing: 6}}>TAP TO START</span>
-          <span style={{fontSize: 36, fontWeight: 800, color: '#fff', letterSpacing: 1}}>Discover your ROI</span>
+          Tap to Start
         </button>
 
         <style>{`
@@ -141,8 +140,8 @@ export function SplashScreen({ onStart }) {
         `}</style>
 
         <div style={{
-          marginTop: 48, fontSize: 14, color: 'rgba(255,255,255,0.25)',
-          letterSpacing: 2,
+          marginTop: 60, fontSize: 18, color: 'rgba(255,255,255,0.25)',
+          letterSpacing: 2.5,
         }}>
           BEST IN KLAS 2025 &nbsp;·&nbsp; DATA ARCHIVING
         </div>
@@ -150,12 +149,12 @@ export function SplashScreen({ onStart }) {
       </div>
 
       <img src={rldatixLogo} alt="RLDatix" style={{
-        position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)',
-        width: 360, opacity: 0.5, zIndex: 3,
+        position: 'absolute', bottom: 50, left: '50%', transform: 'translateX(-50%)',
+        width: 450, opacity: 0.5, zIndex: 3,
       }} />
       <div style={{
-        position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)',
-        fontSize: 11, color: 'rgba(255,255,255,0.2)', letterSpacing: 1, zIndex: 3, whiteSpace: 'nowrap',
+        position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)',
+        fontSize: 14, color: 'rgba(255,255,255,0.2)', letterSpacing: 1, zIndex: 3, whiteSpace: 'nowrap',
       }}>v2.1 · Updated May 2026</div>
     </div>
   );
