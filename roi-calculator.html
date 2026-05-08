@@ -218,6 +218,19 @@
 
 /* Narrow screens */
 @media (max-width: 480px) {
+  /* Year-by-year chart - tighten on mobile */
+  .roi-chart-bars {
+    gap: 4px !important;
+    padding: 0 4px !important;
+  }
+  .roi-chart-bar-label {
+    font-size: 10px !important;
+  }
+  /* Allow chart cards to use full available width */
+  .roi-chart-bar {
+    max-width: none !important;
+  }
+
   /* Ensure range inputs are fat enough to thumb-drag */
   input[type="range"] {
     height: 32px;
@@ -819,6 +832,7 @@ function SIcon({name,size,color}){
   const s=size||20,cl=color||"currentColor";
   const icons={
     unlock:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>,
+    lock:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
     clock:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
     dollar:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
     shield:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>,
@@ -2716,25 +2730,29 @@ function ROICalculator() {
         {!medicareDrgRevenue && <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Estimated: {fmtK(Math.round(inputs.bed_count * (365/US_AVG_ALOS) * occupancyRate * US_AVG_REVENUE_PER_ADMISSION * (PROVIDER_MULTIPLIERS[providerType]?.medicare_pct || 0.42)))}/yr ({fmtNum(Math.round(inputs.bed_count * (365/US_AVG_ALOS) * occupancyRate))} admissions at {Math.round(occupancyRate*100)}% occupancy)</div>}
       </div>
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
           <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>Galen Clinical Archive costs (optional)</span>
           <InfoTip text="If you have indicative costs for the Galen migration and ongoing archive, enter them here. The results page will show net savings after Galen costs."/>
         </div>
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontSize:12,color:C.textMid,minWidth:120}}>Migration cost</span>
-            <span style={{fontSize:13,color:C.textMuted}}>{"$"}</span>
-            <input type="number" value={galenMigrationCost || ""} placeholder="One-time" min={0} step={10000}
-              onChange={e => setGalenMigrationCost(parseInt(e.target.value) || 0)}
-              style={{flex:1,maxWidth:160,padding:"8px 12px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <span style={{fontSize:12,color:C.textMid,flex:"1 1 110px",minWidth:0}}>Migration cost</span>
+            <div style={{display:"flex",alignItems:"center",gap:6,flex:"0 1 auto"}}>
+              <span style={{fontSize:13,color:C.textMuted}}>{"$"}</span>
+              <input type="number" value={galenMigrationCost || ""} placeholder="One-time" min={0} step={10000}
+                onChange={e => setGalenMigrationCost(parseInt(e.target.value) || 0)}
+                style={{width:130,minWidth:100,padding:"8px 12px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
+            </div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontSize:12,color:C.textMid,minWidth:120}}>Annual archive cost</span>
-            <span style={{fontSize:13,color:C.textMuted}}>{"$"}</span>
-            <input type="number" value={galenAnnualCost || ""} placeholder="Per year" min={0} step={10000}
-              onChange={e => setGalenAnnualCost(parseInt(e.target.value) || 0)}
-              style={{flex:1,maxWidth:160,padding:"8px 12px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
-            <span style={{fontSize:11,color:C.textMuted}}>/yr</span>
+          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <span style={{fontSize:12,color:C.textMid,flex:"1 1 110px",minWidth:0}}>Annual archive cost</span>
+            <div style={{display:"flex",alignItems:"center",gap:6,flex:"0 1 auto"}}>
+              <span style={{fontSize:13,color:C.textMuted}}>{"$"}</span>
+              <input type="number" value={galenAnnualCost || ""} placeholder="Per year" min={0} step={10000}
+                onChange={e => setGalenAnnualCost(parseInt(e.target.value) || 0)}
+                style={{width:130,minWidth:100,padding:"8px 12px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
+              <span style={{fontSize:11,color:C.textMuted}}>/yr</span>
+            </div>
           </div>
         </div>
         {(galenMigrationCost > 0 || galenAnnualCost > 0) && <div style={{fontSize:11,color:C.textMuted,marginTop:6}}>Net savings after Galen costs will be shown on the results page</div>}
@@ -2920,18 +2938,18 @@ function ROICalculator() {
           </div>
         </div>
         <div style={{fontSize:12,color:C.textMuted,marginBottom:16}}>Builds from {fmtK(Math.round(total*r.rampPcts[0]))} in Year 1 to {fmtK(total)}/yr at steady state</div>
-        <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-evenly",gap:16,marginBottom:16,height:maxH+30,padding:"0 20px"}}>
+        <div className="roi-chart-bars" style={{display:"flex",alignItems:"flex-end",justifyContent:"space-evenly",gap:8,marginBottom:16,height:maxH+30,padding:"0 8px",overflow:"hidden"}}>
           {years.map((yr,yi)=>{
             const h = Math.round(maxH * yr.pct);
-            return <div key={yi} style={{display:"flex",flexDirection:"column",alignItems:"center",flex:1,maxWidth:160,minWidth:60}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.accent,marginBottom:4}}>{fmtK(Math.round(total*yr.pct))}</div>
+            return <div key={yi} className="roi-chart-bar" style={{display:"flex",flexDirection:"column",alignItems:"center",flex:"1 1 0",minWidth:0,maxWidth:140}}>
+              <div className="roi-chart-bar-label" style={{fontSize:11,fontWeight:700,color:C.accent,marginBottom:4,whiteSpace:"nowrap"}}>{fmtK(Math.round(total*yr.pct))}</div>
               <div style={{width:"100%",height:h,borderRadius:"6px 6px 0 0",overflow:"hidden",display:"flex",flexDirection:"column-reverse",cursor:"pointer"}}
                 onClick={()=>setChartTip(chartTip&&chartTip.yr===yi?null:{yr:yi,segs:segs.map(s=>({label:s.label,val:Math.round(s.val*yr.pct),color:s.color})),total:Math.round(total*yr.pct),label:yr.label})}
                 onMouseEnter={()=>setChartTip({yr:yi,segs:segs.map(s=>({label:s.label,val:Math.round(s.val*yr.pct),color:s.color})),total:Math.round(total*yr.pct),label:yr.label})}
                 onMouseLeave={()=>setChartTip(null)}>
                 {segs.map((s,si)=><div key={si} style={{width:"100%",height:`${s.val/total*100}%`,background:s.color,minHeight:s.val>0?2:0,transition:"opacity .15s",opacity:chartTip&&chartTip.yr===yi?0.85:1}}/>)}
               </div>
-              <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginTop:6}}>{yr.label}</div>
+              <div style={{fontSize:11,fontWeight:600,color:C.textMid,marginTop:6,whiteSpace:"nowrap"}}>{yr.label}</div>
               <div style={{fontSize:10,color:C.textMuted}}>{Math.round(yr.pct*100)}%</div>
             </div>;
           })}
@@ -3144,7 +3162,19 @@ function ROICalculator() {
 
         </>}
     
-    {viewMode === "executive" && <Card style={{marginBottom:24,background:"#f8fafb",border:`1px dashed ${C.border}`}}>
+    {viewMode === "executive" && !leadSubmitted && <Card style={{marginBottom:24,background:`linear-gradient(135deg,${C.navy} 0%,${C.navyMid} 100%)`,border:"none",color:"#fff"}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+        <SIcon name="lock" size={20} color="#00d4aa"/>
+        <h3 style={{fontSize:18,fontWeight:800,margin:0}}>Executive summary breakdown</h3>
+      </div>
+      <p style={{fontSize:13,opacity:.75,marginBottom:14,lineHeight:1.6}}>The component-by-component breakdown — decommission, capacity, reimbursement, quality, academic, and M&amp;A savings — is available with the full PDF report below. Enter your details to unlock.</p>
+      <div style={{display:"flex",gap:8,alignItems:"center",fontSize:12,opacity:.6}}>
+        <span>{"↓"}</span>
+        <span>Scroll to the form below to access the breakdown and download the report</span>
+      </div>
+    </Card>}
+
+    {viewMode === "executive" && leadSubmitted && <Card style={{marginBottom:24,background:"#f8fafb",border:`1px dashed ${C.border}`}}>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:10}}>Components of annual savings</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))",gap:10}}>
         <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #0F4146`}}>
@@ -3280,8 +3310,16 @@ function ROICalculator() {
       </Card>;
     })()}
 
-    <div style={{display:"flex",justifyContent:"center",marginTop:24,marginBottom:16}}>
-      <button type="button" onClick={()=>{setPage("inputs");setStep(0);setScenarioMode(null);setFlagships([]);scrollToTop();}} style={{padding:"10px 24px",border:"1px solid "+C.border,borderRadius:999,background:"#fff",color:C.textMid,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+    <div style={{display:"flex",justifyContent:"center",gap:12,marginTop:24,marginBottom:16,flexWrap:"wrap"}}>
+      <button type="button" onClick={()=>{setPage("inputs");scrollToTop();}} style={{padding:"10px 24px",border:"1px solid "+C.border,borderRadius:999,background:"#fff",color:C.textMid,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+        {"\u2190"} Edit inputs
+      </button>
+      <button type="button" onClick={()=>{
+        if (!confirm("Start a new case? Your current entries will be cleared.")) return;
+        setPage("inputs");setStep(0);setScenarioMode(null);setFlagships([]);
+        setGalenMigrationCost(0);setGalenAnnualCost(0);
+        scrollToTop();
+      }} style={{padding:"10px 24px",border:"1px solid "+C.accent,borderRadius:999,background:C.accent,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
         {"\u21BB"} New case
       </button>
     </div>
@@ -3537,7 +3575,6 @@ function ROICalculator() {
       This report presents indicative estimates only, generated from real-world data where available alongside generalized assumptions and industry-level benchmarks. It does not constitute a guaranteed ROI, a binding savings target, or professional financial, legal, or clinical advice. Actual outcomes will vary based on your organization{"'"}s specific circumstances, contract terms, implementation approach, and operational factors not captured by this model. All projected figures, including decommission savings, reimbursement impact, and quality metrics, are scenario-modeled approximations and should be independently validated before being used to support investment decisions. No liability is accepted for decisions made in reliance on these estimates. Consult qualified advisors for guidance specific to your organization.
     </div>
 
-    <button type="button" onClick={()=>{setPage("inputs");scrollToTop();}} className="roi-btn" style={{marginTop:20,padding:"12px 28px",background:"#fff",color:C.textMid,border:`1px solid ${C.border}`,borderRadius:999,fontSize:14,fontWeight:600,cursor:"pointer"}}>{"←"} Edit inputs</button>
 
     {/* Formula stack modal - "Why these numbers?" */}
     {showFormulas && (() => {
