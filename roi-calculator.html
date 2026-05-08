@@ -998,6 +998,7 @@ function SIcon({name,size,color}){
     scale:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18l-2 13H5z"/><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>,
     folder:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>,
     refresh:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
+    book:<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
   };
   return icons[name]||null;
 }
@@ -3312,7 +3313,7 @@ function ROICalculator() {
     <Card dimmed={dim}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
         <SIcon name="unlock" size={20} color="#0F4146"/>
-        <div style={{display:"flex",alignItems:"center",flex:1,gap:10}}><SIcon name="unlock" size={20} color="#0F4146"/><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legacy decommission savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+        <div style={{display:"flex",alignItems:"center",flex:1,gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#0F414615",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="unlock" size={22} color="#0F4146"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legacy decommission savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Annual costs eliminated when systems are switched off.</p>
       <div style={{overflowX:"auto",marginBottom:16}}>
@@ -3342,7 +3343,7 @@ function ROICalculator() {
     <Card dimmed={dim}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
         <SIcon name="clock" size={20} color="#e67e22"/>
-        <div style={{display:"flex",alignItems:"center",flex:1,gap:10}}><SIcon name="clock" size={20} color="#1a8a7a"/><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+        <div style={{display:"flex",alignItems:"center",flex:1,gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#1a8a7a15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="clock" size={22} color="#1a8a7a"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
       <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:16}}>
@@ -3443,7 +3444,7 @@ function ROICalculator() {
     <Card dimmed={dim} style={{border:"1px solid #f0c4d4",background:"#fdf5f8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
         <SIcon name="shield" size={20} color={C.rose}/>
-        <div style={{display:"flex",alignItems:"center",gap:10}}><SIcon name="shield" size={20} color="#d4507a"/><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Avoidable harm reduction":"Avoidable harm reduction (clinical case for migration)"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Additional value · not in financial total</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#d4507a15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="shield" size={22} color="#d4507a"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Avoidable harm reduction":"Avoidable harm reduction (clinical case for migration)"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Additional value · not in financial total</span></div>
         <InfoTip text={`Source: ACSQHC (Australian Commission on Safety and Quality in Health Care) safety reports; AIHW hospital statistics; QAHCS (Wilson et al 1995). Per-bed rates from Australian public hospital data, scaled by fragmentation (${(0.6+Math.min(r.legacy,20)/20*0.6).toFixed(2)}x). Supporting evidence for the quality and cost avoidance estimates above.`}/>
       </div>
       <p style={{fontSize:13,color:C.textMid,margin:"0 0 16px"}}>{isArchiveOnly?"Fewer fragmented systems means fewer information gaps during care transitions.":"Consolidating onto a single EMR directly reduces information gaps at care transitions, which is the primary patient safety justification for migration."}</p>
@@ -3504,7 +3505,7 @@ function ROICalculator() {
     {r.litigationCases > 0 && <Card dimmed={dim} style={{border:"1px solid #c4cce0",background:"#f0f2f8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
         <span style={{fontSize:20}}>{"\u2696\uFE0F"}</span>
-        <div style={{display:"flex",alignItems:"center",gap:10}}><SIcon name="folder" size={20} color="#2c3e6b"/><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legal and compliance</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#2c3e6b15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="folder" size={22} color="#2c3e6b"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legal and compliance</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       </div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
@@ -3533,7 +3534,7 @@ function ROICalculator() {
     {r.auReadmissionsAvoided > 0 && <Card dimmed={dim} style={{border:"1px solid #b0e0d8",background:"#f0faf8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
         <span style={{fontSize:20}}>{"\u{1F3E5}"}</span>
-        <div style={{display:"flex",alignItems:"center",gap:10}}><SIcon name="refresh" size={20} color="#00d4aa"/><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Readmission cost avoidance</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#00d4aa15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="refresh" size={22} color="#00d4aa"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Readmission cost avoidance</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       </div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 150px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center"}}>
@@ -3561,7 +3562,7 @@ function ROICalculator() {
     {!r.isNDIS && <><Card dimmed={dim} style={{border:"1px solid #c3ddd3",background:"#f5faf7"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
         <SIcon name="settings" size={18} color={C.textMid}/>
-        <div style={{display:"flex",alignItems:"center",gap:10}}><SIcon name="activity" size={20} color="#e67e22"/><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Operational efficiency</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Operational metric</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#e67e2215",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="activity" size={22} color="#e67e22"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Operational efficiency</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Operational metric</span></div>
       </div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:12}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #c3ddd315"}}>
@@ -3838,7 +3839,7 @@ function ROICalculator() {
 
       return <Card style={{marginTop:20}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-          <span style={{fontSize:20}}>{"\ud83d\udcd0"}</span>
+          <SIcon name="book" size={22} color={C.accent}/>
           <h3 style={{fontSize:17,fontWeight:800,margin:0,color:C.text}}>How we calculated this</h3>
         </div>
         <p style={{fontSize:13,color:C.textMuted,margin:"4px 0 12px"}}>Full methodology, formulae and evidence base. Every figure marked {"\u270e"} in the calculator is overridable.</p>
