@@ -681,7 +681,7 @@ function EvidenceDropdown({title,children}){
   const [open,setOpen] = React.useState(false);
   return <div style={{marginTop:10}}>
     <button onClick={(e)=>{e.stopPropagation();setOpen(!open);}} style={{background:"none",border:"none",cursor:"pointer",padding:"6px 0",fontSize:12,fontWeight:600,color:C.textMid,display:"flex",alignItems:"center",gap:6,fontFamily:"inherit"}}>
-      <span style={{transform:open?"rotate(90deg)":"rotate(0deg)",transition:"transform .2s",fontSize:10}}>{"\u25B6"}</span>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{transform:open?"rotate(90deg)":"rotate(0deg)",transition:"transform .2s",flexShrink:0}}><polyline points="9 18 15 12 9 6"/></svg>
       {title||"Evidence & methodology"}
     </button>
     {open && <div style={{padding:"10px 14px",background:"#f8fafb",borderRadius:8,border:"1px solid "+C.borderLight,fontSize:12,color:C.textMid,lineHeight:1.6,marginTop:4}}>{children}</div>}
