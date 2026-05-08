@@ -1629,6 +1629,18 @@ function ROICalculator() {
     // Page 1
     doc.setFillColor(TEAL[0],TEAL[1],TEAL[2]); doc.rect(0,0,pw,50,"F");
     doc.setFillColor(SEAFOAM[0],SEAFOAM[1],SEAFOAM[2]); doc.rect(0,50,pw,1.5,"F");
+
+    // Logo (top-right corner of front page)
+    if (PDF_LOGO_BASE64) {
+      try {
+        const logoW = PDF_LOGO_WIDTH;
+        const logoH = logoW / PDF_LOGO_ASPECT;
+        const logoX = pw - logoW - 5;
+        const logoY = 5;
+        doc.addImage(PDF_LOGO_BASE64, PDF_LOGO_FORMAT, logoX, logoY, logoW, logoH);
+      } catch (e) { console.warn("Logo failed:", e); }
+    }
+
     setC(WHITE); doc.setFontSize(9); doc.setFont("helvetica","normal");
     doc.text("BOARD SUMMARY", ml, 14);
     doc.setFontSize(22); doc.setFont("helvetica","bold");
@@ -1781,6 +1793,21 @@ function ROICalculator() {
     doc.text("Page 2 of 2", pw - mr, ph - 10, { align: "right" });
     doc.setFillColor(SEAFOAM[0],SEAFOAM[1],SEAFOAM[2]); doc.rect(0, ph - 4, pw, 4, "F");
     
+    // Add footer logo to all pages except the first
+    if (PDF_LOGO_BASE64) {
+      const totalPages = doc.internal.getNumberOfPages();
+      const fLogoW = PDF_LOGO_FOOTER_W;
+      const fLogoH = fLogoW / PDF_LOGO_ASPECT;
+      for (let p = 2; p <= totalPages; p++) {
+        doc.setPage(p);
+        try {
+          const bandH = 10;
+          doc.setFillColor(TEAL[0], TEAL[1], TEAL[2]);
+          doc.rect(0, ph - bandH, pw, bandH, "F");
+          doc.addImage(PDF_LOGO_BASE64, PDF_LOGO_FORMAT, pw - fLogoW - 5, ph - bandH + (bandH - fLogoH) / 2, fLogoW, fLogoH);
+        } catch (e) {}
+      }
+    }
     doc.save("Galen_ROI_Board_Summary_" + new Date().toISOString().split("T")[0] + ".pdf");
     return null;
   }, [r, am, reimbursementModel, inputs]);
@@ -1825,13 +1852,9 @@ function ROICalculator() {
       doc.text("EMR Migration & Archiving  |  ROI Estimate", ml, 9);
       doc.setFont("helvetica","normal"); doc.setTextColor(190,230,220);
       doc.text(leadForm.org || "", pw - mr, 9, { align: "right" });
-      if (PDF_LOGO_BASE64) {
-        try {
-          const lh = 8, lw = lh * (PDF_LOGO_WIDTH / 20);
-          doc.addImage(PDF_LOGO_BASE64, PDF_LOGO_FORMAT, pw - mr - lw - 1, 3, lw, lh);
-        } catch(e) {}
-      }
     };
+    // Footer logo on subsequent pages — drawn after content via finalizePages step
+
 
     // ── PAGE 1: Header + Summary ──
     // Full-width teal header bar
@@ -1841,12 +1864,14 @@ function ROICalculator() {
     doc.setFillColor(SEAFOAM[0],SEAFOAM[1],SEAFOAM[2]);
     doc.rect(0, 42, pw, 1.5, "F");
 
-    // Logo (right side of header)
+    // Logo (top-right corner of front page) — ~20% page width with small gap from edges
     if (PDF_LOGO_BASE64) {
       try {
-        const logoH = 16;
-        const logoW = logoH * (PDF_LOGO_WIDTH / 20);
-        doc.addImage(PDF_LOGO_BASE64, PDF_LOGO_FORMAT, pw - mr - logoW, 6, logoW, logoH);
+        const logoW = PDF_LOGO_WIDTH;
+        const logoH = logoW / PDF_LOGO_ASPECT;
+        const logoX = pw - logoW - 5;
+        const logoY = 5;
+        doc.addImage(PDF_LOGO_BASE64, PDF_LOGO_FORMAT, logoX, logoY, logoW, logoH);
       } catch (e) { console.warn("Logo failed:", e); }
     }
 
@@ -2194,6 +2219,22 @@ function ROICalculator() {
 
     // Save or return
     const filename = "ROI-Estimate-" + (leadForm.org || "Report").replace(/[^a-zA-Z0-9]/g, "-") + ".pdf";
+    // Add footer logo to all pages except the first
+    if (PDF_LOGO_BASE64) {
+      const totalPages = doc.internal.getNumberOfPages();
+      const fLogoW = PDF_LOGO_FOOTER_W;
+      const fLogoH = fLogoW / PDF_LOGO_ASPECT;
+      for (let p = 2; p <= totalPages; p++) {
+        doc.setPage(p);
+        try {
+          const bandH = 10;
+          doc.setFillColor(TEAL[0], TEAL[1], TEAL[2]);
+          doc.rect(0, ph - bandH, pw, bandH, "F");
+          doc.addImage(PDF_LOGO_BASE64, PDF_LOGO_FORMAT, pw - fLogoW - 5, ph - bandH + (bandH - fLogoH) / 2, fLogoW, fLogoH);
+        } catch (e) {}
+      }
+    }
+
     if (returnBlob) return { blob: doc.output("blob"), filename };
     doc.save(filename);
   }, [am, r, rCon, rStr, inputs, leadForm, isArchiveOnly, flagships, loadJsPDF]);
