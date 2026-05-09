@@ -2273,31 +2273,29 @@ function ROICalculator() {
       </div>
     )}
 
-    {/* Headline cards */}
-    <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:20}}>
-      <ResultCard dimmed={dim} label={`Total savings (${r.rampYears}-year)`} value={an?<AnimatedK value={r.totalRamp} active={an}/>:"–"} sub={an?`Phased over ${r.rampYears} years (${r.rampPcts.map(p=>Math.round(p*100)+"%").join("/")})`:""} bg={C.greenPale} border="#c3ddd3" valueColor={C.green} />
-      <ResultCard dimmed={dim} label="Annual recurring" value={an?<AnimatedK value={r.annual} active={an}/>:"–"} sub={an?(r.qualitySavings>0 ? `${fmtK(r.decomSave)} decom + ${fmtK(r.timeSave)} time + ${fmtK(r.qualitySavings)} quality` : `${fmtK(r.decomSave)} decom + ${fmtK(r.timeSave)} time`):""} bg="#e8faf6" border="#b0e8dc" valueColor={C.accent} />
-      <ResultCard dimmed={dim} label="Clinician time (annual)" value={an?<AnimatedK value={r.timeSave} active={an}/>:"–"} sub={an?<span>{fmtNum(r.hrsSaved)} hrs/yr, {Math.round(r.realisation*100)}% realisation</span>:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
+    {/* Hero figure + composition + KPI cards (AU-style layout) */}
+    <div style={{textAlign:"center",padding:"8px 0 24px"}}>
+      <div style={{fontSize:13,fontWeight:600,color:C.textMuted,letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>Estimated annual savings at steady state</div>
+      <div style={{fontSize:52,fontWeight:800,color:C.accent,letterSpacing:"-2px",lineHeight:1}}>{an ? <AnimatedK value={r.annual} active={an}/> : "–"}</div>
+      <div style={{fontSize:14,color:C.textMid,marginTop:8}}>per year ({r.rampYears}-year total: <strong style={{color:C.accent}}>{an ? fmtK(r.totalRamp) : "–"}</strong>)</div>
     </div>
 
-    {!dim && (() => {
+    {/* Composition bar */}
+    {an && (() => {
       const segs = [
-        {label:"Decommission",val:r.decomSave,color:"#0F4146"},
-        {label:"Clinician capacity",val:r.timeSave,color:"#1a7a7a"},
-        {label:"Excess bed days avoided",val:r.excessDayCostAvoided||0,color:"#3d8a8a"},
-        {label:"Indemnity exposure",val:r.malpracticeReduction||0,color:"#d4507a"},
-        {label:"Duplicate testing",val:r.duplicateTestSaving||0,color:"#e67e22"},
-      ].filter(s=>s.val>0);
-      const total = segs.reduce((a,s)=>a+s.val,0);
-      if (total <= 0) return null;
-      return <div style={{marginBottom:20}}>
-        <div style={{display:"flex",height:10,borderRadius:5,overflow:"hidden",marginBottom:8}}>
-          {segs.map((s,i)=><div key={i} style={{width:`${s.val/total*100}%`,background:s.color,minWidth:2}} title={`${s.label}: ${fmtK(s.val)}`}/>)}
+        {label:"Decommission", value:r.decomSave, color:"#0F4146"},
+        {label:"Clinical capacity", value:r.timeSave, color:"#1a8a7a"},
+        ...(r.qualitySavings > 0 ? [{label:"Quality / cost avoidance", value:r.qualitySavings, color:"#d4507a"}] : []),
+      ].filter(s => s.value > 0);
+      const total = r.annual || 1;
+      return <div style={{marginBottom:24}}>
+        <div style={{display:"flex",height:10,borderRadius:5,overflow:"hidden",marginBottom:12}}>
+          {segs.map((s,i) => <div key={i} style={{flex:s.value,background:s.color,transition:"flex .5s"}} />)}
         </div>
-        <div style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center"}}>
-          {segs.map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:C.textMid}}>
-            <div style={{width:8,height:8,borderRadius:2,background:s.color}}/>
-            {s.label} {fmtK(s.val)} ({Math.round(s.val/total*100)}%)
+        <div style={{display:"flex",gap:14,justifyContent:"center",flexWrap:"wrap"}}>
+          {segs.map((s,i) => <div key={i} style={{display:"flex",alignItems:"center",gap:6}}>
+            <div style={{width:10,height:10,borderRadius:3,background:s.color}} />
+            <span style={{fontSize:12,color:C.textMid}}>{s.label}: <strong style={{color:s.color}}>{fmtK(s.value)}</strong> ({Math.round(s.value/total*100)}%)</span>
           </div>)}
         </div>
         <div style={{display:"flex",justifyContent:"center",marginTop:8}}>
@@ -2305,6 +2303,14 @@ function ROICalculator() {
         </div>
       </div>;
     })()}
+
+    {/* KPI cards (2x2 grid, AU-style colour scheme) */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+      <ResultCard dimmed={dim} label="Legacy decommission" value={an?fmtK(r.decomSave):"–"} sub={an?r.decom+" of "+r.legacy+" systems retired":""} bg={C.greenPale} border="#c3ddd3" valueColor="#0F4146" />
+      <ResultCard dimmed={dim} label="Clinical capacity" value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"–"} sub={an?fmtK(r.timeSave)+"/yr value":""} bg="#e8faf6" border="#b0e8dc" valueColor="#1a8a7a" />
+      {r.qualitySavings > 0 && <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"–"} sub={an?"Indemnity + bed days + duplicate testing":""} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />}
+      <ResultCard dimmed={dim} label={`Total savings (${r.rampYears}-year)`} value={an?fmtK(r.totalRamp):"–"} sub={an?`Phased ramp ${r.rampPcts.map(p=>Math.round(p*100)+"%").join("/")}`:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
+    </div>
 
     {viewMode === "detailed" && <>
     {/* Decom – tiered breakdown */}
