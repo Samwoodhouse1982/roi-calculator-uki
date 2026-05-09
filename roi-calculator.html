@@ -4029,39 +4029,9 @@ function ROICalculator() {
 
     </>}
 
-    {viewMode === "executive" && <><Card style={{marginBottom:24,background:"#f8fafb",border:`1px dashed ${C.border}`}}>
-      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:10}}>Components of annual savings</div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))",gap:10}}>
-        <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #0F4146`}}>
-          <div style={{fontSize:11,color:C.textMuted}}>Decommission savings</div>
-          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.decomSave)}</div>
-          <div style={{fontSize:10,color:C.textMuted}}>{r.decom} of {r.legacy} systems retired</div>
-        </div>
-        {r.timeSave > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #e67e22`}}>
-          <div style={{fontSize:11,color:C.textMuted}}>Clinician capacity freed</div>
-          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.timeSave)}</div>
-          <div style={{fontSize:10,color:C.textMuted}}>{fmtNum(r.hrsSaved)} hrs/yr · {r.fteEquivalent} FTE</div>
-        </div>}
-        {(r.reimbursementImpact||0) > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #00d4aa`}}>
-          <div style={{fontSize:11,color:C.textMuted}}>{r.isAgedCare?"AN-ACC funding":r.isNDIS?"Claims & utilisation":"ABF efficiency"}</div>
-          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.reimbursementImpact)}</div>
-          <div style={{fontSize:10,color:C.textMuted}}>{r.isAgedCare?"Funding accuracy + agency":r.isNDIS?"Claims + retention":"NWAU recovery + denials"}</div>
-        </div>}
-        {(r.qualitySavings||0) > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #d4507a`}}>
-          <div style={{fontSize:11,color:C.textMuted}}>Quality &amp; safety</div>
-          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.qualitySavings)}</div>
-          <div style={{fontSize:10,color:C.textMuted}}>Indemnity + excess days + duplicates</div>
-        </div>}
-        {(r.mergeSavings||0) > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #2c3e6b`}}>
-          <div style={{fontSize:11,color:C.textMuted}}>Network consolidation</div>
-          <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.mergeSavings)}</div>
-          <div style={{fontSize:10,color:C.textMuted}}>Duplicate elimination + standardisation</div>
-        </div>}
-      </div>
-      <div style={{marginTop:12,textAlign:"center",fontSize:12,color:C.textMid}}>
-        For methodology, evidence, and breakdown by component, switch to <button type="button" onClick={()=>setViewMode("detailed")} style={{background:"none",border:"none",color:C.accent,fontWeight:600,cursor:"pointer",textDecoration:"underline",padding:0,fontFamily:"inherit",fontSize:12}}>Detailed view</button>
-      </div>
-    </Card><LockedConnector/></>}
+    {viewMode === "executive" && <><div style={{textAlign:"center",fontSize:12,color:C.textMid,marginBottom:24,padding:"14px 16px",background:"#f8fafb",border:`1px dashed ${C.border}`,borderRadius:8}}>
+      For methodology, evidence, and breakdown by component, switch to <button type="button" onClick={()=>setViewMode("detailed")} style={{background:"none",border:"none",color:C.accent,fontWeight:600,cursor:"pointer",textDecoration:"underline",padding:0,fontFamily:"inherit",fontSize:12}}>Detailed view</button>
+    </div><LockedConnector/></>}
 
     {/* KPIs */}
     <Card dimmed={dim} style={{background:C.surface,border:`1px solid ${C.border}`}}>
