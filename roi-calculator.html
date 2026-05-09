@@ -920,6 +920,7 @@ function ROICalculator() {
 
   const [inputs, setInputs] = useState({...PRESETS.TYPICAL.data, data_types:{...PRESETS.TYPICAL.data.data_types}, tiers:{...PRESETS.TYPICAL.data.tiers}});
   const [activePreset, setActivePreset] = useState(null);
+  const [viewTimescale, setViewTimescale] = useState("annual");
   const [scenarioMode, setScenarioMode] = useState(null);
   const [viewMode, setViewMode] = useState("executive"); // "executive" or "detailed"
   const [showFormulas, setShowFormulas] = useState(false);
@@ -1262,6 +1263,17 @@ function ROICalculator() {
   const rExp=useMemo(()=>calc(calcInputs,"EXPECTED",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
   const rStr=useMemo(()=>calc(calcInputs,"STRETCH",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
   const r=am==="CONSERVATIVE"?rCon:am==="STRETCH"?rStr:rExp;
+  // ── Timescale multiplier: scales steady-state values for First-year / N-year-total / Yearly-avg views ──
+  const ts = useMemo(() => {
+    const rp = r.rampPcts || [];
+    const padTo = (n) => { let s = 0; for (let i = 0; i < n; i++) s += rp[i] !== undefined ? rp[i] : 1.0; return s; };
+    switch (viewTimescale) {
+      case "year1":  return { mult: rp[0] || 1, heroLabel: "Estimated first-year savings", subContext: "for Year 1 of " + r.rampYears + "-year ramp", suffix: "" };
+      case "total3": return { mult: padTo(3), heroLabel: "Estimated 3-year total savings", subContext: "cumulative across 3 years", suffix: "" };
+      case "total5": return { mult: padTo(5), heroLabel: "Estimated 5-year total savings", subContext: "cumulative across 5 years", suffix: "" };
+      default:       return { mult: 1, heroLabel: "Estimated annual savings at steady state", subContext: "per year at steady state", suffix: "/yr" };
+    }
+  }, [viewTimescale, r.rampPcts, r.rampYears]);
   const isArchiveOnly = inputs.journey === "HAVE_EPR";
 
   // ── Data layer: exposes all values for external PDF engines / integrations ──
@@ -2803,17 +2815,7 @@ function ROICalculator() {
         {(galenMigrationCost > 0 || galenAnnualCost > 0) && <div style={{fontSize:11,color:C.textMuted,marginTop:6}}>Net savings after Galen costs will be shown on the results page</div>}
         {(galenMigrationCost > 0 || galenAnnualCost > 0) && <button type="button" onClick={()=>{setGalenMigrationCost(0);setGalenAnnualCost(0);}} style={{border:"none",background:"none",color:C.textMuted,fontSize:11,cursor:"pointer",textDecoration:"underline",padding:"4px 0",marginTop:2}}>Clear costs</button>}
       </div>
-      <div style={{marginTop:16,paddingTop:16,borderTop:"1px solid "+C.borderLight}}>
-        <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>Phased approach</div>
-        <div style={{display:"flex",gap:8}}>
-          {[{k:3,l:"3-year",s:"40 / 80 / 100%"},{k:5,l:"5-year",s:"20 / 40 / 60 / 80 / 100%"}].map(o =>
-            <button type="button" key={o.k} onClick={()=>setInputs(p=>({...p,_rampYears:o.k}))} style={{flex:1,padding:"10px",border:(inputs._rampYears||3)===o.k?"2px solid "+C.accent:"1px solid "+C.borderLight,borderRadius:10,background:(inputs._rampYears||3)===o.k?C.accentPale:"#fff",cursor:"pointer",textAlign:"center",fontFamily:"inherit"}}>
-              <div style={{fontSize:14,fontWeight:(inputs._rampYears||3)===o.k?700:500,color:(inputs._rampYears||3)===o.k?C.accent:C.textMid}}>{o.l}</div>
-              <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{o.s} ramp</div>
-            </button>
-          )}
-        </div>
-      </div>
+
     </Card></div>
     <LockedConnector/>
 
@@ -2919,24 +2921,41 @@ function ROICalculator() {
       </div>
     )}
 
+    {/* Timescale selector */}
+    {!dim && <div style={{display:"flex",justifyContent:"center",marginBottom:14}}>
+      <div style={{display:"inline-flex",gap:0,padding:3,background:"#fff",border:`1px solid ${C.border}`,borderRadius:999,flexWrap:"wrap"}}>
+        {[
+          {k:"year1",l:"First year"},
+          {k:"total3",l:"3-year total"},
+          {k:"total5",l:"5-year total"},
+          {k:"annual",l:"Yearly average"},
+        ].map(t => <button type="button" key={t.k} onClick={()=>{setViewTimescale(t.k);if(t.k==="total3")setInputs(p=>({...p,_rampYears:3}));if(t.k==="total5")setInputs(p=>({...p,_rampYears:5}));}} style={{padding:"7px 16px",border:"none",borderRadius:999,background:viewTimescale===t.k?C.accent:"transparent",color:viewTimescale===t.k?"#fff":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s",whiteSpace:"nowrap"}}>{t.l}</button>)}
+      </div>
+    </div>}
+
     {/* Hero figure + composition + KPI cards (AU-style layout) */}
     <div style={{textAlign:"center",padding:"8px 0 24px"}}>
-      <div style={{fontSize:13,fontWeight:600,color:C.textMuted,letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>Estimated annual savings at steady state</div>
-      <div style={{fontSize:52,fontWeight:800,color:C.accent,letterSpacing:"-2px",lineHeight:1}}>{an ? <AnimatedK value={r.annualWithReimbursement} active={an}/> : "–"}</div>
-      <div style={{fontSize:14,color:C.textMid,marginTop:8}}>per year ({r.rampYears}-year total: <strong style={{color:C.accent}}>{an ? fmtK(r.total3WithReimbursement) : "–"}</strong>)</div>
+      <div style={{fontSize:13,fontWeight:600,color:C.textMuted,letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>{ts.heroLabel}</div>
+      <div style={{fontSize:52,fontWeight:800,color:C.accent,letterSpacing:"-2px",lineHeight:1}}>{an ? <AnimatedK value={Math.round(r.annualWithReimbursement * ts.mult)} active={an}/> : "–"}</div>
+      <div style={{fontSize:14,color:C.textMid,marginTop:8}}>
+        {viewTimescale === "annual"
+          ? <>per year ({r.rampYears}-year total: <strong style={{color:C.accent}}>{an ? fmtK(r.total3WithReimbursement) : "–"}</strong>)</>
+          : <>{ts.subContext} <span style={{color:C.textMuted}}>{"·"}</span> annual at steady state: <strong style={{color:C.accent}}>{an ? fmtK(r.annualWithReimbursement) : "–"}</strong></>
+        }
+      </div>
     </div>
 
     {/* Composition bar */}
     {an && (() => {
       const segs = [
-        {label:"Decommission", value:r.decomSave, color:"#0F4146"},
-        {label:"Capacity", value:r.timeSave, color:"#1a8a7a"},
-        ...(r.reimbursementImpact > 0 ? [{label:"Reimbursement", value:r.reimbursementImpact, color:"#00d4aa"}] : []),
-        ...(r.qualitySavings > 0 ? [{label:"Quality / cost avoidance", value:r.qualitySavings, color:"#d4507a"}] : []),
-        ...(r.academicSavings > 0 ? [{label:"Academic", value:r.academicSavings, color:"#2c3e6b"}] : []),
-        ...(r.mergeSavings > 0 ? [{label:"M&A", value:r.mergeSavings, color:"#6c5ce7"}] : []),
+        {label:"Decommission", value:Math.round(r.decomSave * ts.mult), color:"#0F4146"},
+        {label:"Capacity", value:Math.round(r.timeSave * ts.mult), color:"#1a8a7a"},
+        ...(r.reimbursementImpact > 0 ? [{label:"Reimbursement", value:Math.round(r.reimbursementImpact * ts.mult), color:"#00d4aa"}] : []),
+        ...(r.qualitySavings > 0 ? [{label:"Quality / cost avoidance", value:Math.round(r.qualitySavings * ts.mult), color:"#d4507a"}] : []),
+        ...(r.academicSavings > 0 ? [{label:"Academic", value:Math.round(r.academicSavings * ts.mult), color:"#2c3e6b"}] : []),
+        ...(r.mergeSavings > 0 ? [{label:"M&A", value:Math.round(r.mergeSavings * ts.mult), color:"#6c5ce7"}] : []),
       ].filter(s => s.value > 0);
-      const total = r.annualWithReimbursement || 1;
+      const total = Math.round((r.annualWithReimbursement || 1) * ts.mult);
       return <div style={{marginBottom:24}}>
         <div style={{display:"flex",height:10,borderRadius:5,overflow:"hidden",marginBottom:12}}>
           {segs.map((s,i) => <div key={i} style={{flex:s.value,background:s.color,transition:"flex .5s"}} />)}
@@ -2955,12 +2974,12 @@ function ROICalculator() {
 
     {/* KPI cards (2x2 grid, AU-style colour scheme) */}
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
-      <ResultCard dimmed={dim} label="Legacy decommission" value={an?fmtK(r.decomSave):"–"} sub={an?r.decom+" of "+r.legacy+" systems retired":""} bg={C.greenPale} border="#c3ddd3" valueColor="#0F4146" />
-      <ResultCard dimmed={dim} label="Clinical capacity" value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"–"} sub={an?fmtK(r.timeSave)+"/yr value":""} bg="#e8faf6" border="#b0e8dc" valueColor="#1a8a7a" />
-      <ResultCard dimmed={dim} info="HRRP: Hospital Readmissions Reduction Program. HAC: Hospital-Acquired Conditions. VBP: Value-Based Purchasing. Components include CMS penalty avoidance and denial recovery." label="Reimbursement & compliance" value={an?fmtK(r.reimbursementImpact):"–"} sub={an?`HRRP ${fmtK(r.hrrpReduction||0)} + HAC ${fmtK(r.hacReduction||0)} + VBP ${fmtK(r.vbpImprovement||0)} + denials ${fmtK(r.denialRecovery||0)}`:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
-      {r.qualitySavings > 0 && <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"–"} sub={an?"Indemnity + bed days + testing + readmission":""} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />}
-      {r.academicSavings > 0 && <ResultCard dimmed={dim} label="Academic medical center" value={an?fmtK(r.academicSavings):"–"} sub={an?"Research + GME + teaching":""} bg="#eef0f8" border="#c4cce0" valueColor="#2c3e6b" />}
-      {r.mergeSavings > 0 && <ResultCard dimmed={dim} label="Network consolidation" value={an?fmtK(r.mergeSavings):"–"} sub={an?(r.duplicateSystems||0)+" duplicate systems":""} bg="#f0eefa" border="#c4c0e8" valueColor="#6c5ce7" />}
+      <ResultCard dimmed={dim} label={"Legacy decommission" + (viewTimescale==="annual"?"":" ("+ts.heroLabel.replace("Estimated ","").replace(" savings","")+")")} value={an?fmtK(Math.round(r.decomSave * ts.mult)):"–"} sub={an?r.decom+" of "+r.legacy+" systems retired":""} bg={C.greenPale} border="#c3ddd3" valueColor="#0F4146" />
+      <ResultCard dimmed={dim} label="Clinical capacity" value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"–"} sub={an?fmtK(Math.round(r.timeSave * ts.mult))+(ts.suffix||" total"):""} bg="#e8faf6" border="#b0e8dc" valueColor="#1a8a7a" />
+      <ResultCard dimmed={dim} info="HRRP: Hospital Readmissions Reduction Program. HAC: Hospital-Acquired Conditions. VBP: Value-Based Purchasing. Components include CMS penalty avoidance and denial recovery." label="Reimbursement & compliance" value={an?fmtK(Math.round(r.reimbursementImpact * ts.mult)):"–"} sub={an?`HRRP ${fmtK(Math.round((r.hrrpReduction||0) * ts.mult))} + HAC ${fmtK(Math.round((r.hacReduction||0) * ts.mult))} + VBP ${fmtK(Math.round((r.vbpImprovement||0) * ts.mult))} + denials ${fmtK(Math.round((r.denialRecovery||0) * ts.mult))}`:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
+      {r.qualitySavings > 0 && <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(Math.round(r.qualitySavings * ts.mult)):"–"} sub={an?"Indemnity + bed days + testing + readmission":""} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />}
+      {r.academicSavings > 0 && <ResultCard dimmed={dim} label="Academic medical center" value={an?fmtK(Math.round(r.academicSavings * ts.mult)):"–"} sub={an?"Research + GME + teaching":""} bg="#eef0f8" border="#c4cce0" valueColor="#2c3e6b" />}
+      {r.mergeSavings > 0 && <ResultCard dimmed={dim} label="Network consolidation" value={an?fmtK(Math.round(r.mergeSavings * ts.mult)):"–"} sub={an?(r.duplicateSystems||0)+" duplicate systems":""} bg="#f0eefa" border="#c4c0e8" valueColor="#6c5ce7" />}
     </div>
 
     {/* Year-by-year stacked bar chart */}
@@ -2979,16 +2998,11 @@ function ROICalculator() {
       const maxH = 200;
       return <Card style={{marginBottom:16}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-          <div style={{fontSize:13,fontWeight:700,color:C.textMid}}>{r.rampYears}-year savings projection</div>
-          <div style={{display:"flex",gap:0}}>
-            {[{k:3,l:"3-yr"},{k:5,l:"5-yr"}].map(o =>
-              <button type="button" key={o.k} onClick={()=>setInputs(p=>({...p,_rampYears:o.k}))} style={{
-                padding:"4px 12px",fontSize:11,fontWeight:r.rampYears===o.k?700:500,
-                border:"1px solid "+C.accent,borderRadius:o.k===3?"6px 0 0 6px":"0 6px 6px 0",
-                background:r.rampYears===o.k?C.accent:"#fff",color:r.rampYears===o.k?"#fff":C.accent,
-                cursor:"pointer",fontFamily:"inherit",marginLeft:o.k===5?-1:0
-              }}>{o.l}</button>
-            )}
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:40,height:40,borderRadius:10,background:`${C.accent}15`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <SIcon name="chart" size={22} color={C.accent}/>
+            </div>
+            <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{r.rampYears}-year savings projection</h3>
           </div>
         </div>
         <div style={{fontSize:12,color:C.textMuted,marginBottom:16}}>Builds from {fmtK(Math.round(total*r.rampPcts[0]))} in Year 1 to {fmtK(total)}/yr at steady state</div>
@@ -3308,9 +3322,6 @@ function ROICalculator() {
     <Card dimmed={dim}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:8}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}><SIcon name="calendar" size={20} color={C.accent}/><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{r.rampYears}-year phased breakdown</h3></div>
-        <div style={{display:"inline-flex",gap:0,padding:3,background:"#f8fafb",border:`1px solid ${C.border}`,borderRadius:999}}>
-          {[3,5].map(yr=><button type="button" key={yr} onClick={()=>setInputs(p=>({...p,_rampYears:yr}))} style={{padding:"4px 12px",border:"none",borderRadius:999,background:r.rampYears===yr?C.accent:"transparent",color:r.rampYears===yr?"#fff":C.textMid,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{yr}-year</button>)}
-        </div>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>({fmtK(r.annualWithReimbursement)}/yr at steady state) phased over {r.rampYears} years = <strong style={{color:C.green}}>{fmtK(r.total3WithReimbursement)}</strong></p>
       <div style={{overflowX:"auto"}}>
