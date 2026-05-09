@@ -1855,6 +1855,7 @@ function ROICalculator() {
         {!activePreset && "Pick the option that best matches your organisation. You can fine-tune beds, systems, and other details in later steps."}
       </div>
     </Card>
+    <LockedConnector/>
 
     <Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
@@ -2517,7 +2518,7 @@ function ROICalculator() {
 
     </>}
 
-    {viewMode === "executive" && <Card style={{marginBottom:24,background:"#f8fafb",border:`1px dashed ${C.border}`}}>
+    {viewMode === "executive" && <><Card style={{marginBottom:24,background:"#f8fafb",border:`1px dashed ${C.border}`}}>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:10}}>Components of annual savings</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))",gap:10}}>
         <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #0F4146`}}>
@@ -2549,7 +2550,7 @@ function ROICalculator() {
       <div style={{marginTop:12,textAlign:"center",fontSize:12,color:C.textMid}}>
         For methodology, evidence, and breakdown by component, switch to <button type="button" onClick={()=>setViewMode("detailed")} style={{background:"none",border:"none",color:C.accent,fontWeight:600,cursor:"pointer",textDecoration:"underline",padding:0,fontFamily:"inherit",fontSize:12}}>Detailed view</button>
       </div>
-    </Card>}
+    </Card><LockedConnector/></>}
 
     {/* Year-by-year */}
     <Card dimmed={dim}>
