@@ -3597,7 +3597,6 @@ function ROICalculator() {
     {/* Legal & compliance */}
     {r.litigationCases > 0 && <Card dimmed={dim} style={{border:"1px solid #c4cce0",background:"#f0f2f8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <span style={{fontSize:20}}>{"\u2696\uFE0F"}</span>
         <div style={{display:"flex",alignItems:"center",gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#2c3e6b15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="folder" size={22} color="#2c3e6b"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legal and compliance</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       </div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -3626,7 +3625,6 @@ function ROICalculator() {
     {/* Readmission cost avoidance */}
     {r.auReadmissionsAvoided > 0 && <Card dimmed={dim} style={{border:"1px solid #b0e0d8",background:"#f0faf8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <span style={{fontSize:20}}>{"\u{1F3E5}"}</span>
         <div style={{display:"flex",alignItems:"center",gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#00d4aa15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="refresh" size={22} color="#00d4aa"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Readmission cost avoidance</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       </div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -3654,7 +3652,6 @@ function ROICalculator() {
     {/* Operational efficiency */}
     {!r.isNDIS && <><Card dimmed={dim} style={{border:"1px solid #c3ddd3",background:"#f5faf7"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-        <SIcon name="settings" size={18} color={C.textMid}/>
         <div style={{display:"flex",alignItems:"center",gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#e67e2215",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="activity" size={22} color="#e67e22"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Operational efficiency</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#f0f2f5",color:"#666",marginLeft:"auto",whiteSpace:"nowrap"}}>Operational metric</span></div>
       </div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:12}}>
@@ -3780,7 +3777,7 @@ function ROICalculator() {
 
     {/* KPIs */}
     <Card dimmed={dim} style={{background:C.surface,border:`1px solid ${C.border}`}}>
-      <h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>Projected KPI improvements</h3>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:4}}><div style={{width:40,height:40,borderRadius:10,background:"#00d4aa15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="chart" size={22} color="#00d4aa"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Projected KPI improvements</h3></div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16,marginTop:16}}>
         <div style={{flex:"1 1 180px",minWidth:170,padding:"18px 20px",background:C.greenPale,borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Decommissioned</div>
