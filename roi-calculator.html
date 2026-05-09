@@ -750,6 +750,7 @@ function ROICalculator() {
   const [inputs, setInputs] = useState({...PRESETS.TYPICAL.data, data_types:{...PRESETS.TYPICAL.data.data_types}, tiers:{...PRESETS.TYPICAL.data.tiers}});
   const [providerType, setProviderType] = useState("acute");
   const [activePreset, setActivePreset] = useState(null);
+  const [openPerspective, setOpenPerspective] = useState(null);
   const [scenarioMode, setScenarioMode] = useState(null);
   const [viewMode, setViewMode] = useState("executive");
   const [showFormulas, setShowFormulas] = useState(false);
@@ -2245,16 +2246,26 @@ function ROICalculator() {
       </div>
     </div>}
 
-    {!dim && <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(320px, 1fr))",gap:12,marginBottom:16}}>
-      <Card style={{margin:0,background:"#f0faf8",borderLeft:"4px solid #00d4aa"}}>
-        <div style={{fontSize:12,fontWeight:600,color:"#0F4146",textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Finance perspective</div>
-        <p style={{fontSize:13,color:C.textMid,margin:0,lineHeight:1.6}}>This represents recurring annual savings against legacy cost base. <strong>Decommissioning ({fmtK(r.decomSave)}) is a hard cash saving</strong> from removed licensing, hosting, and support contracts. <strong>Clinician capacity ({fmtK(r.timeSave)})</strong> is realisable productivity at NHS blended rate (£55/hr) with {Math.round(r.realisation*100)}% realisation factor applied. Three-year phased savings reflect typical archiving and decommissioning timelines.</p>
-      </Card>
-      <Card style={{margin:0,background:"#faf5f7",borderLeft:"4px solid #d4507a"}}>
-        <div style={{fontSize:12,fontWeight:600,color:"#d4507a",textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Clinical perspective</div>
-        <p style={{fontSize:13,color:C.textMid,margin:0,lineHeight:1.6}}>The financial savings shown above are real and material for your CFO. But the more compelling case for the CCIO/CMIO is what they enable: <strong>{fmtNum(r.hrsSaved)} hours of clinical time freed each year ({r.fteEquivalent} FTE equivalent), reduced information gaps at care transitions, and {r.hasClinicalScope ? fmtNum(r.safetyMedErrorsAvoided) : "0"} potentially avoidable medication errors</strong>. The avoidable harm reduction section below quantifies the patient safety case for migration.</p>
-      </Card>
-    </div>}
+    {!dim && <div style={{marginBottom:16}}>
+        <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",marginBottom:openPerspective?12:0}}>
+          <button type="button" onClick={()=>setOpenPerspective(openPerspective==="finance"?null:"finance")} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"6px 14px",border:`1px solid ${openPerspective==="finance"?"#00d4aa":C.border}`,borderRadius:999,background:openPerspective==="finance"?"#f0faf8":"#fff",color:openPerspective==="finance"?"#0F4146":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
+            <span style={{width:8,height:8,borderRadius:2,background:"#00d4aa"}}/>
+            Finance perspective (CFO lens)
+            <span style={{fontSize:10,opacity:0.6,transform:openPerspective==="finance"?"rotate(180deg)":"rotate(0deg)",transition:"transform .15s"}}>{"\u25BC"}</span>
+          </button>
+          <button type="button" onClick={()=>setOpenPerspective(openPerspective==="clinical"?null:"clinical")} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"6px 14px",border:`1px solid ${openPerspective==="clinical"?"#d4507a":C.border}`,borderRadius:999,background:openPerspective==="clinical"?"#faf5f7":"#fff",color:openPerspective==="clinical"?"#d4507a":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
+            <span style={{width:8,height:8,borderRadius:2,background:"#d4507a"}}/>
+            Clinical perspective (CCIO / CMIO lens)
+            <span style={{fontSize:10,opacity:0.6,transform:openPerspective==="clinical"?"rotate(180deg)":"rotate(0deg)",transition:"transform .15s"}}>{"\u25BC"}</span>
+          </button>
+        </div>
+        {openPerspective === "finance" && <Card style={{margin:0,background:"#f0faf8",borderLeft:"4px solid #00d4aa"}}>
+          <p style={{fontSize:13,color:C.textMid,margin:0,lineHeight:1.6}}>This represents recurring annual savings against legacy cost base. <strong>Decommissioning ({fmtK(r.decomSave)}) is a hard cash saving</strong> from removed licensing, hosting, and support contracts. <strong>Clinician capacity ({fmtK(r.timeSave)})</strong> is realisable productivity at NHS blended rate (£55/hr) with {Math.round(r.realisation*100)}% realisation factor applied. Three-year phased savings reflect typical archiving and decommissioning timelines.</p>
+        </Card>}
+        {openPerspective === "clinical" && <Card style={{margin:0,background:"#faf5f7",borderLeft:"4px solid #d4507a"}}>
+          <p style={{fontSize:13,color:C.textMid,margin:0,lineHeight:1.6}}>The financial savings shown above are real and material for your CFO. But the more compelling case for the CCIO/CMIO is what they enable: <strong>{fmtNum(r.hrsSaved)} hours of clinical time freed each year ({r.fteEquivalent} FTE equivalent), reduced information gaps at care transitions, and {r.hasClinicalScope ? fmtNum(r.safetyMedErrorsAvoided) : "0"} potentially avoidable medication errors</strong>. The avoidable harm reduction section below quantifies the patient safety case for migration.</p>
+        </Card>}
+      </div>}
 
     {dim&&<div style={{textAlign:"center",padding:"60px 20px",color:C.textMuted}}><div style={{marginBottom:12,opacity:.3,display:"flex",justifyContent:"center"}}><SIcon name="chart" size={48} color={C.textMuted}/></div><div style={{fontSize:16,fontWeight:600,color:C.textMid}}>Select a scenario above</div></div>}
 
