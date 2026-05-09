@@ -313,14 +313,6 @@ function AnimatedK({ value, active }) { const v = useCountUp(value, 1200, active
    CALC ENGINE – tiered systems, bed-scaled costs, no parallel-run
    ═══════════════════════════════════════════════════════════════════════ */
 
-const UK_PROVIDER_PRESET_MAP = {
-  ics: "REGIONAL",
-  teaching: "LARGE",
-  acute: "TYPICAL",
-  community: "SMALL",
-  specialist: "SMALL",
-};
-
 const SCENARIO = {
   CONSERVATIVE: { decom_pct: 0.85, realisation: 0.20, safety: 0.15 },
   EXPECTED:     { decom_pct: 1.00, realisation: 0.30, safety: 0.25 },
@@ -433,7 +425,7 @@ const PRESETS = {
   SMALL: { label:"Specialist / Smaller Trust", desc:"~250 beds · 1 org · 8 systems", data:{ bed_count:250, org_count:1, journey:"HAVE_EPR", tiers:{enterprise:0,departmental:3,niche:5}, data_types:{...emptyDt(),EPR_PAS:1,DOC_ECM:1,SCANNED_NOTES:1,RAD_REPORTS:1}, complexity_level:"LOW", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   TYPICAL: { label:"Typical Acute Trust", desc:"~800 beds · 1 org · 15 systems", data:{ bed_count:800, org_count:1, journey:"EVALUATING", tiers:{enterprise:1,departmental:5,niche:9}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:1,RAD_REPORTS:1,DOC_ECM:1,SCANNED_NOTES:1}, complexity_level:"TYPICAL", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
   LARGE: { label:"Large Acute Trust", desc:"~1400 beds · 1 org · 25 systems", data:{ bed_count:1400, org_count:1, journey:"EVALUATING", tiers:{enterprise:2,departmental:8,niche:15}, data_types:{...emptyDt(),EPR_PAS:1,ED:1,THEATRES:1,LAB:2,RAD_REPORTS:1,DOC_ECM:2,SCANNED_NOTES:1,MATERNITY:1,COMMUNITY:1}, complexity_level:"HIGH", data_quality_level:"MIXED", decom_retire_rate:0.75 }},
-  REGIONAL: { label:"Multi-Trust / Regional Programme", desc:"~3500 beds · 4 orgs · 70+ systems", data:{ bed_count:3500, org_count:4, journey:"EVALUATING", tiers:{enterprise:5,departmental:22,niche:45}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
+  REGIONAL: { label:"Integrated Care System / Multi-Trust Programme", desc:"~3500 beds · 4 orgs · 70+ systems", data:{ bed_count:3500, org_count:4, journey:"EVALUATING", tiers:{enterprise:5,departmental:22,niche:45}, data_types:{...emptyDt(),EPR_PAS:3,ED:2,THEATRES:2,LAB:3,RAD_REPORTS:2,DOC_ECM:3,SCANNED_NOTES:2,MATERNITY:2,COMMUNITY:2,MENTAL_HEALTH:1,REFERRALS:1}, complexity_level:"HIGH", data_quality_level:"POOR", decom_retire_rate:0.70 }},
 };
 
 // ── Model constants ──
@@ -748,7 +740,6 @@ const tdR_={padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`,textAl
 
 function ROICalculator() {
   const [inputs, setInputs] = useState({...PRESETS.TYPICAL.data, data_types:{...PRESETS.TYPICAL.data.data_types}, tiers:{...PRESETS.TYPICAL.data.tiers}});
-  const [providerType, setProviderType] = useState("acute");
   const [activePreset, setActivePreset] = useState(null);
   const [galenMigrationCost, setGalenMigrationCost] = useState(0);
   const [galenAnnualCost, setGalenAnnualCost] = useState(0);
@@ -1836,29 +1827,32 @@ function ROICalculator() {
         <span style={{width:24,height:24,borderRadius:"50%",background:C.accent,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>1</span>
         What type of organisation are you?
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
-        {(() => { const p = {k:"ics",l:"Integrated Care System / Multi-Trust Programme",d:"Regional / multi-trust programme, multiple sites",icon:"building"};
-          return <button type="button" key={p.k} onClick={()=>{setProviderType(p.k);const pk=UK_PROVIDER_PRESET_MAP[p.k];if(pk)applyPreset(pk);touch(1);}} className="roi-preset" style={{gridColumn:"1 / -1",width:"100%",padding:"14px 16px",textAlign:"left",border:providerType===p.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:providerType===p.k?C.accentPale:"#fff",cursor:"pointer"}}>
-            <div style={{fontSize:14,fontWeight:700,color:providerType===p.k?C.accent:C.text,display:"flex",alignItems:"center",gap:8}}><SIcon name={p.icon} size={20} color={providerType===p.k?C.accent:C.textMid}/> {p.l}</div>
-            <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{p.d}</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
+        {/* ICS full-width on top */}
+        {(() => { const k = "REGIONAL", p = PRESETS[k];
+          return <button type="button" key={k} onClick={()=>{applyPreset(k);touch(1);}} disabled={thinking} className="roi-preset" style={{gridColumn:"1 / -1",width:"100%",padding:"14px 16px",textAlign:"left",border:activePreset===k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:activePreset===k?C.accentPale:"#fff",cursor:thinking?"wait":"pointer",opacity:thinking?0.6:1}}>
+            <div style={{fontSize:14,fontWeight:700,color:activePreset===k?C.accent:C.text,display:"flex",alignItems:"center",gap:8}}><SIcon name="building" size={20} color={activePreset===k?C.accent:C.textMid}/> {p.label}</div>
+            <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{p.desc}</div>
           </button>;
         })()}
+        {/* Single-trust presets in size order, 3-up */}
         {[
-          {k:"teaching",l:"Teaching Hospital / Tertiary",d:"Large research-active trust, ~1,400 beds",icon:"graduation"},
-          {k:"acute",l:"Acute NHS Trust",d:"District general, ~800 beds",icon:"chart"},
-          {k:"community",l:"Community / District",d:"Smaller acute or community trust",icon:"heart"},
-          {k:"specialist",l:"Specialist Trust",d:"Single-specialty, e.g. cancer or cardiac",icon:"shield"},
-        ].map(p=><button type="button" key={p.k} onClick={()=>{setProviderType(p.k);const pk=UK_PROVIDER_PRESET_MAP[p.k];if(pk)applyPreset(pk);touch(1);}} className="roi-preset" style={{width:"100%",padding:"12px 14px",textAlign:"left",border:providerType===p.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:providerType===p.k?C.accentPale:"#fff",cursor:"pointer"}}>
-          <div style={{fontSize:13,fontWeight:700,color:providerType===p.k?C.accent:C.text,display:"flex",alignItems:"center",gap:8}}><SIcon name={p.icon} size={18} color={providerType===p.k?C.accent:C.textMid}/> {p.l}</div>
-          <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{p.d}</div>
-        </button>)}
+          {k:"LARGE", icon:"hospital"},
+          {k:"TYPICAL", icon:"chart"},
+          {k:"SMALL", icon:"shield"},
+        ].map(({k, icon}) => { const p = PRESETS[k];
+          return <button type="button" key={k} onClick={()=>{applyPreset(k);touch(1);}} disabled={thinking} className="roi-preset" style={{width:"100%",padding:"12px 14px",textAlign:"left",border:activePreset===k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:activePreset===k?C.accentPale:"#fff",cursor:thinking?"wait":"pointer",opacity:thinking?0.6:1}}>
+            <div style={{fontSize:13,fontWeight:700,color:activePreset===k?C.accent:C.text,display:"flex",alignItems:"center",gap:8}}><SIcon name={icon} size={18} color={activePreset===k?C.accent:C.textMid}/> {p.label}</div>
+            <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{p.desc}</div>
+          </button>;
+        })}
       </div>
       <div style={{padding:"12px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`,fontSize:12,color:C.textMuted,lineHeight:1.6}}>
-        {providerType === "specialist" && "Specialist trusts typically run a leaner legacy estate but face complex sub-specialty system retirements (e.g. radiotherapy, cath lab)."}
-        {providerType === "community" && "Community / district trusts often have many small departmental and standalone systems. EPR migration drives strong decommission savings."}
-        {providerType === "acute" && "Acute trusts have the most balanced ROI profile — meaningful decommission savings combined with substantial clinician time freed."}
-        {providerType === "teaching" && "Teaching hospitals carry the highest system complexity (research databases, clinical trials, audit platforms, training systems). Migration unlocks both savings and research compliance efficiency."}
-        {providerType === "ics" && "Integrated Care Systems and multi-trust programmes capture additional consolidation savings — duplicate systems eliminated across constituent trusts and shared infrastructure."}
+        {activePreset === "SMALL" && "Specialist or smaller trusts typically run a leaner legacy estate but face complex sub-specialty system retirements (e.g. radiotherapy, cath lab)."}
+        {activePreset === "TYPICAL" && "Acute trusts have the most balanced ROI profile — meaningful decommission savings combined with substantial clinician time freed."}
+        {activePreset === "LARGE" && "Large acute and teaching trusts carry the highest single-site system complexity (research databases, clinical trials, audit platforms, training systems). Migration unlocks both savings and research compliance efficiency."}
+        {activePreset === "REGIONAL" && "Integrated Care Systems and multi-trust programmes capture additional consolidation savings — duplicate systems eliminated across constituent trusts and shared infrastructure."}
+        {!activePreset && "Pick the option that best matches your organisation. You can fine-tune beds, systems, and other details in later steps."}
       </div>
     </Card>
 
@@ -1896,16 +1890,6 @@ function ROICalculator() {
         <span style={{width:24,height:24,borderRadius:"50%",background:step>=1?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>3</span>
         Organisation scale
       </div>
-      <div style={{marginBottom:20,padding:"16px 18px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
-        <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Quick start {"\u2013"} load a template</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-          {Object.entries(PRESETS).map(([k,p])=><button type="button" key={k} onClick={()=>applyPreset(k)} disabled={thinking} className="roi-preset" style={{width:"100%",padding:"10px 12px",textAlign:"left",border:activePreset===k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:activePreset===k?C.accentPale:"#fff",cursor:thinking?"wait":"pointer",opacity:thinking?0.6:1}}>
-            <div style={{fontSize:13,fontWeight:700,color:activePreset===k?C.accent:C.text}}>{p.label}</div>
-            <div style={{fontSize:11,color:C.textMuted,marginTop:1}}>{p.desc}</div>
-          </button>)}
-        </div>
-      </div>
-
       <AnimatedSlider label={<span>Organisations in scope<InfoTip text="How many separate NHS organisations are included? For multi-org, you can break down beds and systems per organisation below."/></span>} value={inputs.org_count} min={1} max={10} step={1} onChange={v=>handleOrgCountChange(v)}/>
 
       <div style={{marginTop:20}}>
