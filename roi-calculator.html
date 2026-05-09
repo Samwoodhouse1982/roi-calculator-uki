@@ -2312,6 +2312,56 @@ function ROICalculator() {
       <ResultCard dimmed={dim} label={`Total savings (${r.rampYears}-year)`} value={an?fmtK(r.totalRamp):"–"} sub={an?`Phased ramp ${r.rampPcts.map(p=>Math.round(p*100)+"%").join("/")}`:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
     </div>
 
+    {/* Year-by-year stacked bar chart */}
+    {!dim && (() => {
+      const segs = [
+        {label:"Decommission",val:r.decomSave,color:"#0F4146"},
+        {label:"Clinical capacity",val:r.timeSave,color:"#1a8a7a"},
+        ...(r.qualitySavings > 0 ? [{label:"Quality / cost avoidance",val:r.qualitySavings,color:"#d4507a"}] : []),
+      ].filter(s=>s.val>0);
+      const total = segs.reduce((a,s)=>a+s.val,0);
+      if (total <= 0) return null;
+      const years = r.rampPcts.map((p,i)=>({label:`Year ${i+1}`, pct:p}));
+      const maxYr = Math.max(...years.map(y=>total*y.pct));
+      return <Card style={{marginBottom:16}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4,flexWrap:"wrap",gap:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:40,height:40,borderRadius:10,background:`${C.accent}15`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <SIcon name="chart" size={22} color={C.accent}/>
+            </div>
+            <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{r.rampYears}-year savings projection</h3>
+          </div>
+          <div style={{display:"inline-flex",gap:0,padding:3,background:"#f8fafb",border:`1px solid ${C.border}`,borderRadius:999}}>
+            {[3,5].map(yr=><button type="button" key={yr} onClick={()=>setRampYears(yr)} style={{padding:"4px 12px",border:"none",borderRadius:999,background:rampYears===yr?C.accent:"transparent",color:rampYears===yr?"#fff":C.textMid,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{yr}-year</button>)}
+          </div>
+        </div>
+        <div style={{fontSize:12,color:C.textMuted,marginBottom:16}}>Builds from {fmtK(Math.round(total*r.rampPcts[0]))} in Year 1 to {fmtK(total)}/yr at steady state</div>
+        <div style={{display:"flex",alignItems:"flex-end",gap:24,height:240,padding:"20px 12px",background:"#f8fafb",borderRadius:8,marginBottom:12,justifyContent:"space-evenly"}}>
+          {years.map((yr,yi)=>{
+            const yrTot = total * yr.pct;
+            const h = (yrTot / maxYr) * 200;
+            return <div key={yi} style={{display:"flex",flexDirection:"column",alignItems:"center",flex:"1 1 0",minWidth:80,maxWidth:180}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.accent,marginBottom:6}}>{fmtK(yrTot)}</div>
+              <div style={{width:"100%",height:h,borderRadius:"6px 6px 0 0",overflow:"hidden",display:"flex",flexDirection:"column-reverse"}}>
+                {segs.map((s,si)=>{
+                  const segPct = (s.val * yr.pct) / yrTot;
+                  return <div key={si} style={{height:`${segPct*100}%`,background:s.color,borderTop:si>0?"1px solid rgba(255,255,255,0.3)":"none"}} title={`${s.label}: ${fmtK(Math.round(s.val*yr.pct))}`}/>;
+                })}
+              </div>
+              <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginTop:8}}>{yr.label}</div>
+              <div style={{fontSize:10,color:C.textMuted}}>{Math.round(yr.pct*100)}%</div>
+            </div>;
+          })}
+        </div>
+        <div style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center"}}>
+          {segs.map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:C.textMid}}>
+            <div style={{width:10,height:10,borderRadius:2,background:s.color}}/>
+            {s.label}
+          </div>)}
+        </div>
+      </Card>;
+    })()}
+
     {viewMode === "detailed" && <>
     {/* Decom – tiered breakdown */}
     <Card dimmed={dim} style={{borderLeft:"4px solid #0F4146"}}>
@@ -2461,55 +2511,6 @@ function ROICalculator() {
         For methodology, evidence, and breakdown by component, switch to <button type="button" onClick={()=>setViewMode("detailed")} style={{background:"none",border:"none",color:C.accent,fontWeight:600,cursor:"pointer",textDecoration:"underline",padding:0,fontFamily:"inherit",fontSize:12}}>Detailed view</button>
       </div>
     </Card>}
-
-        {/* Year-by-year stacked bar chart */}
-    {!dim && (() => {
-      const segs = [
-        {label:"Decommission",val:r.decomSave,color:"#0F4146"},
-        {label:"Capacity",val:r.timeSave,color:"#1a7a7a"},
-        {label:"Excess bed days avoided",val:r.excessDayCostAvoided||0,color:"#3d8a8a"},
-        {label:"Indemnity reduction",val:r.malpracticeReduction||0,color:"#d4507a"},
-        {label:"Duplicate testing",val:r.duplicateTestSaving||0,color:"#e67e22"},
-      ].filter(s=>s.val>0);
-      const total = segs.reduce((a,s)=>a+s.val,0);
-      if (total <= 0) return null;
-      const years = r.rampPcts.map((p,i)=>({label:`Year ${i+1}`, pct:p}));
-      const maxYr = Math.max(...years.map(y=>total*y.pct));
-      return <Card style={{marginBottom:24}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
-          <h3 style={{fontSize:16,fontWeight:700,margin:0,display:"flex",alignItems:"center",gap:8}}>
-            <SIcon name="chart" size={20} color={C.accent}/>
-            {r.rampYears}-year savings build-up
-          </h3>
-          <div style={{display:"inline-flex",gap:0,padding:3,background:"#f8fafb",border:`1px solid ${C.border}`,borderRadius:999}}>
-            {[3,5].map(yr=><button type="button" key={yr} onClick={()=>setRampYears(yr)} style={{padding:"4px 12px",border:"none",borderRadius:999,background:rampYears===yr?C.accent:"transparent",color:rampYears===yr?"#fff":C.textMid,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{yr}-year</button>)}
-          </div>
-        </div>
-        <div style={{display:"flex",alignItems:"flex-end",gap:24,height:240,padding:"20px 12px",background:"#f8fafb",borderRadius:8,marginBottom:12,justifyContent:"space-evenly"}}>
-          {years.map((yr,yi)=>{
-            const yrTot = total * yr.pct;
-            const h = (yrTot / maxYr) * 200;
-            return <div key={yi} style={{display:"flex",flexDirection:"column",alignItems:"center",flex:"1 1 0",minWidth:80,maxWidth:180}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.accent,marginBottom:6}}>{fmtK(yrTot)}</div>
-              <div style={{width:"100%",height:h,borderRadius:"6px 6px 0 0",overflow:"hidden",display:"flex",flexDirection:"column-reverse"}}>
-                {segs.map((s,si)=>{
-                  const segPct = (s.val * yr.pct) / yrTot;
-                  return <div key={si} style={{height:`${segPct*100}%`,background:s.color,borderTop:si>0?"1px solid rgba(255,255,255,0.3)":"none"}} title={`${s.label}: ${fmtK(Math.round(s.val*yr.pct))}`}/>;
-                })}
-              </div>
-              <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginTop:8}}>{yr.label}</div>
-              <div style={{fontSize:10,color:C.textMuted}}>{Math.round(yr.pct*100)}%</div>
-            </div>;
-          })}
-        </div>
-        <div style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center"}}>
-          {segs.map((s,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:C.textMid}}>
-            <div style={{width:10,height:10,borderRadius:2,background:s.color}}/>
-            {s.label}
-          </div>)}
-        </div>
-      </Card>;
-    })()}
 
     {/* Year-by-year */}
     <Card dimmed={dim}>
