@@ -3392,7 +3392,7 @@ function ROICalculator() {
           ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:90,padding:"10px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:8,cursor:"pointer",background:scenarioMode===s.k?C.accentPale:"#fff",transition:"all .15s"}}>
           <div style={{fontSize:11,fontWeight:600,color:scenarioMode===s.k?C.accent:C.textMuted,textTransform:"uppercase",letterSpacing:".03em",marginBottom:2}}>{s.l}</div>
           <div style={{fontSize:18,fontWeight:800,color:scenarioMode===s.k?C.accent:C.text}}>{fmtK(s.res.annualWithReimbursement)}</div>
-          <div style={{fontSize:10,color:C.textMuted,marginTop:1}}>{s.s} \u00b7 /yr</div>
+          <div style={{fontSize:10,color:C.textMuted,marginTop:1}}>{s.s} · /yr</div>
         </button>)}
       </div>
     </Card>
@@ -3530,11 +3530,28 @@ function ROICalculator() {
 
 
     {!dim && <>
+    {/* Timescale selector */}
+    <div style={{display:"flex",justifyContent:"center",marginBottom:14}}>
+      <div style={{display:"inline-flex",gap:0,padding:3,background:"#fff",border:`1px solid ${C.border}`,borderRadius:999,flexWrap:"wrap"}}>
+        {[
+          {k:"year1",l:"First year"},
+          {k:"total3",l:"3-year total"},
+          {k:"total5",l:"5-year total"},
+          {k:"annual",l:"Yearly average"},
+        ].map(t => <button type="button" key={t.k} onClick={()=>{setViewTimescale(t.k);if(t.k==="total3")setRampYears(3);if(t.k==="total5")setRampYears(5);}} style={{padding:"7px 16px",border:"none",borderRadius:999,background:viewTimescale===t.k?C.accent:"transparent",color:viewTimescale===t.k?"#fff":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s",whiteSpace:"nowrap"}}>{t.l}</button>)}
+      </div>
+    </div>
+
 {/* Hero summary */}
     <div style={{textAlign:"center",padding:"8px 0 24px"}}>
-      <div style={{fontSize:13,fontWeight:600,color:C.textMuted,letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>Estimated annual savings at steady state</div>
-      <div style={{fontSize:52,fontWeight:800,color:C.accent,letterSpacing:"-2px",lineHeight:1}}>{an ? <AnimatedK value={r.annualWithReimbursement} active={an}/> : "\u2013"}</div>
-      <div style={{fontSize:14,color:C.textMid,marginTop:8}}>per year ({rampYears}-year total: <strong style={{color:C.accent}}>{an ? fmtK(r.total3WithReimbursement) : "\u2013"}</strong>)</div>
+      <div style={{fontSize:13,fontWeight:600,color:C.textMuted,letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>{ts.heroLabel}</div>
+      <div style={{fontSize:52,fontWeight:800,color:C.accent,letterSpacing:"-2px",lineHeight:1}}>{an ? <AnimatedK value={Math.round(r.annualWithReimbursement * ts.mult)} active={an}/> : "\u2013"}</div>
+      <div style={{fontSize:14,color:C.textMid,marginTop:8}}>
+        {viewTimescale === "annual"
+          ? <>per year ({rampYears}-year total: <strong style={{color:C.accent}}>{an ? fmtK(r.total3WithReimbursement) : "\u2013"}</strong>)</>
+          : <>{ts.subContext} · steady state: <strong style={{color:C.accent}}>{an ? fmtK(r.annualWithReimbursement) : "\u2013"}/yr</strong></>
+        }
+      </div>
     </div>
 
     {/* Composition bar */}
@@ -3566,12 +3583,12 @@ function ROICalculator() {
 
     {/* KPI cards */}
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
-      <ResultCard dimmed={dim} label="Legacy decommission" value={an?fmtK(r.decomSave):"\u2013"} sub={an?r.decom+" of "+r.legacy+" systems retired":""} bg={C.greenPale} border="#c3ddd3" valueColor="#0F4146" />
-      <ResultCard dimmed={dim} label={r.isAgedCare?"Places capacity":r.isNDIS?"Staff capacity":"Clinical capacity"} value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"\u2013"} sub={an?fmtK(r.timeSave)+"/yr value":""} bg="#e8faf6" border="#b0e8dc" valueColor="#1a8a7a" />
-      <ResultCard dimmed={dim} info={r.isAgedCare?"AN-ACC: Australian National Aged Care Classification - the funding model for residential aged care.":r.isNDIS?"NDIS: National Disability Insurance Scheme":"ABF: Activity-Based Funding. NWAU: National Weighted Activity Unit. NEP: National Efficient Price per NWAU (A$7,258 for 2025-26 per IHACPA Determination)."} label={r.isAgedCare?"Funding & efficiency":r.isNDIS?"Revenue & efficiency":"ABF efficiency & revenue"} value={an?fmtK(r.reimbursementImpact):"\u2013"} sub={an?(r.isAgedCare?"AN-ACC + agency + compliance":r.isNDIS?"Claims + utilisation + compliance + retention":"ABF efficiency"+(r.privateRevRecovery>0?" + private revenue":"")):"\u2013"} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
-      {r.qualitySavings > 0 && <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"\u2013"} sub={an?(r.isAgedCare?"Avoidable harm reduction":r.isNDIS?"":"Indemnity + bed days + testing + legal + readmission"):"\u2013"} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />}
-      {r.academicSavings > 0 && <ResultCard dimmed={dim} label="Academic programme" value={an?fmtK(r.academicSavings):"\u2013"} sub={an?"Research + teaching + compliance":""} bg="#eef0f8" border="#c4cce0" valueColor="#2c3e6b" />}
-      {r.mergeSavings > 0 && <ResultCard dimmed={dim} label="Network consolidation" value={an?fmtK(r.mergeSavings):"\u2013"} sub={an?r.duplicateSystems+" duplicate systems":""} bg="#f0eefa" border="#c4c0e8" valueColor="#6c5ce7" />}
+      <ResultCard dimmed={dim} info={`Direct annual cost savings from switching off legacy systems. Calculated from per-system licensing, hosting, and support costs by tier (Enterprise / Departmental / Standalone), modelled on Australian public-sector contract benchmarks.`} label="Legacy decommission" value={an?fmtK(r.decomSave):"\u2013"} sub={an?r.decom+" of "+r.legacy+" systems retired":""} bg={C.greenPale} border="#c3ddd3" valueColor="#0F4146" />
+      <ResultCard dimmed={dim} info={`Clinician time freed when legacy system switching is eliminated. Based on Bartek et al JIMI 2023 (PRIMARY: 2.78M EHR audit-log events; switch penalty 0.04/system) corroborated by Westbrook et al JAMIA 2010. Valued at A$65/hr blended rate (AIHW workforce data). Only ${Math.round(r.realisation*100)}% counted as realisable capacity. This represents capacity redirected to patient care, not headcount reduction.`} label={r.isAgedCare?"Places capacity":r.isNDIS?"Staff capacity":"Clinical capacity"} value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"\u2013"} sub={an?fmtK(r.timeSave)+"/yr value":""} bg="#e8faf6" border="#b0e8dc" valueColor="#1a8a7a" />
+      <ResultCard dimmed={dim} info={r.isAgedCare?"AN-ACC: Australian National Aged Care Classification - the funding model for residential aged care.":r.isNDIS?"NDIS: National Disability Insurance Scheme":"ABF: Activity-Based Funding. NWAU: National Weighted Activity Unit. NEP: National Efficient Price per NWAU (A$7,258 for 2025-26 per IHACPA Determination)."} label={r.isAgedCare?"Funding & efficiency":r.isNDIS?"Revenue & efficiency":"Reimbursement & revenue"} value={an?fmtK(r.reimbursementImpact):"\u2013"} sub={an?(r.isAgedCare?"AN-ACC accuracy + agency reduction":r.isNDIS?"Claims + utilisation + retention":(r.privateRevRecovery>0?"NWAU recovery + private patient revenue":"NWAU recovery + denial reduction")):"\u2013"} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
+      {r.qualitySavings > 0 && <ResultCard dimmed={dim} info={`Cashable cost avoidance from reduced clinical risk: medical indemnity reduction (3% of A$20,000/bed VMIA exposure), excess bed-day savings (QAHCS/AIHW at A$3,100/day), duplicate testing reduction (22% rate per Banker et al 2024), e-Discovery savings, and prevented unplanned readmissions (12% rate, AIHW; 0.6pp reduction per Vest et al JAMIA 2019).`} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"\u2013"} sub={an?(r.isAgedCare?"Avoidable harm reduction":r.isNDIS?"":"Indemnity + bed days + testing + legal + readmission"):"\u2013"} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />}
+      {r.academicSavings > 0 && <ResultCard dimmed={dim} info={`Research and teaching efficiency from system consolidation: research system decommission (3.5 systems per 100 beds), 25% reduction in teaching compliance reporting overhead, and reduced workflow complexity for medical students and registrars.`} label="Academic programme" value={an?fmtK(r.academicSavings):"\u2013"} sub={an?"Research + teaching + compliance":""} bg="#eef0f8" border="#c4cce0" valueColor="#2c3e6b" />}
+      {r.mergeSavings > 0 && <ResultCard dimmed={dim} info={`Savings from eliminating duplicate systems and infrastructure across {r.duplicateSystems}+ duplicate systems post-network consolidation. Assumes 35% of legacy systems duplicated across facilities and A$350k per district for duplicate data centre, network, and service desk costs.`} label="Network consolidation" value={an?fmtK(r.mergeSavings):"\u2013"} sub={an?r.duplicateSystems+" duplicate systems":""} bg="#f0eefa" border="#c4c0e8" valueColor="#6c5ce7" />}
     </div>
 
     {/* Year-by-year stacked bar chart */}
@@ -3590,7 +3607,10 @@ function ROICalculator() {
       const totalSum = pcts.reduce((s,p) => s + r.annualWithReimbursement * p, 0);
       const totalH = barH;
       return <div style={{padding:"0 20px",marginBottom:24}}>
-        <div style={{fontSize:13,fontWeight:700,color:C.textMid,marginBottom:12}}>{rampYears}-year savings projection</div>
+        <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:8}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.textMid}}>{rampYears}-year savings projection</div>
+          <div style={{fontSize:11,color:C.textMuted,fontStyle:"italic"}}>Hover any bar segment for year-by-year detail</div>
+        </div>
         <div style={{display:"flex",gap:8,alignItems:"flex-end",minHeight:barH+50,paddingTop:8}}>
           {pcts.map((p,yi) => {
             const h = Math.round(barH * p / maxP);
@@ -3598,7 +3618,7 @@ function ROICalculator() {
             return <div key={yi} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center"}}>
               <div style={{fontSize:11,fontWeight:700,color:C.accent,marginBottom:4}}>{fmtK(yrTotal)}</div>
               <div style={{width:"100%",height:h,borderRadius:"8px 8px 4px 4px",overflow:"hidden",display:"flex",flexDirection:"column",position:"relative"}}>
-                {segs.map((s,si) => <div key={si} title={s.label+": "+fmtK(Math.round(s.val*p))+"/yr"} style={{flex:s.val,background:s.color,minHeight:1,cursor:"default",transition:"opacity .2s"}} />)}
+                {segs.map((s,si) => <div key={si} title={"Year "+(yi+1)+" · "+s.label+": "+fmtK(Math.round(s.val*p))+" ("+Math.round(p*100)+"% of "+fmtK(s.val)+" steady state)"} style={{flex:s.val,background:s.color,minHeight:1,cursor:"default",transition:"opacity .2s"}} />)}
               </div>
               <div style={{fontSize:11,color:C.textMuted,marginTop:6,fontWeight:600}}>Year {yi+1}</div>
               <div style={{fontSize:10,color:C.textMuted}}>{Math.round(p*100)}%</div>
@@ -3608,7 +3628,7 @@ function ROICalculator() {
         <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginTop:14}}>
           {segs.map((s,i) => <div key={i} style={{display:"flex",alignItems:"center",gap:4}}>
             <div style={{width:8,height:8,borderRadius:2,background:s.color}} />
-            <span style={{fontSize:10,color:C.textMid}}>{s.label}: <strong>{fmtK(s.val)}</strong>/yr</span>
+            <span style={{fontSize:10,color:C.textMid}}>{s.label}: <strong>{fmtK(s.val)}</strong>/yr at steady state</span>
           </div>)}
         </div>
       </div>;
@@ -3718,7 +3738,13 @@ function ROICalculator() {
 
         {/* ABF (Activity Based Funding) efficiency & revenue impact */}
     <Card dimmed={dim}>
-      <div style={{display:"flex",alignItems:"center"}}><h3 style={{fontSize:16,fontWeight:700,margin:"0 0 4px"}}>{r.isAgedCare ? "Aged care funding & efficiency" : r.isNDIS ? "NDIS revenue & efficiency" : (r.privateRevRecovery > 0 ? "Activity-Based Funding (ABF) efficiency & revenue" : "Activity-Based Funding (ABF) efficiency")}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:4}}>
+        <div style={{width:40,height:40,borderRadius:10,background:"#00d4aa15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <SIcon name="dollar" size={22} color="#00d4aa"/>
+        </div>
+        <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{r.isAgedCare ? "Aged care funding & efficiency" : r.isNDIS ? "NDIS revenue & efficiency" : (r.privateRevRecovery > 0 ? "Activity-Based Funding (ABF) efficiency & revenue" : "Activity-Based Funding (ABF) efficiency")}</h3>
+        <span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span>
+      </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Cashable benefits from improved ABF coding efficiency and private patient billing accuracy, attributed to EMR consolidation as a contributing factor.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
@@ -4014,7 +4040,7 @@ function ROICalculator() {
         {r.timeSave > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #e67e22`}}>
           <div style={{fontSize:11,color:C.textMuted}}>Clinician capacity freed</div>
           <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.timeSave)}</div>
-          <div style={{fontSize:10,color:C.textMuted}}>{fmtNum(r.hrsSaved)} hrs/yr \u00b7 {r.fteEquivalent} FTE</div>
+          <div style={{fontSize:10,color:C.textMuted}}>{fmtNum(r.hrsSaved)} hrs/yr · {r.fteEquivalent} FTE</div>
         </div>}
         {(r.reimbursementImpact||0) > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #00d4aa`}}>
           <div style={{fontSize:11,color:C.textMuted}}>{r.isAgedCare?"AN-ACC funding":r.isNDIS?"Claims & utilisation":"ABF efficiency"}</div>
