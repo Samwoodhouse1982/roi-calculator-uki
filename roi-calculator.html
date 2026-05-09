@@ -313,6 +313,14 @@ function AnimatedK({ value, active }) { const v = useCountUp(value, 1200, active
    CALC ENGINE – tiered systems, bed-scaled costs, no parallel-run
    ═══════════════════════════════════════════════════════════════════════ */
 
+const UK_PROVIDER_PRESET_MAP = {
+  ics: "REGIONAL",
+  teaching: "LARGE",
+  acute: "TYPICAL",
+  community: "SMALL",
+  specialist: "SMALL",
+};
+
 const SCENARIO = {
   CONSERVATIVE: { decom_pct: 0.85, realisation: 0.20, safety: 0.15 },
   EXPECTED:     { decom_pct: 1.00, realisation: 0.30, safety: 0.25 },
@@ -740,6 +748,7 @@ const tdR_={padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`,textAl
 
 function ROICalculator() {
   const [inputs, setInputs] = useState({...PRESETS.TYPICAL.data, data_types:{...PRESETS.TYPICAL.data.data_types}, tiers:{...PRESETS.TYPICAL.data.tiers}});
+  const [providerType, setProviderType] = useState("acute");
   const [activePreset, setActivePreset] = useState(null);
   const [scenarioMode, setScenarioMode] = useState(null);
   const [viewMode, setViewMode] = useState("executive");
@@ -847,7 +856,7 @@ function ROICalculator() {
       while (next.length < v) next.push({enterprise:1, departmental:3, niche:5});
       return next.slice(0, v);
     });
-    touch(1);
+    touch(2);
   }, [update, touch, inputs.org_count]);
 
   // Toggle per-org beds: initialise from current total
@@ -869,7 +878,7 @@ function ROICalculator() {
       setInputs(p => ({...p, bed_count: next.reduce((a,b) => a+b, 0)}));
       return next;
     });
-    setActivePreset(null); touch(1);
+    setActivePreset(null); touch(2);
   }, [touch]);
 
   // Toggle per-org systems: initialise from current tiers
@@ -894,7 +903,7 @@ function ROICalculator() {
       setInputs(p => ({...p, tiers: totals}));
       return next;
     });
-    setActivePreset(null); touch(2);
+    setActivePreset(null); touch(3);
   }, [touch]);
 
   const applyPreset=useCallback(key=>{
@@ -909,7 +918,7 @@ function ROICalculator() {
     setOrgBedsList(Array.from({length:n}, (_,i) => i===0 ? bedRem : bedEach));
     const splitT = (total) => { const each = Math.floor(total / n); return Array.from({length:n}, (_,i) => i===0 ? total - each*(n-1) : each); };
     setOrgTiersList(Array.from({length:n}, (_,i) => ({enterprise:splitT(d.tiers.enterprise)[i], departmental:splitT(d.tiers.departmental)[i], niche:splitT(d.tiers.niche)[i]})));
-    setTimeout(()=>{setThinking(false);setStep(3);},1800);
+    setTimeout(()=>{setThinking(false);setStep(4);},1800);
   },[resetOv]);
   const goTo=useCallback((s,ref)=>{setStep(p=>Math.max(p,s));scrollTo(ref);},[]);
 
@@ -1735,7 +1744,7 @@ function ROICalculator() {
           </div>
         </Card>
         <Card style={{marginBottom:12}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:14}}>1. What type of organisation are you?</div>
+          <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:14}}>Organisation scale</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:8}}>
             <div>
               <div style={{fontSize:11,fontWeight:600,color:C.textMid,marginBottom:6}}>Trusts / sites</div>
@@ -1811,6 +1820,37 @@ function ROICalculator() {
     <Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
         <span style={{width:24,height:24,borderRadius:"50%",background:C.accent,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>1</span>
+        What type of organisation are you?
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
+        {(() => { const p = {k:"ics",l:"Integrated Care System / Multi-Trust Programme",d:"Regional / multi-trust programme, multiple sites",icon:"building"};
+          return <button type="button" key={p.k} onClick={()=>{setProviderType(p.k);const pk=UK_PROVIDER_PRESET_MAP[p.k];if(pk)applyPreset(pk);touch(1);}} className="roi-preset" style={{gridColumn:"1 / -1",width:"100%",padding:"14px 16px",textAlign:"left",border:providerType===p.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:providerType===p.k?C.accentPale:"#fff",cursor:"pointer"}}>
+            <div style={{fontSize:14,fontWeight:700,color:providerType===p.k?C.accent:C.text,display:"flex",alignItems:"center",gap:8}}><SIcon name={p.icon} size={20} color={providerType===p.k?C.accent:C.textMid}/> {p.l}</div>
+            <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{p.d}</div>
+          </button>;
+        })()}
+        {[
+          {k:"teaching",l:"Teaching Hospital / Tertiary",d:"Large research-active trust, ~1,400 beds",icon:"graduation"},
+          {k:"acute",l:"Acute NHS Trust",d:"District general, ~800 beds",icon:"chart"},
+          {k:"community",l:"Community / District",d:"Smaller acute or community trust",icon:"heart"},
+          {k:"specialist",l:"Specialist Trust",d:"Single-specialty, e.g. cancer or cardiac",icon:"shield"},
+        ].map(p=><button type="button" key={p.k} onClick={()=>{setProviderType(p.k);const pk=UK_PROVIDER_PRESET_MAP[p.k];if(pk)applyPreset(pk);touch(1);}} className="roi-preset" style={{width:"100%",padding:"12px 14px",textAlign:"left",border:providerType===p.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:providerType===p.k?C.accentPale:"#fff",cursor:"pointer"}}>
+          <div style={{fontSize:13,fontWeight:700,color:providerType===p.k?C.accent:C.text,display:"flex",alignItems:"center",gap:8}}><SIcon name={p.icon} size={18} color={providerType===p.k?C.accent:C.textMid}/> {p.l}</div>
+          <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{p.d}</div>
+        </button>)}
+      </div>
+      <div style={{padding:"12px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`,fontSize:12,color:C.textMuted,lineHeight:1.6}}>
+        {providerType === "specialist" && "Specialist trusts typically run a leaner legacy estate but face complex sub-specialty system retirements (e.g. radiotherapy, cath lab)."}
+        {providerType === "community" && "Community / district trusts often have many small departmental and standalone systems. EPR migration drives strong decommission savings."}
+        {providerType === "acute" && "Acute trusts have the most balanced ROI profile — meaningful decommission savings combined with substantial clinician time freed."}
+        {providerType === "teaching" && "Teaching hospitals carry the highest system complexity (research databases, clinical trials, audit platforms, training systems). Migration unlocks both savings and research compliance efficiency."}
+        {providerType === "ics" && "Integrated Care Systems and multi-trust programmes capture additional consolidation savings — duplicate systems eliminated across constituent trusts and shared infrastructure."}
+      </div>
+    </Card>
+
+    <Card>
+      <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+        <span style={{width:24,height:24,borderRadius:"50%",background:step>=0?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>2</span>
         Where are you on your EPR journey?
       </div>
       <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
@@ -1836,11 +1876,11 @@ function ROICalculator() {
     </Card>
     <LockedConnector/>
 
-    {/* STEP 1 – Org scale + presets */}
+    {/* STEP 2 – Org scale + presets */}
     <div ref={ref1} style={{animation:"fade-in .4s ease"}}><Card>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
-        <span style={{width:24,height:24,borderRadius:"50%",background:step>=0?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>2</span>
-        1. What type of organisation are you?
+        <span style={{width:24,height:24,borderRadius:"50%",background:step>=1?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>3</span>
+        Organisation scale
       </div>
       <div style={{marginBottom:20,padding:"16px 18px",background:C.bg,borderRadius:10,border:`1px solid ${C.borderLight}`}}>
         <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:8}}>Quick start {"\u2013"} load a template</div>
@@ -1863,7 +1903,7 @@ function ROICalculator() {
         )}
         {!perOrgBeds ? (
           <div>
-            <AnimatedSlider label={inputs.org_count <= 1 ? <span>Total acute beds<InfoTip text="Total beds across all organisations in scope. Scales clinical staff (2.8 per bed), system costs, and clinical safety baseline. Set to 0 for community providers."/></span> : null} value={inputs.bed_count} min={0} max={Math.max(8000, inputs.bed_count + 500)} step={10} onChange={v=>{update("bed_count",v);touch(1);}}/>
+            <AnimatedSlider label={inputs.org_count <= 1 ? <span>Total acute beds<InfoTip text="Total beds across all organisations in scope. Scales clinical staff (2.8 per bed), system costs, and clinical safety baseline. Set to 0 for community providers."/></span> : null} value={inputs.bed_count} min={0} max={Math.max(8000, inputs.bed_count + 500)} step={10} onChange={v=>{update("bed_count",v);touch(2);}}/>
           </div>
         ) : (
           <div>
@@ -1887,12 +1927,12 @@ function ROICalculator() {
       </div>
       {inputs.bed_count===0&&<div style={{marginTop:10,padding:"8px 14px",background:C.accentPale,borderRadius:6,fontSize:13,color:C.accent}}>Community provider {"\u2013"} model still works.</div>}
     </Card></div>
-    {step<1?<ContinuePrompt onClick={()=>goTo(1,ref2)} label="Next: legacy systems"/>:<LockedConnector/>}
+    {step<2?<ContinuePrompt onClick={()=>goTo(2,ref2)} label="Next: legacy systems"/>:<LockedConnector/>}
 
     {/* STEP 2 – Tiered legacy systems */}
-    <div ref={ref2} style={{animation:step>=1?"fade-in .4s ease":"none"}}><Card dimmed={step<1}>
+    <div ref={ref2} style={{animation:step>=2?"fade-in .4s ease":"none"}}><Card dimmed={step<2}>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4,display:"flex",alignItems:"center",gap:8}}>
-        <span style={{width:24,height:24,borderRadius:"50%",background:step>=1?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>3</span>
+        <span style={{width:24,height:24,borderRadius:"50%",background:step>=2?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>4</span>
         Legacy systems
         <span style={{marginLeft:"auto",display:"inline-flex",alignItems:"center",justifyContent:"center",minWidth:36,height:24,borderRadius:12,padding:"0 10px",background:C.accent,color:"#fff",fontSize:14,fontWeight:800,lineHeight:1}}>{totalSystems + flagships.length}</span>
       </div>
@@ -1965,7 +2005,7 @@ function ROICalculator() {
                   </span>
                 )}
               </div>
-              <AnimatedSlider value={inputs.tiers[t.tier]} min={0} max={t.max} step={1} onChange={v=>{updateTier(t.tier,v);touch(2);}} hideRange label={<span style={{fontSize:12,color:C.textMuted}}>{t.hint}</span>}/>
+              <AnimatedSlider value={inputs.tiers[t.tier]} min={0} max={t.max} step={1} onChange={v=>{updateTier(t.tier,v);touch(3);}} hideRange label={<span style={{fontSize:12,color:C.textMuted}}>{t.hint}</span>}/>
               {(() => {
                 const tierSys = KNOWN_SYSTEMS.filter(s => tierCatMatch(s.type, t.tier));
                 const selNames = flagships.map(f => f.known || f.name);
@@ -1981,7 +2021,7 @@ function ROICalculator() {
                       return <button type="button" key={sys.label} onClick={()=>{
                         if (sel) { setFlagships(p => p.filter(f => (f.known||f.name) !== sys.label)); }
                         else { addFlagship(sys, t.tier); }
-                        touch(2);
+                        touch(3);
                       }} style={{padding:"6px 10px",fontSize:11,fontWeight:sel?700:500,border:"1px solid "+(sel?C.accent:C.borderLight),borderRadius:8,background:sel?C.accentPale:"#fff",color:sel?C.accent:C.textMid,cursor:"pointer",fontFamily:"inherit"}}>
                         {sel ? "\u2713 " : ""}{sys.label}
                         <span style={{fontSize:10,color:C.textMuted,marginLeft:4}}>~{fmtK(systemCost(sys, inputs.bed_count))}</span>
@@ -2055,7 +2095,7 @@ function ROICalculator() {
           </div>}
         </>;
       })()}
-        <button type="button" onClick={()=>{addFlagship({cost:Math.round((100000 + inputs.bed_count * 300) / 1000) * 1000});touch(2);}} className="roi-link" style={{marginTop:14,border:"none",background:"none",color:C.accent,fontSize:13,fontWeight:700,cursor:"pointer",padding:"8px 0",display:"flex",alignItems:"center",gap:6}}>
+        <button type="button" onClick={()=>{addFlagship({cost:Math.round((100000 + inputs.bed_count * 300) / 1000) * 1000});touch(3);}} className="roi-link" style={{marginTop:14,border:"none",background:"none",color:C.accent,fontSize:13,fontWeight:700,cursor:"pointer",padding:"8px 0",display:"flex",alignItems:"center",gap:6}}>
           + Add a custom / unlisted system
         </button>
 
@@ -2117,12 +2157,12 @@ function ROICalculator() {
           </div>
         )}
     </Card></div>
-    {step<3?<ContinuePrompt onClick={()=>goTo(3,ref3)} label="Next: fine-tune"/>:<LockedConnector/>}
+    {step<4?<ContinuePrompt onClick={()=>goTo(4,ref3)} label="Next: fine-tune"/>:<LockedConnector/>}
 
     {/* STEP 3 - Fine-tune */}
-    <div ref={ref3} style={{animation:step>=3?"fade-in .4s ease":"none"}}><Card dimmed={step<3}>
+    <div ref={ref3} style={{animation:step>=4?"fade-in .4s ease":"none"}}><Card dimmed={step<4}>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
-        <span style={{width:24,height:24,borderRadius:"50%",background:step>=3?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>4</span>
+        <span style={{width:24,height:24,borderRadius:"50%",background:step>=4?C.accent:C.border,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>5</span>
         Fine-tune
       </div>
       <div style={{display:"flex",gap:16,flexWrap:"wrap",marginBottom:16}}>
@@ -2136,7 +2176,7 @@ function ROICalculator() {
     <LockedConnector/>
 
     {/* CTA */}
-    <div ref={refCta} style={{animation:step>=3?"fade-in .4s ease":"none",opacity:step<3?0.3:1,pointerEvents:step<3?"none":"auto",transition:"opacity .4s"}}>
+    <div ref={refCta} style={{animation:step>=4?"fade-in .4s ease":"none",opacity:step<4?0.3:1,pointerEvents:step<4?"none":"auto",transition:"opacity .4s"}}>
       <button type="button" className="roi-cta" onClick={() => {
           setPage("calculating"); setCalcStep(0); setScenarioMode("EXPECTED");
           scrollToTop();
