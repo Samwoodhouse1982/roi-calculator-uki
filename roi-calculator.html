@@ -1093,6 +1093,7 @@ function ROICalculator() {
   const [inputs, setInputs] = useState({...PRESETS.TYPICAL.data, tiers:{...PRESETS.TYPICAL.data.tiers}});
   const avgBedsPerHospital = inputs.org_count > 0 ? Math.round(inputs.bed_count / inputs.org_count) : 0;
   const [activePreset, setActivePreset] = useState(null);
+  const [viewTimescale, setViewTimescale] = useState("annual");
   const [scenarioMode, setScenarioMode] = useState(null);
   const [viewMode, setViewMode] = useState("executive"); // "executive" or "detailed"
   const [showFormulas, setShowFormulas] = useState(false);
@@ -1421,6 +1422,17 @@ function ROICalculator() {
   const rDel=useMemo(()=>calc(calcInputs,"DELAYED",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
   const rPar=useMemo(()=>calc(calcInputs,"PARTIAL",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
   const r=am==="CONSERVATIVE"?rCon:am==="STRETCH"?rStr:am==="DELAYED"?rDel:am==="PARTIAL"?rPar:rExp;
+  // ── Timescale multiplier: scales steady-state values for First-year / N-year-total / Yearly-avg views ──
+  const ts = useMemo(() => {
+    const rp = r.rampPcts || [];
+    const padTo = (n) => { let s = 0; for (let i = 0; i < n; i++) s += rp[i] !== undefined ? rp[i] : 1.0; return s; };
+    switch (viewTimescale) {
+      case "year1":  return { mult: rp[0] || 1, heroLabel: "Estimated first-year savings", subContext: "for Year 1 of " + r.rampN + "-year ramp", suffix: "" };
+      case "total3": return { mult: padTo(3), heroLabel: "Estimated 3-year total savings", subContext: "cumulative across 3 years", suffix: "" };
+      case "total5": return { mult: padTo(5), heroLabel: "Estimated 5-year total savings", subContext: "cumulative across 5 years", suffix: "" };
+      default:       return { mult: 1, heroLabel: "Estimated annual savings at steady state", subContext: "per year at steady state", suffix: "/yr" };
+    }
+  }, [viewTimescale, r.rampPcts, r.rampN]);
   const isArchiveOnly = inputs.journey === "HAVE_EPR";
 
   // ── Data layer: exposes all values for external PDF engines / integrations ──
@@ -2952,19 +2964,7 @@ function ROICalculator() {
       </div>
 
       <AnimatedSlider label={<span>Decommission target<InfoTip text="What % of legacy systems do you plan to retire? 60-80% is typical as most programmes retain a few for standalone or long-retention use."/></span>} value={inputs.decom_retire_rate} min={0} max={1} step={0.05} display={`${Math.round(inputs.decom_retire_rate*100)}%`} onChange={v=>{update("decom_retire_rate",v);touch(3);}} suffix=""/>
-      <div style={{marginBottom:16}}>
-        <div style={{fontSize:13,fontWeight:600,color:C.textMid,marginBottom:8}}>Projection period</div>
-        <div style={{display:"flex",gap:10}}>
-          {[
-            {yr:3, label:"3-year", ramp:"40% / 80% / 100%", desc:"Single hospital or LHD programmes"},
-            {yr:5, label:"5-year", ramp:"20% / 40% / 60% / 80% / 100%", desc:"Recommended for statewide programmes"},
-          ].map(opt => <button type="button" key={opt.yr} onClick={()=>setRampYears(opt.yr)} style={{flex:1,padding:"16px 18px",textAlign:"left",cursor:"pointer",borderRadius:12,border:rampYears===opt.yr?`2px solid ${C.accent}`:`1px solid ${C.borderLight}`,background:rampYears===opt.yr?C.accentPale:"#fff",transition:"all .15s"}}>
-            <div style={{fontSize:20,fontWeight:800,color:rampYears===opt.yr?C.accent:C.textMid,marginBottom:4}}>{opt.label}</div>
-            <div style={{fontSize:12,fontWeight:600,color:rampYears===opt.yr?C.accent:C.textMuted,marginBottom:4}}>Phased ramp: {opt.ramp}</div>
-            <div style={{fontSize:11,color:C.textMuted}}>{opt.desc}</div>
-          </button>)}
-        </div>
-      </div>
+
 
       <AnimatedSlider label={<span>{sector === "aged_care" ? "Occupancy rate" : sector === "ndis" ? "Utilisation rate" : "Bed occupancy rate"}<InfoTip text={sector === "aged_care" ? "Average occupancy across your residential places. Typical 90-95%. Drives revenue and staffing estimates." : sector === "ndis" ? "Proportion of available staff hours that are billable. Typical 65-75%. Drives revenue and utilisation uplift estimates." : "Average bed occupancy. National average is ~90% (OECD 2023, AMA). This drives admission volume, revenue estimates, and ADE calculations."}/></span>} value={occupancyRate} min={0.30} max={1.00} step={0.01} display={`${Math.round(occupancyRate*100)}%`} onChange={v=>{setOccupancyRate(v);touch(3);}} suffix=""/>
 
@@ -3276,14 +3276,14 @@ function ROICalculator() {
     {/* Composition bar */}
     {an && (() => {
       const segs = [
-        {label:"Decommission", value:r.decomSave, color:"#0F4146"},
-        {label:"Capacity", value:r.timeSave, color:"#1a8a7a"},
-        {label:r.isAgedCare?"AN-ACC & funding":r.isNDIS?"Claims & utilisation":"ABF & revenue", value:r.reimbursementImpact, color:"#00d4aa"},
-        ...(r.qualitySavings > 0 ? [{label:"Quality / cost avoidance", value:r.qualitySavings, color:"#d4507a"}] : []),
-        ...(r.academicSavings > 0 ? [{label:"Academic", value:r.academicSavings, color:"#2c3e6b"}] : []),
-        ...(r.mergeSavings > 0 ? [{label:"Network", value:r.mergeSavings, color:"#6c5ce7"}] : []),
+        {label:"Decommission", value:Math.round(r.decomSave * ts.mult), color:"#0F4146"},
+        {label:"Capacity", value:Math.round(r.timeSave * ts.mult), color:"#1a8a7a"},
+        {label:r.isAgedCare?"AN-ACC & funding":r.isNDIS?"Claims & utilisation":"ABF & revenue", value:Math.round(r.reimbursementImpact * ts.mult), color:"#00d4aa"},
+        ...(r.qualitySavings > 0 ? [{label:"Quality / cost avoidance", value:Math.round(r.qualitySavings * ts.mult), color:"#d4507a"}] : []),
+        ...(r.academicSavings > 0 ? [{label:"Academic", value:Math.round(r.academicSavings * ts.mult), color:"#2c3e6b"}] : []),
+        ...(r.mergeSavings > 0 ? [{label:"Network", value:Math.round(r.mergeSavings * ts.mult), color:"#6c5ce7"}] : []),
       ].filter(s => s.value > 0);
-      const total = r.annualWithReimbursement || 1;
+      const total = Math.round((r.annualWithReimbursement || 1) * ts.mult);
       return <div style={{marginBottom:24}}>
         <div style={{display:"flex",height:10,borderRadius:5,overflow:"hidden",marginBottom:12}}>
           {segs.map((s,i) => <div key={i} style={{flex:s.value,background:s.color,transition:"flex .5s"}} />)}
@@ -3354,9 +3354,6 @@ function ROICalculator() {
     {an && <Card dimmed={dim} style={{marginBottom:24}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:8}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}><SIcon name="calendar" size={20} color={C.accent}/><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{r.rampN}-year phased breakdown</h3></div>
-        <div style={{display:"inline-flex",gap:0,padding:3,background:"#f8fafb",border:`1px solid ${C.border}`,borderRadius:999}}>
-          {[3,5].map(yr=><button type="button" key={yr} onClick={()=>setRampYears(yr)} style={{padding:"4px 12px",border:"none",borderRadius:999,background:r.rampN===yr?C.accent:"transparent",color:r.rampN===yr?"#fff":C.textMid,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{yr}-year</button>)}
-        </div>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{fmtK(r.annualWithReimbursement)}/yr at steady state, phased over {r.rampN} years = <strong style={{color:C.green}}>{fmtK(r.total3WithReimbursement)}</strong></p>
       <div style={{overflowX:"auto"}}>
