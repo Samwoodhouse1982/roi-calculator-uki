@@ -2551,7 +2551,7 @@ function ROICalculator() {
           ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:90,padding:"10px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:8,cursor:"pointer",background:scenarioMode===s.k?C.accentPale:"#fff",transition:"all .15s"}}>
           <div style={{fontSize:11,fontWeight:600,color:scenarioMode===s.k?C.accent:C.textMuted,textTransform:"uppercase",letterSpacing:".03em",marginBottom:2}}>{s.l}</div>
           <div style={{fontSize:18,fontWeight:800,color:scenarioMode===s.k?C.accent:C.text}}>{fmtK(s.res.annual)}</div>
-          <div style={{fontSize:10,color:C.textMuted,marginTop:1}}>{s.s} \u00b7 /yr</div>
+          <div style={{fontSize:10,color:C.textMuted,marginTop:1}}>{s.s} · /yr</div>
         </button>)}
       </div>
     </Card>
@@ -2820,7 +2820,7 @@ function ROICalculator() {
         {r.timeSave > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #1a7a7a`}}>
           <div style={{fontSize:11,color:C.textMuted}}>Clinician capacity freed</div>
           <div style={{fontSize:18,fontWeight:700,color:C.text}}>{fmtK(r.timeSave)}</div>
-          <div style={{fontSize:10,color:C.textMuted}}>{fmtNum(r.hrsSaved)} hrs/yr \u00b7 {r.fteEquivalent} FTE</div>
+          <div style={{fontSize:10,color:C.textMuted}}>{fmtNum(r.hrsSaved)} hrs/yr · {r.fteEquivalent} FTE</div>
         </div>}
         {(r.excessDayCostAvoided||0) > 0 && <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #3d8a8a`}}>
           <div style={{fontSize:11,color:C.textMuted}}>Excess bed days avoided</div>
