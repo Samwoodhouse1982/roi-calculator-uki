@@ -3089,9 +3089,9 @@ function ROICalculator() {
     {r.isMultiHospital && <LockedConnector/>}
 
     {/* Clinician time */}
-    <Card dimmed={dim} style={{borderLeft:"4px solid #e67e22"}}>
+    <Card dimmed={dim} style={{borderLeft:"4px solid #1a8a7a"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <div style={{width:40,height:40,borderRadius:10,background:"#e67e2215",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:4}}><SIcon name="clock" size={22} color="#e67e22"/></div>
+        <div style={{width:40,height:40,borderRadius:10,background:"#1a8a7a15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:4}}><SIcon name="clock" size={22} color="#1a8a7a"/></div>
         <div style={{display:"flex",alignItems:"center",flex:1}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
