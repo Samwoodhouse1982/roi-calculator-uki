@@ -751,6 +751,7 @@ function ROICalculator() {
   const [providerType, setProviderType] = useState("acute");
   const [activePreset, setActivePreset] = useState(null);
   const [openPerspective, setOpenPerspective] = useState(null);
+  const [viewTimescale, setViewTimescale] = useState("annual");
   const [scenarioMode, setScenarioMode] = useState(null);
   const [viewMode, setViewMode] = useState("executive");
   const [showFormulas, setShowFormulas] = useState(false);
@@ -952,6 +953,17 @@ function ROICalculator() {
   const rExp=useMemo(()=>calc({...inputs,_rampYears:rampYears},"EXPECTED",mergedOv,flagships),[inputs,mergedOv,flagships,rampYears]);
   const rStr=useMemo(()=>calc({...inputs,_rampYears:rampYears},"STRETCH",mergedOv,flagships),[inputs,mergedOv,flagships,rampYears]);
   const r=am==="CONSERVATIVE"?rCon:am==="STRETCH"?rStr:rExp;
+  // ── Timescale multiplier: scales steady-state values for First-year / N-year-total / Yearly-avg views ──
+  const ts = useMemo(() => {
+    const rp = r.rampPcts || [];
+    const padTo = (n) => { let s = 0; for (let i = 0; i < n; i++) s += rp[i] !== undefined ? rp[i] : 1.0; return s; };
+    switch (viewTimescale) {
+      case "year1":  return { mult: rp[0] || 1, heroLabel: "Estimated first-year savings", subContext: "for Year 1 of " + r.rampYears + "-year ramp", suffix: "" };
+      case "total3": return { mult: padTo(3), heroLabel: "Estimated 3-year total savings", subContext: "cumulative across 3 years", suffix: "" };
+      case "total5": return { mult: padTo(5), heroLabel: "Estimated 5-year total savings", subContext: "cumulative across 5 years", suffix: "" };
+      default:       return { mult: 1, heroLabel: "Estimated annual savings at steady state", subContext: "per year at steady state", suffix: "/yr" };
+    }
+  }, [viewTimescale, r.rampPcts, r.rampYears]);
   const isArchiveOnly = inputs.journey === "HAVE_EPR";
 
   // ── Data layer: exposes all values for external PDF engines / integrations ──
@@ -2284,21 +2296,38 @@ function ROICalculator() {
       </div>
     )}
 
+    {/* Timescale selector */}
+    {!dim && <div style={{display:"flex",justifyContent:"center",marginBottom:14}}>
+      <div style={{display:"inline-flex",gap:0,padding:3,background:"#fff",border:`1px solid ${C.border}`,borderRadius:999,flexWrap:"wrap"}}>
+        {[
+          {k:"year1",l:"First year"},
+          {k:"total3",l:"3-year total"},
+          {k:"total5",l:"5-year total"},
+          {k:"annual",l:"Yearly average"},
+        ].map(t => <button type="button" key={t.k} onClick={()=>setViewTimescale(t.k)} style={{padding:"7px 16px",border:"none",borderRadius:999,background:viewTimescale===t.k?C.accent:"transparent",color:viewTimescale===t.k?"#fff":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s",whiteSpace:"nowrap"}}>{t.l}</button>)}
+      </div>
+    </div>}
+
     {/* Hero figure + composition + KPI cards (AU-style layout) */}
     <div style={{textAlign:"center",padding:"8px 0 24px"}}>
-      <div style={{fontSize:13,fontWeight:600,color:C.textMuted,letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>Estimated annual savings at steady state</div>
-      <div style={{fontSize:52,fontWeight:800,color:C.accent,letterSpacing:"-2px",lineHeight:1}}>{an ? <AnimatedK value={r.annual} active={an}/> : "–"}</div>
-      <div style={{fontSize:14,color:C.textMid,marginTop:8}}>per year ({r.rampYears}-year total: <strong style={{color:C.accent}}>{an ? fmtK(r.totalRamp) : "–"}</strong>)</div>
+      <div style={{fontSize:13,fontWeight:600,color:C.textMuted,letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>{ts.heroLabel}</div>
+      <div style={{fontSize:52,fontWeight:800,color:C.accent,letterSpacing:"-2px",lineHeight:1}}>{an ? <AnimatedK value={Math.round(r.annual * ts.mult)} active={an}/> : "–"}</div>
+      <div style={{fontSize:14,color:C.textMid,marginTop:8}}>
+        {viewTimescale === "annual"
+          ? <>per year ({r.rampYears}-year total: <strong style={{color:C.accent}}>{an ? fmtK(r.totalRamp) : "–"}</strong>)</>
+          : <>{ts.subContext} <span style={{color:C.textMuted}}>{"·"}</span> annual at steady state: <strong style={{color:C.accent}}>{an ? fmtK(r.annual) : "–"}</strong></>
+        }
+      </div>
     </div>
 
     {/* Composition bar */}
     {an && (() => {
       const segs = [
-        {label:"Decommission", value:r.decomSave, color:"#0F4146"},
-        {label:"Clinical capacity", value:r.timeSave, color:"#1a8a7a"},
-        ...(r.qualitySavings > 0 ? [{label:"Quality / cost avoidance", value:r.qualitySavings, color:"#d4507a"}] : []),
+        {label:"Decommission", value:Math.round(r.decomSave * ts.mult), color:"#0F4146"},
+        {label:"Clinical capacity", value:Math.round(r.timeSave * ts.mult), color:"#1a8a7a"},
+        ...(r.qualitySavings > 0 ? [{label:"Quality / cost avoidance", value:Math.round(r.qualitySavings * ts.mult), color:"#d4507a"}] : []),
       ].filter(s => s.value > 0);
-      const total = r.annual || 1;
+      const total = Math.round((r.annual || 1) * ts.mult);
       return <div style={{marginBottom:24}}>
         <div style={{display:"flex",height:10,borderRadius:5,overflow:"hidden",marginBottom:12}}>
           {segs.map((s,i) => <div key={i} style={{flex:s.value,background:s.color,transition:"flex .5s"}} />)}
@@ -2317,9 +2346,9 @@ function ROICalculator() {
 
     {/* KPI cards (2x2 grid, AU-style colour scheme) */}
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
-      <ResultCard dimmed={dim} label="Legacy decommission" value={an?fmtK(r.decomSave):"–"} sub={an?r.decom+" of "+r.legacy+" systems retired":""} bg={C.greenPale} border="#c3ddd3" valueColor="#0F4146" />
-      <ResultCard dimmed={dim} label="Clinical capacity" value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"–"} sub={an?fmtK(r.timeSave)+"/yr value":""} bg="#e8faf6" border="#b0e8dc" valueColor="#1a8a7a" />
-      {r.qualitySavings > 0 && <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(r.qualitySavings):"–"} sub={an?"Indemnity + bed days + duplicate testing":""} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />}
+      <ResultCard dimmed={dim} label={"Legacy decommission" + (viewTimescale==="annual"?"":" ("+ts.heroLabel.replace("Estimated ","").replace(" savings","")+")")} value={an?fmtK(Math.round(r.decomSave * ts.mult)):"–"} sub={an?r.decom+" of "+r.legacy+" systems retired":""} bg={C.greenPale} border="#c3ddd3" valueColor="#0F4146" />
+      <ResultCard dimmed={dim} label="Clinical capacity" value={an?(r.fteEquivalent >= 1 ? Math.round(r.fteEquivalent)+" FTE freed" : r.fteEquivalent.toFixed(1)+" FTE freed"):"–"} sub={an?fmtK(Math.round(r.timeSave * ts.mult))+(ts.suffix||" total"):""} bg="#e8faf6" border="#b0e8dc" valueColor="#1a8a7a" />
+      {r.qualitySavings > 0 && <ResultCard dimmed={dim} label="Quality / cost avoidance" value={an?fmtK(Math.round(r.qualitySavings * ts.mult)):"–"} sub={an?"Indemnity + bed days + duplicate testing":""} bg="#fdf0f4" border="#f0c4d4" valueColor="#d4507a" />}
       <ResultCard dimmed={dim} label={`Total savings (${r.rampYears}-year)`} value={an?fmtK(r.totalRamp):"–"} sub={an?`Phased ramp ${r.rampPcts.map(p=>Math.round(p*100)+"%").join("/")}`:""} bg={C.blue25} border={C.blue50} valueColor="#0f4146" />
     </div>
 
