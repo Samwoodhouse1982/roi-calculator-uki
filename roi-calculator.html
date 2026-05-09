@@ -3236,7 +3236,7 @@ function ROICalculator() {
 
         </>}
     
-    {viewMode === "executive" && !leadSubmitted && <Card style={{marginBottom:24,background:`linear-gradient(135deg,${C.navy} 0%,${C.navyMid} 100%)`,border:"none",color:"#fff"}}>
+    {viewMode === "executive" && !leadSubmitted && <><Card style={{marginBottom:24,background:`linear-gradient(135deg,${C.navy} 0%,${C.navyMid} 100%)`,border:"none",color:"#fff"}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
         <SIcon name="lock" size={20} color="#00d4aa"/>
         <h3 style={{fontSize:18,fontWeight:800,margin:0}}>Executive summary breakdown</h3>
@@ -3246,9 +3246,9 @@ function ROICalculator() {
         <span>{"↓"}</span>
         <span>Scroll to the form below to access the breakdown and download the report</span>
       </div>
-    </Card>}
+    </Card><LockedConnector/></>}
 
-    {viewMode === "executive" && leadSubmitted && <Card style={{marginBottom:24,background:"#f8fafb",border:`1px dashed ${C.border}`}}>
+    {viewMode === "executive" && leadSubmitted && <><Card style={{marginBottom:24,background:"#f8fafb",border:`1px dashed ${C.border}`}}>
       <div style={{fontSize:12,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:10}}>Components of annual savings</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))",gap:10}}>
         <div style={{padding:"10px 12px",background:"#fff",borderRadius:8,borderLeft:`4px solid #0F4146`}}>
@@ -3285,7 +3285,7 @@ function ROICalculator() {
       <div style={{marginTop:12,textAlign:"center",fontSize:12,color:C.textMid}}>
         For methodology, evidence, and breakdown by component, switch to <button type="button" onClick={()=>setViewMode("detailed")} style={{background:"none",border:"none",color:C.accent,fontWeight:600,cursor:"pointer",textDecoration:"underline",padding:0,fontFamily:"inherit",fontSize:12}}>Detailed view</button>
       </div>
-    </Card>}
+    </Card><LockedConnector/></>}
 
         {/* KPIs */}
     <Card dimmed={dim} style={{background:C.surface,border:`1px solid ${C.border}`}}>
