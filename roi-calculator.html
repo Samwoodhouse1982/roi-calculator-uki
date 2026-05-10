@@ -272,6 +272,20 @@
     font-size: 12px !important;
   }
 
+  /* Timescale selector: keep on one line on mobile by tightening padding + font */
+  .roi-timescale {
+    flex-wrap: nowrap !important;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .roi-timescale::-webkit-scrollbar { display: none; }
+  .roi-timescale-btn {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    flex: 0 0 auto;
+  }
+
   /* ─────────────────────────────────────────────────────────
      OVERFLOW PREVENTION ON NARROW VIEWPORTS
      ─────────────────────────────────────────────────────── */
@@ -3825,13 +3839,13 @@ function ROICalculator() {
     {!dim && <>
     {/* Timescale selector */}
     <div style={{display:"flex",justifyContent:"center",marginBottom:14}}>
-      <div style={{display:"inline-flex",gap:0,padding:3,background:"#fff",border:`1px solid ${C.border}`,borderRadius:999,flexWrap:"wrap"}}>
+      <div className="roi-timescale" style={{display:"inline-flex",gap:0,padding:3,background:"#fff",border:`1px solid ${C.border}`,borderRadius:999,flexWrap:"wrap"}}>
         {[
-          {k:"year1",l:"First year"},
-          {k:"total3",l:"3-year total"},
-          {k:"total5",l:"5-year total"},
-          {k:"annual",l:"Yearly average"},
-        ].map(t => <button type="button" key={t.k} onClick={()=>{setViewTimescale(t.k);if(t.k==="total3")setRampYears(3);if(t.k==="total5")setRampYears(5);}} style={{padding:"7px 16px",border:"none",borderRadius:999,background:viewTimescale===t.k?C.accent:"transparent",color:viewTimescale===t.k?"#fff":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s",whiteSpace:"nowrap"}}>{t.l}</button>)}
+          {k:"year1",l:"Year 1"},
+          {k:"total3",l:"3-yr total"},
+          {k:"total5",l:"5-yr total"},
+          {k:"annual",l:"Annual avg"},
+        ].map(t => <button type="button" key={t.k} className="roi-timescale-btn" onClick={()=>{setViewTimescale(t.k);if(t.k==="total3")setRampYears(3);if(t.k==="total5")setRampYears(5);}} style={{padding:"7px 16px",border:"none",borderRadius:999,background:viewTimescale===t.k?C.accent:"transparent",color:viewTimescale===t.k?"#fff":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s",whiteSpace:"nowrap"}}>{t.l}</button>)}
       </div>
     </div>
 
