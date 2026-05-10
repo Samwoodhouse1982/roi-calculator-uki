@@ -440,7 +440,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         </MCard>
 
         <MCard color={C.amber} title="Clinical capacity" num="02">
-          Not all staff use all systems. We apply two evidence-based filters: 65% of staff are regular system users (HIMSS Analytics), and each user interacts with ~35% of the legacy estate. A 4% productivity penalty per system touched (Westbrook et al, JAMIA 2010) determines time wasted. Hours freed are valued at $95/hr with 30% realisation, reflecting that freed time creates capacity, not direct savings.
+          Not all staff use all systems. We apply two evidence-based filters: 65% of staff are regular system users (Sinsky et al 2016; KLAS Arch Collaborative — 500k+ clinicians analysed), and each user interacts with ~35% of the legacy estate. A 4% productivity penalty per system touched (Bartek et al JIMI 2023, primary: 2.78M EHR audit-log events, β=0.03; corroborated by Westbrook et al JAMIA 2010) determines time wasted. Hours freed are valued at $95/hr with 30% realisation, reflecting that freed time creates capacity, not direct savings.
         </MCard>
 
         <MCard color={C.blue} title="CMS reimbursement" num="03">
