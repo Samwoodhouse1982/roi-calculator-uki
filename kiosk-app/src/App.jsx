@@ -9,128 +9,279 @@ import { ProviderStep, JourneyStep, FacilitiesStep, SystemsStep, FineTuneStep } 
 import { ResultsPage } from './results/ResultsPage';
 
 /* ────────────────────────────────────────────────────────────────────────
-   COMPLETION COUNTER (localStorage-backed, hidden admin reveal via 5 taps)
+   COMPLETION TRACKING + ADMIN STATS (localStorage-backed)
+   Reveal: single tap on RLDatix logo on splash
+   Reset: PIN-protected (default 2580 - vertical line on phone keypad)
    ──────────────────────────────────────────────────────────────────────── */
-const STATS_KEY = 'kiosk-stats';
-function recordCompletion() {
+const STATS_KEY = 'kiosk-stats-v2';
+const ADMIN_PIN = '2580'; // 4-digit numeric. Change to your preferred PIN.
+
+function recordCompletion(session) {
   try {
     const raw = localStorage.getItem(STATS_KEY);
-    const data = raw ? JSON.parse(raw) : { completions: [], total: 0 };
-    data.completions.push(Date.now());
+    const data = raw ? JSON.parse(raw) : { sessions: [], total: 0 };
+    data.sessions.push({ ts: Date.now(), ...session });
     data.total = (data.total || 0) + 1;
-    if (data.completions.length > 1000) data.completions = data.completions.slice(-1000);
+    // Keep last 1000 sessions to bound storage growth
+    if (data.sessions.length > 1000) data.sessions = data.sessions.slice(-1000);
     localStorage.setItem(STATS_KEY, JSON.stringify(data));
   } catch (e) { /* ignore */ }
 }
-function getStats() {
+
+function loadSessions() {
   try {
     const raw = localStorage.getItem(STATS_KEY);
-    if (!raw) return { total: 0, today: 0, last: null };
+    if (!raw) return { sessions: [], total: 0 };
     const data = JSON.parse(raw);
-    const now = Date.now();
-    const oneDayAgo = now - 24 * 60 * 60 * 1000;
-    const today = (data.completions || []).filter(t => t >= oneDayAgo).length;
-    const last = (data.completions || []).length ? data.completions[data.completions.length - 1] : null;
-    return { total: data.total || 0, today, last };
-  } catch (e) { return { total: 0, today: 0, last: null }; }
+    return { sessions: data.sessions || [], total: data.total || 0 };
+  } catch (e) { return { sessions: [], total: 0 }; }
 }
+
 function resetStats() {
   try { localStorage.removeItem(STATS_KEY); } catch (e) { /* ignore */ }
 }
 
+// Compute aggregated stats: by provider type + cumulative impact
+function computeStats() {
+  const { sessions, total } = loadSessions();
+  const now = Date.now();
+  const oneDayAgo = now - 24 * 60 * 60 * 1000;
+  const today = sessions.filter(s => s.ts >= oneDayAgo).length;
+  const last = sessions.length ? sessions[sessions.length - 1].ts : null;
+
+  // Group by provider type
+  const PROVIDER_LABELS = {
+    critical_access: 'Critical Access / Rural',
+    community: 'Community Hospital',
+    regional: 'Regional Medical Center',
+    academic: 'Academic Medical Center',
+    multi_hospital: 'IDN / Health System',
+  };
+  const byProvider = {};
+  for (const s of sessions) {
+    const k = s.providerType || 'unknown';
+    if (!byProvider[k]) byProvider[k] = { count: 0, beds: 0, systems: 0, savings: 0, fte: 0 };
+    byProvider[k].count++;
+    byProvider[k].beds += s.beds || 0;
+    byProvider[k].systems += s.systems || 0;
+    byProvider[k].savings += s.savings || 0;
+    byProvider[k].fte += s.fte || 0;
+  }
+  const providerRows = Object.keys(byProvider).map(k => ({
+    key: k,
+    label: PROVIDER_LABELS[k] || k,
+    count: byProvider[k].count,
+    avgBeds: Math.round(byProvider[k].beds / byProvider[k].count),
+    avgSystems: Math.round(byProvider[k].systems / byProvider[k].count),
+    avgSavings: Math.round(byProvider[k].savings / byProvider[k].count),
+    avgFte: Math.round(byProvider[k].fte / byProvider[k].count * 10) / 10,
+  })).sort((a, b) => b.count - a.count);
+
+  // Cumulative impact across all sessions
+  const cum = sessions.reduce((acc, s) => ({
+    fte: acc.fte + (s.fte || 0),
+    medErrors: acc.medErrors + (s.medErrors || 0),
+    patients: acc.patients + (s.patientsProtected || 0),
+    bedDays: acc.bedDays + (s.bedDays || 0),
+    savings: acc.savings + (s.savings || 0),
+  }), { fte: 0, medErrors: 0, patients: 0, bedDays: 0, savings: 0 });
+
+  return { total, today, last, providerRows, cum };
+}
+
 /* ────────────────────────────────────────────────────────────────────────
-   ADMIN OVERLAY - shown after 5 quick taps on the splash logo
+   ADMIN STATS OVERLAY
    ──────────────────────────────────────────────────────────────────────── */
-function AdminOverlay({ onClose }) {
-  const [stats, setStats] = useState(getStats());
-  const refresh = () => setStats(getStats());
-  useEffect(() => {
-    const id = setInterval(refresh, 1000);
-    return () => clearInterval(id);
-  }, []);
-  const lastStr = stats.last ? new Date(stats.last).toLocaleString() : 'never';
-  const handleReset = () => {
-    if (window.confirm('Reset all completion stats? This cannot be undone.')) {
-      resetStats();
-      refresh();
+function fmtMoney(n) {
+  if (n >= 1e9) return '$' + (n/1e9).toFixed(1) + 'b';
+  if (n >= 1e6) return '$' + (n/1e6).toFixed(1) + 'm';
+  if (n >= 1e3) return '$' + Math.round(n/1e3) + 'k';
+  return '$' + n;
+}
+function fmtNum(n) { return (n || 0).toLocaleString('en-US'); }
+
+function PinKeypad({ onSubmit, onCancel, error }) {
+  const [pin, setPin] = useState('');
+  const handleDigit = (d) => {
+    if (pin.length < 4) {
+      const next = pin + d;
+      setPin(next);
+      if (next.length === 4) {
+        // Submit immediately on 4th digit
+        setTimeout(() => onSubmit(next), 150);
+      }
     }
   };
+  const handleClear = () => setPin('');
+  // Reset PIN when an error comes in (so user can retry)
+  useEffect(() => { if (error) setPin(''); }, [error]);
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,15,26,0.92)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
-      <div style={{ background: C.surface, padding: '40px 48px', borderRadius: 24, border: '1px solid ' + C.border, maxWidth: 560, width: '100%' }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>Kiosk Stats</div>
-        <div style={{ fontSize: 28, fontWeight: 800, color: C.text, marginBottom: 28 }}>Completion counter</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 24 }}>
-          <div style={{ padding: '20px 22px', background: C.bg, borderRadius: 14, border: '1px solid ' + C.borderLight }}>
-            <div style={{ fontSize: 12, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600 }}>All time</div>
-            <div style={{ fontSize: 56, fontWeight: 800, color: C.accent, lineHeight: 1.1, marginTop: 6 }}>{stats.total}</div>
-          </div>
-          <div style={{ padding: '20px 22px', background: C.bg, borderRadius: 14, border: '1px solid ' + C.borderLight }}>
-            <div style={{ fontSize: 12, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600 }}>Last 24 hours</div>
-            <div style={{ fontSize: 56, fontWeight: 800, color: C.accent, lineHeight: 1.1, marginTop: 6 }}>{stats.today}</div>
-          </div>
-        </div>
-        <div style={{ fontSize: 14, color: C.textMid, marginBottom: 24 }}>Last completion: <strong style={{ color: C.text }}>{lastStr}</strong></div>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-          <button onClick={handleReset} style={{ padding: '12px 22px', borderRadius: 12, border: '1px solid ' + C.border, background: 'transparent', color: C.textMid, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Reset stats</button>
-          <button onClick={onClose} style={{ padding: '12px 28px', borderRadius: 12, border: 'none', background: C.accent, color: '#0a0f1a', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Close</button>
-        </div>
+    <div style={{ background: C.surface, padding: '36px 40px', borderRadius: 24, border: '1px solid ' + C.border, maxWidth: 420 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: C.amber, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>Restricted</div>
+      <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 6 }}>Enter PIN to reset stats</div>
+      <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 24 }}>Resetting stats cannot be undone.</div>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginBottom: 22, height: 28 }}>
+        {[0,1,2,3].map(i => (
+          <div key={i} style={{
+            width: 18, height: 18, borderRadius: '50%',
+            background: i < pin.length ? C.accent : 'transparent',
+            border: '2px solid ' + (i < pin.length ? C.accent : C.border),
+            transition: 'all .15s'
+          }} />
+        ))}
+      </div>
+      {error && <div style={{ textAlign: 'center', fontSize: 13, color: C.rose, fontWeight: 600, marginBottom: 14 }}>Incorrect PIN. Try again.</div>}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
+        {['1','2','3','4','5','6','7','8','9'].map(d => (
+          <button key={d} onClick={() => handleDigit(d)} style={{
+            padding: '20px 0', borderRadius: 14, border: '1px solid ' + C.border,
+            background: C.bg, color: C.text, fontSize: 24, fontWeight: 700,
+            cursor: 'pointer', fontFamily: 'inherit', transition: 'background .1s'
+          }}>{d}</button>
+        ))}
+        <button onClick={handleClear} style={{
+          padding: '20px 0', borderRadius: 14, border: '1px solid ' + C.border,
+          background: C.bg, color: C.textMuted, fontSize: 14, fontWeight: 600,
+          cursor: 'pointer', fontFamily: 'inherit'
+        }}>Clear</button>
+        <button onClick={() => handleDigit('0')} style={{
+          padding: '20px 0', borderRadius: 14, border: '1px solid ' + C.border,
+          background: C.bg, color: C.text, fontSize: 24, fontWeight: 700,
+          cursor: 'pointer', fontFamily: 'inherit'
+        }}>0</button>
+        <button onClick={onCancel} style={{
+          padding: '20px 0', borderRadius: 14, border: '1px solid ' + C.border,
+          background: C.bg, color: C.textMuted, fontSize: 14, fontWeight: 600,
+          cursor: 'pointer', fontFamily: 'inherit'
+        }}>Cancel</button>
       </div>
     </div>
   );
 }
 
-const IDN_FACILITIES = {
-  ambulatory_surgery: 6, physician_practices: 20, urgent_care: 4,
-  imaging_centers: 3, dialysis: 2, snf: 3, home_health: 2,
-  behavioral: 1, rehab: 1, ltach: 0,
-};
-
-function CalibratingScreen({ onDone }) {
-  const [step, setStep] = useState(0);
-  const [barW, setBarW] = useState(0);
-  const steps = ['Mapping your legacy estate', 'Modeling decommission savings', 'Estimating clinical capacity impact', 'Calculating reimbursement recovery'];
+function AdminOverlay({ onClose }) {
+  const [stats, setStats] = useState(computeStats());
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pinError, setPinError] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const refresh = () => setStats(computeStats());
   useEffect(() => {
-    const t = [
-      setTimeout(() => { setStep(1); setBarW(25); }, 600),
-      setTimeout(() => { setStep(2); setBarW(50); }, 1400),
-      setTimeout(() => { setStep(3); setBarW(75); }, 2200),
-      setTimeout(() => setBarW(100), 2800),
-      setTimeout(onDone, 3200),
-    ];
-    return () => t.forEach(clearTimeout);
-  }, [onDone]);
+    const id = setInterval(refresh, 1500);
+    return () => clearInterval(id);
+  }, []);
+  const handlePinSubmit = (entered) => {
+    if (entered === ADMIN_PIN) {
+      setPinError(false);
+      setPinOpen(false);
+      setConfirmReset(true);
+    } else {
+      setPinError(true);
+    }
+  };
+  const handleConfirmReset = () => { resetStats(); setConfirmReset(false); refresh(); };
+  const lastStr = stats.last ? new Date(stats.last).toLocaleString() : 'never';
 
   return (
-    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-      <style>{`
-        @keyframes calSpin { to { transform: rotate(360deg); } }
-        @keyframes calPulse { 0%,100% { opacity:.5; transform:scale(1); } 50% { opacity:1; transform:scale(1.02); } }
-      `}</style>
-      <div style={{ position: 'relative', width: 100, height: 100, marginBottom: 48 }}>
-        <div style={{ position: 'absolute', inset: 0, border: '4px solid ' + C.border, borderRadius: '50%' }} />
-        <div style={{ position: 'absolute', inset: 0, border: '4px solid transparent', borderTopColor: C.accent, borderRightColor: C.accent, borderRadius: '50%', animation: 'calSpin .8s linear infinite' }} />
-        <div style={{ position: 'absolute', inset: 16, border: '3px solid transparent', borderTopColor: C.tealLight, borderRadius: '50%', animation: 'calSpin 1.4s linear infinite reverse' }} />
-      </div>
-      <div style={{ fontSize: F.h1, fontWeight: 800, color: C.accent, marginBottom: 12, animation: 'calPulse 2s ease-in-out infinite', textAlign: 'center' }}>Calibrating your model</div>
-      <div style={{ fontSize: F.body, color: C.textMuted, marginBottom: 44, textAlign: 'center' }}>{'Analyzing ' + (step < 2 ? 'inputs' : 'clinical impact') + '...'}</div>
-      <div style={{ width: 420, maxWidth: '80%', height: 6, background: C.border, borderRadius: 3, marginBottom: 40, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: barW + '%', background: 'linear-gradient(90deg, ' + C.accent + ', ' + C.tealLight + ')', borderRadius: 3, transition: 'width .5s ease-out' }} />
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 420, maxWidth: '80%' }}>
-        {steps.map((label, i) => {
-          const done = step > i, active = step === i;
-          return (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, opacity: done ? 1 : active ? 0.9 : 0.2, transform: done || active ? 'translateX(0)' : 'translateX(-8px)', transition: 'all .4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: done ? C.accent : active ? C.accent + '30' : C.border, border: active ? '2px solid ' + C.accent : '2px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .3s' }}>
-                {done && <span style={{ color: '#0a0f1a', fontSize: 18, fontWeight: 800 }}>{'✓'}</span>}
-                {active && <div style={{ width: 8, height: 8, borderRadius: 4, background: C.accent }} />}
-              </div>
-              <span style={{ fontSize: F.body, fontWeight: active ? 700 : 400, color: done ? C.accent : active ? C.text : C.textMuted, transition: 'all .3s' }}>{label}</span>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,15,26,0.94)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, overflow: 'auto' }}>
+      {pinOpen ? (
+        <PinKeypad onSubmit={handlePinSubmit} onCancel={() => { setPinOpen(false); setPinError(false); }} error={pinError} />
+      ) : confirmReset ? (
+        <div style={{ background: C.surface, padding: '36px 40px', borderRadius: 24, border: '1px solid ' + C.rose, maxWidth: 480 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: C.rose, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>Final confirmation</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 12 }}>Reset all kiosk stats?</div>
+          <div style={{ fontSize: 14, color: C.textMid, marginBottom: 24, lineHeight: 1.6 }}>This will permanently delete <strong style={{ color: C.text }}>{stats.total}</strong> recorded session{stats.total === 1 ? '' : 's'}. This action cannot be undone.</div>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+            <button onClick={() => setConfirmReset(false)} style={{ padding: '12px 22px', borderRadius: 12, border: '1px solid ' + C.border, background: 'transparent', color: C.textMid, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+            <button onClick={handleConfirmReset} style={{ padding: '12px 28px', borderRadius: 12, border: 'none', background: C.rose, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Yes, delete all stats</button>
+          </div>
+        </div>
+      ) : (
+      <div style={{ background: C.surface, padding: '36px 40px', borderRadius: 24, border: '1px solid ' + C.border, width: '100%', maxWidth: 720 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 22 }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, letterSpacing: 3, textTransform: 'uppercase' }}>Kiosk Stats</div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: C.text, marginTop: 4 }}>Assessments completed</div>
+          </div>
+          <button onClick={onClose} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: C.accent, color: '#0a0f1a', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Close</button>
+        </div>
+
+        {/* Top row: total + 24h */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 18 }}>
+          <div style={{ padding: '18px 20px', background: C.bg, borderRadius: 14, border: '1px solid ' + C.borderLight }}>
+            <div style={{ fontSize: 11, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600 }}>All time</div>
+            <div style={{ fontSize: 44, fontWeight: 800, color: C.accent, lineHeight: 1.1, marginTop: 4 }}>{stats.total}</div>
+          </div>
+          <div style={{ padding: '18px 20px', background: C.bg, borderRadius: 14, border: '1px solid ' + C.borderLight }}>
+            <div style={{ fontSize: 11, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600 }}>Last 24 hours</div>
+            <div style={{ fontSize: 44, fontWeight: 800, color: C.accent, lineHeight: 1.1, marginTop: 4 }}>{stats.today}</div>
+          </div>
+        </div>
+
+        {/* By provider type */}
+        {stats.providerRows.length > 0 && <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 11, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600, marginBottom: 10 }}>By organization type</div>
+          <div style={{ background: C.bg, borderRadius: 14, border: '1px solid ' + C.borderLight, overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 0.6fr 0.7fr 0.7fr 0.9fr 0.7fr', gap: 8, padding: '10px 16px', borderBottom: '1px solid ' + C.borderLight, fontSize: 10, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>
+              <div>Type</div>
+              <div style={{ textAlign: 'right' }}>Count</div>
+              <div style={{ textAlign: 'right' }}>Avg beds</div>
+              <div style={{ textAlign: 'right' }}>Avg sys</div>
+              <div style={{ textAlign: 'right' }}>Avg savings</div>
+              <div style={{ textAlign: 'right' }}>Avg FTE</div>
             </div>
-          );
-        })}
+            {stats.providerRows.map(r => (
+              <div key={r.key} style={{ display: 'grid', gridTemplateColumns: '2fr 0.6fr 0.7fr 0.7fr 0.9fr 0.7fr', gap: 8, padding: '12px 16px', borderBottom: '1px solid ' + C.borderLight, fontSize: 13 }}>
+                <div style={{ color: C.text, fontWeight: 600 }}>{r.label}</div>
+                <div style={{ textAlign: 'right', color: C.accent, fontWeight: 700 }}>{r.count}</div>
+                <div style={{ textAlign: 'right', color: C.textMid }}>{fmtNum(r.avgBeds)}</div>
+                <div style={{ textAlign: 'right', color: C.textMid }}>{r.avgSystems}</div>
+                <div style={{ textAlign: 'right', color: C.textMid, fontVariantNumeric: 'tabular-nums' }}>{fmtMoney(r.avgSavings)}</div>
+                <div style={{ textAlign: 'right', color: C.textMid }}>{r.avgFte}</div>
+              </div>
+            ))}
+          </div>
+        </div>}
+
+        {/* Cumulative impact */}
+        {stats.total > 0 && <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 11, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600, marginBottom: 10 }}>Cumulative impact across all sessions</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+            <div style={{ padding: '14px 16px', background: C.bg, borderRadius: 12, border: '1px solid ' + C.borderLight }}>
+              <div style={{ fontSize: 11, color: C.textMuted }}>Total annual savings shown</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: C.accent, marginTop: 4 }}>{fmtMoney(stats.cum.savings)}</div>
+            </div>
+            <div style={{ padding: '14px 16px', background: C.bg, borderRadius: 12, border: '1px solid ' + C.borderLight }}>
+              <div style={{ fontSize: 11, color: C.textMuted }}>FTEs freed (cumulative)</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: C.amber, marginTop: 4 }}>{fmtNum(Math.round(stats.cum.fte))}</div>
+            </div>
+            <div style={{ padding: '14px 16px', background: C.bg, borderRadius: 12, border: '1px solid ' + C.borderLight }}>
+              <div style={{ fontSize: 11, color: C.textMuted }}>Patients protected</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: C.purple, marginTop: 4 }}>{fmtNum(stats.cum.patients)}</div>
+            </div>
+            <div style={{ padding: '14px 16px', background: C.bg, borderRadius: 12, border: '1px solid ' + C.borderLight }}>
+              <div style={{ fontSize: 11, color: C.textMuted }}>Med errors avoided</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: C.purple, marginTop: 4 }}>{fmtNum(stats.cum.medErrors)}</div>
+            </div>
+            <div style={{ padding: '14px 16px', background: C.bg, borderRadius: 12, border: '1px solid ' + C.borderLight }}>
+              <div style={{ fontSize: 11, color: C.textMuted }}>Excess bed days avoided</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: C.blue, marginTop: 4 }}>{fmtNum(stats.cum.bedDays)}</div>
+            </div>
+            <div style={{ padding: '14px 16px', background: C.bg, borderRadius: 12, border: '1px solid ' + C.borderLight }}>
+              <div style={{ fontSize: 11, color: C.textMuted }}>Last completion</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginTop: 8, lineHeight: 1.4 }}>{lastStr}</div>
+            </div>
+          </div>
+        </div>}
+
+        {stats.total === 0 && <div style={{ padding: '24px', background: C.bg, borderRadius: 12, border: '1px solid ' + C.borderLight, textAlign: 'center', color: C.textMuted, fontSize: 14, marginBottom: 18 }}>
+          No sessions recorded yet.
+        </div>}
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button onClick={() => setPinOpen(true)} disabled={stats.total === 0} style={{ padding: '10px 18px', borderRadius: 10, border: '1px solid ' + C.border, background: 'transparent', color: stats.total === 0 ? C.textMuted : C.textMid, fontSize: 12, fontWeight: 600, cursor: stats.total === 0 ? 'default' : 'pointer', fontFamily: 'inherit', opacity: stats.total === 0 ? 0.4 : 1 }}>Reset stats (PIN required)</button>
+        </div>
       </div>
+      )}
     </div>
   );
 }
@@ -221,7 +372,26 @@ export default function App() {
   const r = useMemo(() => calc(calcInputs, "EXPECTED", {}, flagships), [calcInputs, flagships]);
 
   const handleCalculate = useCallback(() => setCalibrating(true), []);
-  const handleCalibrationDone = useCallback(() => { setCalibrating(false); setKioskStep(KIOSK_STEPS.length - 1); recordCompletion(); }, []);
+  const handleCalibrationDone = useCallback(() => {
+    setCalibrating(false);
+    setKioskStep(KIOSK_STEPS.length - 1);
+    // Capture session metadata so the admin overlay can break stats down by
+    // organisation type and report cumulative impact across all assessments.
+    recordCompletion({
+      providerType,
+      beds: inputs.bed_count,
+      orgs: inputs.org_count,
+      systems: r.legacy || 0,
+      decomSystems: r.decom || 0,
+      savings: r.annualWithReimbursement || r.annual || 0,
+      fte: r.fteEquivalent || 0,
+      medErrors: r.safetyMedErrorsAvoided || 0,
+      patientsProtected: r.safetyPatientsProtected || 0,
+      bedDays: r.safetyBedDaysAvoided || 0,
+      decomSave: r.decomSave || 0,
+      timeSave: r.timeSave || 0,
+    });
+  }, [providerType, inputs, r]);
   const handleAdjust = useCallback(() => setKioskStep(4), []);
   const handleStartOver = useCallback(() => {
     setShowSplash(true);

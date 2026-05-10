@@ -3,20 +3,11 @@ import { C } from '../theme';
 import rldatixLogo from '../assets/rldatix-logo.png';
 
 export function SplashScreen({ onStart, onAdminReveal }) {
-  // 5 quick taps on the RLDatix logo at the bottom reveals the hidden completion stats overlay.
-  // Used by sales/marketing staff at the show to check how many assessments have been completed.
-  const tapCount = useRef(0);
-  const tapTimer = useRef(null);
+  // Single tap on the RLDatix logo at the bottom reveals the hidden admin stats overlay.
+  // Reset is PIN-protected so accidental discovery doesn't risk losing the stats.
   const handleLogoTap = useCallback((e) => {
     e.stopPropagation();
-    tapCount.current += 1;
-    if (tapTimer.current) clearTimeout(tapTimer.current);
-    tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 1500);
-    if (tapCount.current >= 5) {
-      tapCount.current = 0;
-      if (tapTimer.current) clearTimeout(tapTimer.current);
-      if (onAdminReveal) onAdminReveal();
-    }
+    if (onAdminReveal) onAdminReveal();
   }, [onAdminReveal]);
 
   const canvasRef = useRef(null);
