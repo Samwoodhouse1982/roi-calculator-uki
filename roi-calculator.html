@@ -218,6 +218,37 @@
 }
 
 /* Narrow screens */
+@media print {
+  /* Hide interactive UI elements that don't make sense in print */
+  .roi-tab, .roi-cta, .roi-btn, button[type="button"]:not(.print-keep) { display: none !important; }
+  /* Header bar - keep but simplify */
+  .roi-print-header { display: block !important; }
+  /* Force colours to print (most browsers respect this for backgrounds) */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  /* Keep cards on the same page where possible */
+  .roi-result, .roi-card { break-inside: avoid; page-break-inside: avoid; }
+  /* Remove shadows / shrink backgrounds for ink economy */
+  body { background: #fff !important; }
+  .roi-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+  /* Hide interactive elements */
+  .roi-toggle-pill, .roi-slider, input[type="range"], select { display: none !important; }
+  /* Tooltips become invisible (they're hover-triggered anyway) */
+  .roi-info-tip { display: none !important; }
+  /* Slightly smaller body font for tighter printing */
+  body, body * { font-size: 11pt !important; line-height: 1.4 !important; }
+  h1 { font-size: 22pt !important; }
+  h2 { font-size: 16pt !important; }
+  h3 { font-size: 13pt !important; }
+}
+
+/* Subtle pulse animation when KPI tiles receive a new scenario */
+@keyframes kpi-pulse {
+  0%   { transform: scale(1); box-shadow: none; }
+  35%  { transform: scale(1.02); box-shadow: 0 4px 18px rgba(0,212,170,.18); }
+  100% { transform: scale(1); box-shadow: none; }
+}
+.roi-result { animation: kpi-pulse .55s ease-out; }
+
 @media (max-width: 480px) {
   /* Year-by-year chart - tighten on mobile */
   .roi-chart-bars {
@@ -483,6 +514,8 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const yr3 = Math.round(annual * y3Pct);
   // total3 is the FULL ramp total (sums all years in rampPcts), historically named "total3"
   const total3 = rampPcts.reduce((s,p) => s + Math.round(annual*p), 0);
+  // Canonical alias - prefer totalRamp going forward; total3 kept for backward-compat with PDF/HubSpot fields
+  const totalRamp = total3;
   const yr1R = Math.round(annualWithReimbursement * y1Pct);
   const yr2R = Math.round(annualWithReimbursement * y2Pct);
   const yr3R = Math.round(annualWithReimbursement * y3Pct);
@@ -497,7 +530,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
-    annual, total3, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, yr4R, yr5R, rampYears, rampPcts, realization: sc.realization, decomFactor: sc.decom_pct, safetyFactor: sc.safety, isArchiveOnly,
+    annual, total3, totalRamp, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, yr4R, yr5R, rampYears, rampPcts, realization: sc.realization, decomFactor: sc.decom_pct, safetyFactor: sc.safety, isArchiveOnly,
     fteEquivalent: Math.round(hrsSaved * sc.realization / 2080 * 10) / 10,
     flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
     flagshipCount, flagshipRetireCount,
@@ -1805,6 +1838,33 @@ function ROICalculator() {
     doc.text("Total annual", ml, y);
     doc.text(fmtKp(r.annualWithReimbursement), ml + cw, y, { align: "right" });
     y += 14;
+    
+    // Year-by-year ramp visualization (compact bar chart)
+    setC(DARK); doc.setFontSize(11); doc.setFont("helvetica","bold");
+    doc.text(r.rampYears + "-year phased build-up", ml, y);
+    y += 6;
+    setC(GRAY); doc.setFontSize(8); doc.setFont("helvetica","normal");
+    doc.text("How the annual savings ramp up year by year as systems decommission and clinical workflows transition.", ml, y);
+    y += 7;
+    {
+      const barTop = y;
+      const colW = (cw - 8) / r.rampPcts.length;
+      const maxBarH = 32;
+      const baselineY = barTop + maxBarH + 4;
+      r.rampPcts.forEach((p, i) => {
+        const yrVal = Math.round(r.annualWithReimbursement * p);
+        const barH = maxBarH * p;
+        const x = ml + i * (colW + (8 / Math.max(1, r.rampPcts.length - 1)));
+        doc.setFillColor(TEAL[0], TEAL[1], TEAL[2]);
+        doc.roundedRect(x, baselineY - barH, colW - 4, barH, 1, 1, "F");
+        setC(DARK); doc.setFontSize(7.5); doc.setFont("helvetica","bold");
+        doc.text(fmtKp(yrVal), x + (colW - 4) / 2, baselineY - barH - 1, { align: "center" });
+        setC(GRAY); doc.setFontSize(7); doc.setFont("helvetica","normal");
+        doc.text("Year " + (i + 1), x + (colW - 4) / 2, baselineY + 4, { align: "center" });
+        doc.text("(" + Math.round(p * 100) + "%)", x + (colW - 4) / 2, baselineY + 8, { align: "center" });
+      });
+      y = baselineY + 14;
+    }
     
     // Methodology summary
     setC(DARK); doc.setFontSize(11); doc.setFont("helvetica","bold");
@@ -3604,7 +3664,7 @@ function ROICalculator() {
       </div>
       <div style={{marginTop:14,padding:"10px 14px",background:C.bg,borderRadius:6,fontSize:12,color:C.textMuted,display:"flex",gap:16,flexWrap:"wrap"}}>
         <span>Showing: <strong style={{color:C.accent}}>{am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected"}</strong></span>
-        <span>Range: <strong>{fmtK(rCon.total3)}</strong> {"-"} <strong>{fmtK(rStr.total3)}</strong></span>
+        <span>Range: <strong>{fmtK(rCon.total3)}</strong> {"–"} <strong>{fmtK(rStr.total3)}</strong> across {r.rampYears} years (steady state: <strong>{fmtK(rCon.annual)}</strong> {"–"} <strong>{fmtK(rStr.annual)}</strong>/yr)</span>
       </div>
     </Card>
 
