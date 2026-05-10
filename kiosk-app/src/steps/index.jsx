@@ -10,6 +10,124 @@ const TIER_TYPES = {
   niche: ["Document Management","Integration Engine","CDI/Coding","Clinical Documentation","Dictation/Transcription","Clinical Communication","Incident/Risk","Infection Control","Workforce/Scheduling","Data Warehouse"],
 };
 
+// Cost slider ranges per tier - matches tierCost() in engine for typical values
+const TIER_COST_RANGE = {
+  enterprise:   { min: 250000, max: 5000000, step: 50000, default: 1000000, label: "Enterprise" },
+  departmental: { min: 25000,  max: 500000,  step: 10000, default: 200000,  label: "Departmental" },
+  niche:        { min: 5000,   max: 100000,  step: 5000,  default: 30000,   label: "Standalone" },
+};
+
+// On-screen QWERTY keyboard for the kiosk - guaranteed to work regardless of OS/touchscreen
+// keyboard configuration. Used by CustomSystemModal for the system-name input.
+function OnScreenKeyboard({ value, onChange, onDone, maxLen = 40 }) {
+  const [shift, setShift] = useState(true); // start uppercase for first letter
+  const numRow = ['1','2','3','4','5','6','7','8','9','0'];
+  const rows = shift ? [
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L'],
+    ['Z','X','C','V','B','N','M'],
+  ] : [
+    ['q','w','e','r','t','y','u','i','o','p'],
+    ['a','s','d','f','g','h','j','k','l'],
+    ['z','x','c','v','b','n','m'],
+  ];
+  const press = (k) => {
+    if (value.length >= maxLen) return;
+    onChange(value + k);
+    if (shift) setShift(false);
+  };
+  const back = () => onChange(value.slice(0, -1));
+  const space = () => { if (value.length < maxLen) onChange(value + ' '); };
+  const keyStyle = (extraStyle = {}) => ({
+    flex: 1, padding: '18px 0', borderRadius: 12, border: '1px solid ' + C.border,
+    background: C.surface, color: C.text, fontSize: 22, fontWeight: 600,
+    cursor: 'pointer', fontFamily: 'inherit', minWidth: 0, ...extraStyle
+  });
+  const wideStyle = (extraStyle = {}) => ({
+    ...keyStyle(),
+    flex: 1.6, fontSize: 16, fontWeight: 700, color: C.textMid, ...extraStyle
+  });
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 6 }}>
+        {numRow.map(k => <button key={k} onClick={() => press(k)} style={keyStyle()}>{k}</button>)}
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        {rows[0].map(k => <button key={k} onClick={() => press(k)} style={keyStyle()}>{k}</button>)}
+      </div>
+      <div style={{ display: 'flex', gap: 6, paddingLeft: 24, paddingRight: 24 }}>
+        {rows[1].map(k => <button key={k} onClick={() => press(k)} style={keyStyle()}>{k}</button>)}
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button onClick={() => setShift(s => !s)} style={wideStyle({ background: shift ? C.accent + '30' : C.surface, color: shift ? C.accent : C.textMid, borderColor: shift ? C.accent : C.border })}>⇧ Shift</button>
+        {rows[2].map(k => <button key={k} onClick={() => press(k)} style={keyStyle()}>{k}</button>)}
+        <button onClick={back} style={wideStyle()}>⌫</button>
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button onClick={() => press('-')} style={keyStyle({ flex: 0.6 })}>-</button>
+        <button onClick={() => press('.')} style={keyStyle({ flex: 0.6 })}>.</button>
+        <button onClick={space} style={keyStyle({ flex: 4, color: C.textMuted })}>space</button>
+        <button onClick={() => press('/')} style={keyStyle({ flex: 0.6 })}>/</button>
+        <button onClick={onDone} style={keyStyle({ flex: 1.4, background: C.accent, color: '#0a0f1a', borderColor: C.accent, fontWeight: 800 })}>Done</button>
+      </div>
+    </div>
+  );
+}
+
+// Modal for adding a custom (not-in-list) legacy system. Includes on-screen keyboard
+// and cost slider scoped to the tier.
+function CustomSystemModal({ tier, color, onAdd, onCancel }) {
+  const range = TIER_COST_RANGE[tier];
+  const [name, setName] = useState('');
+  const [cost, setCost] = useState(range.default);
+  const handleAdd = () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    onAdd({ label: trimmed, cost });
+  };
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,15,26,0.94)', zIndex: 99998, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: 24, overflow: 'auto' }}>
+      <div style={{ background: C.surface, padding: '28px 32px', borderRadius: 24, border: '1px solid ' + C.border, width: '100%', maxWidth: 920, marginTop: 60 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>{range.label}</div>
+        <div style={{ fontSize: 24, fontWeight: 800, color: C.text, marginBottom: 4 }}>Add a system not in the list</div>
+        <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 20 }}>Type the system name, then set its annual cost.</div>
+
+        {/* Name display + on-screen keyboard */}
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>System name</div>
+          <div style={{ minHeight: 60, padding: '14px 18px', background: C.bg, border: '2px solid ' + (name ? color : C.border), borderRadius: 12, fontSize: 22, fontWeight: 600, color: name ? C.text : C.textMuted, marginBottom: 12 }}>
+            {name || <span style={{ opacity: 0.5 }}>Tap keys below to type...</span>}
+            {name && <span style={{ display: 'inline-block', width: 2, height: 22, background: color, marginLeft: 2, verticalAlign: 'middle', animation: 'caret-blink 1s infinite' }} />}
+          </div>
+          <style>{'@keyframes caret-blink { 50% { opacity: 0; } }'}</style>
+          <OnScreenKeyboard value={name} onChange={setName} onDone={handleAdd} maxLen={40} />
+        </div>
+
+        {/* Cost slider */}
+        <div style={{ marginTop: 20, marginBottom: 20, padding: '18px 20px', background: C.bg, borderRadius: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: C.textMid }}>Annual cost</span>
+            <span style={{ fontSize: 30, fontWeight: 800, color }}>{fmtK(cost)}/yr</span>
+          </div>
+          <input type="range" min={range.min} max={range.max} step={range.step} value={cost}
+            onChange={e => setCost(Number(e.target.value))}
+            style={{ width: '100%', accentColor: color, cursor: 'pointer', height: 36 }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.textMuted, marginTop: 4 }}>
+            <span>{fmtK(range.min)}</span>
+            <span>{fmtK(range.max)}</span>
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+          <button onClick={onCancel} style={{ padding: '14px 28px', borderRadius: 12, border: '1px solid ' + C.border, background: 'transparent', color: C.textMid, fontSize: 16, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+          <button onClick={handleAdd} disabled={!name.trim()} style={{ padding: '14px 36px', borderRadius: 12, border: 'none', background: name.trim() ? color : C.border, color: name.trim() ? '#0a0f1a' : C.textMuted, fontSize: 16, fontWeight: 800, cursor: name.trim() ? 'pointer' : 'default', fontFamily: 'inherit' }}>Add system</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // STEP 1: Scope + Reimbursement
 export function ProviderStep({ providerType, onSelect, reimbursementModel, setReimbursementModel }) {
   return <div>
@@ -109,6 +227,7 @@ export function FacilitiesStep({ inputs, update, facilities, setFacility }) {
 export function SystemsStep({ inputs, updateTier, flagships, addFlagship, removeFlagship, updateFlagshipCost, costMode, setCostMode, knownSpend, setKnownSpend }) {
   const [openTier, setOpenTier] = useState(null);
   const [selected, setSelected] = useState([]);
+  const [customTier, setCustomTier] = useState(null); // when set, modal is open for that tier
   const tiers = [
     { key: "enterprise", label: "Enterprise", color: C.accent, hint: "Including legacy EHR, ERP, RCM", max: Math.max(10, inputs.tiers.enterprise + 3) },
     { key: "departmental", label: "Departmental", color: C.blue, hint: "Including laboratory, pharmacy, perinatal, imaging/PACS, cardiology, and radiology", max: Math.max(30, inputs.tiers.departmental + 5) },
@@ -198,6 +317,12 @@ export function SystemsStep({ inputs, updateTier, flagships, addFlagship, remove
                 background: t.color, color: "#0a0f1a", fontSize: F.small, fontWeight: 700,
                 cursor: "pointer", fontFamily: "inherit", width: "100%"
               }}>Add {selected.length} system{selected.length > 1 ? "s" : ""}</button>}
+              <button onClick={() => setCustomTier(t.key)} style={{
+                marginTop: selected.length > 0 ? 8 : 10, padding: "12px 20px", borderRadius: 12,
+                border: `1px dashed ${t.color}80`, background: 'transparent',
+                color: t.color, fontSize: F.tiny, fontWeight: 600, cursor: "pointer",
+                fontFamily: "inherit", width: "100%"
+              }}>+ Enter your own {t.label.toLowerCase()} system</button>
             </div>}
           </>}
         </Card>;
@@ -210,6 +335,15 @@ export function SystemsStep({ inputs, updateTier, flagships, addFlagship, remove
         {flagships.length > 0 && <div style={{ fontSize: F.tiny, color: C.textMuted, marginTop: 2 }}>{sliderTotal} by tier + {flagships.length} named system{flagships.length > 1 ? "s" : ""}</div>}
       </div>
     </div>
+    {customTier && (() => {
+      const tier = tiers.find(t => t.key === customTier);
+      return <CustomSystemModal
+        tier={customTier}
+        color={tier.color}
+        onAdd={(sys) => { addFlagship(sys, customTier); setCustomTier(null); setOpenTier(null); }}
+        onCancel={() => setCustomTier(null)}
+      />;
+    })()}
   </div>;
 }
 
