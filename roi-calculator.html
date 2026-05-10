@@ -2930,10 +2930,10 @@ function ROICalculator() {
     {!dim && <div style={{display:"flex",justifyContent:"center",marginBottom:14}}>
       <div className="roi-timescale" style={{display:"inline-flex",gap:0,padding:3,background:"#fff",border:`1px solid ${C.border}`,borderRadius:999,flexWrap:"wrap"}}>
         {[
-          {k:"year1",l:"First year"},
-          {k:"total3",l:"3-year total"},
-          {k:"total5",l:"5-year total"},
-          {k:"annual",l:"Yearly average"},
+          {k:"year1",l:"Year 1"},
+          {k:"total3",l:"3-yr total"},
+          {k:"total5",l:"5-yr total"},
+          {k:"annual",l:"Annual avg"},
         ].map(t => <button type="button" key={t.k} className="roi-timescale-btn" onClick={()=>{setViewTimescale(t.k);if(t.k==="total3")setRampYears(3);if(t.k==="total5")setRampYears(5);}} style={{padding:"7px 16px",border:"none",borderRadius:999,background:viewTimescale===t.k?C.accent:"transparent",color:viewTimescale===t.k?"#fff":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s",whiteSpace:"nowrap"}}>{t.l}</button>)}
       </div>
     </div>}
