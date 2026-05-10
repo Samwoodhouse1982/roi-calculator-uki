@@ -354,11 +354,11 @@ export function FineTuneStep({ inputs, update, galenMigrationCost, setGalenMigra
     <Card>
       <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 28 }}>
         <div style={{ flex: "1 1 240px" }}>
-          <SegmentedControl label="System complexity" value={inputs.complexity_level} onChange={v => update("complexity_level", v)}
+          <SegmentedControl label="System complexity" info="How tightly your legacy systems are interwoven with workflows, interfaces, and customizations. Low: mostly standalone systems with simple data structures, straightforward to migrate. Typical: standard interfaces with some customization, the most common situation. High: heavily customized integrations and complex workflows that need careful migration planning. Affects per-system migration cost (High adds ~45%, Low subtracts ~30% from baseline)." value={inputs.complexity_level} onChange={v => update("complexity_level", v)}
             options={[{ key: "LOW", label: "Low" }, { key: "TYPICAL", label: "Typical" }, { key: "HIGH", label: "High" }]} />
         </div>
         <div style={{ flex: "1 1 240px" }}>
-          <SegmentedControl label="Data quality" value={inputs.data_quality_level} onChange={v => update("data_quality_level", v)}
+          <SegmentedControl label="Data quality" info="Cleanliness and consistency of the data in your legacy systems. Clean: well-structured, validated, with clear ownership. Mixed: typical real-world data with some duplicates, missing fields, and legacy quirks (most common). Poor: significant duplicates, inconsistent formats, missing metadata, requires substantial cleanup before migration. Affects migration effort (Poor adds ~40%, Clean subtracts ~25% from baseline)." value={inputs.data_quality_level} onChange={v => update("data_quality_level", v)}
             options={[{ key: "CLEAN", label: "Clean" }, { key: "MIXED", label: "Mixed" }, { key: "POOR", label: "Poor" }]} />
         </div>
       </div>

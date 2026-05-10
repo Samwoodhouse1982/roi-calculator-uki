@@ -144,9 +144,12 @@ export function SectionTitle({ number, children }) {
   </div>;
 }
 
-export function SegmentedControl({ options, value, onChange, label }) {
+export function SegmentedControl({ options, value, onChange, label, info }) {
   return <div>
-    {label && <div style={{ fontSize: F.body, fontWeight: 600, color: C.textMid, marginBottom: 12 }}>{label}</div>}
+    {label && <div style={{ fontSize: F.body, fontWeight: 600, color: C.textMid, marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
+      <span>{label}</span>
+      {info && <InfoTip text={info} />}
+    </div>}
     <div style={{ display: "flex", gap: 10 }}>
       {options.map(opt => <button key={opt.key} onClick={() => onChange(opt.key)} style={{ flex: 1, padding: "18px", borderRadius: 16, cursor: "pointer", border: value === opt.key ? `2px solid ${C.accent}` : `1px solid ${C.border}`, background: value === opt.key ? C.accentPale : C.surface, color: value === opt.key ? C.accent : C.textMid, fontSize: F.body, fontWeight: 600, fontFamily: "inherit" }}>{opt.label}</button>)}
     </div>
