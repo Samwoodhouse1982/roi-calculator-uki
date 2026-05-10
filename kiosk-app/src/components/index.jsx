@@ -31,7 +31,7 @@ const STEP_CONTEXT = [
   { title: "Why this matters", text: "These settings calibrate the model to your specific situation. Complexity and data quality affect migration effort. Occupancy drives admission volume. Galen costs let us calculate your exact payback period." },
 ];
 
-export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate }) {
+export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onStartOver }) {
   if (step >= totalSteps - 1) return null;
   const ctx = STEP_CONTEXT[step];
   return <div style={{ borderTop: `1px solid ${C.border}` }}>
@@ -44,6 +44,19 @@ export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate }) {
     </div>}
     <div style={{ padding: "16px 56px 40px", display: "flex", gap: 20, alignItems: "center" }}>
       {step > 0 && <button onClick={onBack} style={{ padding: "24px 44px", borderRadius: 18, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Back</button>}
+      <div style={{ flex: 1 }} />
+      {/* Subtle Start over button - sits centred between Back and Next/Calculate.
+          Deliberately understated (no background, muted text colour, smaller
+          font) so it doesn't compete with the primary navigation. */}
+      {onStartOver && <button onClick={onStartOver} style={{
+        padding: "10px 18px", borderRadius: 12, border: "none",
+        background: "transparent", color: C.textMuted, fontSize: F.small,
+        fontWeight: 500, cursor: "pointer", fontFamily: "inherit",
+        letterSpacing: 0.3, opacity: 0.75, transition: "opacity .15s, color .15s"
+      }} onMouseEnter={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.color = C.textMid; }}
+         onMouseLeave={e => { e.currentTarget.style.opacity = "0.75"; e.currentTarget.style.color = C.textMuted; }}>
+        ↻  Start over
+      </button>}
       <div style={{ flex: 1 }} />
       {step < totalSteps - 2 ? (
         <button onClick={onNext} style={{ padding: "24px 64px", borderRadius: 18, border: "none", background: C.accent, color: "#0a0f1a", fontSize: F.h3, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Next →</button>

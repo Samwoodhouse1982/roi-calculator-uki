@@ -418,6 +418,24 @@ export default function App() {
     setInputs({ ...PRESETS.TYPICAL.data, tiers: { ...PRESETS.TYPICAL.data.tiers } });
   }, []);
 
+  // Resets all inputs and jumps to step 0 (Scope) without showing the splash.
+  // Used by the subtle "Start over" button on every input step's nav bar.
+  // Splash is reserved for fresh-from-idle / fresh-from-completion states.
+  const handleResetInputs = useCallback(() => {
+    setKioskStep(0);
+    setCalibrating(false);
+    setProviderType("community");
+    setReimbursementModel("mixed");
+    setOccupancyRate(0.65);
+    setGalenMigrationCost(0);
+    setGalenAnnualCost(0);
+    setFlagships([]);
+    setFacilitiesState({});
+    setCostMode("estimate");
+    setKnownSpend(0);
+    setInputs({ ...PRESETS.TYPICAL.data, tiers: { ...PRESETS.TYPICAL.data.tiers } });
+  }, []);
+
   const renderStep = () => {
     switch (kioskStep) {
       case 0: return <ProviderStep providerType={providerType} onSelect={selectProvider} reimbursementModel={reimbursementModel} setReimbursementModel={setReimbursementModel} />;
@@ -488,7 +506,7 @@ export default function App() {
       <div style={{ flex: 1, overflowY: "auto", padding: "0 56px 32px" }}>
         <PageTransition step={kioskStep}>{renderStep()}</PageTransition>
       </div>
-      <NavButtons step={kioskStep} totalSteps={KIOSK_STEPS.length} onBack={() => setKioskStep(p => p - 1)} onNext={() => setKioskStep(p => p + 1)} onCalculate={handleCalculate} />
+      <NavButtons step={kioskStep} totalSteps={KIOSK_STEPS.length} onBack={() => setKioskStep(p => p - 1)} onNext={() => setKioskStep(p => p + 1)} onCalculate={handleCalculate} onStartOver={handleResetInputs} />
       {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
     </div>
   );
