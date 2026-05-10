@@ -242,6 +242,9 @@
 }
 
 /* Subtle pulse animation when KPI tiles receive a new scenario */
+@keyframes roi-spin {
+  to { transform: rotate(360deg); }
+}
 @keyframes kpi-pulse {
   0%   { transform: scale(1); box-shadow: none; }
   35%  { transform: scale(1.02); box-shadow: 0 4px 18px rgba(0,212,170,.18); }
@@ -250,10 +253,10 @@
 .roi-result { animation: kpi-pulse .55s ease-out; }
 
 @media (max-width: 480px) {
-  /* Ensure range inputs are fat enough to thumb-drag */
+  /* Ensure range inputs are fat enough to thumb-drag - bumped to 40px for better hit-target */
   input[type="range"] {
-    height: 32px;
-    min-height: 32px;
+    height: 40px;
+    min-height: 40px;
   }
 
   /* Stack flagship rows vertically */
@@ -359,6 +362,22 @@
   }
 }
 
+
+/* Anchor labels on the scenario slider - hover state + keyboard focus ring */
+.roi-anchor {
+  transition: color .15s, text-decoration-color .15s;
+}
+.roi-anchor:hover {
+  color: #1a8a7a !important;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+.roi-anchor:focus-visible {
+  outline: 2px solid #1a8a7a;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
 
 /* Email form placeholder */
 .roi-lead-input::placeholder {
@@ -1407,7 +1426,8 @@ function ROICalculator() {
   }, [scenarioBlend]);
   const [viewMode, setViewMode] = useState("executive"); // "executive" or "detailed"
   const [showFormulas, setShowFormulas] = useState(false);
-  const [pdfFormat, setPdfFormat] = useState("full"); // "full" or "board"
+  const [pdfFormat, setPdfFormat] = useState("full");
+  const [pdfBusy, setPdfBusy] = useState(false); // "full" or "board"
   const [page, setPage] = useState("inputs");
   const [adminMode, setAdminMode] = useState(typeof window !== "undefined" && window.location.hash === "#admin-leads");
   useEffect(() => {
@@ -1955,7 +1975,7 @@ function ROICalculator() {
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const pw = 210, ph = 297, ml = 16, mr = 16, cw = pw - ml - mr;
     let y = 0;
-    const scenarioLabel = am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected";
+    const scenarioLabel = (am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected") + ((scenarioBlend != null && Math.abs(scenarioBlend - 0) > 0.005 && Math.abs(scenarioBlend - 0.5) > 0.005 && Math.abs(scenarioBlend - 1) > 0.005) ? " (custom blend at " + Math.round(scenarioBlend*100) + "%)" : "");
     const dateStr = new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"});
     const TEAL = [15,65,70], WHITE = [255,255,255], SEAFOAM = [190,250,240];
     const GRAY = [61,90,94], LTBG = [238,247,241], DARK = [31,41,55], MID = [110,138,142];
@@ -2241,7 +2261,7 @@ function ROICalculator() {
     }
     doc.save("Galen_ROI_Board_Summary_" + new Date().toISOString().split("T")[0] + ".pdf");
     return null;
-  }, [r, am, reimbursementModel, inputs, galenMigrationCost, galenAnnualCost]);
+  }, [r, am, scenarioBlend, reimbursementModel, inputs, galenMigrationCost, galenAnnualCost]);
 
   const generatePDF = useCallback(async (returnBlob) => {
     let jsPDF;
@@ -2253,7 +2273,7 @@ function ROICalculator() {
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const pw = 210, ph = 297, ml = 16, mr = 16, mt = 16, cw = pw - ml - mr;
     let y = 0;
-    const scenarioLabel = am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected";
+    const scenarioLabel = (am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected") + ((scenarioBlend != null && Math.abs(scenarioBlend - 0) > 0.005 && Math.abs(scenarioBlend - 0.5) > 0.005 && Math.abs(scenarioBlend - 1) > 0.005) ? " (custom blend at " + Math.round(scenarioBlend*100) + "%)" : "");
     const dateStr = new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"});
 
     // Colours
@@ -2694,7 +2714,7 @@ function ROICalculator() {
 
     if (returnBlob) return { blob: doc.output("blob"), filename };
     doc.save(filename);
-  }, [am, r, rCon, rStr, inputs, leadForm, isArchiveOnly, flagships, galenMigrationCost, galenAnnualCost, loadJsPDF]);
+  }, [am, scenarioBlend, r, rCon, rStr, inputs, leadForm, isArchiveOnly, flagships, galenMigrationCost, galenAnnualCost, loadJsPDF]);
 
   // ── Lead submission: HubSpot + PDF email ──
   const submitLead = useCallback(async () => {
@@ -2768,7 +2788,7 @@ function ROICalculator() {
     // 3. Submit to HubSpot (EU1 region, fire-and-forget)
     if (HUBSPOT_PORTAL_ID && HUBSPOT_FORM_GUID) {
       try {
-        const scenarioLabel = am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected";
+        const scenarioLabel = (am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected") + ((scenarioBlend != null && Math.abs(scenarioBlend - 0) > 0.005 && Math.abs(scenarioBlend - 0.5) > 0.005 && Math.abs(scenarioBlend - 1) > 0.005) ? " (custom blend at " + Math.round(scenarioBlend*100) + "%)" : "");
         const calcContext = `ROI Calculator submission | Scenario: ${scenarioLabel} | Beds: ${inputs.bed_count} | Orgs: ${inputs.org_count} | Legacy systems: ${r.legacy} | Annual savings: ${fmtK(r.annual)} | 3-year total: ${fmtK(r.total3)} | Complexity: ${inputs.complexity_level} | Journey: ${isArchiveOnly?"Archive only":"Migration + archiving"}`;
         await fetch(`https://forms-${HUBSPOT_REGION}.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_PORTAL_ID}/${HUBSPOT_FORM_GUID}`, {
           method: "POST",
@@ -2827,7 +2847,19 @@ function ROICalculator() {
 
     setLeadSending(false);
     setLeadSubmitted(true);
-  }, [generatePDF, generateBoardPDF, pdfFormat, leadForm, am, r, inputs, isArchiveOnly, sector, providerType, galenMigrationCost, galenAnnualCost, HUBSPOT_PORTAL_ID, HUBSPOT_FORM_GUID, EMAIL_ENDPOINT]);
+  }, [generatePDF, generateBoardPDF, pdfFormat, leadForm, am, scenarioBlend, r, inputs, isArchiveOnly, sector, providerType, galenMigrationCost, galenAnnualCost, HUBSPOT_PORTAL_ID, HUBSPOT_FORM_GUID, EMAIL_ENDPOINT]);
+
+  // Wrap PDF generation calls so we can show a loading state on the Download again button
+  const downloadPdfAgain = useCallback(async () => {
+    if (pdfBusy) return;
+    setPdfBusy(true);
+    try {
+      if (pdfFormat === "board") await generateBoardPDF();
+      else await generatePDF();
+    } finally {
+      setPdfBusy(false);
+    }
+  }, [pdfBusy, pdfFormat, generateBoardPDF, generatePDF]);
 
 
   /* Styles loaded from styles.css */
@@ -3617,7 +3649,7 @@ function ROICalculator() {
     <Card style={{marginBottom:0,border:dim?`2px solid ${C.accent}`:`1px solid ${C.border}`,boxShadow:dim?`0 0 0 4px ${C.accent}22`:"0 1px 3px rgba(0,0,0,0.05)",padding:"14px 18px"}}>
       <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:6,flexWrap:"wrap",gap:8}}>
         <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em"}}>
-          {dim ? "Drag the slider to unlock results" : (scenarioMode==="DELAYED"||scenarioMode==="PARTIAL") ? "Risk scenario active · use slider to return to main range" : "Adjust scenario assumptions · drag to fine-tune"}
+          {dim ? "Drag the slider to unlock results" : (scenarioMode==="DELAYED"||scenarioMode==="PARTIAL") ? "Risk scenario active · use slider to return to main range" : "Confidence level"}
         </div>
         {!dim && <div style={{fontSize:11,color:C.textMuted}}>
           <span style={{fontWeight:700,color:C.text}}>{scenarioMode === "CONSERVATIVE" ? "Conservative" : scenarioMode === "STRETCH" ? "Stretch" : scenarioMode === "DELAYED" ? "Delayed" : scenarioMode === "PARTIAL" ? "Partial" : "Expected"}</span>
@@ -3629,15 +3661,21 @@ function ROICalculator() {
           onChange={(e)=>setBlend(parseFloat(e.target.value))}
           style={{width:"100%",accentColor:C.accent,cursor:"pointer",height:24,padding:0,margin:0}}/>
         <div style={{position:"relative",height:14,marginTop:2}}>
-          <button type="button" onClick={()=>setBlend(0)} style={{position:"absolute",left:0,fontSize:11,color:C.textMuted,fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit"}}>Conservative</button>
-          <button type="button" onClick={()=>setBlend(0.5)} style={{position:"absolute",left:"50%",transform:"translateX(-50%)",fontSize:11,color:C.textMuted,fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",whiteSpace:"nowrap"}}>Expected</button>
-          <button type="button" onClick={()=>setBlend(1)} style={{position:"absolute",right:0,fontSize:11,color:C.textMuted,fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit"}}>Stretch</button>
+          <button type="button" className="roi-anchor" onClick={()=>setBlend(0)} style={{position:"absolute",left:0,fontSize:11,color:C.textMuted,fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit"}}>Conservative</button>
+          <button type="button" className="roi-anchor" onClick={()=>setBlend(0.5)} style={{position:"absolute",left:"50%",transform:"translateX(-50%)",fontSize:11,color:C.textMuted,fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",whiteSpace:"nowrap"}}>Expected</button>
+          <button type="button" className="roi-anchor" onClick={()=>setBlend(1)} style={{position:"absolute",right:0,fontSize:11,color:C.textMuted,fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit"}}>Stretch</button>
         </div>
       </div>
-      {!dim && <div style={{padding:"14px 18px",background:C.accentPale,border:`1px solid ${C.accent}33`,borderRadius:10,textAlign:"center"}}>
-        <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4}}>Annual savings at this scenario</div>
-        <div style={{fontSize:32,fontWeight:800,color:C.accent,letterSpacing:"-1px",lineHeight:1.1,fontVariantNumeric:"tabular-nums"}}>{fmtK(r.annualWithReimbursement)}<span style={{fontSize:14,fontWeight:600,color:C.textMid}}>/yr</span></div>
-        <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Range across scenarios: <strong style={{color:C.textMid}}>{fmtK(rCon.annualWithReimbursement)}</strong> {"\u2013"} <strong style={{color:C.textMid}}>{fmtK(rStr.annualWithReimbursement)}</strong></div>
+      {!dim && <div style={{padding:"16px 18px",background:C.accentPale,border:`1px solid ${C.accent}33`,borderRadius:10,textAlign:"center"}}>
+        <div style={{fontSize:11,fontWeight:600,color:C.textMuted,letterSpacing:2,textTransform:"uppercase",marginBottom:6}}>{ts.heroLabel}</div>
+        <div style={{fontSize:38,fontWeight:800,color:C.accent,letterSpacing:"-1.5px",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{fmtK(Math.round(r.annualWithReimbursement * ts.mult))}<span style={{fontSize:15,fontWeight:600,color:C.textMid,marginLeft:2}}>{ts.suffix || "/yr"}</span></div>
+        <div style={{fontSize:12,color:C.textMid,marginTop:8}}>
+          {viewTimescale === "annual"
+            ? <>per year · {rampYears}-year total: <strong style={{color:C.accent}}>{fmtK(r.total3WithReimbursement)}</strong></>
+            : <>{ts.subContext} · annual at steady state: <strong style={{color:C.accent}}>{fmtK(r.annualWithReimbursement)}</strong></>
+          }
+        </div>
+        <div style={{fontSize:11,color:C.textMuted,marginTop:6}}>Range across scenarios: <strong style={{color:C.textMid}}>{fmtK(rCon.annualWithReimbursement)}</strong> {"\u2013"} <strong style={{color:C.textMid}}>{fmtK(rStr.annualWithReimbursement)}</strong> /yr</div>
       </div>}
     </Card>
     </div>
@@ -3651,9 +3689,12 @@ function ROICalculator() {
       </div>
     </div>}
 
-    {/* Risk scenarios in detailed view only */}
-    {viewMode === "detailed" && !dim && <Card style={{marginBottom:16,border:`1px solid ${C.border}`}}>
-      <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:8,letterSpacing:0.5}}>RISK SCENARIOS · STRESS TEST</div>
+    {/* Risk scenarios - visible in both views as a stress-test option */}
+    {!dim && <Card style={{marginBottom:16,border:`1px solid ${C.border}`}}>
+      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+        <div style={{fontSize:11,fontWeight:600,color:C.textMuted,letterSpacing:0.5}}>RISK SCENARIOS · STRESS TEST</div>
+        <InfoTip text="Override the main scenario slider with a downside-risk model. 12-month delay assumes the programme slips by a year before benefits begin to accrue. Partial decom assumes only 50% of legacy systems actually retire. Useful for board conversations about what happens if implementation goes worse than planned." />
+      </div>
       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
         <button type="button" onClick={()=>{if(scenarioMode==="DELAYED"||scenarioMode==="PARTIAL")setBlend(0.5)}} className="roi-scenario" style={{flex:"1 1 0",minWidth:80,padding:"10px 8px",textAlign:"center",border:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accentPale:"#fff"}}>
           <div style={{marginBottom:2,display:"flex",justifyContent:"center"}}><SIcon name="shield" size={18} color={scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accent:C.textMid}/></div>
@@ -3681,7 +3722,7 @@ function ROICalculator() {
         flexWrap: "wrap", gap: 8,
       }}>
         <div style={{ fontSize: 13, color: C.override }}><strong>{overrideCount}</strong> overridden</div>
-        <button type="button" onClick={resetOv} style={{
+        <button type="button" onClick={() => { if (window.confirm("Reset all overrides and the scenario slider position? This cannot be undone.")) resetOv(); }} style={{
           border: "none", background: C.override, color: "#fff",
           padding: "8px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer",
         }}>Reset all</button>
@@ -3786,19 +3827,7 @@ function ROICalculator() {
       </div>
     </div>
 
-{/* Hero summary */}
-    <div style={{textAlign:"center",padding:"8px 0 24px"}}>
-      <div style={{fontSize:13,fontWeight:600,color:C.textMuted,letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>{ts.heroLabel}</div>
-      <div style={{fontSize:52,fontWeight:800,color:C.accent,letterSpacing:"-2px",lineHeight:1}}>{an ? <AnimatedK value={Math.round(r.annualWithReimbursement * ts.mult)} active={an}/> : "\u2013"}</div>
-      <div style={{fontSize:14,color:C.textMid,marginTop:8}}>
-        {viewTimescale === "annual"
-          ? <>per year ({rampYears}-year total: <strong style={{color:C.accent}}>{an ? fmtK(r.total3WithReimbursement) : "\u2013"}</strong>)</>
-          : <>{ts.subContext} · steady state: <strong style={{color:C.accent}}>{an ? fmtK(r.annualWithReimbursement) : "\u2013"}/yr</strong></>
-        }
-      </div>
-    </div>
-
-    {/* Composition bar */}
+{/* Composition bar */}
     {an && (() => {
       const segs = [
         {label:"Decommission", value:Math.round(r.decomSave * ts.mult), color:"#0F4146"},
@@ -4421,12 +4450,24 @@ function ROICalculator() {
       </Card>
     )}
 
+    {pdfBusy && (
+      <div style={{position:"fixed",inset:0,background:"rgba(15,65,70,0.55)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+        <div style={{background:"#fff",padding:"22px 28px",borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,.25)",display:"flex",alignItems:"center",gap:14,maxWidth:340}}>
+          <div style={{width:24,height:24,border:`3px solid ${C.accent}33`,borderTopColor:C.accent,borderRadius:"50%",animation:"roi-spin 0.8s linear infinite"}}/>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:2}}>Generating PDF...</div>
+            <div style={{fontSize:12,color:C.textMuted}}>This usually takes 1-3 seconds.</div>
+          </div>
+        </div>
+      </div>
+    )}
+
     {!dim && leadSubmitted && (
       <Card style={{marginTop:20,background:C.greenPale,border:"1px solid #c3ddd3"}}>
         <div style={{textAlign:"center",padding:"12px 0"}}>
           <h3 style={{fontSize:18,fontWeight:800,color:C.green,margin:"0 0 6px"}}>{"✓"} Report downloaded</h3>
           <p style={{fontSize:14,color:C.textMid}}>{EMAIL_ENDPOINT ? "A copy is also being sent to " + leadForm.email + "." : "Your PDF has been saved."}</p>
-          <button type="button" onClick={async ()=>{if(pdfFormat==="board"){await generateBoardPDF();}else{await generatePDF();}}} className="roi-btn" style={{marginTop:12,padding:"10px 24px",background:C.accent,color:"#fff",border:"none",borderRadius:999,fontSize:14,fontWeight:600,cursor:"pointer"}}>Download again</button>
+          <button type="button" onClick={downloadPdfAgain} disabled={pdfBusy} className="roi-btn" style={{marginTop:12,padding:"10px 24px",background:C.accent,color:"#fff",border:"none",borderRadius:999,fontSize:14,fontWeight:600,cursor:pdfBusy?"wait":"pointer",opacity:pdfBusy?0.7:1}}>{pdfBusy ? "Generating PDF..." : "Download again"}</button>
         </div>
       </Card>
     )}
@@ -4722,7 +4763,7 @@ function ROICalculator() {
           </div>
 
           <div style={{marginTop:14,fontSize:11,color:C.textMuted,lineHeight:1.6,fontStyle:"italic"}}>
-            Scenario factors: <strong>{am === "CONSERVATIVE" ? "Conservative" : am === "STRETCH" ? "Stretch" : "Expected"}</strong> = decom ×{sc.decom_pct.toFixed(2)}, realisation ×{sc.realisation.toFixed(2)}, safety ×{sc.safety.toFixed(2)}. Drag the slider above to see how the numbers shift.
+            Scenario factors: <strong>{am === "CONSERVATIVE" ? "Conservative" : am === "STRETCH" ? "Stretch" : "Expected"}</strong>{(scenarioBlend != null && Math.abs(scenarioBlend - 0) > 0.005 && Math.abs(scenarioBlend - 0.5) > 0.005 && Math.abs(scenarioBlend - 1) > 0.005) && <em style={{fontStyle:"normal",color:C.accent}}> (custom blend at {Math.round(scenarioBlend*100)}%)</em>} = decom ×{sc.decom_pct.toFixed(2)}, realisation ×{sc.realisation.toFixed(2)}, safety ×{sc.safety.toFixed(2)}. Drag the slider above to see how the numbers shift.
           </div>
 
           <div style={{marginTop:14,display:"flex",justifyContent:"center"}}>
