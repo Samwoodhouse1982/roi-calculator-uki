@@ -255,7 +255,7 @@ export default function App() {
   useEffect(() => {
     if (showSplash) return;
     let timeoutId = null;
-    const IDLE_MS = 90000;
+    const IDLE_MS = 15 * 60 * 1000; // 15 minutes
     const goToSplash = () => {
       setShowSplash(true);
       setKioskStep(0);
