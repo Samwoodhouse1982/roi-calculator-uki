@@ -966,24 +966,67 @@ const C = {
 function Card({children,style,dimmed,className}){return <div className={className||"roi-card"} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"24px 28px 20px",marginBottom:0,opacity:dimmed?0.3:1,pointerEvents:dimmed?"none":"auto",filter:dimmed?"grayscale(.5)":"none",transition:"opacity .4s,filter .4s",...style}}>{children}</div>;}
 
 function InfoTip({text}){
-  const[show,setShow]=useState(false);const[pos,setPos]=useState("above");const ref=useRef(null);
-  const enter=()=>{setShow(true);if(ref.current)setPos(ref.current.getBoundingClientRect().top<120?"below":"above");};
-  return <span ref={ref} style={{position:"relative",display:"inline-flex",marginLeft:4}} onMouseEnter={enter} onMouseLeave={()=>setShow(false)}>
-    <span style={{width:18,height:18,borderRadius:"50%",background:"#e8ecf1",color:C.textMid,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,cursor:"help",border:"1px solid #d0d5dd",lineHeight:1}}>i</span>
+  const [show, setShow] = useState(false);
+  const [tipPos, setTipPos] = useState({top:0, left:0, width:280, above:true});
+  const ref = useRef(null);
+
+  const updatePos = useCallback(() => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const margin = 8;
+    const tipW = Math.min(280, vw - margin * 2);
+    let left = r.left + r.width / 2 - tipW / 2;
+    left = Math.max(margin, Math.min(left, vw - tipW - margin));
+    const above = r.top > 140;
+    const top = above ? r.top - margin : r.bottom + margin;
+    setTipPos({ top, left, width: tipW, above });
+  }, []);
+
+  const open = useCallback(() => { updatePos(); setShow(true); }, [updatePos]);
+  const close = useCallback(() => setShow(false), []);
+  const toggle = useCallback((e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (show) close(); else open();
+  }, [show, open, close]);
+
+  useEffect(() => {
+    if (!show) return;
+    const onDoc = () => close();
+    document.addEventListener("click", onDoc);
+    document.addEventListener("touchstart", onDoc);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      document.removeEventListener("click", onDoc);
+      document.removeEventListener("touchstart", onDoc);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [show, close]);
+
+  return <span ref={ref} className="roi-info-tip" style={{position:"relative",display:"inline-flex",marginLeft:4}}>
+    <span
+      onMouseEnter={open}
+      onMouseLeave={close}
+      onClick={toggle}
+      role="button"
+      aria-label="More information"
+      style={{width:18,height:18,borderRadius:"50%",background:"#e8ecf1",color:C.textMid,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,cursor:"help",border:"1px solid #d0d5dd",lineHeight:1,userSelect:"none"}}>i</span>
     {show && (
       <span style={{
-        position: "absolute", [pos === "above" ? "bottom" : "top"]: "calc(100% + 8px)",
-        left: "50%", transform: "translateX(-50%)", background: C.navy, color: "#fff",
+        position: "fixed",
+        left: `${tipPos.left}px`,
+        top: `${tipPos.top}px`,
+        transform: tipPos.above ? "translateY(-100%)" : "none",
+        background: C.navy, color: "#fff",
         fontSize: 12, lineHeight: 1.5, padding: "10px 14px", borderRadius: 8,
-        width: 280, maxWidth: "80vw", boxShadow: "0 4px 16px rgba(0,0,0,.22)",
-        zIndex: 20, pointerEvents: "none", fontWeight: 400,
+        width: `${tipPos.width}px`,
+        boxShadow: "0 4px 16px rgba(0,0,0,.22)",
+        zIndex: 9999, pointerEvents: "none", fontWeight: 400,
       }}>
         {text}
-        <span style={{
-          position: "absolute", [pos === "above" ? "bottom" : "top"]: -5,
-          left: "50%", transform: "translateX(-50%) rotate(45deg)",
-          width: 10, height: 10, background: C.navy,
-        }} />
       </span>
     )}
   </span>;
