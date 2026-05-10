@@ -147,32 +147,31 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
           </div>
         </div>
 
-        {/* Cumulative total banner */}
+        {/* Cumulative total banner - uses proper 3-year (40/80/100) or 5-year (20/40/60/80/100) ramp */}
         {(() => {
-          const yr3Val = r.yr3R || r.yr3 || 0;
-          const yr4 = yr3Val;
-          const yr5 = yr3Val;
           const total = projYears === 5
-            ? (r.total3WithReimbursement || r.total3 || 0) + yr4 + yr5
+            ? (r.total5WithReimbursement || r.total5 || 0)
             : (r.total3WithReimbursement || r.total3 || 0);
+          const firstYearPct = projYears === 5 ? 0.20 : 0.40;
           return <div style={{ textAlign: "center", padding: "12px 0 20px" }}>
             <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>{projYears}-year cumulative savings</div>
             <div style={{ fontSize: 56, fontWeight: 800, color: C.accent, letterSpacing: "-2px" }}>{fmtK(total)}</div>
-            <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 6 }}>Builds from {fmtK(Math.round((r.annualWithReimbursement || r.annual || 0) * 0.4))} in Year 1 to {fmtK(r.annualWithReimbursement || r.annual || 0)}/yr at steady state</div>
+            <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 6 }}>Builds from {fmtK(Math.round((r.annualWithReimbursement || r.annual || 0) * firstYearPct))} in Year 1 to {fmtK(r.annualWithReimbursement || r.annual || 0)}/yr at steady state</div>
           </div>;
         })()}
 
-        {/* Year cards */}
+        {/* Year cards - uses real ramp values from engine */}
         {(() => {
-          const yr3Val = r.yr3R || r.yr3 || 0;
-          const allYrs = [
+          const allYrs = projYears === 5 ? [
+            { yr: "Year 1", val: (r.yr5ValsR || r.yr5Vals || [0])[0], pct: 20 },
+            { yr: "Year 2", val: (r.yr5ValsR || r.yr5Vals || [0,0])[1], pct: 40 },
+            { yr: "Year 3", val: (r.yr5ValsR || r.yr5Vals || [0,0,0])[2], pct: 60 },
+            { yr: "Year 4", val: (r.yr5ValsR || r.yr5Vals || [0,0,0,0])[3], pct: 80 },
+            { yr: "Year 5", val: (r.yr5ValsR || r.yr5Vals || [0,0,0,0,0])[4], pct: 100 },
+          ] : [
             { yr: "Year 1", val: r.yr1R || r.yr1, pct: 40 },
             { yr: "Year 2", val: r.yr2R || r.yr2, pct: 80 },
             { yr: "Year 3", val: r.yr3R || r.yr3, pct: 100 },
-            ...(projYears === 5 ? [
-              { yr: "Year 4", val: yr3Val, pct: 100 },
-              { yr: "Year 5", val: yr3Val, pct: 100 },
-            ] : []),
           ];
           return <div style={{ display: "flex", gap: projYears === 5 ? 8 : 14, marginBottom: 20 }}>
             {allYrs.map(y => <div key={y.yr} style={{ flex: 1, padding: projYears === 5 ? "14px 10px" : "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
@@ -186,11 +185,16 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         {/* Interactive stacked bar chart */}
         {(() => {
           const yr3Val = r.yr3R || r.yr3 || 0;
-          const yrs = [
+          const yrs = projYears === 5 ? [
+            { yr: "Yr 1", pct: 0.2 },
+            { yr: "Yr 2", pct: 0.4 },
+            { yr: "Yr 3", pct: 0.6 },
+            { yr: "Yr 4", pct: 0.8 },
+            { yr: "Yr 5", pct: 1.0 },
+          ] : [
             { yr: "Yr 1", pct: 0.4 },
             { yr: "Yr 2", pct: 0.8 },
             { yr: "Yr 3", pct: 1.0 },
-            ...(projYears === 5 ? [{ yr: "Yr 4", pct: 1.0 }, { yr: "Yr 5", pct: 1.0 }] : []),
           ];
           const segments = [
             { key: "Decommission", color: C.accent, val: seg.decom },
@@ -456,7 +460,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         </MCard>
 
         <MCard color={C.accent} title="Year-by-year ramp" num="07">
-          Savings are phased over three years: Year 1 at 40%, Year 2 at 80%, Year 3 at 100% of steady state. This reflects progressive legacy system retirement. Data is migrated and interfaces decommissioned over time, not all at once. Galen payback is calculated as migration cost ÷ (annual decom savings minus annual archive cost).
+          Savings are phased to reflect progressive legacy system retirement. The 3-year view models 40% / 80% / 100% of steady state across Years 1-3. The 5-year view models 20% / 40% / 60% / 80% / 100% to reflect a slower, more conservative implementation cadence typical of larger health systems. Tap the 3-year / 5-year toggle on the projection card above to switch views. Galen payback is calculated as migration cost ÷ (annual decom savings minus annual archive cost).
         </MCard>
 
         <MCard color={C.blue} title="Key sources" num="08">

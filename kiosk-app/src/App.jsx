@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { C, F, W, H, KIOSK_STEPS } from './theme';
 import { SplashScreen } from './components/SplashScreen';
 import { calc } from './calc/engine';
@@ -7,6 +7,78 @@ import { systemCost } from './calc/vendors';
 import { StepIndicator, NavButtons, PageTransition } from './components';
 import { ProviderStep, JourneyStep, FacilitiesStep, SystemsStep, FineTuneStep } from './steps';
 import { ResultsPage } from './results/ResultsPage';
+
+/* ────────────────────────────────────────────────────────────────────────
+   COMPLETION COUNTER (localStorage-backed, hidden admin reveal via 5 taps)
+   ──────────────────────────────────────────────────────────────────────── */
+const STATS_KEY = 'kiosk-stats';
+function recordCompletion() {
+  try {
+    const raw = localStorage.getItem(STATS_KEY);
+    const data = raw ? JSON.parse(raw) : { completions: [], total: 0 };
+    data.completions.push(Date.now());
+    data.total = (data.total || 0) + 1;
+    if (data.completions.length > 1000) data.completions = data.completions.slice(-1000);
+    localStorage.setItem(STATS_KEY, JSON.stringify(data));
+  } catch (e) { /* ignore */ }
+}
+function getStats() {
+  try {
+    const raw = localStorage.getItem(STATS_KEY);
+    if (!raw) return { total: 0, today: 0, last: null };
+    const data = JSON.parse(raw);
+    const now = Date.now();
+    const oneDayAgo = now - 24 * 60 * 60 * 1000;
+    const today = (data.completions || []).filter(t => t >= oneDayAgo).length;
+    const last = (data.completions || []).length ? data.completions[data.completions.length - 1] : null;
+    return { total: data.total || 0, today, last };
+  } catch (e) { return { total: 0, today: 0, last: null }; }
+}
+function resetStats() {
+  try { localStorage.removeItem(STATS_KEY); } catch (e) { /* ignore */ }
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   ADMIN OVERLAY - shown after 5 quick taps on the splash logo
+   ──────────────────────────────────────────────────────────────────────── */
+function AdminOverlay({ onClose }) {
+  const [stats, setStats] = useState(getStats());
+  const refresh = () => setStats(getStats());
+  useEffect(() => {
+    const id = setInterval(refresh, 1000);
+    return () => clearInterval(id);
+  }, []);
+  const lastStr = stats.last ? new Date(stats.last).toLocaleString() : 'never';
+  const handleReset = () => {
+    if (window.confirm('Reset all completion stats? This cannot be undone.')) {
+      resetStats();
+      refresh();
+    }
+  };
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,15,26,0.92)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+      <div style={{ background: C.surface, padding: '40px 48px', borderRadius: 24, border: '1px solid ' + C.border, maxWidth: 560, width: '100%' }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 8 }}>Kiosk Stats</div>
+        <div style={{ fontSize: 28, fontWeight: 800, color: C.text, marginBottom: 28 }}>Completion counter</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 24 }}>
+          <div style={{ padding: '20px 22px', background: C.bg, borderRadius: 14, border: '1px solid ' + C.borderLight }}>
+            <div style={{ fontSize: 12, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600 }}>All time</div>
+            <div style={{ fontSize: 56, fontWeight: 800, color: C.accent, lineHeight: 1.1, marginTop: 6 }}>{stats.total}</div>
+          </div>
+          <div style={{ padding: '20px 22px', background: C.bg, borderRadius: 14, border: '1px solid ' + C.borderLight }}>
+            <div style={{ fontSize: 12, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600 }}>Last 24 hours</div>
+            <div style={{ fontSize: 56, fontWeight: 800, color: C.accent, lineHeight: 1.1, marginTop: 6 }}>{stats.today}</div>
+          </div>
+        </div>
+        <div style={{ fontSize: 14, color: C.textMid, marginBottom: 24 }}>Last completion: <strong style={{ color: C.text }}>{lastStr}</strong></div>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+          <button onClick={handleReset} style={{ padding: '12px 22px', borderRadius: 12, border: '1px solid ' + C.border, background: 'transparent', color: C.textMid, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Reset stats</button>
+          <button onClick={onClose} style={{ padding: '12px 28px', borderRadius: 12, border: 'none', background: C.accent, color: '#0a0f1a', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const IDN_FACILITIES = {
   ambulatory_surgery: 6, physician_practices: 20, urgent_care: 4,
@@ -67,6 +139,7 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [kioskStep, setKioskStep] = useState(0);
   const [calibrating, setCalibrating] = useState(false);
+  const [adminVisible, setAdminVisible] = useState(false);
   const [providerType, setProviderType] = useState("community");
   const [reimbursementModel, setReimbursementModel] = useState("mixed");
   const [occupancyRate, setOccupancyRate] = useState(0.65);
@@ -148,7 +221,7 @@ export default function App() {
   const r = useMemo(() => calc(calcInputs, "EXPECTED", {}, flagships), [calcInputs, flagships]);
 
   const handleCalculate = useCallback(() => setCalibrating(true), []);
-  const handleCalibrationDone = useCallback(() => { setCalibrating(false); setKioskStep(KIOSK_STEPS.length - 1); }, []);
+  const handleCalibrationDone = useCallback(() => { setCalibrating(false); setKioskStep(KIOSK_STEPS.length - 1); recordCompletion(); }, []);
   const handleAdjust = useCallback(() => setKioskStep(4), []);
   const handleStartOver = useCallback(() => {
     setShowSplash(true);
@@ -177,12 +250,53 @@ export default function App() {
     }
   };
 
-  if (showSplash) return <SplashScreen onStart={() => setShowSplash(false)} />;
+  // Idle timeout - reset to splash after 90 seconds of no user activity
+  // Only active when not on splash (otherwise the splash auto-advances unwantedly)
+  useEffect(() => {
+    if (showSplash) return;
+    let timeoutId = null;
+    const IDLE_MS = 90000;
+    const goToSplash = () => {
+      setShowSplash(true);
+      setKioskStep(0);
+      setCalibrating(false);
+      setProviderType("community");
+      setReimbursementModel("mixed");
+      setOccupancyRate(0.65);
+      setGalenMigrationCost(0);
+      setGalenAnnualCost(0);
+      setFlagships([]);
+      setFacilitiesState({});
+      setCostMode("estimate");
+      setKnownSpend(0);
+      setInputs({ ...PRESETS.TYPICAL.data, tiers: { ...PRESETS.TYPICAL.data.tiers } });
+    };
+    const reset = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(goToSplash, IDLE_MS);
+    };
+    reset();
+    document.addEventListener('touchstart', reset, { passive: true });
+    document.addEventListener('mousedown', reset);
+    document.addEventListener('keydown', reset);
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      document.removeEventListener('touchstart', reset);
+      document.removeEventListener('mousedown', reset);
+      document.removeEventListener('keydown', reset);
+    };
+  }, [showSplash]);
+
+  if (showSplash) return <>
+    <SplashScreen onStart={() => setShowSplash(false)} onAdminReveal={() => setAdminVisible(true)} />
+    {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
+  </>;
 
   if (calibrating) {
 
   return <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, height: '100vh', color: C.text, position: "relative" }}>
       <CalibratingScreen onDone={handleCalibrationDone} />
+      {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
     </div>;
   }
 
@@ -195,6 +309,7 @@ export default function App() {
         <PageTransition step={kioskStep}>{renderStep()}</PageTransition>
       </div>
       <NavButtons step={kioskStep} totalSteps={KIOSK_STEPS.length} onBack={() => setKioskStep(p => p - 1)} onNext={() => setKioskStep(p => p + 1)} onCalculate={handleCalculate} />
+      {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
     </div>
   );
 }

@@ -1,8 +1,24 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { C } from '../theme';
 import rldatixLogo from '../assets/rldatix-logo.png';
 
-export function SplashScreen({ onStart }) {
+export function SplashScreen({ onStart, onAdminReveal }) {
+  // 5 quick taps on the RLDatix logo at the bottom reveals the hidden completion stats overlay.
+  // Used by sales/marketing staff at the show to check how many assessments have been completed.
+  const tapCount = useRef(0);
+  const tapTimer = useRef(null);
+  const handleLogoTap = useCallback((e) => {
+    e.stopPropagation();
+    tapCount.current += 1;
+    if (tapTimer.current) clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 1500);
+    if (tapCount.current >= 5) {
+      tapCount.current = 0;
+      if (tapTimer.current) clearTimeout(tapTimer.current);
+      if (onAdminReveal) onAdminReveal();
+    }
+  }, [onAdminReveal]);
+
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -148,9 +164,9 @@ export function SplashScreen({ onStart }) {
 
       </div>
 
-      <img src={rldatixLogo} alt="RLDatix" style={{
+      <img src={rldatixLogo} alt="RLDatix" onClick={handleLogoTap} style={{
         position: 'absolute', bottom: 50, left: '50%', transform: 'translateX(-50%)',
-        width: 450, opacity: 0.5, zIndex: 3,
+        width: 450, opacity: 0.5, zIndex: 3, cursor: 'pointer',
       }} />
       <div style={{
         position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)',

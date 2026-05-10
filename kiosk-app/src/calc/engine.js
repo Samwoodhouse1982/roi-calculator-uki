@@ -289,7 +289,8 @@ export function calc(inp, mode, ov = {}, flagships = []) {
 
   const annual = decomSave + timeSave;
   const annualWithReimbursement = annual + reimbursementImpact + qualitySavings + academicSavings + mergeSavings;
-  // Phased ramp: Year 1 = 40%, Year 2 = 80%, Year 3 = 100% of steady-state
+  // Phased ramp - both 3-year (40/80/100) and 5-year (20/40/60/80/100) variants pre-computed
+  // so the Results page can switch between projection windows without recomputing.
   const y1Pct = 0.40, y2Pct = 0.80, y3Pct = 1.00;
   const yr1 = Math.round(annual * y1Pct);
   const yr2 = Math.round(annual * y2Pct);
@@ -299,6 +300,12 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const yr2R = Math.round(annualWithReimbursement * y2Pct);
   const yr3R = Math.round(annualWithReimbursement * y3Pct);
   const total3WithReimbursement = yr1R + yr2R + yr3R;
+  // 5-year ramp: 20/40/60/80/100. Sum = 3.0 x steady state (vs 3-year ramp's 2.2 x)
+  const ramp5 = [0.20, 0.40, 0.60, 0.80, 1.00];
+  const yr5Vals = ramp5.map(p => Math.round(annual * p));
+  const yr5ValsR = ramp5.map(p => Math.round(annualWithReimbursement * p));
+  const total5 = yr5Vals.reduce((s, v) => s + v, 0);
+  const total5WithReimbursement = yr5ValsR.reduce((s, v) => s + v, 0);
   return {
     legacy, org_count: inp.org_count, ent, dep, nic, entCost, depCost, nicCost, blendedCost, totalEstate,
     decom, entDecom, depDecom, nicDecom, decomSave,
@@ -327,6 +334,7 @@ export function calc(inp, mode, ov = {}, flagships = []) {
     isMultiHospital, duplicateSystems, duplicateSystemCost, duplicateElimination,
     duplicateInfraCost, infraConsolidation, standardizationSave, mergeSavings,
     annualWithReimbursement, total3WithReimbursement, yr1R, yr2R, yr3R,
+    yr5Vals, yr5ValsR, total5, total5WithReimbursement, ramp5,
   };
 }
 
