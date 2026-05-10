@@ -320,9 +320,17 @@
     letter-spacing: -1px !important;
   }
 
-  /* Wider scenario figure box (32px) - tighten on small screens */
+  /* Eye-catching headline number (56px on desktop) - cap on mobile */
+  div[style*="font-size: 56px"] {
+    font-size: 40px !important;
+    letter-spacing: -1.5px !important;
+  }
+  /* Legacy 32px / 38px figures that may exist elsewhere */
   div[style*="font-size: 32px"] {
     font-size: 26px !important;
+  }
+  div[style*="font-size: 38px"] {
+    font-size: 28px !important;
   }
 
   /* Composition bar segments - ensure horizontal wrap doesn't break layout */
