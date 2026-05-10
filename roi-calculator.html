@@ -3492,31 +3492,21 @@ function ROICalculator() {
           {scenarioBlend != null && Math.abs(scenarioBlend - 0) > 0.005 && Math.abs(scenarioBlend - 0.5) > 0.005 && Math.abs(scenarioBlend - 1) > 0.005 && <> · custom blend</>}
         </div>}
       </div>
-      <div style={{position:"relative",padding:"6px 0 22px",opacity:(scenarioMode==="DELAYED"||scenarioMode==="PARTIAL")?0.5:1}}>
-        <div style={{position:"absolute",left:0,right:0,top:14,height:10,pointerEvents:"none"}}>
-          {[0, 0.5, 1].map((pos, i) => (
-            <div key={i} style={{position:"absolute",left:`${pos*100}%`,transform:"translateX(-50%)",width:2,height:10,background:scenarioBlend != null && Math.abs(scenarioBlend - pos) < 0.005 ? C.accent : C.border}}/>
-          ))}
-        </div>
+      <div style={{padding:"4px 0 18px",opacity:(scenarioMode==="DELAYED"||scenarioMode==="PARTIAL")?0.5:1}}>
         <input type="range" min="0" max="1" step="0.01" value={scenarioBlend ?? 0.5}
           onChange={(e)=>setBlend(parseFloat(e.target.value))}
           style={{width:"100%",accentColor:C.accent,cursor:"pointer",height:24,padding:0,margin:0}}/>
-        <div style={{position:"absolute",left:0,right:0,top:32,fontSize:10,color:C.textMuted,pointerEvents:"none"}}>
-          <button type="button" onClick={()=>setBlend(0)} style={{position:"absolute",left:0,fontSize:11,color:scenarioMode==="CONSERVATIVE"?C.accent:C.textMid,fontWeight:scenarioMode==="CONSERVATIVE"?700:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",pointerEvents:"auto"}}>Conservative</button>
-          <button type="button" onClick={()=>setBlend(0.5)} style={{position:"absolute",left:"50%",transform:"translateX(-50%)",fontSize:11,color:scenarioMode==="EXPECTED"?C.accent:C.textMid,fontWeight:scenarioMode==="EXPECTED"?700:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",pointerEvents:"auto",whiteSpace:"nowrap"}}>Expected</button>
-          <button type="button" onClick={()=>setBlend(1)} style={{position:"absolute",right:0,fontSize:11,color:scenarioMode==="STRETCH"?C.accent:C.textMid,fontWeight:scenarioMode==="STRETCH"?700:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",pointerEvents:"auto"}}>Stretch</button>
+        <div style={{position:"relative",height:14,marginTop:2}}>
+          <button type="button" onClick={()=>setBlend(0)} style={{position:"absolute",left:0,fontSize:11,color:C.textMuted,fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit"}}>Conservative</button>
+          <button type="button" onClick={()=>setBlend(0.5)} style={{position:"absolute",left:"50%",transform:"translateX(-50%)",fontSize:11,color:C.textMuted,fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",whiteSpace:"nowrap"}}>Expected</button>
+          <button type="button" onClick={()=>setBlend(1)} style={{position:"absolute",right:0,fontSize:11,color:C.textMuted,fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit"}}>Stretch</button>
         </div>
       </div>
-      <div style={{display:"flex",gap:6,marginTop:14}}>
-        {[
-          { k: "CONSERVATIVE", l: "Conservative", res: rCon, pos: 0 },
-          { k: "EXPECTED", l: "Expected", res: rExp, pos: 0.5 },
-          { k: "STRETCH", l: "Stretch", res: rStr, pos: 1 },
-        ].map(s => <div key={s.k} style={{flex:"1 1 0",minWidth:90,padding:"8px 6px",textAlign:"center",border:`1px solid ${scenarioMode===s.k?C.accent:C.borderLight}`,borderRadius:8,background:scenarioMode===s.k?C.accentPale:"#fafbfc"}}>
-          <div style={{fontSize:10,fontWeight:600,color:scenarioMode===s.k?C.accent:C.textMuted,textTransform:"uppercase",letterSpacing:".03em",marginBottom:2}}>{s.l}</div>
-          <div style={{fontSize:16,fontWeight:800,color:scenarioMode===s.k?C.accent:C.text}}>{fmtK(s.res.annualWithReimbursement)}/yr</div>
-        </div>)}
-      </div>
+      {!dim && <div style={{padding:"14px 18px",background:C.accentPale,border:`1px solid ${C.accent}33`,borderRadius:10,textAlign:"center"}}>
+        <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginBottom:4}}>Annual savings at this scenario</div>
+        <div style={{fontSize:32,fontWeight:800,color:C.accent,letterSpacing:"-1px",lineHeight:1.1,fontVariantNumeric:"tabular-nums"}}>{fmtK(r.annualWithReimbursement)}<span style={{fontSize:14,fontWeight:600,color:C.textMid}}>/yr</span></div>
+        <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>Range across scenarios: <strong style={{color:C.textMid}}>{fmtK(rCon.annualWithReimbursement)}</strong> {"\u2013"} <strong style={{color:C.textMid}}>{fmtK(rStr.annualWithReimbursement)}</strong></div>
+      </div>}
     </Card>
     </div>
 
