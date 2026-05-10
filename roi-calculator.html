@@ -2638,20 +2638,40 @@ function ROICalculator() {
 
     {/* Scenario chooser - sticky with comparison strip */}
     <div style={{position:"sticky",top:0,zIndex:50,background:C.bg,paddingTop:8,paddingBottom:8,marginBottom:16,marginLeft:-24,marginRight:-24,paddingLeft:24,paddingRight:24,borderBottom:`1px solid ${C.borderLight}`}}>
-    <Card style={{marginBottom:0,border:dim?`2px solid ${C.accent}`:`1px solid ${C.border}`,boxShadow:dim?`0 0 0 4px ${C.accent}22`:"0 1px 3px rgba(0,0,0,0.05)",padding:"12px 16px"}}>
-      <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:8,textTransform:"uppercase",letterSpacing:".05em"}}>
-        {dim ? "Choose scenario to unlock results" : "Annual savings by scenario \u00b7 click to switch"}
+    <Card style={{marginBottom:0,border:dim?`2px solid ${C.accent}`:`1px solid ${C.border}`,boxShadow:dim?`0 0 0 4px ${C.accent}22`:"0 1px 3px rgba(0,0,0,0.05)",padding:"14px 18px"}}>
+      <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:6,flexWrap:"wrap",gap:8}}>
+        <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em"}}>
+          {dim ? "Drag the slider to unlock results" : "Adjust scenario assumptions · drag to fine-tune"}
+        </div>
+        {!dim && <div style={{fontSize:11,color:C.textMuted}}>
+          <span style={{fontWeight:700,color:C.text}}>{scenarioMode === "CONSERVATIVE" ? "Conservative" : scenarioMode === "STRETCH" ? "Stretch" : "Expected"}</span>
+          {scenarioBlend != null && Math.abs(scenarioBlend - 0) > 0.005 && Math.abs(scenarioBlend - 0.5) > 0.005 && Math.abs(scenarioBlend - 1) > 0.005 && <> · custom blend</>}
+        </div>}
       </div>
-      <div style={{display:"flex",gap:6}}>
+      <div style={{position:"relative",padding:"6px 0 22px"}}>
+        <div style={{position:"absolute",left:0,right:0,top:14,height:10,pointerEvents:"none"}}>
+          {[0, 0.5, 1].map((pos, i) => (
+            <div key={i} style={{position:"absolute",left:`${pos*100}%`,transform:"translateX(-50%)",width:2,height:10,background:scenarioBlend != null && Math.abs(scenarioBlend - pos) < 0.005 ? C.accent : C.border}}/>
+          ))}
+        </div>
+        <input type="range" min="0" max="1" step="0.01" value={scenarioBlend ?? 0.5}
+          onChange={(e)=>setBlend(parseFloat(e.target.value))}
+          style={{width:"100%",accentColor:C.accent,cursor:"pointer",height:24,padding:0,margin:0}}/>
+        <div style={{position:"absolute",left:0,right:0,top:32,fontSize:10,color:C.textMuted,pointerEvents:"none"}}>
+          <button type="button" onClick={()=>setBlend(0)} style={{position:"absolute",left:0,fontSize:11,color:scenarioMode==="CONSERVATIVE"?C.accent:C.textMid,fontWeight:scenarioMode==="CONSERVATIVE"?700:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",pointerEvents:"auto"}}>Conservative</button>
+          <button type="button" onClick={()=>setBlend(0.5)} style={{position:"absolute",left:"50%",transform:"translateX(-50%)",fontSize:11,color:scenarioMode==="EXPECTED"?C.accent:C.textMid,fontWeight:scenarioMode==="EXPECTED"?700:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",pointerEvents:"auto",whiteSpace:"nowrap"}}>Expected</button>
+          <button type="button" onClick={()=>setBlend(1)} style={{position:"absolute",right:0,fontSize:11,color:scenarioMode==="STRETCH"?C.accent:C.textMid,fontWeight:scenarioMode==="STRETCH"?700:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",pointerEvents:"auto"}}>Stretch</button>
+        </div>
+      </div>
+      <div style={{display:"flex",gap:6,marginTop:14}}>
         {[
-            { k: "CONSERVATIVE", l: "Conservative", s: "Lower-bound", res: rCon },
-            { k: "EXPECTED", l: "Expected", s: "Best estimate", res: rExp },
-            { k: "STRETCH", l: "Stretch", s: "Upside", res: rStr },
-          ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:90,padding:"10px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:8,cursor:"pointer",background:scenarioMode===s.k?C.accentPale:"#fff",transition:"all .15s"}}>
-          <div style={{fontSize:11,fontWeight:600,color:scenarioMode===s.k?C.accent:C.textMuted,textTransform:"uppercase",letterSpacing:".03em",marginBottom:2}}>{s.l}</div>
-          <div style={{fontSize:18,fontWeight:800,color:scenarioMode===s.k?C.accent:C.text}}>{fmtK(s.res.annual)}</div>
-          <div style={{fontSize:10,color:C.textMuted,marginTop:1}}>{s.s} · /yr</div>
-        </button>)}
+          { k: "CONSERVATIVE", l: "Conservative", res: rCon, pos: 0 },
+          { k: "EXPECTED", l: "Expected", res: rExp, pos: 0.5 },
+          { k: "STRETCH", l: "Stretch", res: rStr, pos: 1 },
+        ].map(s => <div key={s.k} style={{flex:"1 1 0",minWidth:90,padding:"8px 6px",textAlign:"center",border:`1px solid ${scenarioMode===s.k?C.accent:C.borderLight}`,borderRadius:8,background:scenarioMode===s.k?C.accentPale:"#fafbfc"}}>
+          <div style={{fontSize:10,fontWeight:600,color:scenarioMode===s.k?C.accent:C.textMuted,textTransform:"uppercase",letterSpacing:".03em",marginBottom:2}}>{s.l}</div>
+          <div style={{fontSize:16,fontWeight:800,color:scenarioMode===s.k?C.accent:C.text}}>{fmtK(s.res.annual)}/yr</div>
+        </div>)}
       </div>
     </Card>
     </div>
