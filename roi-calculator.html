@@ -477,11 +477,12 @@ function calc(inp, mode, ov = {}, flagships = []) {
   // Phased ramp: Year 1 = 40%, Year 2 = 80%, Year 3 = 100% of steady-state
   const rampYears = inp._rampYears || 3;
   const rampPcts = rampYears === 5 ? [0.20,0.40,0.60,0.80,1.00] : [0.40,0.80,1.00];
-  const y1Pct = rampPcts[0], y2Pct = rampPcts[1], y3Pct = rampPcts[2];
+  const y1Pct = rampPcts[0], y2Pct = rampPcts[1] || 0, y3Pct = rampPcts[2] || 0;
   const yr1 = Math.round(annual * y1Pct);
   const yr2 = Math.round(annual * y2Pct);
   const yr3 = Math.round(annual * y3Pct);
-  const total3 = yr1 + yr2 + yr3;
+  // total3 is the FULL ramp total (sums all years in rampPcts), historically named "total3"
+  const total3 = rampPcts.reduce((s,p) => s + Math.round(annual*p), 0);
   const yr1R = Math.round(annualWithReimbursement * y1Pct);
   const yr2R = Math.round(annualWithReimbursement * y2Pct);
   const yr3R = Math.round(annualWithReimbursement * y3Pct);
@@ -783,7 +784,7 @@ function OverridableStat({label,computed,override,onOverride,prefix,suffix,step:
 }
 
 function Stat({label,value,sub,color,info}){return<div style={{minWidth:130,flex:"1 1 130px"}}><div style={{fontSize:12,fontWeight:600,color:C.textMuted,letterSpacing:".01em",display:"flex",alignItems:"center"}}>{label}{info&&<InfoTip text={info}/>}</div><div style={{fontSize:26,fontWeight:800,color:color||C.text,letterSpacing:"-.5px",margin:"2px 0"}}>{value}</div>{sub&&<div style={{fontSize:12,color:C.textMuted}}>{sub}</div>}</div>;}
-function ResultCard({ label, value, sub, bg, border, valueColor, icon, dimmed }) {
+function ResultCard({ label, value, sub, bg, border, valueColor, icon, dimmed, info }) {
   return (
     <div className="roi-result" style={{
       background: bg, border: `1px solid ${border}`, borderRadius: 12,
@@ -791,8 +792,8 @@ function ResultCard({ label, value, sub, bg, border, valueColor, icon, dimmed })
       opacity: dimmed ? 0.3 : 1, filter: dimmed ? "grayscale(.5)" : "none",
       transition: "all .3s",
     }}>
-      <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".01em", color: C.textMid, marginBottom: 2 }}>
-        {icon && <span style={{ marginRight: 6 }}>{icon}</span>}{label}
+      <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: ".01em", color: C.textMid, marginBottom: 2, display: "flex", alignItems: "center" }}>
+        {icon && <span style={{ marginRight: 6 }}>{icon}</span>}{label}{info && <InfoTip text={info}/>}
       </div>
       <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-.5px", color: valueColor, margin: "4px 0" }}>{value}</div>
       {sub && <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.4 }}>{sub}</div>}
@@ -1495,14 +1496,14 @@ function ROICalculator() {
     three_year_with_reimbursement: r.total3WithReimbursement,
     galen_migration_cost: galenMigrationCost,
     galen_annual_cost: galenAnnualCost,
-    galen_3yr_total: galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)),
+    galen_total: galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b)=>a+b,0)),
     merger_mode: mergerMode,
     merger_orgs: mergerOrgs.map(o => ({ label: o.label, beds: o.beds, facilities: o.orgs, cat: o.cat })),
     facility_portfolio: facilityPortfolio,
     portfolio_additional_systems: portfolioImpact.addSystems,
     portfolio_additional_staff: portfolioImpact.addStaff,
     portfolio_additional_cost: portfolioImpact.addCost,
-    net_3yr_savings: (galenMigrationCost > 0 || galenAnnualCost > 0) ? r.total3WithReimbursement - galenMigrationCost - Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)) : null,
+    net_savings: (galenMigrationCost > 0 || galenAnnualCost > 0) ? r.total3WithReimbursement - galenMigrationCost - Math.round(galenAnnualCost * r.rampPcts.reduce((a,b)=>a+b,0)) : null,
     yr1: r.yr1, yr2: r.yr2, yr3: r.yr3,
     yr1_pct: r.y1Pct, yr2_pct: r.y2Pct, yr3_pct: r.y3Pct,
     admissions_per_year: r.admissionsPerYear,
@@ -3888,12 +3889,12 @@ function ROICalculator() {
         </div>
         <div style={{flex:"1 1 160px",padding:"16px 18px",background:"#fef0f0",borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Galen annual (3yr)</div>
-          <div style={{fontSize:22,fontWeight:800,color:"#993535",margin:"6px 0"}}>{fmtK(Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))}</div>
+          <div style={{fontSize:22,fontWeight:800,color:"#993535",margin:"6px 0"}}>{fmtK(Math.round(galenAnnualCost * r.rampPcts.reduce((a,b)=>a+b,0)))}</div>
           <div style={{fontSize:11,color:C.textMuted}}>{fmtK(galenAnnualCost)}/yr phased</div>
         </div>
-        <div style={{flex:"1 1 160px",padding:"16px 18px",background:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.greenPale : "#fef0f0",borderRadius:10,textAlign:"center"}}>
+        <div style={{flex:"1 1 160px",padding:"16px 18px",background:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b)=>a+b,0)))) > 0 ? C.greenPale : "#fef0f0",borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>3-year net savings</div>
-          <div style={{fontSize:22,fontWeight:800,color:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))) > 0 ? C.green : "#993535",margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * (r.y1Pct + r.y2Pct + r.y3Pct)))):"-"}</div>
+          <div style={{fontSize:22,fontWeight:800,color:(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b)=>a+b,0)))) > 0 ? C.green : "#993535",margin:"6px 0"}}>{an?fmtK(r.total3WithReimbursement - (galenMigrationCost + Math.round(galenAnnualCost * r.rampPcts.reduce((a,b)=>a+b,0)))):"-"}</div>
           <div style={{fontSize:11,color:C.textMuted}}>Payback: ~{an && r.annualWithReimbursement > galenAnnualCost ? (galenMigrationCost / (r.annualWithReimbursement - galenAnnualCost)).toFixed(1) : "-"} years</div>
         </div>
       </div>
