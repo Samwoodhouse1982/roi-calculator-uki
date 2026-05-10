@@ -3407,10 +3407,10 @@ function ROICalculator() {
           <button type="button" className="roi-anchor" onClick={()=>setBlend(1)} style={{position:"absolute",right:0,fontSize:11,color:C.textMuted,fontWeight:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit"}}>Stretch</button>
         </div>
       </div>
-      {!dim && <div style={{padding:"16px 18px",background:C.accentPale,border:`1px solid ${C.accent}33`,borderRadius:10,textAlign:"center"}}>
-        <div style={{fontSize:11,fontWeight:600,color:C.textMuted,letterSpacing:2,textTransform:"uppercase",marginBottom:6}}>{ts.heroLabel}</div>
-        <div style={{fontSize:38,fontWeight:800,color:C.accent,letterSpacing:"-1.5px",lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{fmtK(Math.round(r.annualWithReimbursement * ts.mult))}<span style={{fontSize:15,fontWeight:600,color:C.textMid,marginLeft:2}}>{ts.suffix || "/yr"}</span></div>
-        <div style={{fontSize:12,color:C.textMid,marginTop:8}}>
+      {!dim && <div style={{padding:"24px 18px 18px",background:`linear-gradient(180deg, ${C.tealPale} 0%, #fff 100%)`,border:`1px solid ${C.accent}33`,borderTop:`3px solid ${C.accent}`,borderRadius:12,textAlign:"center",boxShadow:`0 6px 24px ${C.accent}1a, 0 1px 3px ${C.accent}10`}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.textMid,letterSpacing:2,textTransform:"uppercase",marginBottom:12}}>{ts.heroLabel}</div>
+        <div style={{fontSize:56,fontWeight:900,letterSpacing:"-2.5px",lineHeight:1,fontVariantNumeric:"tabular-nums",background:`linear-gradient(135deg, ${C.accent} 0%, ${C.amber} 55%, ${C.seafoam} 100%)`,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",display:"inline-block",filter:`drop-shadow(0 2px 8px ${C.accent}30)`,paddingBottom:4}}>{fmtK(Math.round(r.annualWithReimbursement * ts.mult))}<span style={{fontSize:18,fontWeight:600,color:C.textMid,WebkitTextFillColor:C.textMid,background:"none",marginLeft:4}}>{ts.suffix || "/yr"}</span></div>
+        <div style={{fontSize:12,color:C.textMid,marginTop:12}}>
           {viewTimescale === "annual"
             ? <>per year · {r.rampYears}-year total: <strong style={{color:C.accent}}>{fmtK(r.totalRamp)}</strong></>
             : <>{ts.subContext} · annual at steady state: <strong style={{color:C.accent}}>{fmtK(r.annualWithReimbursement)}</strong></>
