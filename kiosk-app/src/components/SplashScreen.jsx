@@ -107,7 +107,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
 
         <div style={{
           fontSize: 20, fontWeight: 600, letterSpacing: 10, textTransform: 'uppercase',
-          color: '#00d4aa', marginBottom: 50, opacity: 0.7,
+          color: '#00d4aa', marginBottom: 50, opacity: 0.95,
         }}>RLDatix Galen Clinical Archive</div>
 
         <h1 style={{
@@ -120,7 +120,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
         </h1>
 
         <p style={{
-          fontSize: 28, fontWeight: 400, color: 'rgba(255,255,255,0.5)',
+          fontSize: 28, fontWeight: 400, color: 'rgba(255,255,255,0.78)',
           lineHeight: 1.6, margin: '0 auto 75px', maxWidth: 750,
         }}>
           See exactly how much your health system could save by retiring legacy applications and consolidating clinical data into a single archive.
@@ -147,7 +147,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
         `}</style>
 
         <div style={{
-          marginTop: 60, fontSize: 18, color: 'rgba(255,255,255,0.25)',
+          marginTop: 60, fontSize: 18, color: 'rgba(255,255,255,0.5)',
           letterSpacing: 2.5,
         }}>
           BEST IN KLAS 2025 &nbsp;·&nbsp; DATA ARCHIVING
@@ -161,7 +161,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
       }} />
       <div style={{
         position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)',
-        fontSize: 14, color: 'rgba(255,255,255,0.2)', letterSpacing: 1, zIndex: 3, whiteSpace: 'nowrap',
+        fontSize: 14, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, zIndex: 3, whiteSpace: 'nowrap',
       }}>v2.1 · Updated May 2026</div>
     </div>
   );

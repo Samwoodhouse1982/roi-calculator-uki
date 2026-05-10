@@ -278,7 +278,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Row label="Capacity value" value={fmtK(seg.capacity) + "/yr"} accent />
         <Methodology
           formula={"clinicians \u00d7 (mins/wk - residual) \u00d7 working_weeks / 60 \u00d7 $95 \u00d7 scenario.realization"}
-          plug={`${fmtNum(r.clinicians)} active clinicians \u00d7 ${Math.max(0, r.minsWasted - 2)} reducible mins/wk (${r.minsWasted} - 2 residual) \u00d7 50 working wks / 60\n= ${fmtNum(r.hrsSaved)} hrs \u00d7 $95/hr \u00d7 ${Math.round((r.realization || 0.3) * 100)}% realization\n= ${fmtK(r.timeSave)}/yr`}
+          plug={`${fmtNum(r.clinicians)} active clinicians \u00d7 ${Math.max(0, r.minsWasted - (r.isArchiveOnly ? 1 : 2))} reducible mins/wk (${r.minsWasted} - ${r.isArchiveOnly ? 1 : 2} residual) \u00d7 50 working wks / 60\n= ${fmtNum(r.hrsSaved)} hrs \u00d7 $95/hr \u00d7 ${Math.round((r.realization || 0.3) * 100)}% realization\n= ${fmtK(r.timeSave)}/yr`}
           source={"Active clinicians = total staff (beds \u00d7 3.2) \u00d7 65% active rate (Sinsky et al 2016, KLAS Arch Collaborative 500k+ clinicians). Each clinician touches ~35% of legacy estate (role-based access, modeled). Switch penalty 4% per system: Bartek et al JIMI 2023 (PRIMARY: 2.78M EHR audit-log events, \u03b2=0.03), corroborated by Westbrook et al JAMIA 2010. $95/hr blended: AHA RN/MD/tech weighted."}
         />
       </Card>
@@ -296,8 +296,8 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Row label="Total reimbursement impact" value={fmtK(seg.reimb) + "/yr"} accent />
         <Methodology
           formula={"HRRP penalty reduction + HAC penalty reduction + VBP improvement + Denial recovery"}
-          plug={`HRRP: ${fmtK(r.hrrpReduction)}/yr (Medicare DRG ${fmtK(r.medicareDrg)} \u00d7 0.69% avg penalty \u00d7 scenario.safety)\nHAC: ${fmtK(r.hacReduction)}/yr (DRG \u00d7 1% \u00d7 25% bottom-quartile probability)\nVBP: ${fmtK(r.vbpImprovement)}/yr (DRG \u00d7 2% withhold \u00d7 15% improvement potential)\nDenials: ${fmtK(r.denialRecovery)}/yr (revenue \u00d7 4.8% denial rate \u00d7 fragmentation attribution)\n= ${fmtK(seg.reimb)}/yr total`}
-          source={"HRRP: CMS Section 1886(q) Social Security Act (3% max penalty, 0.69% avg). HAC: CMS HAC Reduction Program (1% reduction for bottom 25%). VBP: CMS Hospital Value-Based Purchasing (2% withhold pool). Denials: HFMA 2024 + AHIP industry data ($262bn annually denied, 4.8% net loss). Fragmentation attribution: Vest et al JAMIA 2019."}
+          plug={`HRRP: ${fmtK(r.hrrpReduction)}/yr (Medicare DRG ${fmtK(r.medicareDrg)} \u00d7 0.33% avg penalty \u00d7 scenario.safety)\nHAC: ${fmtK(r.hacReduction)}/yr (DRG \u00d7 1% \u00d7 25% bottom-quartile probability)\nVBP: ${fmtK(r.vbpImprovement)}/yr (DRG \u00d7 2% withhold \u00d7 15% improvement potential)\nDenials: ${fmtK(r.denialRecovery)}/yr (revenue \u00d7 4.8% denial rate \u00d7 fragmentation attribution)\n= ${fmtK(seg.reimb)}/yr total`}
+          source={"HRRP: CMS Section 1886(q) Social Security Act (3% max penalty, 0.33% avg FY2025 - Advisory Board). HAC: CMS HAC Reduction Program (1% reduction for bottom 25%). VBP: CMS Hospital Value-Based Purchasing (2% withhold pool). Denials: HFMA 2024 + AHIP industry data ($262bn annually denied, 4.8% net loss). Fragmentation attribution: Vest et al JAMIA 2019."}
         />
       </Card>
     </div>}
@@ -314,8 +314,8 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         {r.malpracticeReduction > 0 && <Row label="Malpractice reduction" value={fmtK(r.malpracticeReduction) + "/yr"} />}
         {(r.qualitySavings || 0) > 0 && <Row label="Total cost avoidance" value={fmtK(r.qualitySavings) + "/yr"} accent />}
         <Methodology
-          formula={"Excess bed days \u00d7 $3,132/day + Malpractice premium \u00d7 5% \u00d7 scenario.safety + Readmissions avoided \u00d7 $16,000"}
-          plug={`Excess bed days: ${fmtNum(r.safetyBedDaysAvoided || 0)} days \u00d7 $3,132 = ${fmtK(r.excessDayCostAvoided || 0)}/yr\n${r.malpracticeReduction > 0 ? `Malpractice: beds \u00d7 $8,500 premium \u00d7 5% reduction \u00d7 scenario.safety = ${fmtK(r.malpracticeReduction)}/yr\n` : ""}${r.readmissionCostAvoidance > 0 ? `Readmissions: ${r.readmissionsAvoided} avoided \u00d7 $16,000 = ${fmtK(r.readmissionCostAvoidance)}/yr\n` : ""}= ${fmtK(r.qualitySavings || 0)}/yr total`}
+          formula={"Excess bed days \u00d7 $3,132/day + Malpractice premium \u00d7 5% \u00d7 scenario.safety + Readmissions avoided \u00d7 $15,200"}
+          plug={`Excess bed days: ${fmtNum(r.safetyBedDaysAvoided || 0)} days \u00d7 $3,132 = ${fmtK(r.excessDayCostAvoided || 0)}/yr\n${r.malpracticeReduction > 0 ? `Malpractice: beds \u00d7 $8,500 premium \u00d7 5% reduction \u00d7 scenario.safety = ${fmtK(r.malpracticeReduction)}/yr\n` : ""}${r.readmissionCostAvoidance > 0 ? `Readmissions: ${r.readmissionsAvoided} avoided \u00d7 $15,200 = ${fmtK(r.readmissionCostAvoidance)}/yr\n` : ""}= ${fmtK(r.qualitySavings || 0)}/yr total`}
           source={"Excess bed days: HCUP/AHRQ ($3,132/day acute). Medication errors: Bates et al (1.8 preventable ADEs per 100 admits). Communication failures contribute to 30% of malpractice claims (CRICO 2016). Malpractice premium: Mello et al Health Affairs 2010, NPDB 2023, TDC Group 2025. Readmissions: CMS 15.6% baseline, Vest et al JAMIA 2019 (0.8pp reduction from EHR consolidation). Classification: cost avoidance \u2014 these represent harm that doesn't occur, not direct budget reductions."}
         />
       </Card>
@@ -373,17 +373,17 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {seg.network > 0 && <div ref={networkRef}>
       <Card style={{ marginBottom: 18, borderLeft: "3px solid #8e44ad" }}>
         <CTitle iconKey="network" color="#8e44ad">Network consolidation</CTitle>
-        <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Multi-facility systems run duplicate legacy instances across sites. A single archive eliminates redundant licensing, infrastructure, and support.</div>
-        <Row label="Duplicate systems identified" value={fmtNum(r.duplicateSystems)} />
-        <Row label="Duplicate system cost" value={fmtK(r.duplicateSystemCost) + "/yr"} />
-        {r.duplicateElimination > 0 && <Row label="Duplicate elimination savings" value={fmtK(r.duplicateElimination)} />}
-        {r.infraConsolidation > 0 && <Row label="Infrastructure consolidation" value={fmtK(r.infraConsolidation)} />}
-        {r.standardizationSave > 0 && <Row label="Cross-facility standardization" value={fmtK(r.standardizationSave)} />}
-        <Row label="Total network savings" value={fmtK(seg.network) + "/yr"} accent />
+        <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Savings from running one consolidated archive across multiple hospitals — <strong style={{ color: C.text }}>incremental to the decommissioning savings above</strong>, not double-counted. Covers shared infrastructure (data centre, network, monitoring tools that operate independently of any one system) and the operational efficiencies of one estate vs many (governance, vendor management, audit, training).</div>
+        <div style={{ padding: "12px 16px", background: C.bg, borderRadius: 12, marginBottom: 14, fontSize: F.tiny, color: C.textMid, lineHeight: 1.6, border: `1px dashed ${C.borderLight}` }}>
+          <strong style={{ color: C.textMid }}>Context (informational):</strong> {fmtNum(r.duplicateSystems)} duplicate instances identified across {r.org_count} facilities (~30% of estate, CHIME Digital Health Survey). Their per-system costs are already captured in the decommissioning savings above — each duplicate retires in the same way a unique system does.
+        </div>
+        {r.infraConsolidation > 0 && <Row label="Shared infrastructure consolidation" value={fmtK(r.infraConsolidation)} />}
+        {r.standardizationSave > 0 && <Row label="Cross-facility operational efficiency" value={fmtK(r.standardizationSave)} />}
+        <Row label="Total incremental network savings" value={fmtK(seg.network) + "/yr"} accent />
         <Methodology
-          formula={"Duplicates: legacy \u00d7 30% \u00d7 blended_cost \u00d7 scenario.decom + Infra: facilities \u00d7 $350k \u00d7 60% + Standardization: estate \u00d7 15%"}
-          plug={`Duplicates: ${r.duplicateSystems} duplicate systems \u00d7 ${fmtK(r.blendedCost)} = ${fmtK(r.duplicateElimination)}/yr\nInfra: ${r.org_count} facilities \u00d7 $350k \u00d7 60% consolidatable = ${fmtK(r.infraConsolidation)}/yr\nStandardization: ${fmtK(r.totalEstate)} estate \u00d7 5% = ${fmtK(r.standardizationSave)}/yr\n= ${fmtK(seg.network)}/yr total`}
-          source={"Duplicate system rate: ~30% of legacy systems are replicated across facilities in an IDN (CHIME Digital Health Survey, KLAS M&A Best Practices). Infrastructure benchmarks: AHA Hospital IT Survey post-merger. Cross-facility standardization: Deloitte healthcare M&A studies."}
+          formula={"Infra: facilities \u00d7 $250k duplicate cost \u00d7 60% consolidatable + Standardization: estate \u00d7 15% \u00d7 scenario.decom"}
+          plug={`Infra: ${r.org_count} facilities \u00d7 $250k duplicate hosting/interfaces/support \u00d7 60% consolidatable = ${fmtK(r.infraConsolidation)}/yr\nStandardization: ${fmtK(r.totalEstate)} estate \u00d7 15% operational efficiency \u00d7 scenario.decom = ${fmtK(r.standardizationSave)}/yr\n= ${fmtK(seg.network)}/yr total\n\nNote: ${r.duplicateSystems} duplicate instances are NOT summed here. Their licensing/support costs are recovered through decommissioning above (each retired system's cost is captured there); double-counting them would inflate the total.`}
+          source={"Duplicate system rate: ~30% of legacy systems replicated across facilities in an IDN (CHIME Digital Health Survey, KLAS M&A Best Practices) - shown as informational context only. Shared infrastructure: AHA Hospital IT Survey post-merger ($250k/facility duplicate hosting/network/monitoring). Cross-facility operational efficiency 15%: Deloitte healthcare M&A studies (governance, vendor management, audit, training overhead reduction from one consolidated estate)."}
         />
       </Card>
     </div>}
@@ -452,7 +452,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         </MCard>
 
         <MCard color="#8e44ad" title="Network savings" num="05">
-          Multi-hospital IDNs typically run duplicate instances of the same legacy system across sites, approximately 30% of the estate (CHIME Digital Health Survey). Each facility carries ~$350k/yr in duplicate hosting, interfaces, and support (60% consolidatable). Cross-facility standardisation addresses 15% of operational costs through unified workflows and data governance.
+          For IDNs and multi-hospital systems, this captures savings <strong>incremental to decommissioning</strong> (not double-counted). Two components: shared infrastructure consolidation ($250k/facility for data centre, network and monitoring tools that aren’t tied to specific systems, 60% consolidatable through a single archive) and cross-facility operational efficiency (15% of estate cost addressable through unified governance, vendor management, audit and training). The 30% duplicate-instance rate (CHIME Digital Health Survey) is shown as context but excluded from the sum — retired duplicates are already captured in the decommissioning savings above.
         </MCard>
 
         <MCard color="#e67e22" title="Academic impact" num="06">

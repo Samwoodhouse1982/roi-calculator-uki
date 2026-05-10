@@ -506,7 +506,7 @@ export default function App() {
       <div style={{ flex: 1, overflowY: "auto", padding: "0 56px 32px" }}>
         <PageTransition step={kioskStep}>{renderStep()}</PageTransition>
       </div>
-      <NavButtons step={kioskStep} totalSteps={KIOSK_STEPS.length} onBack={() => setKioskStep(p => p - 1)} onNext={() => setKioskStep(p => p + 1)} onCalculate={handleCalculate} onStartOver={handleResetInputs} />
+      <NavButtons step={kioskStep} totalSteps={KIOSK_STEPS.length} onBack={() => setKioskStep(p => p - 1)} onNext={() => setKioskStep(p => p + 1)} onCalculate={handleCalculate} onStartOver={handleStartOver} />
       {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
     </div>
   );

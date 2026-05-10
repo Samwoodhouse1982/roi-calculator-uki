@@ -74,7 +74,7 @@ export const GME_COMPLIANCE_COST_PER_BED = 850;        // ACGME reporting, resid
 export const TEACHING_OVERHEAD_PCT = 0.12;             // 12% additional system complexity for teaching workflows
 
 // ── M&A / Multi-Hospital Constants ──
-export const DUPLICATE_SYSTEM_RATE = 0.35;             // 35% of systems are duplicated across facilities post-M&A
+export const DUPLICATE_SYSTEM_RATE = 0.30;             // 30% of systems are duplicated across facilities post-M&A
 export const DUPLICATE_INFRA_COST_PER_FACILITY = 250000;
 
 // Fragmentation attribution factors
@@ -281,7 +281,13 @@ export function calc(inp, mode, ov = {}, flagships = []) {
 
   // Module totals
   const academicSavings = researchDecomSave + gmeEfficiency + teachingOverhead;
-  const mergeSavings = duplicateElimination + infraConsolidation + standardizationSave;
+  // Network consolidation - only counts genuinely INCREMENTAL savings beyond decommissioning:
+  //   - infraConsolidation: shared data centre, network, monitoring tools (NOT per-system costs)
+  //   - standardizationSave: governance, vendor mgmt, training overhead from running one estate vs N
+  // duplicateElimination is NOT summed here - retiring duplicate instances is already captured
+  // in decomSave (each retired system's cost is recovered there). Keeping the computed value
+  // in the returned object for informational display (number of duplicates identified).
+  const mergeSavings = infraConsolidation + standardizationSave;
 
   // Total reimbursement impact
   const reimbursementImpact = hrrpReduction + hacReduction + vbpImprovement + denialRecovery;
