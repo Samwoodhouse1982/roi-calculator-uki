@@ -13,7 +13,7 @@ import { ResultsPage } from './results/ResultsPage';
    Reveal: single tap on RLDatix logo on splash
    Reset: PIN-protected (default 2580 - vertical line on phone keypad)
    ──────────────────────────────────────────────────────────────────────── */
-const STATS_KEY = 'kiosk-stats-v2';
+const STATS_KEY = 'kiosk-stats';
 const ADMIN_PIN = '2580'; // 4-digit numeric. Change to your preferred PIN.
 
 function recordCompletion(session) {
@@ -33,8 +33,18 @@ function loadSessions() {
     const raw = localStorage.getItem(STATS_KEY);
     if (!raw) return { sessions: [], total: 0 };
     const data = JSON.parse(raw);
-    return { sessions: data.sessions || [], total: data.total || 0 };
-  } catch (e) { return { sessions: [], total: 0 }; }
+    // If the stored data isn't in the expected shape (e.g. an older format
+    // from a previous build), wipe it. We don't migrate - this is throwaway
+    // tradeshow data, not anything precious.
+    if (!Array.isArray(data.sessions)) {
+      localStorage.removeItem(STATS_KEY);
+      return { sessions: [], total: 0 };
+    }
+    return { sessions: data.sessions, total: data.total || 0 };
+  } catch (e) {
+    try { localStorage.removeItem(STATS_KEY); } catch (e2) {}
+    return { sessions: [], total: 0 };
+  }
 }
 
 function resetStats() {
