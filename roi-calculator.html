@@ -374,8 +374,10 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
 function calc(inp, mode, ov = {}, flagships = []) {
   const sc = SCENARIO[mode], cx = CX[inp.complexity_level], dq = DQ[inp.data_quality_level];
-  // Realization override - lets user override the scenario default with a slider on the report
+  // Scenario factor overrides - allow slider on the report to drive all three scenario factors
   const realization = (ov.realization != null) ? ov.realization : sc.realization;
+  const decomPct = (ov.decom_pct != null) ? ov.decom_pct : sc.decom_pct;
+  const safetyPct = (ov.safety != null) ? ov.safety : sc.safety;
   const isArchiveOnly = inp.journey === "HAVE_EPR";
   const ent = ov.enterprise != null ? ov.enterprise : inp.tiers.enterprise;
   const dep = ov.departmental != null ? ov.departmental : inp.tiers.departmental;
@@ -394,13 +396,13 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const legacy = tieredLegacy + flagshipCount + portfolioSystems;
   const totalEstate = tieredEstate + flagshipTotal + (inp._portfolioCost || 0);
   const blendedCost = legacy > 0 ? Math.round(totalEstate / legacy) : 0;
-  const rawDecom = tieredLegacy * inp.decom_retire_rate * sc.decom_pct;
+  const rawDecom = tieredLegacy * inp.decom_retire_rate * decomPct;
   const decom = Math.min(Math.round(rawDecom), tieredLegacy) + flagshipRetireCount;
   const decomFrac = tieredLegacy > 0 ? Math.min(Math.round(rawDecom), tieredLegacy) / tieredLegacy : 0;
   const entDecom = Math.min(Math.round(ent * decomFrac), ent);
   const depDecom = Math.min(Math.round(dep * decomFrac), dep);
   const nicDecom = clamp(Math.min(Math.round(rawDecom), tieredLegacy) - entDecom - depDecom, 0, nic);
-  const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * sc.decom_pct);
+  const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * decomPct);
   const corpPerOrg = Math.min(120, Math.round(CORPORATE_STAFF_BASE + (inp.bed_count / Math.max(1, inp.org_count)) * CORPORATE_STAFF_PER_BED));
   const totalStaff = Math.round(inp.bed_count * STAFF_PER_BED + inp.org_count * corpPerOrg + (inp._portfolioStaff || 0));
   const clinicians = ov.clinicians != null ? ov.clinicians : Math.round(totalStaff * ACTIVE_USER_PCT);
@@ -425,9 +427,9 @@ function calc(inp, mode, ov = {}, flagships = []) {
     safetyMedErrorsBaseline = Math.round(inp.bed_count * MED_ERRORS_PER_BED * frag * dq);
     const harmedBl = Math.round(inp.bed_count * PATIENTS_HARMED_PER_BED * frag * dq);
     const bedDaysBl = Math.round(inp.bed_count * EXCESS_BED_DAYS_PER_BED * frag * dq);
-    safetyMedErrorsAvoided = Math.round(safetyMedErrorsBaseline * sc.safety);
-    safetyPatientsProtected = Math.round(harmedBl * sc.safety);
-    safetyBedDaysAvoided = Math.round(bedDaysBl * sc.safety);
+    safetyMedErrorsAvoided = Math.round(safetyMedErrorsBaseline * safetyPct);
+    safetyPatientsProtected = Math.round(harmedBl * safetyPct);
+    safetyBedDaysAvoided = Math.round(bedDaysBl * safetyPct);
   }
   // ── Reimbursement & Compliance Impact ──
   // Admissions and revenue (evidence-based derivation)
@@ -440,53 +442,53 @@ function calc(inp, mode, ov = {}, flagships = []) {
 
   // HRRP penalty exposure
   const hrrpExposure = medicareDrg * CMS_HRRP_AVG_PENALTY;
-  const hrrpReduction = Math.round(hrrpExposure * sc.safety * (inp._penaltyWeight != null ? inp._penaltyWeight : 1.0));
+  const hrrpReduction = Math.round(hrrpExposure * safetyPct * (inp._penaltyWeight != null ? inp._penaltyWeight : 1.0));
 
   // HAC penalty exposure (bottom quartile = 1% of all Medicare payments)
   const hacExposure = medicareDrg * CMS_HAC_PENALTY * 0.25; // 25% probability of being in bottom quartile
-  const hacReduction = Math.round(hacExposure * sc.safety * (inp._penaltyWeight != null ? inp._penaltyWeight : 1.0));
+  const hacReduction = Math.round(hacExposure * safetyPct * (inp._penaltyWeight != null ? inp._penaltyWeight : 1.0));
 
   // VBP improvement potential
   const vbpPool = medicareDrg * CMS_VBP_WITHHOLD;
-  const vbpImprovement = Math.round(vbpPool * 0.15 * sc.safety * (inp._qualityBonus != null ? inp._qualityBonus : 0.5));
+  const vbpImprovement = Math.round(vbpPool * 0.15 * safetyPct * (inp._qualityBonus != null ? inp._qualityBonus : 0.5));
 
   // Denial rate reduction (FFS pathway)
   const estAnnualRevenue = estAnnualRevenueCalc; // from admissions-based model above
   const denialBaseline = estAnnualRevenue * DENIAL_NET_REVENUE_LOSS;
-  const denialRecovery = Math.round(denialBaseline * DENIAL_FRAGMENTATION_ATTRIBUTION * 0.20 * sc.decom_pct * (inp._denialWeight || 1.0));
+  const denialRecovery = Math.round(denialBaseline * DENIAL_FRAGMENTATION_ATTRIBUTION * 0.20 * decomPct * (inp._denialWeight || 1.0));
 
   // Malpractice premium reduction (modeled assumption)
   const malpracticePremium = inp.bed_count * MALPRACTICE_AVG_PREMIUM_PER_BED;
-  const malpracticeReduction = Math.round(malpracticePremium * 0.05 * sc.safety); // 5% reduction — conservative (CRICO: 30% of claims involve comms failure)
+  const malpracticeReduction = Math.round(malpracticePremium * 0.05 * safetyPct); // 5% reduction — conservative (CRICO: 30% of claims involve comms failure)
 
   // Excess bed days avoided (unified with safety section)
   const preventableADEs = Math.round(admissionsPerYear / 100 * PREVENTABLE_ADE_PER_100_ADMITS);
   // Use safety section's bed day estimate when available for consistency
-  const excessDaysAvoided = hasClinicalScope ? safetyBedDaysAvoided : Math.round(preventableADEs * EXCESS_DAYS_PER_ADE * sc.safety);
+  const excessDaysAvoided = hasClinicalScope ? safetyBedDaysAvoided : Math.round(preventableADEs * EXCESS_DAYS_PER_ADE * safetyPct);
   const excessDayCostAvoided = Math.round(excessDaysAvoided * COST_PER_EXCESS_BED_DAY);
 
   // Duplicate testing reduction
   const estLabSpend = inp.bed_count * 8500; // ~$8,500 per bed in lab/imaging spend
   const duplicateWaste = estLabSpend * DUPLICATE_TEST_RATE;
-  const duplicateReduction = Math.round(duplicateWaste * 0.50 * sc.decom_pct); // 50% of duplicates addressable
+  const duplicateReduction = Math.round(duplicateWaste * 0.50 * decomPct); // 50% of duplicates addressable
 
   // ── Academic Medical Center Module ──
   const isAcademic = inp._providerType === "academic";
   const researchSystems = isAcademic ? Math.round(inp.bed_count / 100 * RESEARCH_SYSTEMS_PER_100_BEDS) : 0;
   const researchSystemCost = researchSystems * RESEARCH_SYSTEM_AVG_COST;
-  const researchDecomSave = Math.round(researchSystemCost * 0.60 * sc.decom_pct); // 60% retirable
+  const researchDecomSave = Math.round(researchSystemCost * 0.60 * decomPct); // 60% retirable
   const gmeComplianceCost = isAcademic ? Math.round(inp.bed_count * GME_COMPLIANCE_COST_PER_BED) : 0;
-  const gmeEfficiency = Math.round(gmeComplianceCost * 0.25 * sc.decom_pct); // 25% efficiency gain
-  const teachingOverhead = isAcademic ? Math.round(totalEstate * TEACHING_OVERHEAD_PCT * 0.30 * sc.decom_pct) : 0; // 30% of 12% extra complexity
+  const gmeEfficiency = Math.round(gmeComplianceCost * 0.25 * decomPct); // 25% efficiency gain
+  const teachingOverhead = isAcademic ? Math.round(totalEstate * TEACHING_OVERHEAD_PCT * 0.30 * decomPct) : 0; // 30% of 12% extra complexity
 
   // ── M&A / Multi-Hospital Module ──
   const isMultiHospital = inp._providerType === "multi_hospital";
   const duplicateSystems = isMultiHospital ? Math.round(legacy * DUPLICATE_SYSTEM_RATE) : 0;
   const duplicateSystemCost = isMultiHospital ? Math.round(duplicateSystems * blendedCost) : 0;
-  const duplicateElimination = Math.round(duplicateSystemCost * sc.decom_pct);
+  const duplicateElimination = Math.round(duplicateSystemCost * decomPct);
   const duplicateInfraCost = isMultiHospital ? inp.org_count * DUPLICATE_INFRA_COST_PER_FACILITY : 0;
-  const infraConsolidation = Math.round(duplicateInfraCost * 0.60 * sc.decom_pct); // 60% consolidatable
-  const standardizationSave = isMultiHospital ? Math.round(totalEstate * CROSS_FACILITY_STANDARDIZATION_PCT * sc.decom_pct) : 0;
+  const infraConsolidation = Math.round(duplicateInfraCost * 0.60 * decomPct); // 60% consolidatable
+  const standardizationSave = isMultiHospital ? Math.round(totalEstate * CROSS_FACILITY_STANDARDIZATION_PCT * decomPct) : 0;
 
   // Module totals
   const academicSavings = researchDecomSave + gmeEfficiency + teachingOverhead;
@@ -500,7 +502,7 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const usReadmitReduction = 0.008; // Vest et al JAMIA 2019: 0.8pp
   const usReadmitAttribution = 0.30;
   const usReadmitCostPer = 16000; // CMS avg readmission cost
-  const usReadmissionsAvoided = isVBC ? Math.round(admissionsPerYear * usReadmitReduction * usReadmitAttribution * sc.safety) : 0;
+  const usReadmissionsAvoided = isVBC ? Math.round(admissionsPerYear * usReadmitReduction * usReadmitAttribution * safetyPct) : 0;
   const usReadmissionCostAvoidance = usReadmissionsAvoided * usReadmitCostPer;
 
   const qualitySavings = malpracticeReduction + excessDayCostAvoided + duplicateReduction + usReadmissionCostAvoidance;
@@ -532,9 +534,9 @@ function calc(inp, mode, ov = {}, flagships = []) {
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
-    annual, total3, totalRamp, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, yr4R, yr5R, rampYears, rampPcts, realization, scenarioDefaultRealization: sc.realization, decomFactor: sc.decom_pct, safetyFactor: sc.safety, isArchiveOnly,
+    annual, total3, totalRamp, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, yr4R, yr5R, rampYears, rampPcts, realization, scenarioDefaultRealization: sc.realization, decomFactor: decomPct, safetyFactor: safetyPct, isArchiveOnly,
     fteEquivalent: Math.round(hrsSaved * realization / 2080 * 10) / 10,
-    flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
+    flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * decomPct),
     flagshipCount, flagshipRetireCount,
     // Reimbursement & compliance
     admissionsPerYear, estAnnualRevenueCalc, occupancy, medicareDrg, hrrpExposure, hrrpReduction, hacExposure, hacReduction,
@@ -1070,6 +1072,30 @@ function ROICalculator() {
   const [activePreset, setActivePreset] = useState(null);
   const [viewTimescale, setViewTimescale] = useState("annual");
   const [scenarioMode, setScenarioMode] = useState(null);
+  const [scenarioBlend, setScenarioBlend] = useState(null);
+  const setBlend = useCallback((val) => {
+    setScenarioBlend(val);
+    if (val == null) setBlend(null);
+    else setScenarioMode(val < 0.33 ? "CONSERVATIVE" : val < 0.67 ? "EXPECTED" : "STRETCH");
+  }, []);
+  const blendFactors = useMemo(() => {
+    if (scenarioBlend == null) return null;
+    const c = SCENARIO.CONSERVATIVE, e = SCENARIO.EXPECTED, s = SCENARIO.STRETCH;
+    if (scenarioBlend <= 0.5) {
+      const t = scenarioBlend / 0.5;
+      return {
+        decom_pct: c.decom_pct + (e.decom_pct - c.decom_pct) * t,
+        realization: c.realization + (e.realization - c.realization) * t,
+        safety: c.safety + (e.safety - c.safety) * t,
+      };
+    }
+    const t = (scenarioBlend - 0.5) / 0.5;
+    return {
+      decom_pct: e.decom_pct + (s.decom_pct - e.decom_pct) * t,
+      realization: e.realization + (s.realization - e.realization) * t,
+      safety: e.safety + (s.safety - e.safety) * t,
+    };
+  }, [scenarioBlend]);
   const [viewMode, setViewMode] = useState("executive"); // "executive" or "detailed"
   const [showFormulas, setShowFormulas] = useState(false);
   const [pdfFormat, setPdfFormat] = useState("full"); // "full" or "board"
@@ -1118,8 +1144,6 @@ function ROICalculator() {
   const [knownAnnualSpend, setKnownAnnualSpend] = useState(null);
 
   const [overrides, setOverrides] = useState({enterprise:null,departmental:null,niche:null,entCost:null,depCost:null,nicCost:null,clinicians:null,minsWasted:null,ticketsBaseline:null,sarDaysBefore:null});
-  // Realization rate override (null = use scenario default; otherwise 0.05-0.55)
-  const [realizationOv, setRealizationOv] = useState(null);
   const [leadForm, setLeadForm] = useState({name:"",email:"",org:"",role:""});
   const [leadSubmitted, setLeadSubmitted] = useState(false);
   const [leadSending, setLeadSending] = useState(false);
@@ -1143,7 +1167,7 @@ function ROICalculator() {
   const PDF_COMPANY_NAME = "RLDatix Data Solutions Group (US)";
   const setOv = useCallback((k,v) => setOverrides(p=>({...p,[k]:v})),[]);
   const overrideCount = Object.values(overrides).filter(v=>v!=null).length;
-  const resetOv = useCallback(()=>{setOverrides({enterprise:null,departmental:null,niche:null,entCost:null,depCost:null,nicCost:null,clinicians:null,minsWasted:null,ticketsBaseline:null,sarDaysBefore:null}); setRealizationOv(null);},[]);
+  const resetOv = useCallback(()=>{setOverrides({enterprise:null,departmental:null,niche:null,entCost:null,depCost:null,nicCost:null,clinicians:null,minsWasted:null,ticketsBaseline:null,sarDaysBefore:null}); setScenarioBlend(null);},[]);
 
   const ref1=useRef(null),ref2=useRef(null),refFlag=useRef(null),ref3=useRef(null),refCta=useRef(null),thinkingRef=useRef(null),calcPageRef=useRef(null);
   const scrollTo=ref=>setTimeout(()=>ref.current?.scrollIntoView({behavior:"smooth",block:"start"}),120);
@@ -1394,11 +1418,11 @@ function ROICalculator() {
       entCost: tierCostEdits.enterprise != null ? tierCostEdits.enterprise : overrides.entCost,
       depCost: tierCostEdits.departmental != null ? tierCostEdits.departmental : overrides.depCost,
       nicCost: tierCostEdits.niche != null ? tierCostEdits.niche : overrides.nicCost,
-      realization: realizationOv,
+      ...(blendFactors || {}),
     };
     if (costMode === "known" && knownAnnualSpend > 0) return { ...base, ...knownCostOv };
     return base;
-  }, [overrides, tierCostEdits, costMode, knownAnnualSpend, knownCostOv, realizationOv]);
+  }, [overrides, tierCostEdits, costMode, knownAnnualSpend, knownCostOv, blendFactors]);
   const calcInputs = useMemo(() => {
     const pm = PROVIDER_MULTIPLIERS[providerType] || PROVIDER_MULTIPLIERS.community;
     const rm = REIMBURSE_MULTIPLIERS[reimbursementModel] || REIMBURSE_MULTIPLIERS.mixed;
@@ -1416,9 +1440,15 @@ function ROICalculator() {
       _portfolioCost: portfolioImpact.addCost,
     };
   }, [inputs, providerType, reimbursementModel, medicareDrgRevenue]);
-  const rCon=useMemo(()=>calc(calcInputs,"CONSERVATIVE",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
-  const rExp=useMemo(()=>calc(calcInputs,"EXPECTED",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
-  const rStr=useMemo(()=>calc(calcInputs,"STRETCH",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
+  // For range display: strip out blend factors so rCon/rExp/rStr show their pure anchors
+  const cleanOv = useMemo(() => {
+    if (!blendFactors) return mergedOv;
+    const { decom_pct: _d, realization: _r, safety: _s, ...rest } = mergedOv;
+    return rest;
+  }, [mergedOv, blendFactors]);
+  const rCon=useMemo(()=>calc(calcInputs,"CONSERVATIVE",cleanOv,flagships),[calcInputs,cleanOv,flagships]);
+  const rExp=useMemo(()=>calc(calcInputs,"EXPECTED",cleanOv,flagships),[calcInputs,cleanOv,flagships]);
+  const rStr=useMemo(()=>calc(calcInputs,"STRETCH",cleanOv,flagships),[calcInputs,cleanOv,flagships]);
   const r=am==="CONSERVATIVE"?rCon:am==="STRETCH"?rStr:rExp;
   // ── Timescale multiplier: scales steady-state values for First-year / N-year-total / Yearly-avg views ──
   const ts = useMemo(() => {
@@ -2620,7 +2650,7 @@ function ROICalculator() {
         </div>
       </Card>
       <button type="button" className="roi-cta" onClick={() => {
-        setPage("calculating"); setCalcStep(0); setScenarioMode("EXPECTED"); scrollToTop();
+        setPage("calculating"); setCalcStep(0); setBlend(0.5); scrollToTop();
         setTimeout(() => setCalcStep(1), 400);
         setTimeout(() => setCalcStep(2), 1100);
         setTimeout(() => setCalcStep(3), 1800);
@@ -3166,7 +3196,7 @@ function ROICalculator() {
         return <>
           <button type="button" className={canCalc ? "roi-cta" : "roi-cta"} onClick={() => {
             if (!canCalc) return;
-            setPage("calculating"); setCalcStep(0); setScenarioMode("EXPECTED");
+            setPage("calculating"); setCalcStep(0); setBlend(0.5);
             scrollToTop();
             setTimeout(() => setCalcStep(1), 400);
             setTimeout(() => setCalcStep(2), 1100);
@@ -3216,20 +3246,40 @@ function ROICalculator() {
 
     {/* Scenario chooser - sticky with comparison strip */}
     <div style={{position:"sticky",top:0,zIndex:50,background:C.bg,paddingTop:8,paddingBottom:8,marginBottom:16,marginLeft:-24,marginRight:-24,paddingLeft:24,paddingRight:24,borderBottom:`1px solid ${C.borderLight}`}}>
-    <Card style={{marginBottom:0,border:dim?`2px solid ${C.accent}`:`1px solid ${C.border}`,boxShadow:dim?`0 0 0 4px ${C.accent}22`:"0 1px 3px rgba(0,0,0,0.05)",padding:"12px 16px"}}>
-      <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:8,textTransform:"uppercase",letterSpacing:".05em"}}>
-        {dim ? "Choose scenario to unlock results" : "Annual savings by scenario · click to switch"}
+    <Card style={{marginBottom:0,border:dim?`2px solid ${C.accent}`:`1px solid ${C.border}`,boxShadow:dim?`0 0 0 4px ${C.accent}22`:"0 1px 3px rgba(0,0,0,0.05)",padding:"14px 18px"}}>
+      <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:6,flexWrap:"wrap",gap:8}}>
+        <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em"}}>
+          {dim ? "Drag the slider to unlock results" : "Adjust scenario assumptions · drag to fine-tune"}
+        </div>
+        {!dim && <div style={{fontSize:11,color:C.textMuted}}>
+          <span style={{fontWeight:700,color:C.text}}>{scenarioMode === "CONSERVATIVE" ? "Conservative" : scenarioMode === "STRETCH" ? "Stretch" : "Expected"}</span>
+          {scenarioBlend != null && Math.abs(scenarioBlend - 0) > 0.005 && Math.abs(scenarioBlend - 0.5) > 0.005 && Math.abs(scenarioBlend - 1) > 0.005 && <> · custom blend</>}
+        </div>}
       </div>
-      <div style={{display:"flex",gap:6}}>
+      <div style={{position:"relative",padding:"6px 0 22px"}}>
+        <div style={{position:"absolute",left:0,right:0,top:14,height:10,pointerEvents:"none"}}>
+          {[0, 0.5, 1].map((pos, i) => (
+            <div key={i} style={{position:"absolute",left:`${pos*100}%`,transform:"translateX(-50%)",width:2,height:10,background:scenarioBlend != null && Math.abs(scenarioBlend - pos) < 0.005 ? C.accent : C.border}}/>
+          ))}
+        </div>
+        <input type="range" min="0" max="1" step="0.01" value={scenarioBlend ?? 0.5}
+          onChange={(e)=>setBlend(parseFloat(e.target.value))}
+          style={{width:"100%",accentColor:C.accent,cursor:"pointer",height:24,padding:0,margin:0}}/>
+        <div style={{position:"absolute",left:0,right:0,top:32,fontSize:10,color:C.textMuted,pointerEvents:"none"}}>
+          <button type="button" onClick={()=>setBlend(0)} style={{position:"absolute",left:0,fontSize:11,color:scenarioMode==="CONSERVATIVE"?C.accent:C.textMid,fontWeight:scenarioMode==="CONSERVATIVE"?700:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",pointerEvents:"auto"}}>Conservative</button>
+          <button type="button" onClick={()=>setBlend(0.5)} style={{position:"absolute",left:"50%",transform:"translateX(-50%)",fontSize:11,color:scenarioMode==="EXPECTED"?C.accent:C.textMid,fontWeight:scenarioMode==="EXPECTED"?700:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",pointerEvents:"auto",whiteSpace:"nowrap"}}>Expected</button>
+          <button type="button" onClick={()=>setBlend(1)} style={{position:"absolute",right:0,fontSize:11,color:scenarioMode==="STRETCH"?C.accent:C.textMid,fontWeight:scenarioMode==="STRETCH"?700:500,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"inherit",pointerEvents:"auto"}}>Stretch</button>
+        </div>
+      </div>
+      <div style={{display:"flex",gap:6,marginTop:14}}>
         {[
-            { k: "CONSERVATIVE", l: "Conservative", s: "Lower-bound", res: rCon },
-            { k: "EXPECTED", l: "Expected", s: "Best estimate", res: rExp },
-            { k: "STRETCH", l: "Stretch", s: "Upside", res: rStr },
-          ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:90,padding:"10px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:8,cursor:"pointer",background:scenarioMode===s.k?C.accentPale:"#fff",transition:"all .15s"}}>
-          <div style={{fontSize:11,fontWeight:600,color:scenarioMode===s.k?C.accent:C.textMuted,textTransform:"uppercase",letterSpacing:".03em",marginBottom:2}}>{s.l}</div>
-          <div style={{fontSize:18,fontWeight:800,color:scenarioMode===s.k?C.accent:C.text}}>{fmtK(s.res.annualWithReimbursement)}</div>
-          <div style={{fontSize:10,color:C.textMuted,marginTop:1}}>{s.s} · /yr</div>
-        </button>)}
+          { k: "CONSERVATIVE", l: "Conservative", res: rCon, pos: 0 },
+          { k: "EXPECTED", l: "Expected", res: rExp, pos: 0.5 },
+          { k: "STRETCH", l: "Stretch", res: rStr, pos: 1 },
+        ].map(s => <div key={s.k} style={{flex:"1 1 0",minWidth:90,padding:"8px 6px",textAlign:"center",border:`1px solid ${scenarioMode===s.k?C.accent:C.borderLight}`,borderRadius:8,background:scenarioMode===s.k?C.accentPale:"#fafbfc"}}>
+          <div style={{fontSize:10,fontWeight:600,color:scenarioMode===s.k?C.accent:C.textMuted,textTransform:"uppercase",letterSpacing:".03em",marginBottom:2}}>{s.l}</div>
+          <div style={{fontSize:16,fontWeight:800,color:scenarioMode===s.k?C.accent:C.text}}>{fmtK(s.res.annualWithReimbursement)}/yr</div>
+        </div>)}
       </div>
     </Card>
     </div>
@@ -3269,23 +3319,6 @@ function ROICalculator() {
           {k:"total5",l:"5-year total"},
           {k:"annual",l:"Yearly average"},
         ].map(t => <button type="button" key={t.k} onClick={()=>{setViewTimescale(t.k);if(t.k==="total3")setInputs(p=>({...p,_rampYears:3}));if(t.k==="total5")setInputs(p=>({...p,_rampYears:5}));}} style={{padding:"7px 16px",border:"none",borderRadius:999,background:viewTimescale===t.k?C.accent:"transparent",color:viewTimescale===t.k?"#fff":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s",whiteSpace:"nowrap"}}>{t.l}</button>)}
-      </div>
-    </div>}
-
-    {/* Realization rate override slider - lets user dial capacity-realization up or down without changing scenario */}
-    {!dim && <div style={{display:"flex",justifyContent:"center",marginBottom:18}}>
-      <div style={{display:"flex",alignItems:"center",gap:14,padding:"10px 18px",background:"#f8fafb",border:`1px dashed ${C.border}`,borderRadius:999,flexWrap:"wrap",justifyContent:"center"}}>
-        <span style={{fontSize:11,fontWeight:700,color:C.textMid,textTransform:"uppercase",letterSpacing:".05em"}}>Capacity realization</span>
-        <InfoTip text={`The percentage of clinician time freed that translates into measurable value. Conservative scenario assumes 20%, Expected 30%, Stretch 40%. Drag to model your own assumption - all numbers update in real time.`}/>
-        <span style={{fontSize:11,color:C.textMuted,minWidth:24,textAlign:"right"}}>5%</span>
-        <input type="range" min="0.05" max="0.55" step="0.01" value={r.realization}
-          onChange={(e)=>setRealizationOv(parseFloat(e.target.value))}
-          style={{width:180,accentColor:C.accent,cursor:"pointer"}}/>
-        <span style={{fontSize:11,color:C.textMuted,minWidth:24}}>55%</span>
-        <span style={{fontSize:15,fontWeight:800,color:C.accent,minWidth:48,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>{Math.round(r.realization*100)}%</span>
-        {realizationOv !== null && Math.abs(realizationOv - r.scenarioDefaultRealization) > 0.005 && (
-          <button type="button" onClick={()=>setRealizationOv(null)} style={{background:"none",border:"none",color:C.accent,cursor:"pointer",padding:0,fontFamily:"inherit",textDecoration:"underline",fontSize:11,fontWeight:600}}>Reset to {Math.round(r.scenarioDefaultRealization*100)}%</button>
-        )}
       </div>
     </div>}
 
@@ -3735,7 +3768,7 @@ function ROICalculator() {
       </button>
       <button type="button" onClick={()=>{
         if (!confirm("Start a new case? Your current entries will be cleared.")) return;
-        setPage("inputs");setStep(0);setScenarioMode(null);setFlagships([]);
+        setPage("inputs");setStep(0);setBlend(null);setFlagships([]);
         setGalenMigrationCost(0);setGalenAnnualCost(0);
         scrollToTop();
       }} style={{padding:"10px 24px",border:"1px solid "+C.accent,borderRadius:999,background:C.accent,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
