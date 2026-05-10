@@ -347,6 +347,25 @@
   div[style*="min-width: 180px"] {
     min-width: 100px !important;
   }
+
+  /* Year-by-year bar chart - tighten everything on mobile so 5 years fit */
+  .roi-chart-bars {
+    gap: 4px !important;
+    padding: 14px 4px !important;
+    height: 200px !important;
+  }
+  .roi-chart-bar {
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  .roi-chart-bar-value {
+    font-size: 10px !important;
+    margin-bottom: 4px !important;
+  }
+  .roi-chart-bar-label {
+    font-size: 10px !important;
+    margin-top: 4px !important;
+  }
 }
 
 
@@ -2900,20 +2919,20 @@ function ROICalculator() {
           </div>
         </div>
         <div style={{fontSize:12,color:C.textMuted,marginBottom:16}}>Builds from {fmtK(Math.round(total*r.rampPcts[0]))} in Year 1 to {fmtK(total)}/yr at steady state</div>
-        <div style={{display:"flex",alignItems:"flex-end",gap:24,height:240,padding:"20px 12px",background:"#f8fafb",borderRadius:8,marginBottom:12,justifyContent:"space-evenly"}}>
+        <div className="roi-chart-bars" style={{display:"flex",alignItems:"flex-end",gap:12,height:240,padding:"20px 8px",background:"#f8fafb",borderRadius:8,marginBottom:12,justifyContent:"space-evenly",overflowX:"hidden"}}>
           {years.map((yr,yi)=>{
             const yrTot = total * yr.pct;
             const h = (yrTot / maxYr) * 200;
-            return <div key={yi} style={{display:"flex",flexDirection:"column",alignItems:"center",flex:"1 1 0",minWidth:80,maxWidth:180}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.accent,marginBottom:6}}>{fmtK(yrTot)}</div>
+            return <div key={yi} className="roi-chart-bar" style={{display:"flex",flexDirection:"column",alignItems:"center",flex:"1 1 0",minWidth:0,maxWidth:180}}>
+              <div className="roi-chart-bar-value" style={{fontSize:13,fontWeight:700,color:C.accent,marginBottom:6}}>{fmtK(yrTot)}</div>
               <div style={{width:"100%",height:h,borderRadius:"6px 6px 0 0",overflow:"hidden",display:"flex",flexDirection:"column-reverse"}}>
                 {segs.map((s,si)=>{
                   const segPct = (s.val * yr.pct) / yrTot;
                   return <div key={si} style={{height:`${segPct*100}%`,background:s.color,borderTop:si>0?"1px solid rgba(255,255,255,0.3)":"none"}} title={`${yr.label} · ${s.label}: ${fmtK(Math.round(s.val*yr.pct))} (${Math.round(yr.pct*100)}% of ${fmtK(s.val)} steady state)`}/>;
                 })}
               </div>
-              <div style={{fontSize:12,fontWeight:600,color:C.textMid,marginTop:8}}>{yr.label}</div>
-              <div style={{fontSize:10,color:C.textMuted}}>{Math.round(yr.pct*100)}%</div>
+              <div className="roi-chart-bar-label" style={{fontSize:12,fontWeight:600,color:C.textMid,marginTop:8}}>{yr.label}</div>
+              <div className="roi-chart-bar-label" style={{fontSize:10,color:C.textMuted}}>{Math.round(yr.pct*100)}%</div>
             </div>;
           })}
         </div>
