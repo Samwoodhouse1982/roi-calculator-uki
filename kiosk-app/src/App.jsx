@@ -296,6 +296,55 @@ function AdminOverlay({ onClose }) {
   );
 }
 
+function CalibratingScreen({ onDone }) {
+  const [step, setStep] = useState(0);
+  const [barW, setBarW] = useState(0);
+  const steps = ['Mapping your legacy estate', 'Modeling decommission savings', 'Estimating clinical capacity impact', 'Calculating reimbursement recovery'];
+  useEffect(() => {
+    const t = [
+      setTimeout(() => { setStep(1); setBarW(25); }, 600),
+      setTimeout(() => { setStep(2); setBarW(50); }, 1400),
+      setTimeout(() => { setStep(3); setBarW(75); }, 2200),
+      setTimeout(() => setBarW(100), 2800),
+      setTimeout(onDone, 3200),
+    ];
+    return () => t.forEach(clearTimeout);
+  }, [onDone]);
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <style>{`
+        @keyframes calSpin { to { transform: rotate(360deg); } }
+        @keyframes calPulse { 0%,100% { opacity:.5; transform:scale(1); } 50% { opacity:1; transform:scale(1.02); } }
+      `}</style>
+      <div style={{ position: 'relative', width: 100, height: 100, marginBottom: 48 }}>
+        <div style={{ position: 'absolute', inset: 0, border: '4px solid ' + C.border, borderRadius: '50%' }} />
+        <div style={{ position: 'absolute', inset: 0, border: '4px solid transparent', borderTopColor: C.accent, borderRightColor: C.accent, borderRadius: '50%', animation: 'calSpin .8s linear infinite' }} />
+        <div style={{ position: 'absolute', inset: 16, border: '3px solid transparent', borderTopColor: C.tealLight, borderRadius: '50%', animation: 'calSpin 1.4s linear infinite reverse' }} />
+      </div>
+      <div style={{ fontSize: F.h1, fontWeight: 800, color: C.accent, marginBottom: 12, animation: 'calPulse 2s ease-in-out infinite', textAlign: 'center' }}>Calibrating your model</div>
+      <div style={{ fontSize: F.body, color: C.textMuted, marginBottom: 44, textAlign: 'center' }}>{'Analyzing ' + (step < 2 ? 'inputs' : 'clinical impact') + '...'}</div>
+      <div style={{ width: 420, maxWidth: '80%', height: 6, background: C.border, borderRadius: 3, marginBottom: 40, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: barW + '%', background: 'linear-gradient(90deg, ' + C.accent + ', ' + C.tealLight + ')', borderRadius: 3, transition: 'width .5s ease-out' }} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 420, maxWidth: '80%' }}>
+        {steps.map((label, i) => {
+          const done = step > i, active = step === i;
+          return (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, opacity: done ? 1 : active ? 0.9 : 0.2, transform: done || active ? 'translateX(0)' : 'translateX(-8px)', transition: 'all .4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: done ? C.accent : active ? C.accent + '30' : C.border, border: active ? '2px solid ' + C.accent : '2px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .3s' }}>
+                {done && <span style={{ color: '#0a0f1a', fontSize: 18, fontWeight: 800 }}>{'✓'}</span>}
+                {active && <div style={{ width: 8, height: 8, borderRadius: 4, background: C.accent }} />}
+              </div>
+              <span style={{ fontSize: F.body, fontWeight: active ? 700 : 400, color: done ? C.accent : active ? C.text : C.textMuted, transition: 'all .3s' }}>{label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [kioskStep, setKioskStep] = useState(0);
