@@ -337,6 +337,26 @@
   div[style*="min-width: 180px"] {
     min-width: 100px !important;
   }
+
+  /* Year-by-year bar chart - tighten on mobile so 5 years fit */
+  .roi-chart-wrap {
+    padding: 0 4px !important;
+  }
+  .roi-chart-bars {
+    gap: 4px !important;
+  }
+  .roi-chart-bar {
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  .roi-chart-bar-value {
+    font-size: 10px !important;
+    margin-bottom: 4px !important;
+  }
+  .roi-chart-bar-label {
+    font-size: 10px !important;
+    margin-top: 4px !important;
+  }
 }
 
 
@@ -3830,22 +3850,22 @@ function ROICalculator() {
       const barH = 160;
       const totalSum = pcts.reduce((s,p) => s + r.annualWithReimbursement * p, 0);
       const totalH = barH;
-      return <div style={{padding:"0 20px",marginBottom:24}}>
+      return <div className="roi-chart-wrap" style={{padding:"0 20px",marginBottom:24}}>
         <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:8}}>
           <div style={{fontSize:13,fontWeight:700,color:C.textMid}}>{rampYears}-year savings projection</div>
           <div style={{fontSize:11,color:C.textMuted,fontStyle:"italic"}}>Hover any bar segment for year-by-year detail</div>
         </div>
-        <div style={{display:"flex",gap:8,alignItems:"flex-end",minHeight:barH+50,paddingTop:8}}>
+        <div className="roi-chart-bars" style={{display:"flex",gap:8,alignItems:"flex-end",minHeight:barH+50,paddingTop:8,overflowX:"hidden"}}>
           {pcts.map((p,yi) => {
             const h = Math.round(barH * p / maxP);
             const yrTotal = Math.round(r.annualWithReimbursement * p);
-            return <div key={yi} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center"}}>
-              <div style={{fontSize:11,fontWeight:700,color:C.accent,marginBottom:4}}>{fmtK(yrTotal)}</div>
+            return <div key={yi} className="roi-chart-bar" style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",minWidth:0}}>
+              <div className="roi-chart-bar-value" style={{fontSize:11,fontWeight:700,color:C.accent,marginBottom:4}}>{fmtK(yrTotal)}</div>
               <div style={{width:"100%",height:h,borderRadius:"8px 8px 4px 4px",overflow:"hidden",display:"flex",flexDirection:"column",position:"relative"}}>
                 {segs.map((s,si) => <div key={si} title={"Year "+(yi+1)+" · "+s.label+": "+fmtK(Math.round(s.val*p))+" ("+Math.round(p*100)+"% of "+fmtK(s.val)+" steady state)"} style={{flex:s.val,background:s.color,minHeight:1,cursor:"default",transition:"opacity .2s"}} />)}
               </div>
-              <div style={{fontSize:11,color:C.textMuted,marginTop:6,fontWeight:600}}>Year {yi+1}</div>
-              <div style={{fontSize:10,color:C.textMuted}}>{Math.round(p*100)}%</div>
+              <div className="roi-chart-bar-label" style={{fontSize:11,color:C.textMuted,marginTop:6,fontWeight:600}}>Year {yi+1}</div>
+              <div className="roi-chart-bar-label" style={{fontSize:10,color:C.textMuted}}>{Math.round(p*100)}%</div>
             </div>;
           })}
         </div>
