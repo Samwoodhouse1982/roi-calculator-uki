@@ -368,8 +368,10 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
 function calc(inp, mode, ov = {}, flagships = []) {
   const sc = SCENARIO[mode], cx = CX[inp.complexity_level], dq = DQ[inp.data_quality_level];
-  // Realisation override - lets user override the scenario default with a slider on the report
+  // Scenario factor overrides - allow slider on the report to drive all three scenario factors
   const realisation = (ov.realisation != null) ? ov.realisation : sc.realisation;
+  const decomPct = (ov.decom_pct != null) ? ov.decom_pct : sc.decom_pct;
+  const safetyPct = (ov.safety != null) ? ov.safety : sc.safety;
   const isArchiveOnly = inp.journey === "HAVE_EPR";
   const sector = (inp._providerType || "") === "aged_care" ? "aged_care"
                : (inp._providerType || "") === "ndis_provider" ? "ndis" : "hospital";
@@ -392,15 +394,15 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const legacy = tieredLegacy + flagshipCount + portfolioSystems;
   const totalEstate = tieredEstate + flagshipTotal + (inp._portfolioCost ?? 0);
   const blendedCost = legacy > 0 ? Math.round(totalEstate / legacy) : 0;
-  const rawDecom = tieredLegacy * inp.decom_retire_rate * sc.decom_pct;
-  const decom = Math.min(Math.round(rawDecom), tieredLegacy) + flagshipRetireCount + (Math.round(portfolioSystems * inp.decom_retire_rate * sc.decom_pct) || 0);
+  const rawDecom = tieredLegacy * inp.decom_retire_rate * decomPct;
+  const decom = Math.min(Math.round(rawDecom), tieredLegacy) + flagshipRetireCount + (Math.round(portfolioSystems * inp.decom_retire_rate * decomPct) || 0);
   const decomFrac = tieredLegacy > 0 ? Math.min(Math.round(rawDecom), tieredLegacy) / tieredLegacy : 0;
   const entDecom = Math.min(Math.round(ent * decomFrac), ent);
   const depDecom = Math.min(Math.round(dep * decomFrac), dep);
   const nicDecom = clamp(Math.min(Math.round(rawDecom), tieredLegacy) - entDecom - depDecom, 0, nic);
-  const portfolioDecomSave = Math.round((inp._portfolioCost ?? 0) * inp.decom_retire_rate * sc.decom_pct);
-  const portfolioDecom = Math.round(portfolioSystems * inp.decom_retire_rate * sc.decom_pct);
-  const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * sc.decom_pct) + portfolioDecomSave;
+  const portfolioDecomSave = Math.round((inp._portfolioCost ?? 0) * inp.decom_retire_rate * decomPct);
+  const portfolioDecom = Math.round(portfolioSystems * inp.decom_retire_rate * decomPct);
+  const decomSave = entDecom * entCost + depDecom * depCost + nicDecom * nicCost + Math.round(flagshipDecomSave * decomPct) + portfolioDecomSave;
   const corpPerOrg = Math.min(100, Math.round(CORPORATE_STAFF_BASE + (inp.bed_count / Math.max(1, inp.org_count)) * CORPORATE_STAFF_PER_BED));
   const staffPerUnit = isAgedCare ? AC_STAFF_PER_PLACE : isNDIS ? (NDIS_STAFF_PER_PARTICIPANT * 10) : STAFF_PER_BED;
   const hourlyRate = isAgedCare ? AC_BLENDED_HOURLY : isNDIS ? NDIS_BLENDED_HOURLY : BLENDED_HOURLY_RATE;
@@ -434,9 +436,9 @@ function calc(inp, mode, ov = {}, flagships = []) {
     safetyMedErrorsBaseline = Math.round(inp.bed_count * MED_ERRORS_PER_BED * frag * dq);
     const harmedBl = Math.round(inp.bed_count * PATIENTS_HARMED_PER_BED * FRAGMENTATION_ATTRIBUTION * frag * dq);
     const bedDaysBl = Math.round(inp.bed_count * EXCESS_BED_DAYS_PER_BED * FRAGMENTATION_ATTRIBUTION * frag * dq);
-    safetyMedErrorsAvoided = Math.round(safetyMedErrorsBaseline * sc.safety);
-    safetyPatientsProtected = Math.round(harmedBl * sc.safety);
-    safetyBedDaysAvoided = Math.round(bedDaysBl * sc.safety);
+    safetyMedErrorsAvoided = Math.round(safetyMedErrorsBaseline * safetyPct);
+    safetyPatientsProtected = Math.round(harmedBl * safetyPct);
+    safetyBedDaysAvoided = Math.round(bedDaysBl * safetyPct);
   }
   // ── Sector-Specific Impact ──
   let occupancy=0, admissionsPerYear=0, estAnnualRevenueCalc=0, estMedicareDrgRevenue=0, medicareDrg=0;
@@ -453,30 +455,30 @@ function calc(inp, mode, ov = {}, flagships = []) {
   if (isAgedCare) {
     // AN-ACC funding optimisation
     const totalRevenue = inp.bed_count * AC_REVENUE_PER_PLACE;
-    acAnaccUplift = Math.round(totalRevenue * 0.45 * AC_ANACC_UPLIFT * sc.decom_pct);
+    acAnaccUplift = Math.round(totalRevenue * 0.45 * AC_ANACC_UPLIFT * decomPct);
     // Agency staff cost reduction
     const acStaffCost = inp.bed_count * AC_STAFF_PER_PLACE * AC_BLENDED_HOURLY * 1824;
-    acAgencyReduction = Math.round(acStaffCost * AC_AGENCY_SPEND_PCT * AC_AGENCY_REDUCTION * sc.decom_pct);
+    acAgencyReduction = Math.round(acStaffCost * AC_AGENCY_SPEND_PCT * AC_AGENCY_REDUCTION * decomPct);
     // Compliance efficiency
-    acComplianceSaving = Math.round(inp.org_count * AC_COMPLIANCE_FTE_PER_FACILITY * AC_COMPLIANCE_COST_PER_FTE * sc.decom_pct * 0.5);
+    acComplianceSaving = Math.round(inp.org_count * AC_COMPLIANCE_FTE_PER_FACILITY * AC_COMPLIANCE_COST_PER_FTE * decomPct * 0.5);
     // Avoidable cost of harm
-    acHarmAvoidance = Math.round(inp.bed_count * AC_HARM_COST_PER_PLACE * AC_FRAGMENTATION_ATTRIBUTION * sc.safety);
+    acHarmAvoidance = Math.round(inp.bed_count * AC_HARM_COST_PER_PLACE * AC_FRAGMENTATION_ATTRIBUTION * safetyPct);
 
   } else if (isNDIS) {
     // Claims accuracy
     const ndisRevenue = inp.bed_count * NDIS_REVENUE_PER_PARTICIPANT;
     // 8% of NDIS claims are rejected; 5% improvement in rejection rate through better documentation
-    ndisClaimsRecovery = Math.round(ndisRevenue * 0.08 * NDIS_CLAIMS_IMPROVEMENT * sc.decom_pct);
+    ndisClaimsRecovery = Math.round(ndisRevenue * 0.08 * NDIS_CLAIMS_IMPROVEMENT * decomPct);
     // Utilisation improvement
     const ndisStaff = Math.round(inp.bed_count * NDIS_STAFF_PER_PARTICIPANT);
     const baseHrs = ndisStaff * 1824 * NDIS_UTILISATION_BASELINE;
-    const improvedHrs = ndisStaff * 1824 * (NDIS_UTILISATION_BASELINE + NDIS_UTILISATION_UPLIFT * sc.decom_pct);
+    const improvedHrs = ndisStaff * 1824 * (NDIS_UTILISATION_BASELINE + NDIS_UTILISATION_UPLIFT * decomPct);
     ndisUtilisationUplift = Math.round((improvedHrs - baseHrs) * NDIS_BLENDED_HOURLY);
     // Compliance cost reduction
-    ndisComplianceSaving = Math.round((inp.bed_count / 100) * NDIS_COMPLIANCE_FTE_PER_100 * NDIS_COMPLIANCE_COST_PER_FTE * sc.decom_pct * 0.5);
+    ndisComplianceSaving = Math.round((inp.bed_count / 100) * NDIS_COMPLIANCE_FTE_PER_100 * NDIS_COMPLIANCE_COST_PER_FTE * decomPct * 0.5);
     // Staff retention saving
     const ndisTurnoverCost = ndisStaff * NDIS_TURNOVER_RATE * NDIS_TURNOVER_COST;
-    ndisRetentionSaving = Math.round(ndisTurnoverCost * NDIS_TURNOVER_REDUCTION * sc.decom_pct);
+    ndisRetentionSaving = Math.round(ndisTurnoverCost * NDIS_TURNOVER_REDUCTION * decomPct);
 
   } else {
     // Hospital sector - original AU calculations
@@ -485,38 +487,38 @@ function calc(inp, mode, ov = {}, flagships = []) {
     estAnnualRevenueCalc = admissionsPerYear * AU_NWAU_PER_SEPARATION * AU_NWAU_PRICE;
     estMedicareDrgRevenue = Math.round(estAnnualRevenueCalc * 0.70);
     medicareDrg = inp._medicareDrgRevenue > 0 ? inp._medicareDrgRevenue : estMedicareDrgRevenue;
-    abfEfficiencyGain = Math.round(totalEstate * 0.15 * sc.decom_pct);
+    abfEfficiencyGain = Math.round(totalEstate * 0.15 * decomPct);
     privatePct = inp._privatePct ?? 0.15;
     privateLeakage = Math.round(admissionsPerYear * privatePct * PRIVATE_PATIENT_LEAKAGE * PRIVATE_EPISODE_AVG_VALUE);
-    privateRevRecovery = Math.round(privateLeakage * 0.30 * sc.decom_pct);
+    privateRevRecovery = Math.round(privateLeakage * 0.30 * decomPct);
     malpracticePremium = inp.bed_count * INDEMNITY_COST_PER_BED;
-    malpracticeReduction = Math.round(malpracticePremium * INDEMNITY_REDUCTION_PCT * sc.safety);
+    malpracticeReduction = Math.round(malpracticePremium * INDEMNITY_REDUCTION_PCT * safetyPct);
     preventableADEs = Math.round(admissionsPerYear / 100 * PREVENTABLE_ADE_PER_100_ADMITS);
-    excessDaysAvoided = hasClinicalScope ? safetyBedDaysAvoided : Math.round(preventableADEs * EXCESS_DAYS_PER_ADE * sc.safety);
+    excessDaysAvoided = hasClinicalScope ? safetyBedDaysAvoided : Math.round(preventableADEs * EXCESS_DAYS_PER_ADE * safetyPct);
     excessDayCostAvoided = Math.round(excessDaysAvoided * COST_PER_EXCESS_BED_DAY);
     estLabSpend = inp.bed_count * PATHOLOGY_COST_PER_BED;
     duplicateWaste = estLabSpend * DUPLICATE_TEST_RATE;
-    duplicateReduction = Math.round(duplicateWaste * 0.50 * sc.decom_pct);
+    duplicateReduction = Math.round(duplicateWaste * 0.50 * decomPct);
   }
 
   // ── Teaching Hospital Module ──
   const isAcademic = inp._providerType === "tertiary";
   const researchSystems = isAcademic ? Math.round(inp.bed_count / 100 * RESEARCH_SYSTEMS_PER_100_BEDS) : 0;
   const researchSystemCost = researchSystems * RESEARCH_SYSTEM_AVG_COST;
-  const researchDecomSave = Math.round(researchSystemCost * 0.60 * sc.decom_pct); // 60% retirable
+  const researchDecomSave = Math.round(researchSystemCost * 0.60 * decomPct); // 60% retirable
   const teachingComplianceCost = isAcademic ? Math.round(inp.bed_count * TEACHING_COMPLIANCE_COST_PER_BED) : 0;
-  const teachingEfficiency = Math.round(teachingComplianceCost * 0.25 * sc.decom_pct); // 25% efficiency gain
-  const teachingOverhead = isAcademic ? Math.round(totalEstate * TEACHING_OVERHEAD_PCT * 0.30 * sc.decom_pct) : 0; // 30% of 12% extra complexity
+  const teachingEfficiency = Math.round(teachingComplianceCost * 0.25 * decomPct); // 25% efficiency gain
+  const teachingOverhead = isAcademic ? Math.round(totalEstate * TEACHING_OVERHEAD_PCT * 0.30 * decomPct) : 0; // 30% of 12% extra complexity
 
   // ── Network Consolidation Module ──
   const isMultiHospital = inp._providerType === "state_network" || inp._providerType === "statewide";
   const survivingSystems = legacy - decom;
   const duplicateSystems = isMultiHospital ? Math.round(survivingSystems * DUPLICATE_SYSTEM_RATE) : 0;
   const duplicateSystemCost = isMultiHospital ? Math.round(duplicateSystems * depCost) : 0; // Use dep tier cost - duplicates are departmental/niche, not enterprise
-  const duplicateElimination = Math.round(duplicateSystemCost * sc.decom_pct);
+  const duplicateElimination = Math.round(duplicateSystemCost * decomPct);
   const lhdCount = inp._lhdCount || Math.max(1, Math.round(inp.org_count / 15)); // LHDs/HHSs, not individual hospitals
   const duplicateInfraCost = isMultiHospital ? lhdCount * DUPLICATE_INFRA_COST_PER_FACILITY : 0;
-  const infraConsolidation = Math.round(duplicateInfraCost * 0.60 * sc.decom_pct); // 60% consolidatable
+  const infraConsolidation = Math.round(duplicateInfraCost * 0.60 * decomPct); // 60% consolidatable
   // standardisationSave removed - identical formula to abfEfficiencyGain (both totalEstate*15%), was double-counting
   const standardisationSave = 0;
 
@@ -524,12 +526,12 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const litigationCases = isAgedCare || isNDIS ? 0 : Math.round(inp.bed_count / 100 * AU_EDISCOVERY_CASES_PER_100_BEDS);
   const ediscoverySaveBefore = litigationCases * AU_EDISCOVERY_HRS_PER_CASE_BEFORE * AU_EDISCOVERY_HOURLY_RATE;
   const ediscoverySaveAfter = litigationCases * AU_EDISCOVERY_HRS_PER_CASE_AFTER * AU_EDISCOVERY_HOURLY_RATE;
-  const ediscoverySaving = Math.round((ediscoverySaveBefore - ediscoverySaveAfter) * sc.decom_pct);
+  const ediscoverySaving = Math.round((ediscoverySaveBefore - ediscoverySaveAfter) * decomPct);
   const cyberSystemsRetired = Math.max(0, decom - 1); // -1 for the new archive system
 
   // ── Readmission cost avoidance (hospital sector only) ──
   const auReadmissions = isAgedCare || isNDIS ? 0 : Math.round(admissionsPerYear * AU_READMISSION_RATE);
-  const auReadmissionsAvoided = Math.round(admissionsPerYear * AU_READMIT_REDUCTION * AU_READMIT_FRAGMENTATION_ATTRIBUTION * sc.safety);
+  const auReadmissionsAvoided = Math.round(admissionsPerYear * AU_READMIT_REDUCTION * AU_READMIT_FRAGMENTATION_ATTRIBUTION * safetyPct);
   const auReadmissionCostAvoidance = Math.round(auReadmissionsAvoided * AU_READMIT_COST);
 
   // Module totals
@@ -569,8 +571,8 @@ function calc(inp, mode, ov = {}, flagships = []) {
     sarDaysBefore, sarDaysAfter, sarReductionPct,
     hasClinicalScope, safetyMedErrorsAvoided, safetyPatientsProtected,
     safetyBedDaysAvoided, safetyMedErrorsBaseline,
-    annual, total3, totalRamp, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, rampN, rampPcts, yrValues, yrRValues, realisation, scenarioDefaultRealisation: sc.realisation, decomFactor: sc.decom_pct, safetyFactor: sc.safety, isArchiveOnly,
-    flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * sc.decom_pct),
+    annual, total3, totalRamp, yr1, yr2, yr3, y1Pct, y2Pct, y3Pct, rampN, rampPcts, yrValues, yrRValues, realisation, scenarioDefaultRealisation: sc.realisation, decomFactor: decomPct, safetyFactor: safetyPct, isArchiveOnly,
+    flagshipTotal, flagshipDecomSave: Math.round(flagshipDecomSave * decomPct),
     flagshipCount, flagshipRetireCount,
     // ABF efficiency and compliance
     admissionsPerYear, estAnnualRevenueCalc, occupancy, medicareDrg,
@@ -1241,6 +1243,36 @@ function ROICalculator() {
   const [activePreset, setActivePreset] = useState(null);
   const [viewTimescale, setViewTimescale] = useState("annual");
   const [scenarioMode, setScenarioMode] = useState(null);
+  const [scenarioBlend, setScenarioBlend] = useState(null);
+  // setBlend used by the slider - sets continuous blend AND closest discrete scenario  
+  const setBlend = useCallback((val) => {
+    setScenarioBlend(val);
+    if (val == null) setBlend(null);
+    else setScenarioMode(val < 0.33 ? "CONSERVATIVE" : val < 0.67 ? "EXPECTED" : "STRETCH");
+  }, []);
+  // setRiskScenario used by DELAYED/PARTIAL buttons - sets discrete scenario, clears slider blend
+  const setRiskScenario = useCallback((mode) => {
+    setScenarioMode(mode);
+    setScenarioBlend(null); // clear blend factors so calc uses pure DELAYED/PARTIAL constants
+  }, []);
+  const blendFactors = useMemo(() => {
+    if (scenarioBlend == null) return null;
+    const c = SCENARIO.CONSERVATIVE, e = SCENARIO.EXPECTED, s = SCENARIO.STRETCH;
+    if (scenarioBlend <= 0.5) {
+      const t = scenarioBlend / 0.5;
+      return {
+        decom_pct: c.decom_pct + (e.decom_pct - c.decom_pct) * t,
+        realisation: c.realisation + (e.realisation - c.realisation) * t,
+        safety: c.safety + (e.safety - c.safety) * t,
+      };
+    }
+    const t = (scenarioBlend - 0.5) / 0.5;
+    return {
+      decom_pct: e.decom_pct + (s.decom_pct - e.decom_pct) * t,
+      realisation: e.realisation + (s.realisation - e.realisation) * t,
+      safety: e.safety + (s.safety - e.safety) * t,
+    };
+  }, [scenarioBlend]);
   const [viewMode, setViewMode] = useState("executive"); // "executive" or "detailed"
   const [showFormulas, setShowFormulas] = useState(false);
   const [pdfFormat, setPdfFormat] = useState("full"); // "full" or "board"
@@ -1287,8 +1319,6 @@ function ROICalculator() {
   const [knownAnnualSpend, setKnownAnnualSpend] = useState(null);
 
   const [overrides, setOverrides] = useState({enterprise:null,departmental:null,niche:null,entCost:null,depCost:null,nicCost:null,clinicians:null,minsWasted:null,ticketsBaseline:null,sarDaysBefore:null});
-  // Realisation rate override (null = use scenario default; otherwise 0.05-0.55)
-  const [realisationOv, setRealisationOv] = useState(null);
   const [leadForm, setLeadForm] = useState({name:"",email:"",org:"",role:""});
   const [leadSubmitted, setLeadSubmitted] = useState(false);
   const [leadSending, setLeadSending] = useState(false);
@@ -1310,7 +1340,7 @@ function ROICalculator() {
   const PDF_COMPANY_NAME = "RLDatix Data Solutions Group (AU)";
   const setOv = useCallback((k,v) => setOverrides(p=>({...p,[k]:v})),[]);
   const overrideCount = Object.values(overrides).filter(v=>v!=null).length;
-  const resetOv = useCallback(()=>{setOverrides({enterprise:null,departmental:null,niche:null,entCost:null,depCost:null,nicCost:null,clinicians:null,minsWasted:null,ticketsBaseline:null,sarDaysBefore:null}); setRealisationOv(null);},[]);
+  const resetOv = useCallback(()=>{setOverrides({enterprise:null,departmental:null,niche:null,entCost:null,depCost:null,nicCost:null,clinicians:null,minsWasted:null,ticketsBaseline:null,sarDaysBefore:null}); setScenarioBlend(null);},[]);
 
   const ref1=useRef(null),ref2=useRef(null),ref3=useRef(null),refCta=useRef(null),thinkingRef=useRef(null),calcPageRef=useRef(null);
   const scrollTo=ref=>setTimeout(()=>ref.current?.scrollIntoView({behavior:"smooth",block:"start"}),120);
@@ -1539,11 +1569,11 @@ function ROICalculator() {
       entCost: tierCostEdits.enterprise != null ? tierCostEdits.enterprise : overrides.entCost,
       depCost: tierCostEdits.departmental != null ? tierCostEdits.departmental : overrides.depCost,
       nicCost: tierCostEdits.niche != null ? tierCostEdits.niche : overrides.nicCost,
-      realisation: realisationOv,
+      ...(blendFactors || {}),
     };
     if (costMode === "known" && knownAnnualSpend > 0) return { ...base, ...knownCostOv };
     return base;
-  }, [overrides, tierCostEdits, costMode, knownAnnualSpend, knownCostOv, realisationOv]);
+  }, [overrides, tierCostEdits, costMode, knownAnnualSpend, knownCostOv, blendFactors]);
   const calcInputs = useMemo(() => {
     const pm = PROVIDER_MULTIPLIERS[providerType] || PROVIDER_MULTIPLIERS.regional;
     const rm = REIMBURSE_MULTIPLIERS[reimbursementModel] || REIMBURSE_MULTIPLIERS.mixed;
@@ -1571,11 +1601,17 @@ function ROICalculator() {
   const facilityLabelCap = sector === "aged_care" ? "Facilities" : sector === "ndis" ? "Service Locations" : "Hospitals";
   const knownSystems = sector === "aged_care" ? AC_KNOWN_SYSTEMS : sector === "ndis" ? NDIS_KNOWN_SYSTEMS : KNOWN_SYSTEMS;
 
-  const rCon=useMemo(()=>calc(calcInputs,"CONSERVATIVE",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
-  const rExp=useMemo(()=>calc(calcInputs,"EXPECTED",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
-  const rStr=useMemo(()=>calc(calcInputs,"STRETCH",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
-  const rDel=useMemo(()=>calc(calcInputs,"DELAYED",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
-  const rPar=useMemo(()=>calc(calcInputs,"PARTIAL",mergedOv,flagships),[calcInputs,mergedOv,flagships]);
+  // For range/risk display: strip blend factors so rCon/rExp/rStr/rDel/rPar show pure scenario anchors
+  const cleanOv = useMemo(() => {
+    if (!blendFactors) return mergedOv;
+    const { decom_pct: _d, realisation: _r, safety: _s, ...rest } = mergedOv;
+    return rest;
+  }, [mergedOv, blendFactors]);
+  const rCon=useMemo(()=>calc(calcInputs,"CONSERVATIVE",cleanOv,flagships),[calcInputs,cleanOv,flagships]);
+  const rExp=useMemo(()=>calc(calcInputs,"EXPECTED",cleanOv,flagships),[calcInputs,cleanOv,flagships]);
+  const rStr=useMemo(()=>calc(calcInputs,"STRETCH",cleanOv,flagships),[calcInputs,cleanOv,flagships]);
+  const rDel=useMemo(()=>calc(calcInputs,"DELAYED",cleanOv,flagships),[calcInputs,cleanOv,flagships]);
+  const rPar=useMemo(()=>calc(calcInputs,"PARTIAL",cleanOv,flagships),[calcInputs,cleanOv,flagships]);
   const r=am==="CONSERVATIVE"?rCon:am==="STRETCH"?rStr:am==="DELAYED"?rDel:am==="PARTIAL"?rPar:rExp;
   // ── Timescale multiplier: scales steady-state values for First-year / N-year-total / Yearly-avg views ──
   const ts = useMemo(() => {
@@ -2866,7 +2902,7 @@ function ROICalculator() {
 
       {/* Calculate button */}
             <button type="button" className="roi-cta" onClick={() => {
-          setPage("calculating"); setCalcStep(0); setScenarioMode("EXPECTED");
+          setPage("calculating"); setCalcStep(0); setBlend(0.5);
           scrollToTop();
           setTimeout(() => setCalcStep(1), 400);
           setTimeout(() => setCalcStep(2), 1100);
@@ -3406,7 +3442,7 @@ function ROICalculator() {
     {/* CTA */}
     <div ref={refCta} style={{animation:step>=2?"fade-in .4s ease":"none",opacity:step<2?0.3:1,pointerEvents:step<2?"none":"auto",transition:"opacity .4s"}}>
       <button type="button" className="roi-cta" onClick={() => {
-          setPage("calculating"); setCalcStep(0); setScenarioMode("EXPECTED");
+          setPage("calculating"); setCalcStep(0); setBlend(0.5);
           scrollToTop();
           setTimeout(() => setCalcStep(1), 400);
           setTimeout(() => setCalcStep(2), 1100);
@@ -3477,7 +3513,7 @@ function ROICalculator() {
     {viewMode === "detailed" && !dim && <Card style={{marginBottom:16,border:`1px solid ${C.border}`}}>
       <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:8,letterSpacing:0.5}}>RISK SCENARIOS · STRESS TEST</div>
       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-        <button type="button" onClick={()=>{if(scenarioMode==="DELAYED"||scenarioMode==="PARTIAL")setScenarioMode("EXPECTED")}} className="roi-scenario" style={{flex:"1 1 0",minWidth:80,padding:"10px 8px",textAlign:"center",border:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accentPale:"#fff"}}>
+        <button type="button" onClick={()=>{if(scenarioMode==="DELAYED"||scenarioMode==="PARTIAL")setBlend(0.5)}} className="roi-scenario" style={{flex:"1 1 0",minWidth:80,padding:"10px 8px",textAlign:"center",border:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accentPale:"#fff"}}>
           <div style={{marginBottom:2,display:"flex",justifyContent:"center"}}><SIcon name="shield" size={18} color={scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accent:C.textMid}/></div>
           <div style={{fontSize:12,fontWeight:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?700:500,color:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accent:C.textMid}}>None</div>
           <div style={{fontSize:10,color:C.textMuted}}>No risk applied</div>
@@ -3485,7 +3521,7 @@ function ROICalculator() {
         {[
             { k: "DELAYED", l: "12-month delay", s: "Programme slips 1 year", svgIcon: "clock" },
             { k: "PARTIAL", l: "Partial decom", s: "Only 50% systems retired", svgIcon: "alert" },
-          ].map(s => <button type="button" key={s.k} onClick={()=>setScenarioMode(scenarioMode===s.k?"EXPECTED":s.k)} className="roi-scenario" style={{flex:"1 1 0",minWidth:100,padding:"10px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid #2c3e6b`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode===s.k?"#eef0f8":"#fff"}}>
+          ].map(s => <button type="button" key={s.k} onClick={()=>{if(scenarioMode===s.k){setBlend(0.5)}else{setRiskScenario(s.k)}}} className="roi-scenario" style={{flex:"1 1 0",minWidth:100,padding:"10px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid #2c3e6b`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode===s.k?"#eef0f8":"#fff"}}>
           <div style={{marginBottom:2,display:"flex",justifyContent:"center"}}><SIcon name={s.svgIcon} size={18} color={scenarioMode===s.k?"#2c3e6b":C.textMid}/></div>
           <div style={{fontSize:12,fontWeight:scenarioMode===s.k?700:500,color:scenarioMode===s.k?"#2c3e6b":C.textMid}}>{s.l}</div>
           <div style={{fontSize:10,color:C.textMuted}}>{s.s}</div>
@@ -3605,23 +3641,6 @@ function ROICalculator() {
           {k:"total5",l:"5-year total"},
           {k:"annual",l:"Yearly average"},
         ].map(t => <button type="button" key={t.k} onClick={()=>{setViewTimescale(t.k);if(t.k==="total3")setRampYears(3);if(t.k==="total5")setRampYears(5);}} style={{padding:"7px 16px",border:"none",borderRadius:999,background:viewTimescale===t.k?C.accent:"transparent",color:viewTimescale===t.k?"#fff":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s",whiteSpace:"nowrap"}}>{t.l}</button>)}
-      </div>
-    </div>
-
-    {/* Realisation rate override slider - lets user dial capacity-realisation up or down without changing scenario */}
-    <div style={{display:"flex",justifyContent:"center",marginBottom:18}}>
-      <div style={{display:"flex",alignItems:"center",gap:14,padding:"10px 18px",background:"#f8fafb",border:`1px dashed ${C.border}`,borderRadius:999,flexWrap:"wrap",justifyContent:"center"}}>
-        <span style={{fontSize:11,fontWeight:700,color:C.textMid,textTransform:"uppercase",letterSpacing:".05em"}}>Capacity realisation</span>
-        <InfoTip text={`The percentage of clinician time freed that translates into measurable value. Conservative scenario assumes 20%, Expected 30%, Stretch 40%. Drag to model your own assumption - all numbers update in real time.`}/>
-        <span style={{fontSize:11,color:C.textMuted,minWidth:24,textAlign:"right"}}>5%</span>
-        <input type="range" min="0.05" max="0.55" step="0.01" value={r.realisation}
-          onChange={(e)=>setRealisationOv(parseFloat(e.target.value))}
-          style={{width:180,accentColor:C.accent,cursor:"pointer"}}/>
-        <span style={{fontSize:11,color:C.textMuted,minWidth:24}}>55%</span>
-        <span style={{fontSize:15,fontWeight:800,color:C.accent,minWidth:48,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>{Math.round(r.realisation*100)}%</span>
-        {realisationOv !== null && Math.abs(realisationOv - r.scenarioDefaultRealisation) > 0.005 && (
-          <button type="button" onClick={()=>setRealisationOv(null)} style={{background:"none",border:"none",color:C.accent,cursor:"pointer",padding:0,fontFamily:"inherit",textDecoration:"underline",fontSize:11,fontWeight:600}}>Reset to {Math.round(r.scenarioDefaultRealisation*100)}%</button>
-        )}
       </div>
     </div>
 
@@ -4208,7 +4227,7 @@ function ROICalculator() {
         setMergerOrgs([]);
         setFacilityPortfolio({});
         setStep(0);
-        setScenarioMode(null);
+        setBlend(null);
         setLeadSubmitted(false);
         setLeadForm({name:"",email:"",org:"",role:""});
         setPage("inputs");
