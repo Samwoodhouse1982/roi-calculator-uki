@@ -294,37 +294,39 @@ export function SystemsStep({ inputs, updateTier, flagships, addFlagship, remove
               </div>;
             })}
           </div>}
-          {tierSystems.length > 0 && <>
-            <div onClick={() => { setOpenTier(openTier === t.key ? null : t.key); setSelected([]); }} style={{ marginTop: 8, fontSize: F.tiny, color: C.accent, cursor: "pointer", fontWeight: 600 }}>
-              {openTier === t.key ? "▾" : "▸"} Name a specific system
-            </div>
-            {openTier === t.key && <div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-                {tierSystems.filter(sys => !tierFlagships.some(f => f.name === sys.label)).map(sys => {
-                  const isSel = selected.some(s => s.label === sys.label);
-                  return <button key={sys.label} onClick={() => setSelected(p => isSel ? p.filter(s => s.label !== sys.label) : [...p, sys])} style={{
-                    padding: "8px 14px", fontSize: F.tiny, fontWeight: 600, borderRadius: 10, cursor: "pointer", fontFamily: "inherit", transition: "all .15s",
-                    border: isSel ? `2px solid ${t.color}` : `1px solid ${C.borderLight}`,
-                    background: isSel ? t.color + "18" : C.bg,
-                    color: isSel ? t.color : C.textMid,
-                  }}>
-                    {isSel ? "✓ " : ""}{sys.label} <span style={{ color: C.textMuted }}>({fmtK(systemCost(sys, inputs.bed_count))})</span>
-                  </button>;
-                })}
-              </div>
-              {selected.length > 0 && <button onClick={() => { selected.forEach(sys => addFlagship(sys, t.key)); setSelected([]); setOpenTier(null); }} style={{
-                marginTop: 10, padding: "14px 32px", borderRadius: 14, border: "none",
-                background: t.color, color: "#0a0f1a", fontSize: F.small, fontWeight: 700,
-                cursor: "pointer", fontFamily: "inherit", width: "100%"
-              }}>Add {selected.length} system{selected.length > 1 ? "s" : ""}</button>}
-              <button onClick={() => setCustomTier(t.key)} style={{
-                marginTop: selected.length > 0 ? 8 : 10, padding: "12px 20px", borderRadius: 12,
-                border: `1px dashed ${t.color}80`, background: 'transparent',
-                color: t.color, fontSize: F.tiny, fontWeight: 600, cursor: "pointer",
-                fontFamily: "inherit", width: "100%"
-              }}>+ Enter your own {t.label.toLowerCase()} system</button>
+          {/* Two parallel ways to add a specific system: pick from common list, OR enter custom.
+              Both buttons are always visible (when collapsed) so users can discover either path. */}
+          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            {tierSystems.length > 0 && <div onClick={() => { setOpenTier(openTier === t.key ? null : t.key); setSelected([]); }} style={{ flex: 1, padding: "12px 16px", textAlign: "center", fontSize: F.tiny, color: C.accent, cursor: "pointer", fontWeight: 600, border: `1px solid ${C.border}`, borderRadius: 12, background: openTier === t.key ? C.accent + "10" : C.bg }}>
+              {openTier === t.key ? "▾" : "▸"} Pick from common systems
             </div>}
-          </>}
+            <button onClick={() => setCustomTier(t.key)} style={{
+              flex: 1, padding: "12px 16px", borderRadius: 12,
+              border: `1px dashed ${t.color}`, background: 'transparent',
+              color: t.color, fontSize: F.tiny, fontWeight: 600, cursor: "pointer",
+              fontFamily: "inherit"
+            }}>+ Enter your own system</button>
+          </div>
+          {tierSystems.length > 0 && openTier === t.key && <div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
+              {tierSystems.filter(sys => !tierFlagships.some(f => f.name === sys.label)).map(sys => {
+                const isSel = selected.some(s => s.label === sys.label);
+                return <button key={sys.label} onClick={() => setSelected(p => isSel ? p.filter(s => s.label !== sys.label) : [...p, sys])} style={{
+                  padding: "8px 14px", fontSize: F.tiny, fontWeight: 600, borderRadius: 10, cursor: "pointer", fontFamily: "inherit", transition: "all .15s",
+                  border: isSel ? `2px solid ${t.color}` : `1px solid ${C.borderLight}`,
+                  background: isSel ? t.color + "18" : C.bg,
+                  color: isSel ? t.color : C.textMid,
+                }}>
+                  {isSel ? "✓ " : ""}{sys.label} <span style={{ color: C.textMuted }}>({fmtK(systemCost(sys, inputs.bed_count))})</span>
+                </button>;
+              })}
+            </div>
+            {selected.length > 0 && <button onClick={() => { selected.forEach(sys => addFlagship(sys, t.key)); setSelected([]); setOpenTier(null); }} style={{
+              marginTop: 10, padding: "14px 32px", borderRadius: 14, border: "none",
+              background: t.color, color: "#0a0f1a", fontSize: F.small, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit", width: "100%"
+            }}>Add {selected.length} system{selected.length > 1 ? "s" : ""}</button>}
+          </div>}
         </Card>;
       })}
     </div>
