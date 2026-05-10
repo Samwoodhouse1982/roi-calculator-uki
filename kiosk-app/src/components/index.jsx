@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { C, F } from '../theme';
 import { Icon } from './Icons';
 
@@ -107,11 +107,55 @@ export function Stepper({ label, value, min = 0, max = 999, step = 1, onChange, 
 
 export function InfoTip({ text }) {
   const [show, setShow] = useState(false);
-  return <span style={{ position: "relative", display: "inline-flex" }}>
+  const iconRef = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, placeAbove: false });
+
+  // When the tooltip opens, measure the icon's viewport position and decide
+  // whether to render the bubble above or below it. Avoids being obscured by
+  // the kiosk's header bar at the top of the viewport.
+  useEffect(() => {
+    if (!show || !iconRef.current) return;
+    const rect = iconRef.current.getBoundingClientRect();
+    const W = 400; // bubble width
+    const ESTIMATED_H = 260; // bubble approx height
+    const M = 14; // margin between icon and bubble
+    const SAFE_TOP = 100; // header height safety margin
+    const SAFE_BOTTOM = 60;
+
+    const spaceBelow = window.innerHeight - rect.bottom - SAFE_BOTTOM;
+    const spaceAbove = rect.top - SAFE_TOP;
+    const placeAbove = spaceBelow < ESTIMATED_H && spaceAbove > spaceBelow;
+
+    let top, left;
+    if (placeAbove) {
+      // Anchor bubble bottom to (rect.top - M), so top = rect.top - M - height.
+      // We don't know height yet, so use translateY(-100%) on the bubble.
+      top = rect.top - M;
+    } else {
+      top = rect.bottom + M;
+    }
+    left = rect.left + rect.width / 2 - W / 2;
+    // Clamp horizontally so the bubble stays on screen
+    left = Math.max(20, Math.min(left, window.innerWidth - W - 20));
+
+    setPos({ top, left, placeAbove });
+  }, [show]);
+
+  return <span ref={iconRef} style={{ position: "relative", display: "inline-flex" }}>
     <span onClick={() => setShow(!show)} style={{ width: 30, height: 30, borderRadius: "50%", background: C.border, color: C.textMid, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: F.small, fontWeight: 700, cursor: "pointer" }}>i</span>
     {show && <>
-      <div onClick={() => setShow(false)} style={{ position: "fixed", inset: 0, zIndex: 19 }} />
-      <span style={{ position: "absolute", bottom: "calc(100% + 14px)", left: "50%", transform: "translateX(-50%)", background: "#1e2840", color: C.text, fontSize: F.small, lineHeight: 1.6, padding: "20px 24px", borderRadius: 18, width: 400, boxShadow: "0 12px 48px rgba(0,0,0,.6)", zIndex: 20, border: `1px solid ${C.border}`, animation: "kfade .2s ease-out" }}>{text}</span>
+      <div onClick={() => setShow(false)} style={{ position: "fixed", inset: 0, zIndex: 99996 }} />
+      <span style={{
+        position: "fixed",
+        top: pos.top, left: pos.left,
+        transform: pos.placeAbove ? "translateY(-100%)" : "none",
+        background: "#1e2840", color: C.text,
+        fontSize: F.small, lineHeight: 1.6, padding: "20px 24px",
+        borderRadius: 18, width: 400, maxWidth: "calc(100vw - 40px)",
+        boxShadow: "0 12px 48px rgba(0,0,0,.6)",
+        zIndex: 99997, border: `1px solid ${C.border}`,
+        animation: "kfade .2s ease-out"
+      }}>{text}</span>
     </>}
   </span>;
 }
