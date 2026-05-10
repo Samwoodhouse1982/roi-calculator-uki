@@ -3392,7 +3392,7 @@ function ROICalculator() {
       </div>
     </div>}
 
-    {dim&&<div style={{textAlign:"center",padding:"60px 20px",color:C.textMuted}}><div style={{marginBottom:12,opacity:.3,display:"flex",justifyContent:"center"}}><SIcon name="chart" size={48} color={C.textMuted}/></div><div style={{fontSize:16,fontWeight:600,color:C.textMid}}>Select a scenario above</div></div>}
+    {dim&&<div style={{textAlign:"center",padding:"60px 20px",color:C.textMuted}}><div style={{marginBottom:12,opacity:.3,display:"flex",justifyContent:"center"}}><SIcon name="chart" size={48} color={C.textMuted}/></div><div style={{fontSize:16,fontWeight:600,color:C.textMid}}>Drag the slider above to unlock</div></div>}
 
     {!dim && overrideCount > 0 && (
       <div style={{
@@ -3628,8 +3628,8 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         {[
           {label:"Medication errors",bl:r.safetyMedErrorsBaseline,av:r.safetyMedErrorsAvoided,avl:"potentially avoidable",sub:"at admission, transfer, or discharge"},
-          {label:"Patients harmed",bl:Math.round(r.safetyPatientsProtected/(SCENARIO[am].safety||0.25)),av:r.safetyPatientsProtected,avl:"potentially protected",sub:"by medication errors during handoffs"},
-          {label:"Excess bed days",bl:Math.round(r.safetyBedDaysAvoided/(SCENARIO[am].safety||0.25)),av:r.safetyBedDaysAvoided,avl:"potentially avoidable",sub:"from adverse medication events"},
+          {label:"Patients harmed",bl:Math.round(r.safetyPatientsProtected/(r.safetyFactor||0.25)),av:r.safetyPatientsProtected,avl:"potentially protected",sub:"by medication errors during handoffs"},
+          {label:"Excess bed days",bl:Math.round(r.safetyBedDaysAvoided/(r.safetyFactor||0.25)),av:r.safetyBedDaysAvoided,avl:"potentially avoidable",sub:"from adverse medication events"},
         ].map((m,i)=>{
           const rampSum = r.rampPcts.reduce((a,b)=>a+b,0);
           const cumulative = Math.round(m.av * rampSum);
@@ -4217,7 +4217,7 @@ function ROICalculator() {
           </div>
 
           <div style={{marginTop:14,fontSize:11,color:C.textMuted,lineHeight:1.6,fontStyle:"italic"}}>
-            Scenario factors: <strong>{am === "CONSERVATIVE" ? "Conservative" : am === "STRETCH" ? "Stretch" : "Expected"}</strong> = decom ×{sc.decom_pct.toFixed(2)}, realization ×{sc.realization.toFixed(2)}, safety ×{sc.safety.toFixed(2)}. Switch scenarios above to see how the numbers shift.
+            Scenario factors: <strong>{am === "CONSERVATIVE" ? "Conservative" : am === "STRETCH" ? "Stretch" : "Expected"}</strong> = decom ×{sc.decom_pct.toFixed(2)}, realization ×{sc.realization.toFixed(2)}, safety ×{sc.safety.toFixed(2)}. Drag the slider above to see how the numbers shift.
           </div>
 
           <div style={{marginTop:14,display:"flex",justifyContent:"center"}}>
