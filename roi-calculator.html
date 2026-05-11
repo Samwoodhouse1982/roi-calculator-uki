@@ -2502,7 +2502,7 @@ function ROICalculator() {
       <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
         {[
           {k:"HAVE_EPR",svgIcon:"shield",title:"We have an enterprise EPR",desc:"Already on Epic, Oracle/Cerner or similar, and looking to archive and decommission legacy systems.",focus:"Archiving + decommission savings"},
-          {k:"EVALUATING",svgIcon:"search",title:"We’re evaluating enterprise EPRs (FDP-supported)",desc:"Assessing migration to a single platform under the Frontline Digitisation Programme. Need the full case for migration and archiving.",focus:"FDP migration + archiving savings"},
+          {k:"EVALUATING",svgIcon:"search",title:"We’re evaluating enterprise EPRs",desc:"Assessing migration to a single platform. Need the full case for migration and archiving.",focus:"FDP migration + archiving savings"},
         ].map(j=><button type="button" key={j.k} onClick={()=>{update("journey",j.k);touch(0);setTimeout(()=>scrollTo(ref1),200);}} className="roi-btn" style={{
           flex:"1 1 240px",minWidth:0,padding:"18px 20px",textAlign:"left",cursor:"pointer",
           border:inputs.journey===j.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:12,
