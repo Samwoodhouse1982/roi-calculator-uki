@@ -1811,15 +1811,24 @@ function ROICalculator() {
     const DARK = [31,41,55], MID = [110,138,142];
     const setC = (c) => { doc.setTextColor(c[0],c[1],c[2]); };
 
-    // Footer helper
+    // Footer helper - clears the bottom 18mm to white first, then draws
+    // the footer on top. The clear-pass guards against content from
+    // higher up the page extending into the footer area (which would
+    // otherwise show through and obscure the page number / company
+    // name). Without this, sections that don't perform their own
+    // page-break check before drawing can overflow into the footer.
     const addFooter = (pageNum, totalPages) => {
+      // 1. Clear the footer region (18mm tall at bottom, white fill)
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, ph - 18, pw, 18, "F");
+      // 2. Draw separator line + footer text
       doc.setDrawColor(15,65,70); doc.setLineWidth(0.6);
       doc.line(ml, ph - 14, pw - mr, ph - 14);
       doc.setFontSize(7); setC(MID);
       doc.text(PDF_COMPANY_NAME, ml, ph - 10);
       doc.text("ROI Calculator  |  " + dateStr, pw / 2, ph - 10, { align: "center" });
       doc.text("Page " + pageNum + " of " + totalPages, pw - mr, ph - 10, { align: "right" });
-      // Seafoam accent bar at very bottom
+      // 3. Seafoam accent bar at very bottom (sits below the text)
       doc.setFillColor(SEAFOAM[0],SEAFOAM[1],SEAFOAM[2]);
       doc.rect(0, ph - 4, pw, 4, "F");
     };
@@ -2095,7 +2104,7 @@ function ROICalculator() {
     // Scenario comparison mini-table
     if (y < 240) {
       doc.setFontSize(10); doc.setFont("helvetica","bold"); setC(TEAL);
-      doc.text("Scenario Comparison", ml, y); y += 2;
+      doc.text("Scenario Comparison", ml, y); y += 6;
       doc.autoTable({
         startY: y,
         margin: { left: ml, right: mr },
@@ -2304,6 +2313,18 @@ function ROICalculator() {
     try {
       if (pdfFormat === "board") await generateBoardPDF();
       else await generatePDF();
+    } finally {
+      setPdfBusy(false);
+    }
+  }, [pdfBusy, pdfFormat, generateBoardPDF, generatePDF]);
+
+  // Also let the user download the OTHER format (the one they didn't pick) from the post-download bar
+  const downloadOtherFormat = useCallback(async () => {
+    if (pdfBusy) return;
+    setPdfBusy(true);
+    try {
+      if (pdfFormat === "board") await generatePDF();
+      else await generateBoardPDF();
     } finally {
       setPdfBusy(false);
     }
@@ -3314,8 +3335,11 @@ function ROICalculator() {
       <Card style={{marginTop:20,background:C.greenPale,border:"1px solid #c3ddd3"}}>
         <div style={{textAlign:"center",padding:"12px 0"}}>
           <h3 style={{fontSize:18,fontWeight:800,color:C.green,margin:"0 0 6px"}}>{"✓"} Report downloaded</h3>
-          <p style={{fontSize:14,color:C.textMid}}>{EMAIL_ENDPOINT ? "A copy is also being sent to " + leadForm.email + "." : "Your PDF has been saved."}</p>
-          <button type="button" onClick={downloadPdfAgain} disabled={pdfBusy} className="roi-btn" style={{marginTop:12,padding:"10px 24px",background:C.accent,color:"#fff",border:"none",borderRadius:999,fontSize:14,fontWeight:600,cursor:pdfBusy?"wait":"pointer",opacity:pdfBusy?0.7:1}}>{pdfBusy ? "Generating PDF..." : "Download again"}</button>
+          <p style={{fontSize:14,color:C.textMid,marginBottom:14}}>{EMAIL_ENDPOINT ? "A copy is also being sent to " + leadForm.email + "." : "Your PDF has been saved."}</p>
+          <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
+            <button type="button" onClick={downloadPdfAgain} disabled={pdfBusy} className="roi-btn" style={{padding:"10px 24px",background:C.accent,color:"#fff",border:"none",borderRadius:999,fontSize:14,fontWeight:600,cursor:pdfBusy?"wait":"pointer",opacity:pdfBusy?0.7:1}}>{pdfBusy ? "Generating PDF..." : "Download again"}</button>
+            <button type="button" onClick={downloadOtherFormat} disabled={pdfBusy} className="roi-btn" style={{padding:"10px 24px",background:"transparent",color:C.accent,border:`2px solid ${C.accent}`,borderRadius:999,fontSize:14,fontWeight:600,cursor:pdfBusy?"wait":"pointer",opacity:pdfBusy?0.7:1}}>{pdfBusy ? "Generating PDF..." : (pdfFormat === "board" ? "Also download full report" : "Also download board summary")}</button>
+          </div>
         </div>
       </Card>
     )}
