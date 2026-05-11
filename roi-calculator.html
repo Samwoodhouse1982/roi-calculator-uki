@@ -1965,7 +1965,7 @@ function ROICalculator() {
     y += 6;
     setC(GRAY); doc.setFontSize(9); doc.setFont("helvetica","normal");
     const halfBoth = Math.round((r.decomSave + r.timeSave + r.reimbursementImpact + r.qualitySavings + r.academicSavings + r.mergeSavings) * 0.5);
-    doc.text("Even if both realisation rate and decommission rate halve simultaneously,", ml, y);
+    doc.text("Even if both realization rate and decommission rate halve simultaneously,", ml, y);
     y += 5;
     doc.text(`projected annual savings remain ${fmtKp(halfBoth)} — demonstrating a robust business case.`, ml, y);
     y += 5;
@@ -3115,8 +3115,8 @@ function ROICalculator() {
         <div>
           <div style={{display:"flex",flexDirection:"column",gap:16}}>
             {[
-              {tier:"enterprise",label:"Enterprise systems",color:C.accent,bg:C.accentPale,br:C.border,hint:"e.g. legacy EHR, PAS, large clinical suites",max:Math.max(10, inputs.tiers.enterprise + 2),tip:"Large clinical platforms, e.g. legacy EHR/PAS, major departmental suites. High per-system cost."},
-              {tier:"departmental",label:"Departmental systems",color:"#1a7a7a",bg:"#eef9f7",br:"#c0e8e2",hint:"e.g. theatres, lab, ED, maternity, radiology",max:Math.max(30, inputs.tiers.departmental + 5),tip:"Mid-tier clinical systems serving one department or specialty. Moderate running costs."},
+              {tier:"enterprise",label:"Enterprise systems",color:C.accent,bg:C.accentPale,br:C.border,hint:"e.g. legacy EHR, ERP, RCM",max:Math.max(10, inputs.tiers.enterprise + 2),tip:"Large clinical platforms, e.g. legacy EHR, ERP, RCM. High per-system cost."},
+              {tier:"departmental",label:"Departmental systems",color:"#1a7a7a",bg:"#eef9f7",br:"#c0e8e2",hint:"Common examples of departmental systems include laboratory, pharmacy, perinatal, imaging/PACS, cardiology, and radiology.",max:Math.max(30, inputs.tiers.departmental + 5),tip:"Mid-tier clinical systems serving one department or specialty. Moderate running costs."},
               {tier:"niche",label:"Standalone systems",color:"#3d8a8a",bg:C.tealPale,br:`${C.teal}22`,hint:"e.g. document stores, scanned notes, specialty databases",max:Math.max(100, inputs.tiers.niche + 10),tip:"Small self-contained tools, e.g. single-function databases, document stores, scanned notes. Low individual cost but they add up."},
             ].map(t=>{
               const computedCost = tierCost(t.tier,inputs.bed_count,CX[inputs.complexity_level]);
@@ -3882,7 +3882,7 @@ function ROICalculator() {
             <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>Expected scenario, current assumptions</div>
           </div>
           <div style={{padding:"12px",background:"#fff",borderRadius:8,border:`1px solid ${C.border}`}}>
-            <div style={{fontSize:11,color:C.textMuted}}>If realisation rate halves</div>
+            <div style={{fontSize:11,color:C.textMuted}}>If realization rate halves</div>
             <div style={{fontSize:20,fontWeight:800,color:C.text}}>{fmtK(halfReal)}/yr</div>
             <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>Capacity + quality at 50% of model</div>
           </div>
@@ -4040,7 +4040,7 @@ function ROICalculator() {
           </table></div>
           <p style={{margin:"8px 0 4px"}}>These formulas were calibrated against real contract data from a large acute health system (~1,385 beds, 42 legacy systems). Default estimates cover ~80% of actual estate value. <Bn s="Validated against contract register from a large acute health system (~1,385 beds, 42 systems, 2024/25 data)."/></p>
           <p style={{margin:"4px 0"}}>The complexity multiplier adjusts costs: Low 0.70, Typical 1.00, High 1.45. <Md s="Calibrated to produce approximately +/-30% variation. Benchmarked Trust classified as HIGH (1.45)."/></p>
-          <p style={{margin:"4px 0"}}>For trusts with known contract values, click any tier cost to override it, add named flagship systems with actual costs, or use {"\u201c"}I know my spend{"\u201d"} mode to enter your total directly.</p>
+          <p style={{margin:"4px 0"}}>For organizations with known contract values, click any tier cost to override it, add named flagship systems with actual costs, or use {"\u201c"}I know my spend{"\u201d"} mode to enter your total directly.</p>
         </S>
 
         <S title="3. Decommission savings">
