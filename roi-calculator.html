@@ -1446,7 +1446,7 @@ function ROICalculator() {
       safety: e.safety + (s.safety - e.safety) * t,
     };
   }, [scenarioBlend]);
-  const [viewMode, setViewMode] = useState("executive"); // "executive" or "detailed"
+  const [viewMode, setViewMode] = useState("detailed"); // "executive" or "detailed"
   const [showFormulas, setShowFormulas] = useState(false);
   const [pdfFormat, setPdfFormat] = useState("full");
   const [pdfBusy, setPdfBusy] = useState(false); // "full" or "board"
