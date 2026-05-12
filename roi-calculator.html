@@ -3430,7 +3430,7 @@ function ROICalculator() {
         </S>
 
         <S title="6. Patient safety metrics">
-          <p style={{margin:"0 0 8px"}}>These are <strong>not included</strong> in the financial ROI total. They provide qualitative context for the patient safety case.</p>
+          <p style={{margin:"0 0 8px"}}>The <strong>counts</strong> shown (medication errors, patients harmed) are not directly converted to a dollar line in the ROI total; they provide qualitative context for the patient safety case. The <strong>financial impact</strong> of safety improvements (excess bed days valued at £400/day, indemnity premium reduction, and duplicate testing savings) IS captured in the {"\u201c"}Quality & safety{"\u201d"} line of the annual savings total.</p>
           <F>medErrors = beds {"\u00d7"} 18 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>patientsHarmed = beds {"\u00d7"} 0.315 {"\u00d7"} fragmentation {"\u00d7"} DQ<br/>excessBedDays = beds {"\u00d7"} 0.365 {"\u00d7"} fragmentation {"\u00d7"} DQ</F>
           <p style={{margin:"8px 0 4px"}}><strong>18 medication errors per bed/yr</strong> {" - "} Camacho et al 2024 reported ~1.8M medication errors at care transitions across NHS England (~100k acute beds). <Ev s="Camacho et al 2024 (BMJ Quality & Safety), 1.8M errors / ~100K beds."/></p>
           <p style={{margin:"4px 0"}}><strong>0.315 patients harmed per bed/yr</strong> and <strong>0.365 excess bed days per bed/yr</strong> {" - "} both from Camacho et al 2024. <Ev s="Camacho et al 2024: 31,500 patients harmed and 36,500 excess bed days annually."/></p>
@@ -3474,8 +3474,8 @@ function ROICalculator() {
         </S>
 
         <S title="10. What is included and excluded">
-          <p style={{margin:"0 0 8px"}}><strong>Included:</strong> Decommission savings (licence, hosting, support costs eliminated) and clinician time capacity value (hours freed, valued at blended rate with realisation discount).</p>
-          <p style={{margin:"4px 0"}}><strong>Excluded:</strong> Implementation costs (covered in main business case), parallel-run costs (too variable to model), data migration costs (one-off programme budget), clinical safety in financial terms (kept qualitative), Clinical Negligence Scheme for Trusts (CNST) premium reductions (mechanism real but not quantifiable per trust).</p>
+          <p style={{margin:"0 0 8px"}}><strong>Included:</strong> Decommission savings (licence, hosting, support costs eliminated), clinician time capacity value (hours freed, valued at blended rate with realisation discount), and quality & safety savings (excess bed days avoided at £400/day, indemnity premium reduction, duplicate testing savings).</p>
+          <p style={{margin:"4px 0"}}><strong>Excluded:</strong> Implementation costs (covered in main business case), parallel-run costs (too variable to model), data migration costs (one-off programme budget), Clinical Negligence Scheme for Trusts (CNST) premium reductions at trust level (the institutional indemnity figure used in the model is a national average; per-trust CNST reductions are real but not quantifiable here).</p>
           <p style={{margin:"4px 0"}}>The 3-year total assumes flat annual savings. In practice, savings may increase in years 2-3 as more systems are retired, or decrease as easy wins are captured first.</p>
         </S>
 
