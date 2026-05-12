@@ -1503,6 +1503,7 @@ function ROICalculator() {
   const HUBSPOT_FORM_GUID = "";   // Set form GUID
   const HUBSPOT_REGION = "na1";  // Data centre region
   const EMAIL_ENDPOINT = "";      // e.g. "https://your-worker.your-domain.workers.dev/send-report"
+  const WEB3FORMS_ACCESS_KEY = "424f05b3-b555-4730-a755-10f0e0947e7b"; // Web3Forms key - submissions appear in dashboard + email
 
   // ── PDF branding ──
   // Paste a base64-encoded PNG/JPEG logo below (data URI without the prefix).
@@ -2848,6 +2849,70 @@ function ROICalculator() {
       } catch (e) { console.warn("HubSpot submission failed:", e); }
     }
 
+    // 3b. Send lead to Web3Forms (fire-and-forget) - lightweight free alternative to HubSpot
+    if (WEB3FORMS_ACCESS_KEY) {
+      try {
+        const scenarioLabel = am === "CONSERVATIVE" ? "Conservative" : am === "STRETCH" ? "Stretch" : "Expected";
+        const journeyLabel = isArchiveOnly ? "Archive only" : "Migration + archiving";
+        const flagshipNames = flagships.map(f => f.name).filter(Boolean).join(", ");
+        const messageLines = [
+          "New ROI Calculator submission (AU)",
+          "",
+          "── Lead ──",
+          "Name: " + (leadForm.name || ""),
+          "Email: " + (leadForm.email || ""),
+          "Organisation: " + (leadForm.org || ""),
+          "Role: " + (leadForm.role || ""),
+          "",
+          "── Assessment context ──",
+          "Provider type: " + (providerType || ""),
+          "Sector: " + (sector || ""),
+          "Journey: " + journeyLabel,
+          "Scenario: " + scenarioLabel,
+          "Beds: " + inputs.bed_count,
+          "Facilities: " + inputs.org_count,
+          "Legacy systems: " + r.legacy + " (" + r.decom + " planned to retire)",
+          "Complexity: " + inputs.complexity_level,
+          "Data quality: " + inputs.data_quality_level,
+          flagshipNames ? "Named flagship systems: " + flagshipNames : "",
+          "",
+          "── Headline figures ──",
+          "Annual savings: A$" + (r.annualWithReimbursement || r.annual || 0).toLocaleString(),
+          "3-year total: A$" + (r.total3WithReimbursement || r.total3 || 0).toLocaleString(),
+          "FTE equivalent freed: " + (r.fteEquivalent ? r.fteEquivalent.toFixed(1) : "0"),
+        ].filter(Boolean).join("\n");
+
+        await fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({
+            access_key: WEB3FORMS_ACCESS_KEY,
+            subject: "ROI Calculator (AU): " + (leadForm.org || leadForm.name || "submission"),
+            from_name: "RLDatix ROI Calculator (AU)",
+            name: leadForm.name || "",
+            email: leadForm.email || "",
+            organisation: leadForm.org || "",
+            role: leadForm.role || "",
+            scenario: scenarioLabel,
+            journey: journeyLabel,
+            provider_type: providerType || "",
+            sector: sector || "",
+            beds: inputs.bed_count,
+            facilities: inputs.org_count,
+            legacy_systems: r.legacy,
+            systems_to_retire: r.decom,
+            annual_savings_aud: r.annualWithReimbursement || r.annual || 0,
+            three_year_total_aud: r.total3WithReimbursement || r.total3 || 0,
+            fte_equivalent: r.fteEquivalent ? r.fteEquivalent.toFixed(1) : "0",
+            complexity: inputs.complexity_level,
+            data_quality: inputs.data_quality_level,
+            flagship_systems: flagshipNames || "(none)",
+            message: messageLines,
+          }),
+        });
+      } catch (e) { console.warn("Web3Forms submission failed:", e); }
+    }
+
     // 4. Send PDF via email endpoint (fire-and-forget) - only for full report (board has no blob)
     if (EMAIL_ENDPOINT && pdf) {
       try {
@@ -2878,7 +2943,7 @@ function ROICalculator() {
 
     setLeadSending(false);
     setLeadSubmitted(true);
-  }, [generatePDF, generateBoardPDF, pdfFormat, leadForm, am, scenarioBlend, r, inputs, isArchiveOnly, sector, providerType, galenMigrationCost, galenAnnualCost, HUBSPOT_PORTAL_ID, HUBSPOT_FORM_GUID, EMAIL_ENDPOINT]);
+  }, [generatePDF, generateBoardPDF, pdfFormat, leadForm, am, scenarioBlend, r, inputs, isArchiveOnly, sector, providerType, flagships, galenMigrationCost, galenAnnualCost, HUBSPOT_PORTAL_ID, HUBSPOT_FORM_GUID, EMAIL_ENDPOINT, WEB3FORMS_ACCESS_KEY]);
 
   // Wrap PDF generation calls so we can show a loading state on the Download again button
   const downloadPdfAgain = useCallback(async () => {
