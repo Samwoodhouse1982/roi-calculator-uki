@@ -2,17 +2,39 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/uk", "destination": "/index.html" },
-    { "source": "/calc", "destination": "/index.html" },
-    { "source": "/calculator", "destination": "/index.html" },
-    { "source": "/roi-calculator", "destination": "/index.html" },
-    { "source": "/((?!api/|_next/|_vercel/|favicon|.*\\.(html|css|js|json|png|jpg|jpeg|svg|ico|webp|woff|woff2|ttf|otf|docx|pdf)).*)", "destination": "/index.html" }
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/uk",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/calc",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/calculator",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/roi-calculator",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!api/|_next/|_vercel/|favicon|.*\\.(html|css|js|json|png|jpg|jpeg|svg|ico|webp|woff|woff2|ttf|otf|docx|pdf)).*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
       ]
     }
   ]
