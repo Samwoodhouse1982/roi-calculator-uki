@@ -482,8 +482,6 @@ const SCENARIO = {
   CONSERVATIVE: { decom_pct: 0.85, realisation: 0.20, safety: 0.15 },
   EXPECTED:     { decom_pct: 1.00, realisation: 0.30, safety: 0.25 },
   STRETCH:      { decom_pct: 1.10, realisation: 0.40, safety: 0.35 },
-  DELAYED:      { decom_pct: 0.70, realisation: 0.15, safety: 0.10 }, // 12-month programme delay
-  PARTIAL:      { decom_pct: 0.50, realisation: 0.20, safety: 0.15 }, // Only 50% of systems retired
 };
 const CX = { LOW: 0.7, TYPICAL: 1.0, HIGH: 1.45 };
 const DQ = { CLEAN: 0.75, MIXED: 1.0, POOR: 1.4 };
@@ -1437,11 +1435,6 @@ function ROICalculator() {
     if (val == null) setBlend(null);
     else setScenarioMode(val < 0.33 ? "CONSERVATIVE" : val < 0.67 ? "EXPECTED" : "STRETCH");
   }, []);
-  // setRiskScenario used by DELAYED/PARTIAL buttons - sets discrete scenario, clears slider blend
-  const setRiskScenario = useCallback((mode) => {
-    setScenarioMode(mode);
-    setScenarioBlend(null); // clear blend factors so calc uses pure DELAYED/PARTIAL constants
-  }, []);
   const blendFactors = useMemo(() => {
     if (scenarioBlend == null) return null;
     const c = SCENARIO.CONSERVATIVE, e = SCENARIO.EXPECTED, s = SCENARIO.STRETCH;
@@ -1799,9 +1792,7 @@ function ROICalculator() {
   const rCon=useMemo(()=>calc(calcInputs,"CONSERVATIVE",cleanOv,flagships),[calcInputs,cleanOv,flagships]);
   const rExp=useMemo(()=>calc(calcInputs,"EXPECTED",cleanOv,flagships),[calcInputs,cleanOv,flagships]);
   const rStr=useMemo(()=>calc(calcInputs,"STRETCH",cleanOv,flagships),[calcInputs,cleanOv,flagships]);
-  const rDel=useMemo(()=>calc(calcInputs,"DELAYED",cleanOv,flagships),[calcInputs,cleanOv,flagships]);
-  const rPar=useMemo(()=>calc(calcInputs,"PARTIAL",cleanOv,flagships),[calcInputs,cleanOv,flagships]);
-  const r=am==="CONSERVATIVE"?rCon:am==="STRETCH"?rStr:am==="DELAYED"?rDel:am==="PARTIAL"?rPar:rExp;
+  const r=am==="CONSERVATIVE"?rCon:am==="STRETCH"?rStr:rExp;
   // ── Timescale multiplier: scales steady-state values for First-year / N-year-total / Yearly-avg views ──
   const ts = useMemo(() => {
     const rp = r.rampPcts || [];
@@ -2788,7 +2779,7 @@ function ROICalculator() {
       const submission = {
         timestamp: new Date().toISOString(),
         format: pdfFormat,
-        scenario: am === "CONSERVATIVE" ? "Conservative" : am === "STRETCH" ? "Stretch" : am === "DELAYED" ? "Delayed" : am === "PARTIAL" ? "Partial" : "Expected",
+        scenario: am === "CONSERVATIVE" ? "Conservative" : am === "STRETCH" ? "Stretch" : "Expected",
         lead: {
           name: leadForm.name || "",
           email: leadForm.email || "",
@@ -3771,14 +3762,14 @@ function ROICalculator() {
     <Card style={{marginBottom:0,border:dim?`2px solid ${C.accent}`:`1px solid ${C.border}`,boxShadow:dim?`0 0 0 4px ${C.accent}22`:"0 1px 3px rgba(0,0,0,0.05)",padding:"14px 18px"}}>
       <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:6,flexWrap:"wrap",gap:8}}>
         <div style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em"}}>
-          {dim ? "Drag the slider to unlock results" : (scenarioMode==="DELAYED"||scenarioMode==="PARTIAL") ? "Risk scenario active · use slider to return to main range" : "Confidence level"}
+          {dim ? "Drag the slider to unlock results" : "Confidence level"}
         </div>
         {!dim && <div style={{fontSize:11,color:C.textMuted}}>
-          <span style={{fontWeight:700,color:C.text}}>{scenarioMode === "CONSERVATIVE" ? "Conservative" : scenarioMode === "STRETCH" ? "Stretch" : scenarioMode === "DELAYED" ? "Delayed" : scenarioMode === "PARTIAL" ? "Partial" : "Expected"}</span>
+          <span style={{fontWeight:700,color:C.text}}>{scenarioMode === "CONSERVATIVE" ? "Conservative" : scenarioMode === "STRETCH" ? "Stretch" : "Expected"}</span>
           {scenarioBlend != null && Math.abs(scenarioBlend - 0) > 0.005 && Math.abs(scenarioBlend - 0.5) > 0.005 && Math.abs(scenarioBlend - 1) > 0.005 && <> · custom blend</>}
         </div>}
       </div>
-      <div style={{padding:"4px 0 18px",opacity:(scenarioMode==="DELAYED"||scenarioMode==="PARTIAL")?0.5:1}}>
+      <div style={{padding:"4px 0 18px"}}>
         <input type="range" min="0" max="1" step="0.01" value={scenarioBlend ?? 0.5}
           onChange={(e)=>setBlend(parseFloat(e.target.value))}
           style={{width:"100%",accentColor:C.accent,cursor:"pointer",height:24,padding:0,margin:0}}/>
@@ -3810,29 +3801,6 @@ function ROICalculator() {
         ].map(v=><button type="button" key={v.k} onClick={()=>setViewMode(v.k)} style={{padding:"6px 16px",border:"none",borderRadius:999,background:viewMode===v.k?C.accent:"transparent",color:viewMode===v.k?"#fff":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>{v.l}</button>)}
       </div>
     </div>}
-
-    {/* Risk scenarios - visible in both views as a stress-test option */}
-    {!dim && <Card style={{marginBottom:16,border:`1px solid ${C.border}`}}>
-      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
-        <div style={{fontSize:11,fontWeight:600,color:C.textMuted,letterSpacing:0.5}}>RISK SCENARIOS · STRESS TEST</div>
-        <InfoTip text="Override the main scenario slider with a downside-risk model. 12-month delay assumes the programme slips by a year before benefits begin to accrue. Partial decom assumes only 50% of legacy systems actually retire. Useful for board conversations about what happens if implementation goes worse than planned." />
-      </div>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-        <button type="button" onClick={()=>{if(scenarioMode==="DELAYED"||scenarioMode==="PARTIAL")setBlend(0.5)}} className="roi-scenario" style={{flex:"1 1 0",minWidth:80,padding:"10px 8px",textAlign:"center",border:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accentPale:"#fff"}}>
-          <div style={{marginBottom:2,display:"flex",justifyContent:"center"}}><SIcon name="shield" size={18} color={scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accent:C.textMid}/></div>
-          <div style={{fontSize:12,fontWeight:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?700:500,color:scenarioMode!=="DELAYED"&&scenarioMode!=="PARTIAL"?C.accent:C.textMid}}>None</div>
-          <div style={{fontSize:10,color:C.textMuted}}>No risk applied</div>
-        </button>
-        {[
-            { k: "DELAYED", l: "12-month delay", s: "Programme slips 1 year", svgIcon: "clock" },
-            { k: "PARTIAL", l: "Partial decom", s: "Only 50% systems retired", svgIcon: "alert" },
-          ].map(s => <button type="button" key={s.k} onClick={()=>{if(scenarioMode===s.k){setBlend(0.5)}else{setRiskScenario(s.k)}}} className="roi-scenario" style={{flex:"1 1 0",minWidth:100,padding:"10px 8px",textAlign:"center",border:scenarioMode===s.k?`2px solid #2c3e6b`:`1px solid ${C.border}`,borderRadius:10,cursor:"pointer",background:scenarioMode===s.k?"#eef0f8":"#fff"}}>
-          <div style={{marginBottom:2,display:"flex",justifyContent:"center"}}><SIcon name={s.svgIcon} size={18} color={scenarioMode===s.k?"#2c3e6b":C.textMid}/></div>
-          <div style={{fontSize:12,fontWeight:scenarioMode===s.k?700:500,color:scenarioMode===s.k?"#2c3e6b":C.textMid}}>{s.l}</div>
-          <div style={{fontSize:10,color:C.textMuted}}>{s.s}</div>
-        </button>)}
-      </div>
-    </Card>}
 
     {dim&&<div style={{textAlign:"center",padding:"60px 20px",color:C.textMuted}}><SIcon name="chart" size={48} color={C.textMuted}/><div style={{height:12}}/><div style={{fontSize:16,fontWeight:600,color:C.textMid}}>Drag the slider above to unlock</div></div>}
 
@@ -4074,7 +4042,7 @@ function ROICalculator() {
         </tbody></table>
       </div>
       <div style={{marginTop:14,padding:"10px 14px",background:C.bg,borderRadius:6,fontSize:12,color:C.textMuted,display:"flex",gap:16,flexWrap:"wrap"}}>
-        <span>Showing: <strong style={{color:C.accent}}>{am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":am==="DELAYED"?"Delayed":am==="PARTIAL"?"Partial":"Expected"}</strong></span>
+        <span>Showing: <strong style={{color:C.accent}}>{am==="CONSERVATIVE"?"Conservative":am==="STRETCH"?"Stretch":"Expected"}</strong></span>
         <span>Range: <strong>{fmtK(rCon.total3WithReimbursement)}</strong> {"–"} <strong>{fmtK(rStr.total3WithReimbursement)}</strong> across {r.rampN} years (steady state: <strong>{fmtK(rCon.annualWithReimbursement)}</strong> {"–"} <strong>{fmtK(rStr.annualWithReimbursement)}</strong>/yr)</span>
       </div>
     </Card>}
