@@ -4166,10 +4166,10 @@ function ROICalculator() {
         <OverridableStat label="Clinical staff" computed={calc(calcInputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on Australian health workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/admin staff per facility (20 base + 0.15/bed, capped at 120).`}/>
         <OverridableStat label="Mins wasted / wk" computed={calc(calcInputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on Westbrook et al 2010 (JAMIA) workflow interruption studies and Nuffield Trust 2020 system navigation research.`}/>
         <Stat label="Full-time equivalent (FTE)" value={an?r.fteEquivalent.toFixed(0):0} sub="clinical capacity" color={"#1a8a7a"} info={`${fmtNum(r.hrsSaved)} hours freed ÷ 1,824 hours per FTE (38hr week × 48 working weeks) = ${r.fteEquivalent.toFixed(1)} FTE equivalent. This is not headcount reduction. It represents clinical capacity freed for patient care, equivalent to hiring ${r.fteEquivalent.toFixed(0)} additional clinicians without recruitment.`}/>
-        <Stat label="Hours freed / yr" value={an?<AnimatedNum value={r.hrsSaved} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Result: ${fmtNum(r.hrsSaved)} hours per year.`}/>
-        <Stat label="Capacity value" value={an?<AnimatedK value={r.timeSave} active={an}/>:"-"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at A$65/hr blended rate (AIHW workforce data: nursing ~A$45-55/hr, medical ~A$90-120/hr, allied health ~A$40-60/hr). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity. This represents capacity redirected to patient care, not a direct cash saving. Equivalent to ~${(r.hrsSaved/1824).toFixed(0)} FTE.`}/>
+        <Stat label={"Hours freed" + (ts.suffix || " / yr")} value={an?<AnimatedNum value={Math.round(r.hrsSaved * ts.mult)} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Steady-state: ${fmtNum(r.hrsSaved)} hours per year.`}/>
+        <Stat label={"Capacity value" + (ts.suffix === "/yr" ? "" : " " + (viewTimescale === "total3" ? "(3-yr)" : viewTimescale === "total5" ? "(5-yr)" : viewTimescale === "year1" ? "(Yr 1)" : ""))} value={an?<AnimatedK value={Math.round(r.timeSave * ts.mult)} active={an}/>:"-"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at A$65/hr blended rate (AIHW workforce data: nursing ~A$45-55/hr, medical ~A$90-120/hr, allied health ~A$40-60/hr). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity. This represents capacity redirected to patient care, not a direct cash saving. Equivalent to ~${(r.hrsSaved/1824).toFixed(0)} FTE.`}/>
       </div>
-      <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(r.hrsSaved)} hrs/yr</strong> {"×"} {"A$"}65 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(r.timeSave)}/yr</strong> <span style={{color:C.textMuted,fontSize:12}}>| Equivalent to ~{r.fteEquivalent.toFixed(0)} FTE of clinical capacity</span></Callout>
+      <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(Math.round(r.hrsSaved * ts.mult))} hrs{ts.suffix || "/yr"}</strong> {"×"} {"A$"}65 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(Math.round(r.timeSave * ts.mult))}{ts.suffix || "/yr"}</strong> <span style={{color:C.textMuted,fontSize:12}}>| Equivalent to ~{r.fteEquivalent.toFixed(0)} FTE of clinical capacity at steady state</span></Callout>
       <EvidenceDropdown title="Evidence & methodology">
         <strong>Sources:</strong> Westbrook et al JAMIA 2010 (context-switching). Sinsky et al 2016; KLAS Arch Collaborative (65% active user rate). Staffing: NSW Health SDPR (3.0 staff/bed). Blended hourly rate A$65 (AIHW).<br/><br/>
         <strong>Formula:</strong> Active users (65%) x switch penalty (0.04/additional system) x base minutes x data quality x complexity. Only {Math.round(r.realisation*100)}% counted as realisable.
@@ -4192,24 +4192,24 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>ABF efficiency gain</div>
-          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.abfEfficiencyGain):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(Math.round(r.abfEfficiencyGain * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>15% of legacy estate admin overhead addressable through consolidation</div>
         </div>
         {r.privateRevRecovery > 0 && <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Private patient revenue uplift</div>
-          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.privateRevRecovery):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(Math.round(r.privateRevRecovery * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>30% recovery of leaked private episodes (15% leakage, VAGO 2019)</div>
         </div>}
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate testing reduction</div>
-          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(r.duplicateReduction):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(Math.round(r.duplicateReduction * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>50% of 22% duplicate rate addressable (Banker et al 2024)</div>
         </div>
       </div>
 
       <Callout bg={C.greenPale} border="#c3ddd3">
         <strong style={{color:C.green}}>Total in this section:</strong>{" "}
-        {fmtK(r.abfEfficiencyGain + r.privateRevRecovery)}/yr
+        {fmtK(Math.round((r.abfEfficiencyGain + r.privateRevRecovery) * ts.mult))}{ts.suffix || "/yr"}
       </Callout>
 
       <EvidenceDropdown title="Evidence & methodology">
@@ -4232,26 +4232,26 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:14}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #f0c4d430"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Excess bed days avoided</div>
-          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(r.excessDayCostAvoided):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>{an?fmtNum(r.excessDaysAvoided):0} days at A$3,100/day (IHACPA, Independent Health and Aged Care Pricing Authority)</div>
+          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(Math.round(r.excessDayCostAvoided * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>{an?fmtNum(Math.round(r.excessDaysAvoided * ts.mult)):0} days at A$3,100/day (IHACPA, Independent Health and Aged Care Pricing Authority)</div>
           <div style={{fontSize:10,color:"#d4507a",marginTop:4}}>35% fragmentation attribution (ACSQHC)</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #f0c4d430"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Medical indemnity reduction</div>
-          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(r.malpracticeReduction):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(Math.round(r.malpracticeReduction * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>3% of A$20,000/bed institutional premium</div>
           <div style={{fontSize:10,color:"#d4507a",marginTop:4}}>VMIA (Victorian Managed Insurance Authority) 2025-26 benchmark</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #f0c4d430"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate testing reduction</div>
-          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(r.duplicateReduction):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(Math.round(r.duplicateReduction * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>22% duplicate rate at A$12,000/bed pathology cost</div>
           <div style={{fontSize:10,color:"#d4507a",marginTop:4}}>Banker et al 2024; RCPA guidelines</div>
         </div>
       </div>
       <Callout bg="#fdf5f8" border="#f0c4d4">
         <strong style={{color:"#d4507a"}}>Total avoidable cost of harm:</strong>{" "}
-        {fmtK(r.costAvoidance)}/yr (included in annual savings as cost avoidance)
+        {fmtK(Math.round(r.costAvoidance * ts.mult))}{ts.suffix || "/yr"} (included in annual savings as cost avoidance)
       </Callout>
       <EvidenceDropdown title="Evidence & methodology">
         <strong>Methodology:</strong> Excess bed days: 8.0/bed baseline (QAHCS/AIHW), 35% fragmentation attribution (ACSQHC), A$3,100/day (IHACPA). Indemnity: 3% of A$20,000/bed (VMIA 2025-26). Duplicate testing: 22% duplicate rate (Banker et al 2024, RCPA), A$12,000/bed pathology, 50% addressable.<br/><br/>
@@ -4281,9 +4281,9 @@ function ROICalculator() {
           const cumulative = Math.round(m.av * rampSum);
           return <div key={i} style={{flex:"1 1 150px",minWidth:140,padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:`1px solid ${C.rose}18`}}>
             <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:6}}>{m.label}</div>
-            <div style={{fontSize:26,fontWeight:800,color:C.rose}}>{"↓"} {an?fmtNum(m.av):0}<span style={{fontSize:13,fontWeight:500}}>/yr {m.avl}</span></div>
+            <div style={{fontSize:26,fontWeight:800,color:C.rose}}>{"↓"} {an?fmtNum(Math.round(m.av * ts.mult)):0}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"} {m.avl}</span></div>
             <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>{m.sub}</div>
-            <div style={{marginTop:8,fontSize:11,color:C.textMid}}>of {an?fmtNum(m.bl):0} baseline/yr</div>
+            <div style={{marginTop:8,fontSize:11,color:C.textMid}}>of {an?fmtNum(Math.round(m.bl * ts.mult)):0} baseline{ts.suffix || "/yr"}</div>
             {an && cumulative > 0 && <div style={{marginTop:8,padding:"4px 10px",background:`${C.rose}15`,borderRadius:20,display:"inline-block",fontSize:11,fontWeight:600,color:C.rose}}>~{fmtNum(cumulative)} over {rampN} years</div>}
           </div>;
         })}
@@ -4334,7 +4334,7 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>e-Discovery savings</div>
-          <div style={{fontSize:26,fontWeight:800,color:"#2c3e6b",margin:"6px 0"}}>{an?fmtK(r.ediscoverySaving):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:26,fontWeight:800,color:"#2c3e6b",margin:"6px 0"}}>{an?fmtK(Math.round(r.ediscoverySaving * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:11,color:C.textMid}}>{r.litigationCases} cases/yr across {r.legacy} systems</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
@@ -4345,7 +4345,7 @@ function ROICalculator() {
       </div>
       <Callout bg="#f0f2f8" border="#c4cce0">
         <strong style={{color:"#2c3e6b"}}>Total legal savings:</strong>{" "}
-        {fmtK(r.ediscoverySaving)}/yr (e-Discovery cost reduction)
+        {fmtK(Math.round(r.ediscoverySaving * ts.mult))}{ts.suffix || "/yr"} (e-Discovery cost reduction)
       </Callout>
       <EvidenceDropdown title="Evidence & methodology">
         <strong>e-Discovery:</strong> Records assembly: ~24 hrs/case across fragmented systems vs ~5 hrs in consolidated archive. 8 cases per 100 beds. HIM staff rate A$45/hr.<br/><br/>
@@ -4361,18 +4361,18 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 150px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Readmissions avoided</div>
-          <div style={{fontSize:26,fontWeight:800,color:"#0F4146"}}>{an?fmtNum(r.auReadmissionsAvoided):"\u2013"}</div>
-          <div style={{fontSize:11,color:C.textMid}}>patients/yr</div>
+          <div style={{fontSize:26,fontWeight:800,color:"#0F4146"}}>{an?fmtNum(Math.round(r.auReadmissionsAvoided * ts.mult)):"\u2013"}</div>
+          <div style={{fontSize:11,color:C.textMid}}>patients{ts.suffix || "/yr"}</div>
         </div>
         <div style={{flex:"1 1 150px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Cost avoidance</div>
-          <div style={{fontSize:26,fontWeight:800,color:"#0F4146"}}>{an?fmtK(r.auReadmissionCostAvoidance):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:26,fontWeight:800,color:"#0F4146"}}>{an?fmtK(Math.round(r.auReadmissionCostAvoidance * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:11,color:C.textMid}}>at A$11,500/readmission</div>
         </div>
       </div>
       <Callout bg="#f0faf8" border="#b0e0d8">
         <strong style={{color:"#0F4146"}}>Total readmission cost avoidance:</strong>{" "}
-        {fmtK(r.auReadmissionCostAvoidance)}/yr ({r.auReadmissionsAvoided} readmissions avoided)
+        {fmtK(Math.round(r.auReadmissionCostAvoidance * ts.mult))}{ts.suffix || "/yr"} ({fmtNum(Math.round(r.auReadmissionsAvoided * ts.mult))} readmissions avoided)
       </Callout>
       <EvidenceDropdown title="Evidence & methodology">
         AIHW 2023-24: 12% unplanned 30-day readmission rate. Vest et al JAMIA 2019: 0.6pp reduction from EMR consolidation. 30% fragmentation attribution. Cost A$11,500/readmission (IHACPA NWAU-derived).
