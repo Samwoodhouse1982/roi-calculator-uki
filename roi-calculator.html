@@ -4227,7 +4227,7 @@ function ROICalculator() {
         <span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>{viewTimescale === "annual" ? "Included in annual savings" : viewTimescale === "year1" ? "Included in Year 1 savings" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span>
       </div>
       <p style={{fontSize:13,color:C.textMid,margin:"0 0 14px",lineHeight:1.5}}>
-        These represent the <strong>financial cost of preventable harm</strong> attributable to legacy system fragmentation. They are included in the annual savings total as cost avoidance: real costs that would not be incurred if clinical information were consolidated.
+        These represent the <strong>financial cost of preventable harm</strong> attributable to legacy system fragmentation. {viewTimescale === "annual" ? "They are included in the annual savings total as cost avoidance: real costs that would not be incurred if clinical information were consolidated." : "They are included in the cumulative savings total as cost avoidance: real costs that would not be incurred if clinical information were consolidated."}
       </p>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:14}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #f0c4d430"}}>
