@@ -2971,7 +2971,7 @@ function ROICalculator() {
       </div>
       <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
         {[
-          {k:"HAVE_EPR",svgIcon:"shield",title:"We’re ready to archive and decommission",desc:"Retiring legacy applications and consolidating clinical records into a single archive — whether to support an EHR, rationalize departmental systems, or address ongoing cost and compliance pressures.",focus:"Archive + decommission savings"},
+          {k:"HAVE_EPR",svgIcon:"shield",title:"We want to decommission systems",desc:"Retiring legacy applications and consolidating clinical records into a single archive.",focus:"Archive + decommission savings"},
           {k:"EVALUATING",svgIcon:"search",title:"We’re evaluating enterprise EHRs",desc:"Assessing migration to a single platform and need the full case for migration and archiving.",focus:"Migration safety + archiving savings"},
         ].map(j=><button type="button" key={j.k} onClick={()=>{update("journey",j.k);touch(0);setTimeout(()=>scrollTo(ref1),200);}} className="roi-btn" style={{
           flex:"1 1 240px",minWidth:0,padding:"18px 20px",textAlign:"left",cursor:"pointer",
@@ -3486,7 +3486,7 @@ function ROICalculator() {
       </div>
       <div style={{fontSize:14,color:C.text,lineHeight:1.6}}>
         <span style={{fontWeight:600}}>You said:</span> {isArchiveOnly
-          ? "\"We’re ready to archive and decommission\" , so we've estimated the potential ROI for retiring your legacy systems and consolidating data into a single archive."
+          ? "\"We want to decommission systems\" , so we've estimated the potential ROI for retiring your legacy applications and consolidating data into a single archive."
           : "\"We're evaluating enterprise EHRs\" , so we've estimated the potential ROI for both migration and archiving."}
       </div>
       <div style={{fontSize:13,color:C.textMid,marginTop:6,lineHeight:1.5}}>{isArchiveOnly
