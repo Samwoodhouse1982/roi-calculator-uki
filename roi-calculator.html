@@ -4130,9 +4130,9 @@ function ROICalculator() {
         {/* Decom - tiered breakdown */}
     <Card dimmed={dim}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <div style={{display:"flex",alignItems:"center",flex:1,gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#0F414615",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="unlock" size={22} color="#0F4146"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legacy decommission savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+        <div style={{display:"flex",alignItems:"center",flex:1,gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#0F414615",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="unlock" size={22} color="#0F4146"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legacy decommission savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>{viewTimescale === "annual" ? "Included in annual savings" : viewTimescale === "year1" ? "Included in Year 1 savings" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span></div>
       </div>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Annual costs eliminated when systems are switched off.</p>
+      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{viewTimescale === "annual" ? "Annual costs" : viewTimescale === "year1" ? "Year 1 costs" : viewTimescale === "total3" ? "3-year cumulative costs" : "5-year cumulative costs"} eliminated when systems are switched off.</p>
       <div style={{overflowX:"auto",marginBottom:16}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}><thead><tr>
           <th style={th_}>Tier</th><th style={{...th_,textAlign:"right"}}>Systems</th><th style={{...th_,textAlign:"right"}}>Cost/sys/yr</th><th style={{...th_,textAlign:"right"}}>Retired</th><th style={{...th_,textAlign:"right",color:C.green}}>Saving</th>
@@ -4159,7 +4159,7 @@ function ROICalculator() {
     {/* Clinician time */}
     <Card dimmed={dim}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <div style={{display:"flex",alignItems:"center",flex:1,gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#1a8a7a15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="clock" size={22} color="#1a8a7a"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+        <div style={{display:"flex",alignItems:"center",flex:1,gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#1a8a7a15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="clock" size={22} color="#1a8a7a"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>{viewTimescale === "annual" ? "Included in annual savings" : viewTimescale === "year1" ? "Included in Year 1 savings" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span></div>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>{isArchiveOnly?"Time spent accessing legacy systems for historical records.":"System-switching time eliminated by consolidating to a single platform."}</p>
       <div style={{display:"flex",gap:20,flexWrap:"wrap",marginBottom:16}}>
@@ -4185,7 +4185,7 @@ function ROICalculator() {
           <SIcon name="dollar" size={22} color="#00d4aa"/>
         </div>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>{r.isAgedCare ? "Aged care funding & efficiency" : r.isNDIS ? "NDIS revenue & efficiency" : (r.privateRevRecovery > 0 ? "Activity-Based Funding (ABF) efficiency & revenue" : "Activity-Based Funding (ABF) efficiency")}</h3>
-        <span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span>
+        <span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>{viewTimescale === "annual" ? "Included in annual savings" : viewTimescale === "year1" ? "Included in Year 1 savings" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span>
       </div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Cashable benefits from improved ABF coding efficiency and private patient billing accuracy, attributed to EMR consolidation as a contributing factor.</p>
 
@@ -4224,7 +4224,7 @@ function ROICalculator() {
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
         <SIcon name="alert" size={18} color="#d4507a"/>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Avoidable cost of harm</h3>
-        <span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span>
+        <span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>{viewTimescale === "annual" ? "Included in annual savings" : viewTimescale === "year1" ? "Included in Year 1 savings" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span>
       </div>
       <p style={{fontSize:13,color:C.textMid,margin:"0 0 14px",lineHeight:1.5}}>
         These represent the <strong>financial cost of preventable harm</strong> attributable to legacy system fragmentation. They are included in the annual savings total as cost avoidance: real costs that would not be incurred if clinical information were consolidated.
@@ -4306,17 +4306,17 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:14}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Falls with fracture</div>
-          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.45))}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.45 * ts.mult))}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:10,color:"#d4507a"}}>~30% prevalence, A$35k/fracture hospitalisation (AIHW)</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Pressure injuries</div>
-          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.25))}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.25 * ts.mult))}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:10,color:"#d4507a"}}>8.4% prevalence, A$10k/incident (ACSQHC QI data)</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Medication incidents</div>
-          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.30))}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.30 * ts.mult))}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:10,color:"#d4507a"}}>12-15 per 100 residents/yr, A$15k/hospitalisation</div>
         </div>
       </div>
@@ -4329,7 +4329,7 @@ function ROICalculator() {
     {/* Legal & compliance */}
     {r.litigationCases > 0 && <><Card dimmed={dim} style={{border:"1px solid #c4cce0",background:"#f0f2f8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <div style={{display:"flex",alignItems:"center",gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#2c3e6b15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="folder" size={22} color="#2c3e6b"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legal and compliance</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#2c3e6b15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="folder" size={22} color="#2c3e6b"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legal and compliance</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>{viewTimescale === "annual" ? "Included in annual savings" : viewTimescale === "year1" ? "Included in Year 1 savings" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span></div>
       </div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
@@ -4356,7 +4356,7 @@ function ROICalculator() {
     {/* Readmission cost avoidance */}
     {r.auReadmissionsAvoided > 0 && <><Card dimmed={dim} style={{border:"1px solid #b0e0d8",background:"#f0faf8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        <div style={{display:"flex",alignItems:"center",gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#00d4aa15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="refresh" size={22} color="#00d4aa"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Readmission cost avoidance</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#00d4aa15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="refresh" size={22} color="#00d4aa"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Readmission cost avoidance</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>{viewTimescale === "annual" ? "Included in annual savings" : viewTimescale === "year1" ? "Included in Year 1 savings" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span></div>
       </div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 150px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center"}}>
@@ -4405,23 +4405,23 @@ function ROICalculator() {
     </Card><LockedConnector/></>}
 
         {r.isAcademic && <Card dimmed={dim}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}><SIcon name="graduation" size={18} color="#534AB7"/> Teaching hospital module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}><SIcon name="graduation" size={18} color="#534AB7"/> Teaching hospital module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>{viewTimescale === "annual" ? "Included in annual savings" : viewTimescale === "year1" ? "Included in Year 1 savings" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and registrar training and teaching compliance.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Research system decommission</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.researchDecomSave):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(Math.round(r.researchDecomSave * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>{r.researchSystems} research systems at ~{fmtK(RESEARCH_SYSTEM_AVG_COST)} avg</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Teaching compliance efficiency</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.teachingEfficiency):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(Math.round(r.teachingEfficiency * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>Registrar training, procedural logging</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Teaching workflow savings</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(r.teachingOverhead):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(Math.round(r.teachingOverhead * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>Reduced complexity from consolidation</div>
         </div>
       </div>
@@ -4439,18 +4439,18 @@ function ROICalculator() {
 
     {/* M&A module - conditional */}
     {r.isMultiHospital && <Card dimmed={dim}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}><SIcon name="building" size={18} color="#2c3e6b"/> Network consolidation module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}><SIcon name="building" size={18} color="#2c3e6b"/> Network consolidation module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>{viewTimescale === "annual" ? "Included in annual savings" : viewTimescale === "year1" ? "Included in Year 1 savings" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Savings from eliminating duplicate systems and infrastructure across {inputs.org_count} facilities post-merger.</p>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate system elimination</div>
-          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.duplicateElimination):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(Math.round(r.duplicateElimination * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>{r.duplicateSystems} duplicate systems across {inputs.org_count} facilities</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Infrastructure consolidation</div>
-          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(r.infraConsolidation):"-"}<span style={{fontSize:13,fontWeight:500}}>/yr</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(Math.round(r.infraConsolidation * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>Data center, network, help desk</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
