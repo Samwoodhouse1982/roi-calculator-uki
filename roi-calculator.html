@@ -882,7 +882,12 @@ function InfoTip({text}){
     const tipW = Math.min(280, vw - margin * 2);
     let left = r.left + r.width / 2 - tipW / 2;
     left = Math.max(margin, Math.min(left, vw - tipW - margin));
-    const above = r.top > 140;
+    // Pop below by default; flip to above only if there's not enough room
+    // below AND more room above. Matches kiosk's robust logic.
+    const HEADER_SAFE = 80; const FOOTER_SAFE = 40; const ESTIMATED_H = 200;
+    const spaceBelow = window.innerHeight - r.bottom - FOOTER_SAFE;
+    const spaceAbove = r.top - HEADER_SAFE;
+    const above = spaceBelow < ESTIMATED_H && spaceAbove > spaceBelow;
     const top = above ? r.top - margin : r.bottom + margin;
     setTipPos({ top, left, width: tipW, above });
   }, []);
@@ -910,6 +915,25 @@ function InfoTip({text}){
     };
   }, [show, close]);
 
+  // Render the tooltip bubble through a Portal so it sits directly at
+  // document.body - escapes any ancestor stacking context, overflow:hidden,
+  // or transform context that would otherwise cause it to appear behind tiles
+  // or get clipped/dragged off-screen.
+  const bubble = show ? ReactDOM.createPortal(
+    <span style={{
+      position: "fixed",
+      left: `${tipPos.left}px`,
+      top: `${tipPos.top}px`,
+      transform: tipPos.above ? "translateY(-100%)" : "none",
+      background: C.navy, color: "#fff",
+      fontSize: 12, lineHeight: 1.5, padding: "10px 14px", borderRadius: 8,
+      width: `${tipPos.width}px`,
+      boxShadow: "0 4px 16px rgba(0,0,0,.22)",
+      zIndex: 2147483647, pointerEvents: "none", fontWeight: 400,
+    }}>{text}</span>,
+    document.body
+  ) : null;
+
   return <span ref={ref} className="roi-info-tip" style={{position:"relative",display:"inline-flex",marginLeft:4}}>
     <span
       onMouseEnter={open}
@@ -918,21 +942,7 @@ function InfoTip({text}){
       role="button"
       aria-label="More information"
       style={{width:18,height:18,borderRadius:"50%",background:"#e8ecf1",color:C.textMid,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,cursor:"help",border:"1px solid #d0d5dd",lineHeight:1,userSelect:"none"}}>i</span>
-    {show && (
-      <span style={{
-        position: "fixed",
-        left: `${tipPos.left}px`,
-        top: `${tipPos.top}px`,
-        transform: tipPos.above ? "translateY(-100%)" : "none",
-        background: C.navy, color: "#fff",
-        fontSize: 12, lineHeight: 1.5, padding: "10px 14px", borderRadius: 8,
-        width: `${tipPos.width}px`,
-        boxShadow: "0 4px 16px rgba(0,0,0,.22)",
-        zIndex: 9999, pointerEvents: "none", fontWeight: 400,
-      }}>
-        {text}
-      </span>
-    )}
+    {bubble}
   </span>;
 }
 
@@ -2961,7 +2971,7 @@ function ROICalculator() {
       </div>
       <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
         {[
-          {k:"HAVE_EPR",svgIcon:"shield",title:"We have an enterprise EHR",desc:"Already on Epic, Oracle/Cerner or similar, and looking to archive and decommission legacy systems.",focus:"Archiving + decommission savings"},
+          {k:"HAVE_EPR",svgIcon:"shield",title:"We’re ready to archive and decommission",desc:"Retiring legacy applications and consolidating clinical records into a single archive — whether to support an EHR, rationalize departmental systems, or address ongoing cost and compliance pressures.",focus:"Archive + decommission savings"},
           {k:"EVALUATING",svgIcon:"search",title:"We’re evaluating enterprise EHRs",desc:"Assessing migration to a single platform and need the full case for migration and archiving.",focus:"Migration safety + archiving savings"},
         ].map(j=><button type="button" key={j.k} onClick={()=>{update("journey",j.k);touch(0);setTimeout(()=>scrollTo(ref1),200);}} className="roi-btn" style={{
           flex:"1 1 240px",minWidth:0,padding:"18px 20px",textAlign:"left",cursor:"pointer",
@@ -3476,11 +3486,11 @@ function ROICalculator() {
       </div>
       <div style={{fontSize:14,color:C.text,lineHeight:1.6}}>
         <span style={{fontWeight:600}}>You said:</span> {isArchiveOnly
-          ? "\"We have an enterprise EHR\" , so we've estimated the potential ROI for archiving and decommissioning your legacy systems."
+          ? "\"We’re ready to archive and decommission\" , so we've estimated the potential ROI for retiring your legacy systems and consolidating data into a single archive."
           : "\"We're evaluating enterprise EHRs\" , so we've estimated the potential ROI for both migration and archiving."}
       </div>
       <div style={{fontSize:13,color:C.textMid,marginTop:6,lineHeight:1.5}}>{isArchiveOnly
-        ? "Your enterprise EHR is in place. Retiring legacy systems eliminates ongoing licensing, hosting and support costs. A clinical archive ensures historical patient records remain accessible to clinicians at the point of care, supporting continuity of care and regulatory compliance."
+        ? "Retiring legacy systems eliminates ongoing licensing, hosting and support costs. A clinical archive ensures historical patient records remain accessible to clinicians at the point of care, supporting continuity of care and regulatory compliance — whether you have an EHR in place, are consolidating departmental systems, or driving cost out of an ageing estate."
         : "Migrating to a single EHR improves patient safety at care transitions. Archiving legacy systems eliminates ongoing costs, while ensuring historical information can be accessed, in context, by clinicians at the point of care."}</div>
     </div>
 
