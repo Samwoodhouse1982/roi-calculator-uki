@@ -3033,7 +3033,7 @@ function ROICalculator() {
           {k:"tertiary",l:"Tertiary Referral / Teaching",d:"Major teaching hospital, research",icon:"graduation"},
           {k:"metropolitan",l:"Metropolitan Hospital",d:"300-600 beds, complex integrations",icon:"hospital"},
           {k:"regional",l:"Regional Hospital",d:"100-300 beds, district systems",icon:"hospital"},
-          {k:"rural_remote",l:"Rural / Remote Hospital",d:"Small facility, standalone systems",icon:"home"},
+          {k:"rural_remote",l:"Rural / Remote Hospital",d:"<100 beds, standalone systems",icon:"home"},
         ].map(p=><button type="button" key={p.k} onClick={()=>{setProviderType(p.k);const pk=PROVIDER_PRESET_MAP[p.k];if(pk)applyPreset(pk);if(p.k==="aged_care")setOccupancyRate(0.92);else if(p.k==="ndis_provider")setOccupancyRate(0.70);else setOccupancyRate(0.90);}} className="roi-preset" style={{width:"100%",padding:"12px 14px",textAlign:"left",border:providerType===p.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:14,background:providerType===p.k?C.accentPale:"#fff",cursor:"pointer"}}>
           <div style={{fontSize:13,fontWeight:700,color:providerType===p.k?C.accent:C.text,display:"flex",alignItems:"center",gap:8}}><SIcon name={p.icon} size={18} color={providerType===p.k?C.accent:C.textMid}/>{p.l}</div>
           <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{p.d}</div>
