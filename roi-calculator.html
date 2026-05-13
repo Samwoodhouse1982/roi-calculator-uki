@@ -3870,7 +3870,7 @@ function ROICalculator() {
       </div>
       {!dim && <div style={{padding:"24px 18px 18px",background:`linear-gradient(180deg, ${C.tealPale} 0%, #fff 100%)`,border:`1px solid ${C.accent}33`,borderTop:`3px solid ${C.accent}`,borderRadius:12,textAlign:"center",boxShadow:`0 6px 24px ${C.accent}1a, 0 1px 3px ${C.accent}10`}}>
         <div style={{fontSize:11,fontWeight:700,color:C.textMid,letterSpacing:2,textTransform:"uppercase",marginBottom:12}}>{ts.heroLabel}</div>
-        <div style={{fontSize:56,fontWeight:900,letterSpacing:"-2.5px",lineHeight:1,fontVariantNumeric:"tabular-nums",background:`linear-gradient(135deg, ${C.accent} 0%, ${C.amber} 55%, ${C.seafoam} 100%)`,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",display:"inline-block",filter:`drop-shadow(0 2px 8px ${C.accent}30)`,paddingBottom:4}}>{fmtK(Math.round(r.annualWithReimbursement * ts.mult))}<span style={{fontSize:18,fontWeight:600,color:C.textMid,WebkitTextFillColor:C.textMid,background:"none",marginLeft:4}}>{ts.suffix || "/yr"}</span></div>
+        <div style={{fontSize:56,fontWeight:900,letterSpacing:"-2.5px",lineHeight:1,fontVariantNumeric:"tabular-nums",background:`linear-gradient(135deg, ${C.accent} 0%, ${C.amber} 55%, ${C.seafoam} 100%)`,WebkitBackgroundClip:"text",backgroundClip:"text",WebkitTextFillColor:"transparent",display:"inline-block",filter:`drop-shadow(0 2px 8px ${C.accent}30)`,paddingBottom:4}}>{fmtK(Math.round(r.annualWithReimbursement * ts.mult))}<span style={{fontSize:18,fontWeight:600,color:C.textMid,WebkitTextFillColor:C.textMid,background:"none",marginLeft:4}}>{ts.suffix}</span></div>
         <div style={{fontSize:12,color:C.textMid,marginTop:12}}>
           {viewTimescale === "annual"
             ? <>per year · {rampYears}-year total: <strong style={{color:C.accent}}>{fmtK(r.total3WithReimbursement)}</strong></>
@@ -4002,7 +4002,7 @@ function ROICalculator() {
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
         <div style={{display:"flex",alignItems:"baseline",gap:8,minWidth:0,flexShrink:1}}>
           <span style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".04em",whiteSpace:"nowrap"}}>{ts.heroLabel || "Estimated savings"}:</span>
-          <span style={{fontSize:18,fontWeight:800,color:C.accent,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{fmtK(Math.round(r.annualWithReimbursement * ts.mult))}<span style={{fontSize:12,fontWeight:600,color:C.textMid,marginLeft:2}}>{ts.suffix || "/yr"}</span></span>
+          <span style={{fontSize:18,fontWeight:800,color:C.accent,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{fmtK(Math.round(r.annualWithReimbursement * ts.mult))}<span style={{fontSize:12,fontWeight:600,color:C.textMid,marginLeft:2}}>{ts.suffix}</span></span>
         </div>
         <div className="roi-timescale" style={{display:"inline-flex",gap:0,padding:3,background:"#fff",border:`1px solid ${C.border}`,borderRadius:999,flexWrap:"wrap"}}>
           {[
@@ -4141,15 +4141,15 @@ function ROICalculator() {
             {l:"Enterprise",n:r.ent,c:r.entCost,d:r.entDecom,s:r.entDecom*r.entCost},
             {l:"Departmental",n:r.dep,c:r.depCost,d:r.depDecom,s:r.depDecom*r.depCost},
             {l:"Standalone",n:r.nic,c:r.nicCost,d:r.nicDecom,s:r.nicDecom*r.nicCost},
-          ].filter(t=>t.n>0).map((t,i)=><tr key={i}><td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`}}>{t.l}</td><td style={tdR_}>{t.n}</td><td style={tdR_}>{fmtK(t.c)}</td><td style={tdR_}>{t.d}</td><td style={{...tdR_,fontWeight:700,color:C.green}}>{fmtK(Math.round(t.s * ts.mult))}{ts.suffix || "/yr"}</td></tr>)}
-          {flagships.map((f,i) => <tr key={`f${i}`} style={{background:"#fafcfb"}}><td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`,fontStyle:"italic"}}>{f.name||`Named system ${i+1}`}</td><td style={tdR_}>1</td><td style={tdR_}>{fmtK(f.cost)}</td><td style={tdR_}>{f.retire?"1":"0"}</td><td style={{...tdR_,fontWeight:700,color:C.green}}>{f.retire?fmtK(Math.round(f.cost * ts.mult))+(ts.suffix || "/yr"):"\u2013"}</td></tr>)}
-          <tr style={{background:C.bg}}><td style={{padding:"10px 12px",fontWeight:700}}>Total</td><td style={{...tdR_,fontWeight:700}}>{r.legacy}</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>avg {fmtK(r.blendedCost)}</td><td style={{...tdR_,fontWeight:700}}>{r.decom}</td><td style={{...tdR_,fontWeight:800,color:C.green}}>{fmtK(Math.round(r.decomSave * ts.mult))}{ts.suffix || "/yr"}</td></tr>
+          ].filter(t=>t.n>0).map((t,i)=><tr key={i}><td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`}}>{t.l}</td><td style={tdR_}>{t.n}</td><td style={tdR_}>{fmtK(t.c)}</td><td style={tdR_}>{t.d}</td><td style={{...tdR_,fontWeight:700,color:C.green}}>{fmtK(Math.round(t.s * ts.mult))}{ts.suffix}</td></tr>)}
+          {flagships.map((f,i) => <tr key={`f${i}`} style={{background:"#fafcfb"}}><td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`,fontStyle:"italic"}}>{f.name||`Named system ${i+1}`}</td><td style={tdR_}>1</td><td style={tdR_}>{fmtK(f.cost)}</td><td style={tdR_}>{f.retire?"1":"0"}</td><td style={{...tdR_,fontWeight:700,color:C.green}}>{f.retire?fmtK(Math.round(f.cost * ts.mult))+(ts.suffix):"\u2013"}</td></tr>)}
+          <tr style={{background:C.bg}}><td style={{padding:"10px 12px",fontWeight:700}}>Total</td><td style={{...tdR_,fontWeight:700}}>{r.legacy}</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>avg {fmtK(r.blendedCost)}</td><td style={{...tdR_,fontWeight:700}}>{r.decom}</td><td style={{...tdR_,fontWeight:800,color:C.green}}>{fmtK(Math.round(r.decomSave * ts.mult))}{ts.suffix}</td></tr>
         </tbody></table>
       </div>
       <Callout bg={C.greenPale} border="#c3ddd3">
-        <strong style={{color:C.green}}>{r.decom} retired {"→"} {fmtK(Math.round(r.decomSave * ts.mult))}{ts.suffix || "/yr"}</strong>
+        <strong style={{color:C.green}}>{r.decom} retired {"→"} {fmtK(Math.round(r.decomSave * ts.mult))}{ts.suffix}</strong>
         <span style={{margin:"0 8px",color:C.textMuted}}>|</span>
-        Estate {fmtK(Math.round(r.totalEstate * ts.mult))}{ts.suffix || "/yr"} {"→"} {Math.round(r.decomSave/Math.max(1,r.totalEstate)*100)}% reduction
+        Estate {fmtK(Math.round(r.totalEstate * ts.mult))}{ts.suffix} {"→"} {Math.round(r.decomSave/Math.max(1,r.totalEstate)*100)}% reduction
       </Callout>
       <EvidenceDropdown title="Evidence & methodology">
         System costs modelled per tier: Enterprise (A$250k base + A$600/bed), Departmental (A$65k + A$140/bed), Standalone (A$12k + A$18/bed), capped at market rates. Named systems use AU state contract-derived pricing.
@@ -4166,10 +4166,10 @@ function ROICalculator() {
         <OverridableStat label="Clinical staff" computed={calc(calcInputs,am,{...mergedOv,clinicians:null},flagships).clinicians} override={overrides.clinicians} onOverride={v=>setOv("clinicians",v)} info={`Clinical staff who regularly interact with legacy systems, including doctors, nurses, pharmacists and allied health professionals. Based on Australian health workforce data: ${STAFF_PER_BED} clinical staff per acute bed, plus scaled corporate/admin staff per facility (20 base + 0.15/bed, capped at 120).`}/>
         <OverridableStat label="Mins wasted / wk" computed={calc(calcInputs,am,{...mergedOv,minsWasted:null},flagships).minsWasted} override={overrides.minsWasted} onOverride={v=>setOv("minsWasted",v)} info={`Time clinicians lose each week navigating between legacy systems, searching for records, and context-switching. Starts at ${r.baseMin} min/wk as a baseline${isArchiveOnly?" (lower because your main workflow is already on your EPR)":""}, then increases with data quality issues (${inputs.data_quality_level} = ${DQ[inputs.data_quality_level]}x), system complexity (${inputs.complexity_level} = ${CX[inputs.complexity_level]}x), and a 4% overhead per additional legacy system. Based on Westbrook et al 2010 (JAMIA) workflow interruption studies and Nuffield Trust 2020 system navigation research.`}/>
         <Stat label="Full-time equivalent (FTE)" value={an?r.fteEquivalent.toFixed(0):0} sub="clinical capacity" color={"#1a8a7a"} info={`${fmtNum(r.hrsSaved)} hours freed ÷ 1,824 hours per FTE (38hr week × 48 working weeks) = ${r.fteEquivalent.toFixed(1)} FTE equivalent. This is not headcount reduction. It represents clinical capacity freed for patient care, equivalent to hiring ${r.fteEquivalent.toFixed(0)} additional clinicians without recruitment.`}/>
-        <Stat label={"Hours freed" + (ts.suffix || " / yr")} value={an?<AnimatedNum value={Math.round(r.hrsSaved * ts.mult)} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Steady-state: ${fmtNum(r.hrsSaved)} hours per year.`}/>
-        <Stat label={"Capacity value" + (ts.suffix === "/yr" ? "" : " " + (viewTimescale === "total3" ? "(3-yr)" : viewTimescale === "total5" ? "(5-yr)" : viewTimescale === "year1" ? "(Yr 1)" : ""))} value={an?<AnimatedK value={Math.round(r.timeSave * ts.mult)} active={an}/>:"-"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at A$65/hr blended rate (AIHW workforce data: nursing ~A$45-55/hr, medical ~A$90-120/hr, allied health ~A$40-60/hr). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity. This represents capacity redirected to patient care, not a direct cash saving. Equivalent to ~${(r.hrsSaved/1824).toFixed(0)} FTE.`}/>
+        <Stat label={"Hours freed" + (viewTimescale === "annual" ? " / yr" : "")} value={an?<AnimatedNum value={Math.round(r.hrsSaved * ts.mult)} active={an}/>:0} color={C.amber} info={`Total hours freed across all ${fmtNum(r.clinicians)} clinical staff when legacy system switching is eliminated. Accounts for 48 working weeks per year and subtracts ${isArchiveOnly?1:2} min/wk residual (time still needed navigating the new system). Steady-state: ${fmtNum(r.hrsSaved)} hours per year.`}/>
+        <Stat label={"Capacity value" + (viewTimescale === "total3" ? " (3-yr)" : viewTimescale === "total5" ? " (5-yr)" : viewTimescale === "year1" ? " (Yr 1)" : "")} value={an?<AnimatedK value={Math.round(r.timeSave * ts.mult)} active={an}/>:"-"} sub={`${Math.round(r.realisation*100)}% realisation`} color={C.amber} info={`The value of freed clinician time, based on ${fmtNum(r.hrsSaved)} hours at A$65/hr blended rate (AIHW workforce data: nursing ~A$45-55/hr, medical ~A$90-120/hr, allied health ~A$40-60/hr). Only ${Math.round(r.realisation*100)}% is counted as realisable capacity. This represents capacity redirected to patient care, not a direct cash saving. Equivalent to ~${(r.hrsSaved/1824).toFixed(0)} FTE.`}/>
       </div>
-      <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(Math.round(r.hrsSaved * ts.mult))} hrs{ts.suffix || "/yr"}</strong> {"×"} {"A$"}65 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(Math.round(r.timeSave * ts.mult))}{ts.suffix || "/yr"}</strong> <span style={{color:C.textMuted,fontSize:12}}>| Equivalent to ~{r.fteEquivalent.toFixed(0)} FTE of clinical capacity at steady state</span></Callout>
+      <Callout bg={C.greenPale} border="#c3ddd3"><strong style={{color:C.green}}>{fmtNum(Math.round(r.hrsSaved * ts.mult))} hrs{ts.suffix}</strong> {"×"} {"A$"}65 {"×"} {Math.round(r.realisation*100)}% = <strong>{fmtK(Math.round(r.timeSave * ts.mult))}{ts.suffix}</strong> <span style={{color:C.textMuted,fontSize:12}}>| Equivalent to ~{r.fteEquivalent.toFixed(0)} FTE of clinical capacity at steady state</span></Callout>
       <EvidenceDropdown title="Evidence & methodology">
         <strong>Sources:</strong> Westbrook et al JAMIA 2010 (context-switching). Sinsky et al 2016; KLAS Arch Collaborative (65% active user rate). Staffing: NSW Health SDPR (3.0 staff/bed). Blended hourly rate A$65 (AIHW).<br/><br/>
         <strong>Formula:</strong> Active users (65%) x switch penalty (0.04/additional system) x base minutes x data quality x complexity. Only {Math.round(r.realisation*100)}% counted as realisable.
@@ -4192,24 +4192,24 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>ABF efficiency gain</div>
-          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(Math.round(r.abfEfficiencyGain * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(Math.round(r.abfEfficiencyGain * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>15% of legacy estate admin overhead addressable through consolidation</div>
         </div>
         {r.privateRevRecovery > 0 && <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Private patient revenue uplift</div>
-          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(Math.round(r.privateRevRecovery * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(Math.round(r.privateRevRecovery * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>30% recovery of leaked private episodes (15% leakage, VAGO 2019)</div>
         </div>}
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate testing reduction</div>
-          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(Math.round(r.duplicateReduction * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(Math.round(r.duplicateReduction * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>50% of 22% duplicate rate addressable (Banker et al 2024)</div>
         </div>
       </div>
 
       <Callout bg={C.greenPale} border="#c3ddd3">
         <strong style={{color:C.green}}>Total in this section:</strong>{" "}
-        {fmtK(Math.round((r.abfEfficiencyGain + r.privateRevRecovery) * ts.mult))}{ts.suffix || "/yr"}
+        {fmtK(Math.round((r.abfEfficiencyGain + r.privateRevRecovery) * ts.mult))}{ts.suffix}
       </Callout>
 
       <EvidenceDropdown title="Evidence & methodology">
@@ -4232,26 +4232,26 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:14}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #f0c4d430"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Excess bed days avoided</div>
-          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(Math.round(r.excessDayCostAvoided * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(Math.round(r.excessDayCostAvoided * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>{an?fmtNum(Math.round(r.excessDaysAvoided * ts.mult)):0} days at A$3,100/day (IHACPA, Independent Health and Aged Care Pricing Authority)</div>
           <div style={{fontSize:10,color:"#d4507a",marginTop:4}}>35% fragmentation attribution (ACSQHC)</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #f0c4d430"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Medical indemnity reduction</div>
-          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(Math.round(r.malpracticeReduction * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(Math.round(r.malpracticeReduction * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>3% of A$20,000/bed institutional premium</div>
           <div style={{fontSize:10,color:"#d4507a",marginTop:4}}>VMIA (Victorian Managed Insurance Authority) 2025-26 benchmark</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #f0c4d430"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate testing reduction</div>
-          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(Math.round(r.duplicateReduction * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(Math.round(r.duplicateReduction * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>22% duplicate rate at A$12,000/bed pathology cost</div>
           <div style={{fontSize:10,color:"#d4507a",marginTop:4}}>Banker et al 2024; RCPA guidelines</div>
         </div>
       </div>
       <Callout bg="#fdf5f8" border="#f0c4d4">
         <strong style={{color:"#d4507a"}}>Total avoidable cost of harm:</strong>{" "}
-        {fmtK(Math.round(r.costAvoidance * ts.mult))}{ts.suffix || "/yr"} {viewTimescale === "annual" ? "(included in annual savings as cost avoidance)" : "(included as cost avoidance)"}
+        {fmtK(Math.round(r.costAvoidance * ts.mult))}{ts.suffix} {viewTimescale === "annual" ? "(included in annual savings as cost avoidance)" : "(included as cost avoidance)"}
       </Callout>
       <EvidenceDropdown title="Evidence & methodology">
         <strong>Methodology:</strong> Excess bed days: 8.0/bed baseline (QAHCS/AIHW), 35% fragmentation attribution (ACSQHC), A$3,100/day (IHACPA). Indemnity: 3% of A$20,000/bed (VMIA 2025-26). Duplicate testing: 22% duplicate rate (Banker et al 2024, RCPA), A$12,000/bed pathology, 50% addressable.<br/><br/>
@@ -4281,9 +4281,9 @@ function ROICalculator() {
           const cumulative = Math.round(m.av * rampSum);
           return <div key={i} style={{flex:"1 1 150px",minWidth:140,padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:`1px solid ${C.rose}18`}}>
             <div style={{fontSize:11,fontWeight:600,color:C.textMuted,marginBottom:6}}>{m.label}</div>
-            <div style={{fontSize:26,fontWeight:800,color:C.rose}}>{"↓"} {an?fmtNum(Math.round(m.av * ts.mult)):0}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"} {m.avl}</span></div>
+            <div style={{fontSize:26,fontWeight:800,color:C.rose}}>{"↓"} {an?fmtNum(Math.round(m.av * ts.mult)):0}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix} {m.avl}</span></div>
             <div style={{fontSize:11,color:C.textMuted,marginTop:4}}>{m.sub}</div>
-            <div style={{marginTop:8,fontSize:11,color:C.textMid}}>of {an?fmtNum(Math.round(m.bl * ts.mult)):0} baseline{ts.suffix || "/yr"}</div>
+            <div style={{marginTop:8,fontSize:11,color:C.textMid}}>of {an?fmtNum(Math.round(m.bl * ts.mult)):0} baseline{ts.suffix}</div>
             {an && cumulative > 0 && <div style={{marginTop:8,padding:"4px 10px",background:`${C.rose}15`,borderRadius:20,display:"inline-block",fontSize:11,fontWeight:600,color:C.rose}}>~{fmtNum(cumulative)} over {rampN} years</div>}
           </div>;
         })}
@@ -4306,23 +4306,23 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:14}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Falls with fracture</div>
-          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.45 * ts.mult))}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.45 * ts.mult))}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:10,color:"#d4507a"}}>~30% prevalence, A$35k/fracture hospitalisation (AIHW)</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Pressure injuries</div>
-          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.25 * ts.mult))}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.25 * ts.mult))}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:10,color:"#d4507a"}}>8.4% prevalence, A$10k/incident (ACSQHC QI data)</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Medication incidents</div>
-          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.30 * ts.mult))}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:22,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{fmtK(Math.round(r.acHarmAvoidance * 0.30 * ts.mult))}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:10,color:"#d4507a"}}>12-15 per 100 residents/yr, A$15k/hospitalisation</div>
         </div>
       </div>
       <Callout bg="#fdf5f8" border="#f0c4d4">
         <strong style={{color:"#d4507a"}}>Total avoidable cost of harm:</strong>{" "}
-        {fmtK(Math.round(r.acHarmAvoidance * ts.mult))}{ts.suffix || "/yr"} (included as cost avoidance)
+        {fmtK(Math.round(r.acHarmAvoidance * ts.mult))}{ts.suffix} (included as cost avoidance)
       </Callout>
     </Card><LockedConnector/></>}
 
@@ -4334,7 +4334,7 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>e-Discovery savings</div>
-          <div style={{fontSize:26,fontWeight:800,color:"#2c3e6b",margin:"6px 0"}}>{an?fmtK(Math.round(r.ediscoverySaving * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:26,fontWeight:800,color:"#2c3e6b",margin:"6px 0"}}>{an?fmtK(Math.round(r.ediscoverySaving * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:11,color:C.textMid}}>{r.litigationCases} cases/yr across {r.legacy} systems</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center",border:"1px solid #e0b0b015"}}>
@@ -4345,7 +4345,7 @@ function ROICalculator() {
       </div>
       <Callout bg="#f0f2f8" border="#c4cce0">
         <strong style={{color:"#2c3e6b"}}>Total legal savings:</strong>{" "}
-        {fmtK(Math.round(r.ediscoverySaving * ts.mult))}{ts.suffix || "/yr"} (e-Discovery cost reduction)
+        {fmtK(Math.round(r.ediscoverySaving * ts.mult))}{ts.suffix} (e-Discovery cost reduction)
       </Callout>
       <EvidenceDropdown title="Evidence & methodology">
         <strong>e-Discovery:</strong> Records assembly: ~24 hrs/case across fragmented systems vs ~5 hrs in consolidated archive. 8 cases per 100 beds. HIM staff rate A$45/hr.<br/><br/>
@@ -4362,17 +4362,17 @@ function ROICalculator() {
         <div style={{flex:"1 1 150px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Readmissions avoided</div>
           <div style={{fontSize:26,fontWeight:800,color:"#0F4146"}}>{an?fmtNum(Math.round(r.auReadmissionsAvoided * ts.mult)):"\u2013"}</div>
-          <div style={{fontSize:11,color:C.textMid}}>patients{ts.suffix || "/yr"}</div>
+          <div style={{fontSize:11,color:C.textMid}}>patients{ts.suffix}</div>
         </div>
         <div style={{flex:"1 1 150px",padding:"16px 18px",background:"#fff",borderRadius:10,textAlign:"center"}}>
           <div style={{fontSize:11,fontWeight:600,color:C.textMuted}}>Cost avoidance</div>
-          <div style={{fontSize:26,fontWeight:800,color:"#0F4146"}}>{an?fmtK(Math.round(r.auReadmissionCostAvoidance * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:26,fontWeight:800,color:"#0F4146"}}>{an?fmtK(Math.round(r.auReadmissionCostAvoidance * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:11,color:C.textMid}}>at A$11,500/readmission</div>
         </div>
       </div>
       <Callout bg="#f0faf8" border="#b0e0d8">
         <strong style={{color:"#0F4146"}}>Total readmission cost avoidance:</strong>{" "}
-        {fmtK(Math.round(r.auReadmissionCostAvoidance * ts.mult))}{ts.suffix || "/yr"} ({fmtNum(Math.round(r.auReadmissionsAvoided * ts.mult))} readmissions avoided)
+        {fmtK(Math.round(r.auReadmissionCostAvoidance * ts.mult))}{ts.suffix} ({fmtNum(Math.round(r.auReadmissionsAvoided * ts.mult))} readmissions avoided)
       </Callout>
       <EvidenceDropdown title="Evidence & methodology">
         AIHW 2023-24: 12% unplanned 30-day readmission rate. Vest et al JAMIA 2019: 0.6pp reduction from EMR consolidation. 30% fragmentation attribution. Cost A$11,500/readmission (IHACPA NWAU-derived).
@@ -4411,23 +4411,23 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Research system decommission</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(Math.round(r.researchDecomSave * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(Math.round(r.researchDecomSave * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>{r.researchSystems} research systems at ~{fmtK(RESEARCH_SYSTEM_AVG_COST)} avg</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Teaching compliance efficiency</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(Math.round(r.teachingEfficiency * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(Math.round(r.teachingEfficiency * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>Registrar training, procedural logging</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#f3eefa",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Teaching workflow savings</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(Math.round(r.teachingOverhead * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:"#534AB7",margin:"6px 0"}}>{an?fmtK(Math.round(r.teachingOverhead * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>Reduced complexity from consolidation</div>
         </div>
       </div>
 
       <Callout bg="#f3eefa" border="#c8b8e8">
-        <strong style={{color:"#534AB7"}}>Academic module total:</strong> {fmtK(Math.round(r.academicSavings * ts.mult))}{ts.suffix || "/yr"}
+        <strong style={{color:"#534AB7"}}>Academic module total:</strong> {fmtK(Math.round(r.academicSavings * ts.mult))}{ts.suffix}
         <span style={{fontSize:12,color:C.textMuted,marginLeft:8}}>{viewTimescale === "annual" ? "Included in combined annual total" : viewTimescale === "year1" ? "Included in Year 1 total" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span>
       </Callout>
 
@@ -4445,12 +4445,12 @@ function ROICalculator() {
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate system elimination</div>
-          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(Math.round(r.duplicateElimination * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(Math.round(r.duplicateElimination * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>{r.duplicateSystems} duplicate systems across {inputs.org_count} facilities</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Infrastructure consolidation</div>
-          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(Math.round(r.infraConsolidation * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix || "/yr"}</span></div>
+          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(Math.round(r.infraConsolidation * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>Data center, network, help desk</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
@@ -4459,7 +4459,7 @@ function ROICalculator() {
       </div>
 
       <Callout bg="#e8faf6" border="#a8d8c8">
-        <strong style={{color:C.accent}}>M&A module total:</strong> {fmtK(Math.round(r.mergeSavings * ts.mult))}{ts.suffix || "/yr"}
+        <strong style={{color:C.accent}}>M&A module total:</strong> {fmtK(Math.round(r.mergeSavings * ts.mult))}{ts.suffix}
         <span style={{fontSize:12,color:C.textMuted,marginLeft:8}}>{viewTimescale === "annual" ? "Included in combined annual total" : viewTimescale === "year1" ? "Included in Year 1 total" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span>
       </Callout>
 
