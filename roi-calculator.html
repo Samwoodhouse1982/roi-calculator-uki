@@ -3246,6 +3246,23 @@ function ROICalculator() {
         </div>
       </Card>
 
+      {/* Reimbursement model (hospital sector only - aged care + NDIS use different funding) */}
+      {sector === "hospital" && (
+        <Card style={{marginBottom:12,background:"#fff"}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".06em",marginBottom:10,display:"flex",alignItems:"center",gap:4}}>Reimbursement model<InfoTip text="Determines whether private patient revenue is included. Public (ABF-funded) excludes private revenue calculations entirely. Mixed and Predominantly Private include private patient revenue uplift."/></div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+            {[
+              {k:"public",l:"Public",d:"ABF-funded"},
+              {k:"mixed",l:"Public + Private",d:"Mixed revenue"},
+              {k:"private",l:"Predominantly Private",d:"Private / PPP"},
+            ].map(rm => <button type="button" key={rm.k} onClick={()=>setReimbursementModel(rm.k)} style={{padding:"10px 8px",textAlign:"center",border:reimbursementModel===rm.k?`2px solid ${C.accent}`:`1px solid ${C.border}`,borderRadius:10,background:reimbursementModel===rm.k?C.accentPale:"#fff",cursor:"pointer",fontFamily:"inherit"}}>
+              <div style={{fontSize:12,fontWeight:700,color:reimbursementModel===rm.k?C.accent:C.text,lineHeight:1.2}}>{rm.l}</div>
+              <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>{rm.d}</div>
+            </button>)}
+          </div>
+        </Card>
+      )}
+
       {/* Calculate button */}
             <button type="button" className="roi-cta" onClick={() => {
           setPage("calculating"); setCalcStep(0); setBlend(0.5);
@@ -3974,15 +3991,24 @@ function ROICalculator() {
 
 
     {!dim && <>
-    {/* Timescale selector */}
-    <div style={{display:"flex",justifyContent:"center",marginBottom:14}}>
-      <div className="roi-timescale" style={{display:"inline-flex",gap:0,padding:3,background:"#fff",border:`1px solid ${C.border}`,borderRadius:999,flexWrap:"wrap"}}>
-        {[
-          {k:"year1",l:"Year 1"},
-          {k:"total3",l:"3-yr total"},
-          {k:"total5",l:"5-yr total"},
-          {k:"annual",l:"Annual avg"},
-        ].map(t => <button type="button" key={t.k} className="roi-timescale-btn" onClick={()=>{setViewTimescale(t.k);if(t.k==="total3")setRampYears(3);if(t.k==="total5")setRampYears(5);}} style={{padding:"7px 16px",border:"none",borderRadius:999,background:viewTimescale===t.k?C.accent:"transparent",color:viewTimescale===t.k?"#fff":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s",whiteSpace:"nowrap"}}>{t.l}</button>)}
+    {/* Sticky timescale selector - stays at top of viewport as user scrolls,
+        so they can change timeframe from anywhere on the page and see all
+        figures update together. Includes the current headline value as
+        context so the impact of changing timescale is immediately visible. */}
+    <div style={{position:"sticky",top:0,zIndex:50,marginBottom:14,marginLeft:-20,marginRight:-20,paddingLeft:20,paddingRight:20,paddingTop:10,paddingBottom:10,background:"rgba(255,255,255,0.96)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",borderBottom:`1px solid ${C.border}`,boxShadow:"0 2px 8px rgba(15,65,70,0.06)"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+        <div style={{display:"flex",alignItems:"baseline",gap:8,minWidth:0,flexShrink:1}}>
+          <span style={{fontSize:11,fontWeight:600,color:C.textMuted,textTransform:"uppercase",letterSpacing:".04em",whiteSpace:"nowrap"}}>{ts.heroLabel || "Estimated savings"}:</span>
+          <span style={{fontSize:18,fontWeight:800,color:C.accent,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{fmtK(Math.round(r.annualWithReimbursement * ts.mult))}<span style={{fontSize:12,fontWeight:600,color:C.textMid,marginLeft:2}}>{ts.suffix || "/yr"}</span></span>
+        </div>
+        <div className="roi-timescale" style={{display:"inline-flex",gap:0,padding:3,background:"#fff",border:`1px solid ${C.border}`,borderRadius:999,flexWrap:"wrap"}}>
+          {[
+            {k:"year1",l:"Year 1"},
+            {k:"total3",l:"3-yr total"},
+            {k:"total5",l:"5-yr total"},
+            {k:"annual",l:"Annual avg"},
+          ].map(t => <button type="button" key={t.k} className="roi-timescale-btn" onClick={()=>{setViewTimescale(t.k);if(t.k==="total3")setRampYears(3);if(t.k==="total5")setRampYears(5);}} style={{padding:"7px 16px",border:"none",borderRadius:999,background:viewTimescale===t.k?C.accent:"transparent",color:viewTimescale===t.k?"#fff":C.textMid,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"all .15s",whiteSpace:"nowrap"}}>{t.l}</button>)}
+        </div>
       </div>
     </div>
 
