@@ -1514,8 +1514,6 @@ function ROICalculator() {
   const [occupancyRate, setOccupancyRate] = useState(0.90);
   const [rampYears, setRampYears] = useState(3);
   const [galenMigrationCost, setGalenMigrationCost] = useState(0);
-  const [discountRate, setDiscountRate] = useState(0.07); // NSW Treasury default 7%
-  const [parallelRunMonths, setParallelRunMonths] = useState(0); // Months of dual-running (0 = off, user opt-in)
   const [trancheMode, setTrancheMode] = useState(false);
   const [showFacilities, setShowFacilities] = useState(null);
   const [showBedDetail, setShowBedDetail] = useState(false);
@@ -3779,33 +3777,6 @@ function ROICalculator() {
       </div>
 
       <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-          <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>Financial analysis settings</span>
-          <InfoTip text="Discount rate for NPV (Net Present Value) calculation (NSW Treasury default 7%). Parallel-run period accounts for dual-running costs during migration."/>
-        </div>
-        <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-          <div style={{flex:"1 1 120px"}}>
-            <div style={{fontSize:11,color:C.textMuted,marginBottom:4}}>Discount rate (NPV)</div>
-            <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <input type="number" value={Math.round(discountRate*100)} min={0} max={15} step={0.5}
-                onChange={e => setDiscountRate(Math.max(0, Math.min(0.15, parseFloat(e.target.value)/100 || 0.07)))}
-                style={{width:60,padding:"8px 10px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,textAlign:"right"}}/>
-              <span style={{fontSize:12,color:C.textMuted}}>%</span>
-            </div>
-            <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>NSW Treasury: 7%</div>
-          </div>
-          <div style={{flex:"1 1 120px"}}>
-            <div style={{fontSize:11,color:C.textMuted,marginBottom:4}}>Parallel-run period</div>
-            <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <input type="number" value={parallelRunMonths} min={0} max={36} step={3}
-                onChange={e => setParallelRunMonths(Math.max(0, Math.min(36, parseInt(e.target.value) || 0)))}
-                style={{width:60,padding:"8px 10px",border:`1px solid ${C.borderLight}`,borderRadius:999,fontSize:13,textAlign:"right"}}/>
-              <span style={{fontSize:12,color:C.textMuted}}>months</span>
-            </div>
-            <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>Dual-running legacy + new EMR</div>
-          </div>
-        </div>
-      <div style={{marginTop:16,padding:"14px 16px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontSize:12,fontWeight:600,color:C.textMid}}>Tranche-based rollout</span>
@@ -3839,7 +3810,6 @@ function ROICalculator() {
         </div>}
       </div>
         {(galenMigrationCost > 0 || galenAnnualCost > 0) && <button type="button" onClick={()=>{setGalenMigrationCost(0);setGalenAnnualCost(0);}} style={{border:"none",background:"none",color:C.textMuted,fontSize:11,cursor:"pointer",textDecoration:"underline",padding:"4px 0",marginTop:2}}>Clear costs</button>}
-      </div>
     </Card></div>
     <LockedConnector/>
 
