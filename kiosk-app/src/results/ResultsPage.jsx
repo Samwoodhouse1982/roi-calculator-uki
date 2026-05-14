@@ -107,12 +107,10 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       @keyframes glow { 0%,100% { text-shadow: 0 0 30px rgba(0,212,170,0.3); } 50% { text-shadow: 0 0 60px rgba(0,212,170,0.6); } }
       @keyframes numPulse { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }`}</style>
 
-    {/* Sticky timescale selector — placed ABOVE the hero so the user sees it
-        immediately and understands the headline number is filtered by their
-        selection. Stays sticky on scroll so they can change view from any
-        point on the report. */}
-    <div style={{ position: "sticky", top: 0, zIndex: 30, padding: "10px 0 14px", marginBottom: 4, background: C.bg + "f0", backdropFilter: "blur(8px)", borderBottom: `1px solid ${C.borderLight}` }}>
-      <div style={{ fontSize: F.tiny, fontWeight: 600, color: C.textMuted, letterSpacing: 2, textTransform: "uppercase", textAlign: "center", marginBottom: 8 }}>View savings as:</div>
+    {/* Timescale selector — sits at the very top of the results page so the
+        user picks their view first, then sees the headline number in that lens. */}
+    <div style={{ padding: "16px 0 20px", marginBottom: 8, borderBottom: `1px solid ${C.borderLight}` }}>
+      <div style={{ fontSize: F.tiny, fontWeight: 600, color: C.textMuted, letterSpacing: 2, textTransform: "uppercase", textAlign: "center", marginBottom: 10 }}>View savings as:</div>
       <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
         {[
           { k: 'year1',  label: 'Year 1' },
