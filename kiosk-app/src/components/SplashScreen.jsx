@@ -7,7 +7,12 @@ import klasBadge from '../assets/best-in-klas-2025-data-archiving.png';
 const CONVERGE_MS = 700;       // particles fly toward the button
 const WIPE_DELAY_MS = 500;     // radial wipe starts before convergence finishes (overlap)
 const WIPE_MS = 700;           // radial wipe duration
-const TOTAL_LAUNCH_MS = WIPE_DELAY_MS + WIPE_MS; // 1200ms — when onStart fires
+// After the wipe peaks (teal core fully visible), a uniform dark overlay fades in
+// to neutralise the green so the handoff to the calculator is seamless rather than a
+// jarring green-to-navy snap.
+const SETTLE_DELAY_MS = 900;   // starts before wipe finishes (overlaps the bright peak)
+const SETTLE_MS = 500;         // fade-in duration of the dark overlay
+const TOTAL_LAUNCH_MS = SETTLE_DELAY_MS + SETTLE_MS + 50; // 1450ms — 50ms buffer after settle completes
 
 export function SplashScreen({ onStart, onAdminReveal }) {
   // Single tap on the RLDatix logo at the bottom reveals the hidden admin stats overlay.
@@ -272,6 +277,10 @@ export function SplashScreen({ onStart, onAdminReveal }) {
             0%   { width: 0;      height: 0;      opacity: 1; }
             100% { width: 4400px; height: 4400px; opacity: 1; }
           }
+          @keyframes radialSettle {
+            0%   { opacity: 0; }
+            100% { opacity: 1; }
+          }
         `}</style>
 
       </div>
@@ -304,7 +313,9 @@ export function SplashScreen({ onStart, onAdminReveal }) {
       {/* Radial wipe overlay — expands from the button position to cover the screen.
           Becomes visible after WIPE_DELAY_MS (overlapping the tail of particle convergence),
           so users see particles arriving AND energy releasing in one continuous motion.
-          Final size 4400px covers all corners of 1080×1920 even at maximum offset. */}
+          Final size 4400px covers all corners of 1080×1920 even at maximum offset.
+          Outer colour (#0a0f1a) matches the calculator background exactly so there's no
+          visible edge-transition when the swap happens. */}
       {launching && (
         <div style={{
           position: 'absolute',
@@ -313,10 +324,29 @@ export function SplashScreen({ onStart, onAdminReveal }) {
           width: 0,
           height: 0,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(0,212,170,0.95) 0%, rgba(10,40,50,0.95) 55%, #060b14 100%)',
+          background: 'radial-gradient(circle, rgba(0,212,170,0.95) 0%, rgba(10,40,50,0.95) 55%, #0a0f1a 100%)',
           transform: 'translate(-50%, -50%)',
           animation: `radialWipe ${WIPE_MS}ms cubic-bezier(0.4, 0, 0.2, 1) ${WIPE_DELAY_MS}ms forwards`,
           zIndex: 50,
+          pointerEvents: 'none',
+        }} />
+      )}
+
+      {/* Settle overlay — a uniform calculator-background-colour layer that fades in
+          on top of the wipe. Starts at SETTLE_DELAY_MS (900ms, overlapping the wipe's
+          bright peak) and reaches full opacity by 1400ms. By the time onStart fires
+          at TOTAL_LAUNCH_MS (1450ms), the whole viewport is solid #0a0f1a — same as
+          the calculator's background — so the splash→calculator swap is invisible.
+          Without this, the bright teal core of the radial wipe would still be visible
+          at handoff and snap abruptly to the calculator's dark navy. */}
+      {launching && (
+        <div style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: '#0a0f1a',
+          opacity: 0,
+          animation: `radialSettle ${SETTLE_MS}ms ease-in ${SETTLE_DELAY_MS}ms forwards`,
+          zIndex: 51,
           pointerEvents: 'none',
         }} />
       )}
