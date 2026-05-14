@@ -500,10 +500,15 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const nicCost = ov.nicCost != null ? ov.nicCost : tierCost("niche", inp.bed_count, cx);
   const tieredEstate = ent * entCost + dep * depCost + nic * nicCost;
   // Flagships
-  const flagshipTotal = flagships.reduce((s,f) => s + (f.cost || 0), 0);
-  const flagshipDecomSave = flagships.filter(f => f.retire).reduce((s,f) => s + (f.cost || 0), 0);
-  const flagshipCount = flagships.length;
-  const flagshipRetireCount = flagships.filter(f => f.retire).length;
+  // Each flagship row optionally carries an `instances` count - default 1.
+  // For IDN buyers with multiple Epic / Cerner installs (e.g. 3 separate
+  // hospital Epic instances), entering one row with instances=3 multiplies
+  // both the cost AND the system count contribution. Backwards compatible:
+  // rows without `instances` default to 1, behaving exactly as before.
+  const flagshipTotal = flagships.reduce((s,f) => s + (f.cost || 0) * (f.instances || 1), 0);
+  const flagshipDecomSave = flagships.filter(f => f.retire).reduce((s,f) => s + (f.cost || 0) * (f.instances || 1), 0);
+  const flagshipCount = flagships.reduce((s,f) => s + (f.instances || 1), 0);
+  const flagshipRetireCount = flagships.filter(f => f.retire).reduce((s,f) => s + (f.instances || 1), 0);
   const portfolioSystems = inp._portfolioSystems || 0;
   const legacy = tieredLegacy + flagshipCount + portfolioSystems;
   const totalEstate = tieredEstate + flagshipTotal + (inp._portfolioCost || 0);
@@ -1287,9 +1292,16 @@ function ROICalculator() {
 
   // Flagship systems (named high-cost outliers outside the tiers)
   const [flagships, setFlagships] = useState([]);
-  const addFlagship = useCallback((sys) => { const s = sys || {}; const sc = s.baseCost ? systemCost(s, inputs.bed_count) : (s.cost || 250000); setFlagships(p => [...p, {name:s.label||"", cost:sc, retire:true, known:s.label||"", items:defaultLineItems(sc), showItems:false}]); }, [inputs.bed_count]);
+  const addFlagship = useCallback((sys) => { const s = sys || {}; const sc = s.baseCost ? systemCost(s, inputs.bed_count) : (s.cost || 250000); setFlagships(p => [...p, {name:s.label||"", cost:sc, retire:true, known:s.label||"", instances:1, items:defaultLineItems(sc), showItems:false}]); }, [inputs.bed_count]);
   const removeFlagship = useCallback(i => setFlagships(p => p.filter((_,j)=>j!==i)), []);
   const updateFlagship = useCallback((i, k, v) => { setFlagships(p => p.map((f,j)=>j===i?{...f,[k]:v}:f)); setActivePreset(null); }, []);
+  // Instance count handler. Clamps to [1, 99] - 1 means single install, 99
+  // is a safety ceiling well above any realistic IDN portfolio.
+  const updateFlagshipInstances = useCallback((i, n) => {
+    const clamped = Math.max(1, Math.min(99, parseInt(n) || 1));
+    setFlagships(p => p.map((f,j) => j===i ? {...f, instances: clamped} : f));
+    setActivePreset(null);
+  }, []);
   const updateLineItem = useCallback((i, key, val) => {
     setFlagships(p => p.map((f,j) => {
       if (j !== i) return f;
@@ -1568,7 +1580,9 @@ function ROICalculator() {
   const totalSystems = inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche;
   const knownCostOv = useMemo(() => {
     if (costMode !== "known" || !knownAnnualSpend || knownAnnualSpend <= 0) return {};
-    const flagSpend = flagships.reduce((s,f) => s + (f.cost || 0), 0);
+    // Total spend across all flagship rows, counting instances. e.g. 3 Epic
+    // installs at $1.5M each contribute $4.5M of the known annual spend.
+    const flagSpend = flagships.reduce((s,f) => s + (f.cost || 0) * (f.instances || 1), 0);
     const rem = Math.max(0, knownAnnualSpend - flagSpend);
     const e = inputs.tiers.enterprise, d = inputs.tiers.departmental, n = inputs.tiers.niche;
     const w = e * 5 + d * 2 + n;
@@ -1668,7 +1682,7 @@ function ROICalculator() {
     cost_flagship_total: r.flagshipTotal,
 
     // Flagships detail
-    flagships: flagships.map(f => ({ name: f.name || f.known, cost: f.cost, retire: f.retire, items: f.items || {} })),
+    flagships: flagships.map(f => ({ name: f.name || f.known, cost: f.cost, instances: f.instances || 1, retire: f.retire, items: f.items || {} })),
 
     // Decommission
     decom_total: r.decom,
@@ -2282,7 +2296,7 @@ function ROICalculator() {
     if (r.ent > 0) decomBody.push(["Enterprise", String(r.ent), fmtK(r.entCost), String(r.entDecom), fmtK(r.entDecom * r.entCost) + "/yr"]);
     if (r.dep > 0) decomBody.push(["Departmental", String(r.dep), fmtK(r.depCost), String(r.depDecom), fmtK(r.depDecom * r.depCost) + "/yr"]);
     if (r.nic > 0) decomBody.push(["Standalone", String(r.nic), fmtK(r.nicCost), String(r.nicDecom), fmtK(r.nicDecom * r.nicCost) + "/yr"]);
-    flagships.forEach(f => { decomBody.push([f.name || "Named system", "1", fmtK(f.cost), f.retire ? "1" : "0", f.retire ? fmtK(f.cost) + "/yr" : "\u2013"]); });
+    flagships.forEach(f => { const inst = f.instances || 1; const rowCost = f.cost * inst; const rowName = f.name || "Named system"; const displayName = inst > 1 ? `${rowName} (\u00d7${inst})` : rowName; decomBody.push([displayName, String(inst), fmtK(f.cost) + (inst > 1 ? " each" : ""), f.retire ? String(inst) : "0", f.retire ? fmtK(rowCost) + "/yr" : "\u2013"]); });
     decomBody.push([{ content: "Total", styles: { fontStyle: "bold", fillColor: LTBG } }, { content: String(r.legacy), styles: { fontStyle: "bold", fillColor: LTBG } }, { content: fmtK(r.blendedCost) + " avg", styles: { fillColor: LTBG } }, { content: String(r.decom), styles: { fontStyle: "bold", fillColor: LTBG } }, { content: fmtK(r.decomSave) + "/yr", styles: { fontStyle: "bold", textColor: TEAL, fillColor: LTBG } }]);
     doc.autoTable({
       startY: y,
@@ -2842,7 +2856,7 @@ function ROICalculator() {
       const estEstate = inputs.tiers.enterprise * (overrides.entCost != null ? overrides.entCost : tierCost("enterprise",inputs.bed_count,cx))
         + inputs.tiers.departmental * (overrides.depCost != null ? overrides.depCost : tierCost("departmental",inputs.bed_count,cx))
         + inputs.tiers.niche * (overrides.nicCost != null ? overrides.nicCost : tierCost("niche",inputs.bed_count,cx))
-        + flagships.reduce((s,f) => s + (f.cost||0), 0);
+        + flagships.reduce((s,f) => s + (f.cost||0) * (f.instances||1), 0);
       const avgBeds = inputs.org_count > 0 ? Math.round(inputs.bed_count / inputs.org_count) : inputs.bed_count;
 
       return <div style={{animation:"fade-in .4s ease"}}>
@@ -3209,13 +3223,17 @@ function ROICalculator() {
               style={{flex:"1 1 200px",maxWidth:260,padding:"12px 14px",border:`2px solid ${C.accent}`,borderRadius:999,fontSize:18,fontWeight:700,fontFamily:"inherit"}}/>
             <span style={{fontSize:13,color:C.textMid}}>/yr across all legacy systems</span>
           </div>
-          {knownAnnualSpend > 0 && (totalSystems + flagships.length) > 0 && (
+          {knownAnnualSpend > 0 && (totalSystems + flagships.length) > 0 && (() => {
+            const totalInst = flagships.reduce((s,f)=>s+(f.instances||1),0);
+            const totalFlagSpend = flagships.reduce((s,f)=>s+(f.cost||0)*(f.instances||1),0);
+            return (
             <div style={{marginTop:12,fontSize:13,color:C.textMid,lineHeight:1.6}}>
-              {fmtK(knownAnnualSpend)}/yr will be distributed across your {totalSystems + flagships.length} systems
-              {flagships.length > 0 ? ` (${fmtK(flagships.reduce((s,f)=>s+(f.cost||0),0))} in named systems, remainder by tier)` : ""}
+              {fmtK(knownAnnualSpend)}/yr will be distributed across your {totalSystems + totalInst} systems
+              {flagships.length > 0 ? ` (${fmtK(totalFlagSpend)} in named systems${totalInst > flagships.length ? ` across ${totalInst} instances` : ""}, remainder by tier)` : ""}
               . Costs are weighted 5:2:1 across tiers. Click any tier cost below to override.
             </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
@@ -3333,8 +3351,11 @@ function ROICalculator() {
       </button>
 
       {flagships.length > 0 && <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:8}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginTop:4}}>Named systems ({flagships.length})</div>
-        {flagships.map((f, i) => (
+        <div style={{fontSize:11,fontWeight:700,color:C.textMuted,textTransform:"uppercase",letterSpacing:".05em",marginTop:4}}>Named systems ({flagships.length}{(() => { const totalInst = flagships.reduce((s,f)=>s+(f.instances||1),0); return totalInst > flagships.length ? ` distinct, ${totalInst} total instances` : ""; })()})</div>
+        {flagships.map((f, i) => {
+          const inst = f.instances || 1;
+          const multi = inst > 1;
+          return (
           <div key={"f"+i} style={{padding:"10px 14px",background:C.bg,borderRadius:8,border:"1px solid "+C.borderLight,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
             {f.known ? (
               <div style={{flex:"1 1 160px",fontSize:13,fontWeight:700,color:C.text,padding:"6px 0"}}>
@@ -3350,14 +3371,34 @@ function ROICalculator() {
               <input type="number" value={f.cost} min={0} step={10000}
                 onChange={e => updateFlagship(i,"cost",parseInt(e.target.value)||0)}
                 style={{width:110,padding:"6px 8px",border:"1px solid "+C.borderLight,borderRadius:8,fontSize:13,fontFamily:"inherit",textAlign:"right"}}/>
-              <span style={{fontSize:11,color:C.textMuted}}>/yr</span>
+              <span style={{fontSize:11,color:C.textMuted}}>/yr each</span>
             </div>
+            {/* Multi-instance toggle for IDN buyers running e.g. 3 separate
+                Epic instances. Clicking switches to a counter row below the
+                base row; clicking off resets to a single instance. */}
+            <label style={{display:"flex",alignItems:"center",gap:4,fontSize:12,color:multi?C.accent:C.textMid,fontWeight:multi?700:500,cursor:"pointer",padding:"4px 8px",borderRadius:6,background:multi?C.accent+"15":"transparent",border:multi?`1px solid ${C.accent}`:"1px solid transparent"}}>
+              <input type="checkbox" checked={multi} onChange={e => updateFlagshipInstances(i, e.target.checked ? 2 : 1)} style={{accentColor:C.accent}}/> Multiple
+            </label>
             <label style={{display:"flex",alignItems:"center",gap:4,fontSize:12,color:C.textMid,cursor:"pointer"}}>
               <input type="checkbox" checked={f.retire} onChange={e => updateFlagship(i,"retire",e.target.checked)} style={{accentColor:C.accent}}/> Retire
             </label>
             <button type="button" onClick={() => removeFlagship(i)} style={{border:"none",background:"none",color:C.textMuted,fontSize:16,cursor:"pointer",padding:"4px 8px"}} title="Remove">{"\u2715"}</button>
+            {multi && (
+              <div style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,padding:"8px 12px",background:C.accent+"10",borderRadius:6,marginTop:4}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:C.textMid}}>
+                  <span style={{fontWeight:600,color:C.text}}>Instances:</span>
+                  <button type="button" onClick={() => updateFlagshipInstances(i, inst - 1)} disabled={inst <= 1} style={{width:26,height:26,border:`1px solid ${C.border}`,background:"#fff",borderRadius:6,fontSize:14,fontWeight:700,cursor:inst<=1?"not-allowed":"pointer",color:inst<=1?C.textMuted:C.accent,opacity:inst<=1?0.5:1}}>{"\u2212"}</button>
+                  <input type="number" value={inst} min={1} max={99} onChange={e => updateFlagshipInstances(i, e.target.value)} style={{width:48,padding:"4px 6px",border:`1px solid ${C.borderLight}`,borderRadius:6,fontSize:13,fontFamily:"inherit",textAlign:"center",fontWeight:700,color:C.accent}}/>
+                  <button type="button" onClick={() => updateFlagshipInstances(i, inst + 1)} style={{width:26,height:26,border:`1px solid ${C.border}`,background:"#fff",borderRadius:6,fontSize:14,fontWeight:700,cursor:"pointer",color:C.accent}}>{"+"}</button>
+                </div>
+                <div style={{fontSize:12,color:C.textMid,fontVariantNumeric:"tabular-nums"}}>
+                  = <strong style={{color:C.accent}}>{fmtK(f.cost * inst)}</strong>/yr total
+                </div>
+              </div>
+            )}
           </div>
-        ))}
+          );
+        })}
       </div>}
 
       {(totalSystems + flagships.length) > 0 && (() => {
@@ -3365,7 +3406,7 @@ function ROICalculator() {
           inputs.tiers.enterprise * (tierCostEdits.enterprise != null ? tierCostEdits.enterprise : tierCost("enterprise",inputs.bed_count,CX[inputs.complexity_level]))
           + inputs.tiers.departmental * (tierCostEdits.departmental != null ? tierCostEdits.departmental : tierCost("departmental",inputs.bed_count,CX[inputs.complexity_level]))
           + inputs.tiers.niche * (tierCostEdits.niche != null ? tierCostEdits.niche : tierCost("niche",inputs.bed_count,CX[inputs.complexity_level]))
-          + flagships.reduce((s,f) => s + (f.cost||0), 0);
+          + flagships.reduce((s,f) => s + (f.cost||0) * (f.instances||1), 0);
         const hasCustomCost = costMode === "known" || tierCostEdits.enterprise != null || tierCostEdits.departmental != null || tierCostEdits.niche != null || flagships.length > 0;
         return <>
           <div style={{marginTop:16,padding:"14px 18px",background:C.bg,borderRadius:8,border:`1px solid ${C.borderLight}`}}>
@@ -3730,7 +3771,7 @@ function ROICalculator() {
             {l:"Departmental",n:r.dep,c:r.depCost,d:r.depDecom,s:r.depDecom*r.depCost},
             {l:"Standalone",n:r.nic,c:r.nicCost,d:r.nicDecom,s:r.nicDecom*r.nicCost},
           ].filter(t=>t.n>0).map((t,i)=><tr key={i}><td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`}}>{t.l}</td><td style={tdR_}>{t.n}</td><td style={tdR_}>{fmtK(t.c)}</td><td style={tdR_}>{t.d}</td><td style={{...tdR_,fontWeight:700,color:C.green}}>{fmtK(t.s)}/yr</td></tr>)}
-          {flagships.map((f,i) => <tr key={`f${i}`} style={{background:"#fafcfb"}}><td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`,fontStyle:"italic"}}>{f.name||`Named system ${i+1}`}</td><td style={tdR_}>1</td><td style={tdR_}>{fmtK(f.cost)}</td><td style={tdR_}>{f.retire?"1":"0"}</td><td style={{...tdR_,fontWeight:700,color:C.green}}>{f.retire?fmtK(f.cost)+"/yr":"\u2013"}</td></tr>)}
+          {flagships.map((f,i) => { const inst = f.instances || 1; const rowTotal = f.cost * inst; const rowSave = f.retire ? rowTotal : 0; return <tr key={`f${i}`} style={{background:"#fafcfb"}}><td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`,fontStyle:"italic"}}>{f.name||`Named system ${i+1}`}{inst>1 && <span style={{fontSize:10,fontWeight:700,color:C.accent,marginLeft:6,padding:"1px 6px",background:C.accent+"15",borderRadius:4}}>{"\u00d7"}{inst}</span>}</td><td style={tdR_}>{inst}</td><td style={tdR_}>{fmtK(f.cost)}{inst>1 && <span style={{fontSize:10,color:C.textMuted,marginLeft:4}}>each</span>}</td><td style={tdR_}>{f.retire?inst:"0"}</td><td style={{...tdR_,fontWeight:700,color:C.green}}>{f.retire?fmtK(Math.round(rowSave * ts.mult))+(ts.suffix||"/yr"):"\u2013"}</td></tr>; })}
           <tr style={{background:C.bg}}><td style={{padding:"10px 12px",fontWeight:700}}>Total</td><td style={{...tdR_,fontWeight:700}}>{r.legacy}</td><td style={{...tdR_,fontWeight:600,color:C.textMid}}>avg {fmtK(r.blendedCost)}</td><td style={{...tdR_,fontWeight:700}}>{r.decom}</td><td style={{...tdR_,fontWeight:800,color:C.green}}>{fmtK(Math.round(r.decomSave * ts.mult))}{ts.suffix||"/yr"}</td></tr>
         </tbody></table>
       </div>
