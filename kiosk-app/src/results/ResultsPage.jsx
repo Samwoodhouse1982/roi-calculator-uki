@@ -329,54 +329,6 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     </div>
 
-    {/* Operational efficiency */}
-    <Card style={{ marginBottom: 18, borderLeft: "3px solid #2ecc71" }}>
-      <CTitle iconKey="clock" color="#2ecc71">Operational efficiency</CTitle>
-      <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>IT service desk and records request improvements from reducing the number of systems staff need to support and search.</div>
-      <div style={{ display: "flex", gap: 14, marginBottom: 16 }}>
-        <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
-          <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>Service desk tickets</div>
-          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#2ecc71" }}>{r.ticketsReductionPct}%</div>
-          <div style={{ fontSize: F.tiny, color: C.textMuted }}>reduction</div>
-          <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 8 }}>{r.ticketsBaselineMonthly}/mo → {r.ticketsAfter}/mo</div>
-        </div>
-        <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
-          <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>Records request turnaround</div>
-          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#2ecc71" }}>{r.sarReductionPct}%</div>
-          <div style={{ fontSize: F.tiny, color: C.textMuted }}>faster</div>
-          <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 8 }}>{r.sarDaysBefore} days → {r.sarDaysAfter} days</div>
-        </div>
-      </div>
-      <Methodology
-        formula={"Tickets/mo: legacy \u00d7 2.5 \u00d7 dq_factor (before) vs surviving \u00d7 2.5 \u00d7 60% (after). SAR: 1.5 base + 0.4/system (before) vs 0.15/surviving (after)"}
-        plug={`Tickets baseline: ${r.legacy} legacy systems \u00d7 2.5/mo = ${fmtNum(r.ticketsBaselineMonthly)}/month\nTickets after: ${r.legacy - r.decom} surviving \u00d7 2.5/mo \u00d7 60% = ${fmtNum(r.ticketsAfter)}/month (${r.ticketsReductionPct}% reduction)\nRecords request: ${r.sarDaysBefore}d \u2192 ${r.sarDaysAfter}d (${r.sarReductionPct}% faster)`}
-        source={"Ticket benchmarks: AHIMA support volume studies (2.5 tickets/system/month average for legacy clinical systems). Surviving system factor: post-archive systems run with reduced ticket volume due to consolidated access. SAR/records request: AHIMA multi-source record assembly benchmarks, HIPAA-compliant release timelines."}
-      />
-    </Card>
-
-    {/* Legal & compliance */}
-    <Card style={{ marginBottom: 18, borderLeft: "3px solid #e74c3c" }}>
-      <CTitle iconKey="shield" color="#e74c3c">Legal and compliance</CTitle>
-      <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Medico-legal records assembly savings and cyber attack surface reduction from retiring legacy systems.</div>
-      <div style={{ display: "flex", gap: 14, marginBottom: 16 }}>
-        <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
-          <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>e-Discovery savings</div>
-          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#e74c3c" }}>{fmtK(r.ediscoverySaving)}/yr</div>
-          <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 6 }}>{r.litigationCases} cases/yr, {Math.round((r.ediscoverySaving / Math.max(1, r.litigationCases)))} saved per case</div>
-        </div>
-        <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
-          <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>Cyber risk reduction</div>
-          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#e74c3c" }}>{r.cyberSystemsRetired} systems</div>
-          <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 6 }}>attack surfaces eliminated</div>
-        </div>
-      </div>
-      <Methodology
-        formula={"e-Discovery: cases \u00d7 (28h before - 6h after) \u00d7 $55/hr. Cyber: legacy systems eliminated = attack surfaces removed"}
-        plug={`e-Discovery: ${r.litigationCases} cases/yr \u00d7 22 hrs saved/case \u00d7 $55/hr = ${fmtK(r.ediscoverySaving || 0)}/yr\nCyber: ${r.cyberSystemsRetired} attack surfaces eliminated`}
-        source={"e-Discovery: ~12 litigation cases per 100 beds typical for US hospitals. Records assembly: 28 hrs/case (3.5 days) across fragmented systems vs 6 hrs from consolidated archive. HIM staff rate: $55/hr (BLS 2024). Cyber: avg healthcare breach $10.93m (IBM/Ponemon 2023). 90% of health systems attacked in 2024. Each legacy system on unsupported OS is an attack vector."}
-      />
-    </Card>
-
     {/* Network consolidation - only for multi-hospital/IDN */}
     {seg.network > 0 && <div ref={networkRef}>
       <Card style={{ marginBottom: 18, borderLeft: "3px solid #8e44ad" }}>
@@ -442,6 +394,60 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         Payback = migration cost ÷ (annual decom savings minus annual archive cost). The {fmtK(r.decomSave)}/yr in decommission savings is only unlocked when legacy systems are safely retired. Galen enables this by providing continued access to historical data.
       </div>
     </div>}
+
+    {/* Operational efficiency + Legal and compliance in a 2-column grid, just
+        above the methodology carousel. Equal-height cards via height: 100%. */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 18 }}>
+
+    {/* Operational efficiency */}
+    <Card style={{ height: '100%', borderLeft: "3px solid #2ecc71" }}>
+      <CTitle iconKey="clock" color="#2ecc71">Operational efficiency</CTitle>
+      <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>IT service desk and records request improvements from reducing the number of systems staff need to support and search.</div>
+      <div style={{ display: "flex", gap: 14, marginBottom: 16 }}>
+        <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
+          <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>Service desk tickets</div>
+          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#2ecc71" }}>{r.ticketsReductionPct}%</div>
+          <div style={{ fontSize: F.tiny, color: C.textMuted }}>reduction</div>
+          <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 8 }}>{r.ticketsBaselineMonthly}/mo → {r.ticketsAfter}/mo</div>
+        </div>
+        <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
+          <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>Records request turnaround</div>
+          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#2ecc71" }}>{r.sarReductionPct}%</div>
+          <div style={{ fontSize: F.tiny, color: C.textMuted }}>faster</div>
+          <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 8 }}>{r.sarDaysBefore} days → {r.sarDaysAfter} days</div>
+        </div>
+      </div>
+      <Methodology
+        formula={"Tickets/mo: legacy \u00d7 2.5 \u00d7 dq_factor (before) vs surviving \u00d7 2.5 \u00d7 60% (after). SAR: 1.5 base + 0.4/system (before) vs 0.15/surviving (after)"}
+        plug={`Tickets baseline: ${r.legacy} legacy systems \u00d7 2.5/mo = ${fmtNum(r.ticketsBaselineMonthly)}/month\nTickets after: ${r.legacy - r.decom} surviving \u00d7 2.5/mo \u00d7 60% = ${fmtNum(r.ticketsAfter)}/month (${r.ticketsReductionPct}% reduction)\nRecords request: ${r.sarDaysBefore}d \u2192 ${r.sarDaysAfter}d (${r.sarReductionPct}% faster)`}
+        source={"Ticket benchmarks: AHIMA support volume studies (2.5 tickets/system/month average for legacy clinical systems). Surviving system factor: post-archive systems run with reduced ticket volume due to consolidated access. SAR/records request: AHIMA multi-source record assembly benchmarks, HIPAA-compliant release timelines."}
+      />
+    </Card>
+
+    {/* Legal & compliance */}
+    <Card style={{ height: '100%', borderLeft: "3px solid #e74c3c" }}>
+      <CTitle iconKey="shield" color="#e74c3c">Legal and compliance</CTitle>
+      <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Medico-legal records assembly savings and cyber attack surface reduction from retiring legacy systems.</div>
+      <div style={{ display: "flex", gap: 14, marginBottom: 16 }}>
+        <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
+          <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>e-Discovery savings</div>
+          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#e74c3c" }}>{fmtK(r.ediscoverySaving)}/yr</div>
+          <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 6 }}>{r.litigationCases} cases/yr, {Math.round((r.ediscoverySaving / Math.max(1, r.litigationCases)))} saved per case</div>
+        </div>
+        <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
+          <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>Cyber risk reduction</div>
+          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#e74c3c" }}>{r.cyberSystemsRetired} systems</div>
+          <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 6 }}>attack surfaces eliminated</div>
+        </div>
+      </div>
+      <Methodology
+        formula={"e-Discovery: cases \u00d7 (28h before - 6h after) \u00d7 $55/hr. Cyber: legacy systems eliminated = attack surfaces removed"}
+        plug={`e-Discovery: ${r.litigationCases} cases/yr \u00d7 22 hrs saved/case \u00d7 $55/hr = ${fmtK(r.ediscoverySaving || 0)}/yr\nCyber: ${r.cyberSystemsRetired} attack surfaces eliminated`}
+        source={"e-Discovery: ~12 litigation cases per 100 beds typical for US hospitals. Records assembly: 28 hrs/case (3.5 days) across fragmented systems vs 6 hrs from consolidated archive. HIM staff rate: $55/hr (BLS 2024). Cyber: avg healthcare breach $10.93m (IBM/Ponemon 2023). 90% of health systems attacked in 2024. Each legacy system on unsupported OS is an attack vector."}
+      />
+    </Card>
+
+    </div>
 
     {/* ═══ METHODOLOGY CAROUSEL ═══ */}
     <div style={{ marginBottom: 24 }}>
