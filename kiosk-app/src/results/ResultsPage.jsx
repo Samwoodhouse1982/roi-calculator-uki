@@ -436,7 +436,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         </div>
         <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
           <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>Cyber risk reduction</div>
-          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#e74c3c" }}>{r.cyberSystemsRetired} systems</div>
+          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#e74c3c" }}>{r.cyberSystemsRetired}</div>
           <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 6 }}>attack surfaces eliminated</div>
         </div>
       </div>
