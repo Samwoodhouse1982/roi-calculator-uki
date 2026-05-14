@@ -69,12 +69,15 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
   const TS_SUFFIX = { year1: " (Year 1)", total3: " (3-yr)", total5: " (5-yr)", annual: "/yr" };
   const TS_LABEL = { year1: "Year 1", total3: "3-yr total", total5: "5-yr total", annual: "Annual avg" };
   const ts = { mult: TS_MULT[viewTimescale], suffix: TS_SUFFIX[viewTimescale], label: TS_LABEL[viewTimescale] };
-  // Helper to scale + format a /yr value to the current timescale.
-  const fmtKts = (v) => fmtK(Math.round((v || 0) * ts.mult)) + ts.suffix;
-  // Scaled but suffix-less variant. Used in headline / KPI displays where the
-  // timescale context is already established by the toggle above and repeating
-  // '(3-yr)' / '(5-yr)' on each tile would be noisy.
-  const fmtKs = (v) => fmtK(Math.round((v || 0) * ts.mult));
+  // Helper to scale a /yr value to the current timescale. The suffix
+  // ('/yr', '(3-yr)', etc) is NOT appended here — every figure on the page
+  // reacts to the toggle bar at the top, and repeating '(3-yr)' on each
+  // tile, row, and segment would be redundant noise. The toggle is the
+  // single source of timeframe context.
+  const fmtKts = (v) => fmtK(Math.round((v || 0) * ts.mult));
+  // Kept as an alias for callsites that already used it (KPI tiles).
+  // Identical behaviour to fmtKts now.
+  const fmtKs = fmtKts;
   // Derived projection window for the time-series chart + Galen ROI box.
   // Switches to 5 when the user picks 5-yr total at the top; otherwise stays
   // on the 3-year ramp visualisation.
@@ -120,9 +123,28 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       @keyframes glow { 0%,100% { text-shadow: 0 0 30px rgba(0,212,170,0.3); } 50% { text-shadow: 0 0 60px rgba(0,212,170,0.6); } }
       @keyframes numPulse { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }`}</style>
 
-    {/* Timescale selector — sits at the very top of the results page so the
-        user picks their view first, then sees the headline number in that lens. */}
-    <div style={{ padding: "16px 0 20px", marginBottom: 8, borderBottom: `1px solid ${C.borderLight}` }}>
+    {/* Timescale selector — sticky at the top of the scrolling content area
+        so the user can change view from anywhere in the report and watch the
+        numbers update in place. position: sticky works because PageTransition
+        (the parent wrapper) only applies its transform during a brief 0.4s
+        entry animation; after that the transform clears and sticky resolves
+        against the App's overflowY:auto scroll container.
+        zIndex 50 keeps it above every other report element including the
+        hero glow and the methodology Bento. */}
+    <div style={{
+      position: "sticky",
+      top: 0,
+      zIndex: 50,
+      padding: "16px 0 20px",
+      marginLeft: -56,    // bleed to the edges of the scroll container
+      marginRight: -56,   // (compensating for App's 56px horizontal padding)
+      paddingLeft: 56,
+      paddingRight: 56,
+      marginBottom: 8,
+      background: C.bg,
+      borderBottom: `1px solid ${C.borderLight}`,
+      boxShadow: `0 4px 12px -4px rgba(0,0,0,0.5)`,
+    }}>
       <div style={{ fontSize: F.tiny, fontWeight: 600, color: C.textMuted, letterSpacing: 2, textTransform: "uppercase", textAlign: "center", marginBottom: 10 }}>View savings as:</div>
       <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
         {[
@@ -339,8 +361,8 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Row label="Active system users (65%)" value={fmtNum(r.clinicians)} />
         <Row label="Systems per user (~35% exposure)" value={r.systemsPerUser} />
         <Row label="Time wasted per person/week" value={`${r.minsWasted} mins`} />
-        <Row label={viewTimescale === 'annual' ? "Hours freed per year" : `Hours freed${ts.suffix}`} value={fmtNum(Math.round(r.hrsSaved * ts.mult))} />
-        <Row label={`Full-time equivalent (FTE)${ts.suffix === '/yr' ? '' : ts.suffix}`} value={fmtFte(fte)} accent />
+        <Row label="Hours freed" value={fmtNum(Math.round(r.hrsSaved * ts.mult))} />
+        <Row label="Full-time equivalent (FTE)" value={fmtFte(fte)} accent />
         <Row label="Capacity value" value={fmtKts(seg.capacity)} accent />
         <Methodology
           formula={"clinicians \u00d7 (mins/wk - residual) \u00d7 working_weeks / 60 \u00d7 $95 \u00d7 scenario.realization"}
