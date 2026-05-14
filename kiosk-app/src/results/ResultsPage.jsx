@@ -499,19 +499,21 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     </div>
 
-    {/* ═══ METHODOLOGY (Bento grid) ═══
-        Layout: 1 large tile (expanded) + 3 small tiles in a column on the
-        right, then a 2x2 grid of 4 small tiles below. Total = 8 tiles, always
-        filling the section regardless of selection. Tap any small tile to
-        promote it to the large slot; the previously-large tile takes that
-        small tile's old position. */}
+    {/* ═══ METHODOLOGY (animated Bento grid) ═══
+        All 8 tiles share the same component; each tile is absolutely
+        positioned with computed coordinates based on whether it's the
+        currently-selected (large) tile or one of the 7 small slots. CSS
+        transitions on top/left/width/height handle the smooth resize +
+        reflow animation when the user taps a small tile. */}
     <div style={{ marginBottom: 24 }}>
       <div style={{ fontSize: F.body, fontWeight: 700, color: C.textMid, marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
         <Icon name="lightbulb" size={22} stroke={C.accent} /> Full methodology
         <span style={{ fontSize: F.tiny, fontWeight: 400, color: C.textMuted, marginLeft: "auto" }}>Tap a tile to expand</span>
       </div>
-      {(() => {
-        const methTiles = [
+      <MethodologyBento
+        selectedIdx={methSelectedIdx}
+        onSelect={setMethSelectedIdx}
+        tiles={[
           { color: C.accent, title: "System costing", num: "01", body: <>Each legacy system is classified into three tiers (enterprise, departmental, or standalone) with costs scaled by bed count. Enterprise systems (e.g. legacy EHR) cost $150k to $1.5m+ base plus $650 to $7,500 per bed. Departmental systems run $80k to $350k plus $200 to $900 per bed. Standalone tools are $50k to $200k plus $120 to $620 per bed. Source: KLAS 2025 benchmarks, Becker's Hospital Review.</> },
           { color: C.amber, title: "Clinical capacity", num: "02", body: <>Not all staff use all systems. We apply two evidence-based filters: 65% of staff are regular system users (Sinsky et al 2016; KLAS Arch Collaborative — 500k+ clinicians analyzed), and each user interacts with ~35% of the legacy estate. A 4% productivity penalty per system touched (Bartek et al JIMI 2023, primary: 2.78M EHR audit-log events, β=0.03; corroborated by Westbrook et al JAMIA 2010) determines time wasted. Hours freed are valued at $95/hr with 30% realization, reflecting that freed time creates capacity, not direct savings.</> },
           { color: C.blue, title: "CMS reimbursement", num: "03", body: <>Three CMS penalty programs are modeled: Hospital Readmissions Reduction Program (HRRP, up to 3% of base DRG, FY2025 data), Hospital-Acquired Condition Reduction (HAC, 1% for bottom quartile), and Value-Based Purchasing (VBP, 2% withhold pool). Denial recovery uses HFMA's 4.8% net revenue loss benchmark. Better documentation from system consolidation improves coding accuracy, reduces denials, and lowers penalty exposure. Evidence: Pattar et al JAMA 2025, Vest et al JAMIA 2019.</> },
@@ -520,33 +522,8 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
           { color: "#e67e22", title: "Academic impact", num: "06", body: <>Academic medical centers maintain additional legacy systems for research databases, GME (Graduate Medical Education) tracking, and teaching program administration. These are costed at the same tier-based rates with an additional compliance efficiency factor from consolidated audit trails. Based on AAMC benchmarks for academic system overhead and ACGME reporting requirements.</> },
           { color: C.accent, title: "Year-by-year ramp", num: "07", body: <>Savings are phased to reflect progressive legacy system retirement. The 3-year view models 40% / 80% / 100% of steady state across Years 1-3. The 5-year view models 20% / 40% / 60% / 80% / 100% to reflect a slower, more conservative implementation cadence typical of larger health systems. The top-of-page timescale toggle switches between these views and re-scales every figure on the report. Galen payback is calculated as migration cost ÷ (annual decom savings minus annual archive cost).</> },
           { color: C.blue, title: "Key sources", num: "08", body: <>KLAS Research (Best in KLAS 2025 Data Archiving) · HIMSS Analytics (system usage patterns) · AHRQ Patient Safety Indicators · CMS Hospital Compare (HRRP, HAC, VBP penalty data) · HFMA (denial management benchmarks) · KFF/AHA (cost per bed day) · CRICO Strategies (malpractice analysis) · Bates et al, JAMA (ADE rates) · Westbrook et al, JAMIA 2010 (system switching costs) · CHIME Digital Health Survey (duplicate systems in IDNs).</> },
-        ];
-        const selected = methTiles[methSelectedIdx];
-        // Build the list of non-selected tiles, preserving their original indices
-        // so click handlers can promote the right tile to the large slot.
-        const others = methTiles
-          .map((tile, idx) => ({ tile, idx }))
-          .filter(({ idx }) => idx !== methSelectedIdx);
-        const topRightThree = others.slice(0, 3);
-        const bottomFour = others.slice(3, 7);
-        return <>
-          {/* Top section: large tile (3fr) + column of 3 small tiles (1fr). */}
-          <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: 14, marginBottom: 14 }}>
-            <MCardLarge tile={selected} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {topRightThree.map(({ tile, idx }) => (
-                <MCardSmall key={idx} tile={tile} onClick={() => setMethSelectedIdx(idx)} />
-              ))}
-            </div>
-          </div>
-          {/* Bottom section: 2x2 grid of the remaining 4 small tiles. */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            {bottomFour.map(({ tile, idx }) => (
-              <MCardSmall key={idx} tile={tile} onClick={() => setMethSelectedIdx(idx)} />
-            ))}
-          </div>
-        </>;
-      })()}
+        ]}
+      />
     </div>
 
     {/* Actions */}
@@ -596,48 +573,169 @@ function Row({ label, value, accent }) {
 function Met({ label, value }) {
   return <div><div style={{ fontSize: F.tiny, color: C.textMuted }}>{label}</div><div style={{ fontSize: F.h2, fontWeight: 800, color: C.accent }}>{value}</div></div>;
 }
-function MCardLarge({ tile }) {
-  return <div style={{
-    padding: "32px 30px",
-    background: C.surface,
-    borderRadius: 20,
-    border: `2px solid ${tile.color}55`,
-    boxShadow: `0 0 0 1px ${tile.color}12, 0 8px 24px -8px ${tile.color}25`,
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    transition: 'all 0.25s ease',
-  }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-      <span style={{ width: 44, height: 44, borderRadius: "50%", background: tile.color + "20", color: tile.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: F.small, fontWeight: 800 }}>{tile.num}</span>
-      <span style={{ fontSize: F.h3, fontWeight: 700, color: tile.color }}>{tile.title}</span>
-    </div>
-    <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.7, flex: 1 }}>{tile.body}</div>
-  </div>;
-}
+/**
+ * Animated Bento grid of 8 methodology tiles.
+ *
+ * Layout when tile X is selected:
+ *
+ *   ┌───────────────┬──────┐
+ *   │               │ s[0] │
+ *   │   LARGE (X)   ├──────┤
+ *   │               │ s[1] │
+ *   │               ├──────┤
+ *   │               │ s[2] │
+ *   ├──────┬────────┴──────┤
+ *   │ s[3] │     s[4]      │
+ *   ├──────┼───────────────┤
+ *   │ s[5] │     s[6]      │
+ *   └──────┴───────────────┘
+ *
+ * Each tile is absolutely positioned and receives a CSS transition on
+ * top/left/width/height, so when the selection changes the tiles smoothly
+ * resize and reflow into their new positions rather than swapping content
+ * inside a static large slot.
+ *
+ * Slot conventions:
+ *   slot === -1                  → tile is the LARGE one
+ *   0..2 (right column top)      → 1st, 2nd, 3rd unselected tiles
+ *   3..6 (bottom 2×2)            → 4th, 5th, 6th, 7th unselected tiles
+ *                                  arranged top-left, top-right,
+ *                                  bottom-left, bottom-right.
+ */
+function MethodologyBento({ tiles, selectedIdx, onSelect }) {
+  const LARGE_H = 380;
+  const BOTTOM_H = 240;
+  const GAP = 14;
+  const TOTAL_H = LARGE_H + GAP + BOTTOM_H;
 
-function MCardSmall({ tile, onClick }) {
-  return <div onClick={onClick} style={{
-    padding: "18px 18px",
-    background: C.surface,
-    borderRadius: 14,
-    border: `1px solid ${tile.color}30`,
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    height: '100%',
-    minHeight: 90,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    gap: 8,
-  }}
-    onMouseOver={e => { e.currentTarget.style.borderColor = tile.color; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-    onMouseOut={e => { e.currentTarget.style.borderColor = tile.color + '30'; e.currentTarget.style.transform = 'translateY(0)'; }}
-  >
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <span style={{ width: 28, height: 28, borderRadius: "50%", background: tile.color + "20", color: tile.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{tile.num}</span>
-      <span style={{ fontSize: F.tiny, fontWeight: 700, color: tile.color, lineHeight: 1.2 }}>{tile.title}</span>
-    </div>
-    <div style={{ fontSize: 11, color: C.textMuted, fontWeight: 600, alignSelf: 'flex-end' }}>Tap to expand →</div>
+  // Position style for a given slot. Uses % for horizontal so it adapts
+  // to whatever width the parent container has on the kiosk (typically
+  // ~970px after page padding); uses px for vertical because the heights
+  // are fixed.
+  const styleForSlot = (slot) => {
+    if (slot === -1) {
+      // LARGE: top-left of the top section, ~75% width, full top-section height.
+      return { top: 0, left: 0, width: `calc(75% - ${GAP/2}px)`, height: LARGE_H };
+    }
+    if (slot >= 0 && slot <= 2) {
+      // Right column of top section: 3 stacked tiles, 25% width.
+      const slotH = (LARGE_H - 2 * GAP) / 3;
+      return {
+        top: slot * (slotH + GAP),
+        left: `calc(75% + ${GAP/2}px)`,
+        width: `calc(25% - ${GAP/2}px)`,
+        height: slotH,
+      };
+    }
+    // Bottom 2x2 grid: slots 3,4,5,6 → cells (0,0), (0,1), (1,0), (1,1).
+    const idx = slot - 3;
+    const row = Math.floor(idx / 2);
+    const col = idx % 2;
+    const slotH = (BOTTOM_H - GAP) / 2;
+    return {
+      top: LARGE_H + GAP + row * (slotH + GAP),
+      left: col === 0 ? 0 : `calc(50% + ${GAP/2}px)`,
+      width: `calc(50% - ${GAP/2}px)`,
+      height: slotH,
+    };
+  };
+
+  // Map every tile index to its slot for the current selection.
+  // The selected tile is -1 (large); the others fill slots 0..6 in their
+  // original-array order (so promotion is a swap with the previously-selected
+  // tile's slot).
+  const slotForTile = (tileIdx) => {
+    if (tileIdx === selectedIdx) return -1;
+    let nonSel = 0;
+    for (let i = 0; i < tiles.length; i++) {
+      if (i === selectedIdx) continue;
+      if (i === tileIdx) return nonSel;
+      nonSel++;
+    }
+    return 0;
+  };
+
+  // Smooth tile transition. Easing chosen for a natural settle (slight overshoot
+  // is intentionally avoided so the layout stays predictable in dense reports).
+  const TRANSITION = "top 0.45s cubic-bezier(0.65,0,0.25,1), left 0.45s cubic-bezier(0.65,0,0.25,1), width 0.45s cubic-bezier(0.65,0,0.25,1), height 0.45s cubic-bezier(0.65,0,0.25,1), border-color 0.3s ease, box-shadow 0.3s ease";
+
+  return <div style={{ position: 'relative', width: '100%', height: TOTAL_H }}>
+    {tiles.map((tile, idx) => {
+      const slot = slotForTile(idx);
+      const isLarge = slot === -1;
+      const pos = styleForSlot(slot);
+      return <div
+        key={idx}
+        onClick={isLarge ? undefined : () => onSelect(idx)}
+        style={{
+          position: 'absolute',
+          ...pos,
+          background: C.surface,
+          borderRadius: isLarge ? 20 : 14,
+          border: `${isLarge ? 2 : 1}px solid ${tile.color}${isLarge ? '55' : '30'}`,
+          boxShadow: isLarge ? `0 0 0 1px ${tile.color}12, 0 8px 24px -8px ${tile.color}25` : 'none',
+          cursor: isLarge ? 'default' : 'pointer',
+          overflow: 'hidden',
+          transition: TRANSITION,
+          padding: isLarge ? "26px 28px" : "14px 16px",
+          display: 'flex',
+          flexDirection: 'column',
+          gap: isLarge ? 12 : 6,
+          boxSizing: 'border-box',
+        }}
+      >
+        {/* Header (number badge + title) - always visible, scales between
+            states. The badge and title use slightly different sizes for
+            large vs small but the same structure so the DOM doesn't reshape. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isLarge ? 14 : 8, flexShrink: 0 }}>
+          <span style={{
+            width: isLarge ? 44 : 28,
+            height: isLarge ? 44 : 28,
+            borderRadius: '50%',
+            background: tile.color + '20',
+            color: tile.color,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: isLarge ? F.small : 11,
+            fontWeight: 800,
+            flexShrink: 0,
+            transition: 'width 0.45s, height 0.45s, font-size 0.45s',
+          }}>{tile.num}</span>
+          <span style={{
+            fontSize: isLarge ? F.h3 : F.tiny,
+            fontWeight: 700,
+            color: tile.color,
+            lineHeight: 1.2,
+            transition: 'font-size 0.45s',
+          }}>{tile.title}</span>
+        </div>
+
+        {/* Body — fades in only when the tile is large. Slight delay so the
+            text appears once the tile has finished growing, avoiding cramped
+            text mid-animation. */}
+        <div style={{
+          fontSize: F.small,
+          color: C.textMid,
+          lineHeight: 1.7,
+          flex: 1,
+          opacity: isLarge ? 1 : 0,
+          transition: isLarge ? 'opacity 0.25s ease 0.2s' : 'opacity 0.15s ease',
+          overflow: 'hidden',
+          pointerEvents: isLarge ? 'auto' : 'none',
+        }}>{tile.body}</div>
+
+        {/* 'Tap to expand →' hint — only visible on small tiles. */}
+        <div style={{
+          fontSize: 11,
+          color: C.textMuted,
+          fontWeight: 600,
+          alignSelf: 'flex-end',
+          opacity: isLarge ? 0 : 1,
+          transition: 'opacity 0.2s ease',
+          flexShrink: 0,
+        }}>Tap to expand →</div>
+      </div>;
+    })}
   </div>;
 }
