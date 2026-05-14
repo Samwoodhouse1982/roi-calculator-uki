@@ -107,27 +107,12 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       @keyframes glow { 0%,100% { text-shadow: 0 0 30px rgba(0,212,170,0.3); } 50% { text-shadow: 0 0 60px rgba(0,212,170,0.6); } }
       @keyframes numPulse { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }`}</style>
 
-    {/* Hero */}
-    <div style={{ textAlign: "center", marginBottom: 12, padding: "24px 0 12px" }}>
-      <div style={{ fontSize: F.body, fontWeight: 600, color: C.textMuted, letterSpacing: 4, textTransform: "uppercase", marginBottom: 16 }}>
-        {viewTimescale === 'annual' ? 'Estimated annual savings'
-          : viewTimescale === 'year1' ? 'Estimated Year 1 savings'
-          : viewTimescale === 'total3' ? 'Estimated 3-year cumulative savings'
-          : 'Estimated 5-year cumulative savings'}
-      </div>
-      <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-4px", animation: "glow 3s ease-in-out infinite" }}><AnimK value={Math.round(totalAnnual * ts.mult)} /></div>
-      <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>
-        {viewTimescale === 'annual' ? 'per year at steady state'
-          : viewTimescale === 'year1' ? 'in Year 1 (40% of steady state during ramp)'
-          : viewTimescale === 'total3' ? 'cumulative across the first 3 years'
-          : 'cumulative across the first 5 years'}
-      </div>
-    </div>
-
-    {/* Sticky timescale selector — controls every $-figure on the page.
-        position: sticky inside the App's overflow:auto content container so it
-        follows the user as they scroll through a long report. */}
-    <div style={{ position: "sticky", top: 0, zIndex: 30, padding: "14px 0", marginBottom: 16, background: C.bg + "f0", backdropFilter: "blur(8px)", borderBottom: `1px solid ${C.borderLight}` }}>
+    {/* Sticky timescale selector — placed ABOVE the hero so the user sees it
+        immediately and understands the headline number is filtered by their
+        selection. Stays sticky on scroll so they can change view from any
+        point on the report. */}
+    <div style={{ position: "sticky", top: 0, zIndex: 30, padding: "10px 0 14px", marginBottom: 4, background: C.bg + "f0", backdropFilter: "blur(8px)", borderBottom: `1px solid ${C.borderLight}` }}>
+      <div style={{ fontSize: F.tiny, fontWeight: 600, color: C.textMuted, letterSpacing: 2, textTransform: "uppercase", textAlign: "center", marginBottom: 8 }}>View savings as:</div>
       <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
         {[
           { k: 'year1',  label: 'Year 1' },
@@ -145,6 +130,23 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
             minWidth: 130,
           }}>{opt.label}</button>;
         })}
+      </div>
+    </div>
+
+    {/* Hero */}
+    <div style={{ textAlign: "center", marginBottom: 20, padding: "24px 0" }}>
+      <div style={{ fontSize: F.body, fontWeight: 600, color: C.textMuted, letterSpacing: 4, textTransform: "uppercase", marginBottom: 16 }}>
+        {viewTimescale === 'annual' ? 'Estimated annual savings'
+          : viewTimescale === 'year1' ? 'Estimated Year 1 savings'
+          : viewTimescale === 'total3' ? 'Estimated 3-year cumulative savings'
+          : 'Estimated 5-year cumulative savings'}
+      </div>
+      <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-4px", animation: "glow 3s ease-in-out infinite" }}><AnimK value={Math.round(totalAnnual * ts.mult)} /></div>
+      <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>
+        {viewTimescale === 'annual' ? 'per year at steady state'
+          : viewTimescale === 'year1' ? 'in Year 1 (40% of steady state during ramp)'
+          : viewTimescale === 'total3' ? 'cumulative across the first 3 years'
+          : 'cumulative across the first 5 years'}
       </div>
     </div>
 
