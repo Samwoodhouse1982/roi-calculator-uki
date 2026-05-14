@@ -381,17 +381,26 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {seg.network > 0 && <div ref={networkRef}>
       <Card style={{ marginBottom: 18, borderLeft: "3px solid #8e44ad" }}>
         <CTitle iconKey="network" color="#8e44ad">Network consolidation</CTitle>
-        <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Savings from running one consolidated archive across multiple hospitals — <strong style={{ color: C.text }}>incremental to the decommissioning savings above</strong>, not double-counted. Covers shared infrastructure (data centre, network, monitoring tools that operate independently of any one system) and the operational efficiencies of one estate vs many (governance, vendor management, audit, training).</div>
-        <div style={{ padding: "12px 16px", background: C.bg, borderRadius: 12, marginBottom: 14, fontSize: F.tiny, color: C.textMid, lineHeight: 1.6, border: `1px dashed ${C.borderLight}` }}>
-          <strong style={{ color: C.textMid }}>Context (informational):</strong> {fmtNum(r.duplicateSystems)} duplicate instances identified across {r.org_count} facilities (~30% of estate, CHIME Digital Health Survey). Their per-system costs are already captured in the decommissioning savings above — each duplicate retires in the same way a unique system does.
+        <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>
+          When a health system runs multiple hospitals, putting them all on <strong style={{ color: C.text }}>one shared archive</strong> saves money beyond just retiring duplicate systems. Two things drive these extra savings:
         </div>
-        {r.infraConsolidation > 0 && <Row label="Shared infrastructure consolidation" value={fmtK(r.infraConsolidation)} />}
-        {r.standardizationSave > 0 && <Row label="Cross-facility operational efficiency" value={fmtK(r.standardizationSave)} />}
-        <Row label="Total incremental network savings" value={fmtK(seg.network) + "/yr"} accent />
+        <ul style={{ margin: '0 0 12px 22px', padding: 0, fontSize: F.tiny, color: C.textMid, lineHeight: 1.55 }}>
+          <li style={{ marginBottom: 6 }}><strong style={{ color: C.text }}>Shared infrastructure</strong> — one data center, network, and monitoring stack for the whole organization instead of one per hospital.</li>
+          <li><strong style={{ color: C.text }}>Operational efficiency</strong> — one governance model, vendor contract, audit, and training program, not one of each per hospital.</li>
+        </ul>
+        <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>
+          These savings are <strong style={{ color: C.text }}>added to</strong> the decommissioning savings above and are included in the overall total at the top of this report. They are not the same numbers counted twice.
+        </div>
+        <div style={{ padding: "12px 16px", background: C.bg, borderRadius: 12, marginBottom: 14, fontSize: F.tiny, color: C.textMid, lineHeight: 1.6, border: `1px dashed ${C.borderLight}` }}>
+          <strong style={{ color: C.textMid }}>About the duplicate systems:</strong> across your {r.org_count} facilities, about 30% of legacy systems are typically duplicates — the same software installed separately at each hospital ({fmtNum(r.duplicateSystems)} instances in your case; CHIME Digital Health Survey). The savings from retiring each duplicate are <strong style={{ color: C.text }}>already counted in the Decommission savings tile above</strong>; we list them here only to show why a multi-hospital network has so much consolidation upside. We are <strong style={{ color: C.text }}>not</strong> counting them again in this tile.
+        </div>
+        {r.infraConsolidation > 0 && <Row label="Shared infrastructure savings" value={fmtK(r.infraConsolidation)} />}
+        {r.standardizationSave > 0 && <Row label="Operational efficiency savings" value={fmtK(r.standardizationSave)} />}
+        <Row label="Total network consolidation savings" value={fmtK(seg.network) + "/yr"} accent />
         <Methodology
-          formula={"Infra: facilities \u00d7 $250k duplicate cost \u00d7 60% consolidatable + Standardization: estate \u00d7 15% \u00d7 scenario.decom"}
-          plug={`Infra: ${r.org_count} facilities \u00d7 $250k duplicate hosting/interfaces/support \u00d7 60% consolidatable = ${fmtK(r.infraConsolidation)}/yr\nStandardization: ${fmtK(r.totalEstate)} estate \u00d7 15% operational efficiency \u00d7 scenario.decom = ${fmtK(r.standardizationSave)}/yr\n= ${fmtK(seg.network)}/yr total\n\nNote: ${r.duplicateSystems} duplicate instances are NOT summed here. Their licensing/support costs are recovered through decommissioning above (each retired system's cost is captured there); double-counting them would inflate the total.`}
-          source={"Duplicate system rate: ~30% of legacy systems replicated across facilities in an IDN (CHIME Digital Health Survey, KLAS M&A Best Practices) - shown as informational context only. Shared infrastructure: AHA Hospital IT Survey post-merger ($250k/facility duplicate hosting/network/monitoring). Cross-facility operational efficiency 15%: Deloitte healthcare M&A studies (governance, vendor management, audit, training overhead reduction from one consolidated estate)."}
+          formula={"Shared infrastructure: facilities \u00d7 $250k duplicate hosting cost \u00d7 60% consolidatable + Operational efficiency: total estate \u00d7 15% \u00d7 scenario.decom"}
+          plug={`Shared infrastructure: ${r.org_count} facilities \u00d7 $250k duplicate hosting / interfaces / support \u00d7 60% consolidatable = ${fmtK(r.infraConsolidation)}/yr\nOperational efficiency: ${fmtK(r.totalEstate)} estate \u00d7 15% \u00d7 scenario.decom = ${fmtK(r.standardizationSave)}/yr\n= ${fmtK(seg.network)}/yr total\n\nNote: the ${r.duplicateSystems} duplicate systems are NOT summed here. Their per-system licensing and support costs are recovered through Decommission savings above (each retired system's cost is captured there). Counting them again here would inflate the total.`}
+          source={"Duplicate system rate: ~30% of legacy systems are typically replicated across facilities in an IDN (CHIME Digital Health Survey, KLAS M&A Best Practices) — shown for context only. Shared infrastructure: AHA Hospital IT Survey post-merger ($250k per facility in duplicate hosting, network, monitoring). Operational efficiency 15%: Deloitte healthcare M&A studies (governance, vendor management, audit, and training overhead reduction from running one consolidated estate vs many separate ones)."}
         />
       </Card>
     </div>}
