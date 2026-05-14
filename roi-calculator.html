@@ -42,6 +42,16 @@
   to { transform: rotate(360deg); }
 }
 
+/* Chart drill-down: brief highlight pulse on target card after clicking a chart segment */
+@keyframes roi-flash {
+  0%   { background-color: transparent; box-shadow: none; }
+  20%  { background-color: rgba(15, 65, 70, 0.07); box-shadow: 0 0 0 4px rgba(15, 65, 70, 0.18); }
+  100% { background-color: transparent; box-shadow: none; }
+}
+.roi-flash-highlight {
+  animation: roi-flash 1.6s ease-out;
+}
+
 /* ── Card hover ── */
 .roi-card {
   transition: border-color .2s ease, box-shadow .2s ease, transform .15s ease;
@@ -1022,7 +1032,7 @@ const C = {
   override:"#1a6b5a",overridePale:"#f0faf6"
 };
 
-function Card({children,style,dimmed,className}){return <div className={className||"roi-card"} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"24px 28px 20px",marginBottom:0,opacity:dimmed?0.3:1,pointerEvents:dimmed?"none":"auto",filter:dimmed?"grayscale(.5)":"none",transition:"opacity .4s,filter .4s",...style}}>{children}</div>;}
+function Card({children,style,dimmed,className,id}){return <div id={id} className={className||"roi-card"} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"24px 28px 20px",marginBottom:0,opacity:dimmed?0.3:1,pointerEvents:dimmed?"none":"auto",filter:dimmed?"grayscale(.5)":"none",transition:"opacity .4s,filter .4s",...style}}>{children}</div>;}
 
 function InfoTip({text}){
   const [show, setShow] = useState(false);
@@ -1404,11 +1414,24 @@ function AdminPanel() {
 // per-category breakdown.
 function SavingsProjectionChart({ pcts, segs, maxP, barH, annual }) {
   const [hoveredYear, setHoveredYear] = useState(null);
+  const [hoveredSegIdx, setHoveredSegIdx] = useState(null);
   const fmtK = (n) => "A$" + (Math.round(n/1000)/1).toLocaleString() + "k";
+
+  // Click handler: smooth-scroll to the target detail card and flash-highlight it
+  const drillToSegment = (anchorId) => {
+    if (!anchorId) return;
+    const el = document.getElementById(anchorId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    el.classList.remove("roi-flash-highlight"); // restart animation if re-clicked quickly
+    void el.offsetWidth; // force reflow
+    el.classList.add("roi-flash-highlight");
+    setTimeout(() => el.classList.remove("roi-flash-highlight"), 1700);
+  };
 
   return <>
     <div className="roi-chart-bars" style={{display:"flex",gap:8,alignItems:"flex-end",minHeight:barH+50,paddingTop:8,overflowX:"hidden"}}
-         onMouseLeave={() => setHoveredYear(null)}>
+         onMouseLeave={() => { setHoveredYear(null); setHoveredSegIdx(null); }}>
       {pcts.map((p, yi) => {
         const h = Math.round(barH * p / maxP);
         const yrTotal = Math.round(annual * p);
@@ -1418,12 +1441,20 @@ function SavingsProjectionChart({ pcts, segs, maxP, barH, annual }) {
           <div key={yi}
                onMouseEnter={() => setHoveredYear(yi)}
                className="roi-chart-bar"
-               style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",minWidth:0,cursor:"pointer",opacity:isDimmed?0.45:1,transition:"opacity .15s ease",transform:isHovered?"translateY(-2px)":"none"}}>
+               style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",minWidth:0,opacity:isDimmed?0.45:1,transition:"opacity .15s ease",transform:isHovered?"translateY(-2px)":"none"}}>
             <div className="roi-chart-bar-value" style={{fontSize:11,fontWeight:isHovered?800:700,color:"#0F4146",marginBottom:4,transition:"font-weight .15s"}}>{fmtK(yrTotal)}</div>
             <div style={{width:"100%",height:h,borderRadius:"8px 8px 4px 4px",overflow:"hidden",display:"flex",flexDirection:"column",position:"relative",boxShadow:isHovered?"0 4px 12px rgba(15,65,70,0.25)":"none",transition:"box-shadow .15s"}}>
-              {segs.map((s, si) => (
-                <div key={si} style={{flex:s.val,background:s.color,minHeight:1}} />
-              ))}
+              {segs.map((s, si) => {
+                const segIsHovered = isHovered && hoveredSegIdx === si;
+                return (
+                  <div key={si}
+                       onMouseEnter={(e) => { e.stopPropagation(); setHoveredSegIdx(si); }}
+                       onMouseLeave={(e) => { e.stopPropagation(); setHoveredSegIdx(null); }}
+                       onClick={(e) => { e.stopPropagation(); drillToSegment(s.anchorId); }}
+                       title={`${s.label}: ${fmtK(Math.round(s.val * p))} (Year ${yi+1}) — click to see detail`}
+                       style={{flex:s.val,background:s.color,minHeight:1,cursor:"pointer",position:"relative",boxShadow:segIsHovered?"inset 0 0 0 2px #fff, inset 0 0 0 4px rgba(0,0,0,0.35)":"none",filter:segIsHovered?"brightness(1.12)":"none",transition:"filter .12s,box-shadow .12s"}}/>
+                );
+              })}
             </div>
             <div className="roi-chart-bar-label" style={{fontSize:11,color:isHovered?"#0F4146":"#6b7a8a",marginTop:6,fontWeight:isHovered?700:600,transition:"color .15s,font-weight .15s"}}>Year {yi+1}</div>
             <div className="roi-chart-bar-label" style={{fontSize:10,color:"#6b7a8a"}}>{Math.round(p*100)}%</div>
@@ -1443,7 +1474,12 @@ function SavingsProjectionChart({ pcts, segs, maxP, barH, annual }) {
           {segs.map((s, i) => {
             const yrVal = Math.round(s.val * pcts[hoveredYear]);
             return (
-              <div key={i} style={{display:"flex",alignItems:"center",gap:6,fontSize:11}}>
+              <div key={i}
+                   onClick={() => drillToSegment(s.anchorId)}
+                   title="Click for detail section"
+                   style={{display:"flex",alignItems:"center",gap:6,fontSize:11,cursor:"pointer",padding:"2px 6px",borderRadius:4,transition:"background .12s"}}
+                   onMouseEnter={(e) => e.currentTarget.style.background = "rgba(15,65,70,0.06)"}
+                   onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
                 <div style={{width:10,height:10,borderRadius:2,background:s.color,flexShrink:0}} />
                 <span style={{color:"#3a4a5a"}}>{s.label}: <strong style={{color:"#0F4146"}}>{fmtK(yrVal)}</strong></span>
               </div>
@@ -1454,7 +1490,12 @@ function SavingsProjectionChart({ pcts, segs, maxP, barH, annual }) {
     ) : (
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginTop:14}}>
         {segs.map((s, i) => (
-          <div key={i} style={{display:"flex",alignItems:"center",gap:4}}>
+          <div key={i}
+               onClick={() => drillToSegment(s.anchorId)}
+               title="Click for detail section"
+               style={{display:"flex",alignItems:"center",gap:4,cursor:"pointer",padding:"2px 6px",borderRadius:4,transition:"background .12s"}}
+               onMouseEnter={(e) => e.currentTarget.style.background = "rgba(15,65,70,0.06)"}
+               onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
             <div style={{width:8,height:8,borderRadius:2,background:s.color}} />
             <span style={{fontSize:10,color:"#3a4a5a"}}>{s.label}: <strong>{fmtK(s.val)}</strong>/yr at steady state</span>
           </div>
@@ -4060,12 +4101,12 @@ function ROICalculator() {
     {an && (() => {
       const pcts = r.rampPcts;
       const segs = [
-        {label:"Decommission", color:"#0F4146", val:r.decomSave},
-        {label:"Capacity", color:"#1a8a7a", val:r.timeSave},
-        {label:r.isAgedCare?"Funding":r.isNDIS?"Revenue":"ABF & revenue", color:"#00d4aa", val:r.reimbursementImpact},
-        {label:"Quality", color:"#d4507a", val:r.qualitySavings},
-        ...(r.academicSavings > 0 ? [{label:"Academic", color:"#2c3e6b", val:r.academicSavings}] : []),
-        ...(r.mergeSavings > 0 ? [{label:"Network", color:"#6c5ce7", val:r.mergeSavings}] : []),
+        {label:"Decommission", color:"#0F4146", val:r.decomSave, anchorId:"card-decommission"},
+        {label:"Capacity", color:"#1a8a7a", val:r.timeSave, anchorId:"card-capacity"},
+        {label:r.isAgedCare?"Funding":r.isNDIS?"Revenue":"ABF & revenue", color:"#00d4aa", val:r.reimbursementImpact, anchorId:"card-reimbursement"},
+        {label:"Quality", color:"#d4507a", val:r.qualitySavings, anchorId:"card-quality"},
+        ...(r.academicSavings > 0 ? [{label:"Academic", color:"#2c3e6b", val:r.academicSavings, anchorId:"card-academic"}] : []),
+        ...(r.mergeSavings > 0 ? [{label:"Network", color:"#6c5ce7", val:r.mergeSavings, anchorId:"card-network"}] : []),
       ].filter(s => s.val > 0);
       const maxP = Math.max(...pcts);
       const barH = 160;
@@ -4074,7 +4115,7 @@ function ROICalculator() {
       return <div className="roi-chart-wrap" style={{padding:"0 20px",marginBottom:24}}>
         <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:8}}>
           <div style={{fontSize:13,fontWeight:700,color:C.textMid}}>{rampYears}-year savings projection</div>
-          <div style={{fontSize:11,color:C.textMuted,fontStyle:"italic"}}>Hover any column for year-by-year detail</div>
+          <div style={{fontSize:11,color:C.textMuted,fontStyle:"italic"}}>Hover for year totals · click any segment to jump to its detail section</div>
         </div>
         <SavingsProjectionChart pcts={pcts} segs={segs} maxP={maxP} barH={barH} annual={r.annualWithReimbursement} />
       </div>;
@@ -4132,7 +4173,7 @@ function ROICalculator() {
 
     {viewMode === "detailed" && <>
         {/* Decom - tiered breakdown */}
-    <Card dimmed={dim}>
+    <Card dimmed={dim} id="card-decommission">
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
         <div style={{display:"flex",alignItems:"center",flex:1,gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#0F414615",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="unlock" size={22} color="#0F4146"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>Legacy decommission savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>{viewTimescale === "annual" ? "Included in annual savings" : viewTimescale === "year1" ? "Included in Year 1 savings" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span></div>
       </div>
@@ -4161,7 +4202,7 @@ function ROICalculator() {
     </Card><LockedConnector/>
 
     {/* Clinician time */}
-    <Card dimmed={dim}>
+    <Card dimmed={dim} id="card-capacity">
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
         <div style={{display:"flex",alignItems:"center",flex:1,gap:12}}><div style={{width:40,height:40,borderRadius:10,background:"#1a8a7a15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SIcon name="clock" size={22} color="#1a8a7a"/></div><h3 style={{fontSize:16,fontWeight:700,margin:0}}>{isArchiveOnly?"Legacy lookup time freed":"Clinical workflow time freed"}</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>{viewTimescale === "annual" ? "Included in annual savings" : viewTimescale === "year1" ? "Included in Year 1 savings" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span></div>
       </div>
@@ -4183,7 +4224,7 @@ function ROICalculator() {
 
 
         {/* ABF (Activity Based Funding) efficiency & revenue impact */}
-    <Card dimmed={dim}>
+    <Card dimmed={dim} id="card-reimbursement">
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:4}}>
         <div style={{width:40,height:40,borderRadius:10,background:"#00d4aa15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           <SIcon name="dollar" size={22} color="#00d4aa"/>
@@ -4224,7 +4265,7 @@ function ROICalculator() {
 
 
         {sector === "hospital" && <>{/* Avoidable cost of harm - hospital only */}
-    <Card dimmed={dim} style={{border:"1px solid #f0c4d4",background:"#fdf5f8"}}>
+    <Card dimmed={dim} id="card-quality" style={{border:"1px solid #f0c4d4",background:"#fdf5f8"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
         <SIcon name="alert" size={18} color="#d4507a"/>
         <h3 style={{fontSize:16,fontWeight:700,margin:0}}>Avoidable cost of harm</h3>
@@ -4408,7 +4449,7 @@ function ROICalculator() {
       </EvidenceDropdown>
     </Card><LockedConnector/></>}
 
-        {r.isAcademic && <Card dimmed={dim}>
+        {r.isAcademic && <Card dimmed={dim} id="card-academic">
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}><SIcon name="graduation" size={18} color="#534AB7"/> Teaching hospital module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>{viewTimescale === "annual" ? "Included in annual savings" : viewTimescale === "year1" ? "Included in Year 1 savings" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Additional savings specific to teaching hospitals with research infrastructure and registrar training and teaching compliance.</p>
 
@@ -4442,7 +4483,7 @@ function ROICalculator() {
     {r.isAcademic && <LockedConnector/>}
 
     {/* M&A module - conditional */}
-    {r.isMultiHospital && <Card dimmed={dim}>
+    {r.isMultiHospital && <Card dimmed={dim} id="card-network">
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}><SIcon name="building" size={18} color="#2c3e6b"/> Network consolidation module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>{viewTimescale === "annual" ? "Included in annual savings" : viewTimescale === "year1" ? "Included in Year 1 savings" : viewTimescale === "total3" ? "Included in 3-year total" : "Included in 5-year total"}</span></div>
       <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Savings from eliminating duplicate systems and infrastructure across {inputs.org_count} facilities post-merger.</p>
 
