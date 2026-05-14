@@ -297,6 +297,51 @@ function AdminOverlay({ onClose }) {
   );
 }
 
+/**
+ * Timescale view selector for the results report.
+ *
+ * Rendered at App level, OUTSIDE the scroll container that holds the report
+ * content. This means it's always visible at the top of the report screen
+ * regardless of scroll position — replacing the previous attempt to use
+ * position: sticky inside ResultsPage, which didn't work because of the
+ * transform-based animations in PageTransition and ResultsPage's outer
+ * wrapper.
+ *
+ * Same four options as the AU calculator: Year 1 / 3-yr total / 5-yr total /
+ * Annual avg. The selected option is held in App-level state so it persists
+ * across re-renders and can be used by ResultsPage to scale every figure.
+ */
+function TimescaleBar({ viewTimescale, setViewTimescale }) {
+  return <div style={{
+    padding: "14px 56px 16px",
+    borderBottom: `1px solid ${C.borderLight}`,
+    background: C.bg,
+    boxShadow: `0 4px 12px -4px rgba(0,0,0,0.5)`,
+    position: 'relative',
+    zIndex: 10,
+  }}>
+    <div style={{ fontSize: F.tiny, fontWeight: 600, color: C.textMuted, letterSpacing: 2, textTransform: "uppercase", textAlign: "center", marginBottom: 8 }}>View savings as:</div>
+    <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+      {[
+        { k: 'year1',  label: 'Year 1' },
+        { k: 'total3', label: '3-yr total' },
+        { k: 'total5', label: '5-yr total' },
+        { k: 'annual', label: 'Annual avg' },
+      ].map(opt => {
+        const active = viewTimescale === opt.k;
+        return <button key={opt.k} onClick={() => setViewTimescale(opt.k)} style={{
+          padding: "12px 22px", borderRadius: 12, fontSize: F.small, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+          border: active ? `2px solid ${C.accent}` : `1px solid ${C.border}`,
+          background: active ? C.accent : C.surface,
+          color: active ? "#0a0f1a" : C.textMid,
+          transition: "all .15s",
+          minWidth: 120,
+        }}>{opt.label}</button>;
+      })}
+    </div>
+  </div>;
+}
+
 function CalibratingScreen({ onDone }) {
   const [step, setStep] = useState(0);
   const [barW, setBarW] = useState(0);
@@ -351,6 +396,12 @@ export default function App() {
   const [kioskStep, setKioskStep] = useState(0);
   const [calibrating, setCalibrating] = useState(false);
   const [adminVisible, setAdminVisible] = useState(false);
+  // Timescale view for the report. Lifted up here (out of ResultsPage) so the
+  // toggle bar can be rendered OUTSIDE the scroll container — sticky position
+  // doesn't work reliably inside PageTransition because of its transform-based
+  // animation. With the bar at App level it's always visible at the top of
+  // the results screen regardless of how far the user has scrolled the report.
+  const [viewTimescale, setViewTimescale] = useState('annual');
   const [providerType, setProviderType] = useState("community");
   const [reimbursementModel, setReimbursementModel] = useState("mixed");
   const [occupancyRate, setOccupancyRate] = useState(0.65);
@@ -498,7 +549,7 @@ export default function App() {
       case 2: return <FacilitiesStep inputs={inputs} update={update} facilities={facilities} setFacility={setFacility} />;
       case 3: return <SystemsStep inputs={inputs} updateTier={updateTier} flagships={flagships} addFlagship={addFlagship} removeFlagship={removeFlagship} updateFlagshipCost={updateFlagshipCost} updateFlagshipInstances={updateFlagshipInstances} costMode={costMode} setCostMode={setCostMode} knownSpend={knownSpend} setKnownSpend={setKnownSpend} />;
       case 4: return <FineTuneStep inputs={inputs} update={update} galenMigrationCost={galenMigrationCost} setGalenMigrationCost={setGalenMigrationCost} galenAnnualCost={galenAnnualCost} setGalenAnnualCost={setGalenAnnualCost} occupancyRate={occupancyRate} setOccupancyRate={setOccupancyRate} />;
-      case 5: return <ResultsPage r={r} galenMigrationCost={galenMigrationCost} galenAnnualCost={galenAnnualCost} onAdjust={handleAdjust} onStartOver={handleStartOver} />;
+      case 5: return <ResultsPage r={r} galenMigrationCost={galenMigrationCost} galenAnnualCost={galenAnnualCost} viewTimescale={viewTimescale} setViewTimescale={setViewTimescale} onAdjust={handleAdjust} onStartOver={handleStartOver} />;
       default: return null;
     }
   };
@@ -560,6 +611,14 @@ export default function App() {
       <div style={{ padding: "48px 56px 0" }}>
         <StepIndicator steps={KIOSK_STEPS} current={kioskStep} onJump={setKioskStep} />
       </div>
+      {/* Timescale bar — rendered here (above the scroll container) instead
+          of inside ResultsPage so it stays visible no matter how far the user
+          scrolls. position: sticky inside ResultsPage didn't work reliably
+          because PageTransition's transform-based animation creates a
+          containing block. This sits in the static-flex column above the
+          scrollable content area. Only renders on the report screen
+          (kioskStep === 5). */}
+      {kioskStep === 5 && <TimescaleBar viewTimescale={viewTimescale} setViewTimescale={setViewTimescale} />}
       <div style={{ flex: 1, overflowY: "auto", padding: "0 56px 32px" }}>
         <PageTransition step={kioskStep}>{renderStep()}</PageTransition>
       </div>

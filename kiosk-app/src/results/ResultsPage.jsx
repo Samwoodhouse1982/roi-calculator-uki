@@ -58,13 +58,13 @@ function JumpLink({ label, onClick }) {
   return <div onClick={onClick} style={{ fontSize: F.tiny, color: C.accent, cursor: "pointer", fontWeight: 600, marginTop: 8, textAlign: "center" }}>{label} ↓</div>;
 }
 
-export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, onStartOver }) {
+export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, viewTimescale, setViewTimescale, onAdjust, onStartOver }) {
   if (!r) return null;
-  // Single top-level timescale that controls every $-figure on the page.
-  // Replaces the previous standalone projYears state (which only drove the
-  // projection chart). Now drives the hero, KPI tiles, all detail cards,
-  // the projection chart, and the Galen ROI section together.
-  const [viewTimescale, setViewTimescale] = useState('annual');
+  // viewTimescale is controlled by the TimescaleBar in App.jsx and received
+  // as a prop, so the bar can be rendered above the scroll container (where
+  // it stays visible during scroll). The bar can't be inside ResultsPage with
+  // position: sticky because the PageTransition + rfade animation ancestors
+  // create containing blocks that scope sticky positioning incorrectly.
   const TS_MULT = { year1: 0.40, total3: 2.20, total5: 3.00, annual: 1.00 };
   const TS_SUFFIX = { year1: " (Year 1)", total3: " (3-yr)", total5: " (5-yr)", annual: "/yr" };
   const TS_LABEL = { year1: "Year 1", total3: "3-yr total", total5: "5-yr total", annual: "Annual avg" };
@@ -123,48 +123,9 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       @keyframes glow { 0%,100% { text-shadow: 0 0 30px rgba(0,212,170,0.3); } 50% { text-shadow: 0 0 60px rgba(0,212,170,0.6); } }
       @keyframes numPulse { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }`}</style>
 
-    {/* Timescale selector — sticky at the top of the scrolling content area
-        so the user can change view from anywhere in the report and watch the
-        numbers update in place. position: sticky works because PageTransition
-        (the parent wrapper) only applies its transform during a brief 0.4s
-        entry animation; after that the transform clears and sticky resolves
-        against the App's overflowY:auto scroll container.
-        zIndex 50 keeps it above every other report element including the
-        hero glow and the methodology Bento. */}
-    <div style={{
-      position: "sticky",
-      top: 0,
-      zIndex: 50,
-      padding: "16px 0 20px",
-      marginLeft: -56,    // bleed to the edges of the scroll container
-      marginRight: -56,   // (compensating for App's 56px horizontal padding)
-      paddingLeft: 56,
-      paddingRight: 56,
-      marginBottom: 8,
-      background: C.bg,
-      borderBottom: `1px solid ${C.borderLight}`,
-      boxShadow: `0 4px 12px -4px rgba(0,0,0,0.5)`,
-    }}>
-      <div style={{ fontSize: F.tiny, fontWeight: 600, color: C.textMuted, letterSpacing: 2, textTransform: "uppercase", textAlign: "center", marginBottom: 10 }}>View savings as:</div>
-      <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-        {[
-          { k: 'year1',  label: 'Year 1' },
-          { k: 'total3', label: '3-yr total' },
-          { k: 'total5', label: '5-yr total' },
-          { k: 'annual', label: 'Annual avg' },
-        ].map(opt => {
-          const active = viewTimescale === opt.k;
-          return <button key={opt.k} onClick={() => setViewTimescale(opt.k)} style={{
-            padding: "14px 24px", borderRadius: 14, fontSize: F.small, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-            border: active ? `2px solid ${C.accent}` : `1px solid ${C.border}`,
-            background: active ? C.accent : C.surface,
-            color: active ? "#0a0f1a" : C.textMid,
-            transition: "all .15s",
-            minWidth: 130,
-          }}>{opt.label}</button>;
-        })}
-      </div>
-    </div>
+    {/* Timescale bar now rendered in App.jsx above the scroll container so
+        it stays visible during scroll. ResultsPage only consumes viewTimescale
+        as a prop and scales every figure accordingly. */}
 
     {/* Hero */}
     <div style={{ textAlign: "center", marginBottom: 20, padding: "24px 0" }}>
