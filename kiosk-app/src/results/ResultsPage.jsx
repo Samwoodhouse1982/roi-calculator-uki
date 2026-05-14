@@ -76,6 +76,9 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
   // on the 3-year ramp visualisation.
   const projYears = viewTimescale === 'total5' ? 5 : 3;
   const [tappedBar, setTappedBar] = useState(null);
+  // Which methodology tile is currently expanded into the large slot of the
+  // Bento grid at the bottom of the report. Defaults to 0 (System costing).
+  const [methSelectedIdx, setMethSelectedIdx] = useState(0);
   const decomRef = useRef(null);
   const capacityRef = useRef(null);
   const reimbRef = useRef(null);
@@ -496,48 +499,54 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     </div>
 
-    {/* ═══ METHODOLOGY CAROUSEL ═══ */}
+    {/* ═══ METHODOLOGY (Bento grid) ═══
+        Layout: 1 large tile (expanded) + 3 small tiles in a column on the
+        right, then a 2x2 grid of 4 small tiles below. Total = 8 tiles, always
+        filling the section regardless of selection. Tap any small tile to
+        promote it to the large slot; the previously-large tile takes that
+        small tile's old position. */}
     <div style={{ marginBottom: 24 }}>
       <div style={{ fontSize: F.body, fontWeight: 700, color: C.textMid, marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
         <Icon name="lightbulb" size={22} stroke={C.accent} /> Full methodology
-        <span style={{ fontSize: F.tiny, fontWeight: 400, color: C.textMuted, marginLeft: "auto" }}>Swipe to browse →</span>
+        <span style={{ fontSize: F.tiny, fontWeight: 400, color: C.textMuted, marginLeft: "auto" }}>Tap a tile to expand</span>
       </div>
-      <div style={{ display: "flex", gap: 14, overflowX: "auto", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", paddingBottom: 12, scrollbarWidth: "none" }}>
-        <style>{`.mcard::-webkit-scrollbar { display: none; }`}</style>
-
-        <MCard color={C.accent} title="System costing" num="01">
-          Each legacy system is classified into three tiers (enterprise, departmental, or standalone) with costs scaled by bed count. Enterprise systems (e.g. legacy EHR) cost $150k to $1.5m+ base plus $650 to $7,500 per bed. Departmental systems run $80k to $350k plus $200 to $900 per bed. Standalone tools are $50k to $200k plus $120 to $620 per bed. Source: KLAS 2025 benchmarks, Becker's Hospital Review.
-        </MCard>
-
-        <MCard color={C.amber} title="Clinical capacity" num="02">
-          Not all staff use all systems. We apply two evidence-based filters: 65% of staff are regular system users (Sinsky et al 2016; KLAS Arch Collaborative — 500k+ clinicians analysed), and each user interacts with ~35% of the legacy estate. A 4% productivity penalty per system touched (Bartek et al JIMI 2023, primary: 2.78M EHR audit-log events, β=0.03; corroborated by Westbrook et al JAMIA 2010) determines time wasted. Hours freed are valued at $95/hr with 30% realisation, reflecting that freed time creates capacity, not direct savings.
-        </MCard>
-
-        <MCard color={C.blue} title="CMS reimbursement" num="03">
-          Three CMS penalty programmes are modelled: Hospital Readmissions Reduction Program (HRRP, up to 3% of base DRG, FY2025 data), Hospital-Acquired Condition Reduction (HAC, 1% for bottom quartile), and Value-Based Purchasing (VBP, 2% withhold pool). Denial recovery uses HFMA's 4.8% net revenue loss benchmark. Better documentation from system consolidation improves coding accuracy, reduces denials, and lowers penalty exposure. Evidence: Pattar et al JAMA 2025, Vest et al JAMIA 2019.
-        </MCard>
-
-        <MCard color={C.purple} title="Patient safety" num="04">
-          ADE rates from <a href="https://qualityindicators.ahrq.gov/measures/psi_resources" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>AHRQ Patient Safety Indicators</a> and HHS OIG 2022 (25% of Medicare patients experience adverse events). Preventable ADEs: 1.8 per 100 admissions (Bates et al). Excess bed day cost: $3,132/day (KFF/AHA 2023). Readmission avoidance: Vest et al JAMIA 2019 found 0.8pp absolute reduction in 30-day readmissions from single-vendor EHR consolidation; we apply 30% fragmentation attribution. Communication failures account for 30% of malpractice claims (CRICO 2016). These are cost avoidance figures: harm that doesn't occur, not direct budget reductions.
-        </MCard>
-
-        <MCard color="#8e44ad" title="Network savings" num="05">
-          For IDNs and multi-hospital systems, this captures savings <strong>incremental to decommissioning</strong> (not double-counted). Two components: shared infrastructure consolidation ($250k/facility for data centre, network and monitoring tools that aren’t tied to specific systems, 60% consolidatable through a single archive) and cross-facility operational efficiency (15% of estate cost addressable through unified governance, vendor management, audit and training). The 30% duplicate-instance rate (CHIME Digital Health Survey) is shown as context but excluded from the sum — retired duplicates are already captured in the decommissioning savings above.
-        </MCard>
-
-        <MCard color="#e67e22" title="Academic impact" num="06">
-          Academic medical centres maintain additional legacy systems for research databases, GME (Graduate Medical Education) tracking, and teaching programme administration. These are costed at the same tier-based rates with an additional compliance efficiency factor from consolidated audit trails. Based on AAMC benchmarks for academic system overhead and ACGME reporting requirements.
-        </MCard>
-
-        <MCard color={C.accent} title="Year-by-year ramp" num="07">
-          Savings are phased to reflect progressive legacy system retirement. The 3-year view models 40% / 80% / 100% of steady state across Years 1-3. The 5-year view models 20% / 40% / 60% / 80% / 100% to reflect a slower, more conservative implementation cadence typical of larger health systems. Tap the 3-year / 5-year toggle on the projection card above to switch views. Galen payback is calculated as migration cost ÷ (annual decom savings minus annual archive cost).
-        </MCard>
-
-        <MCard color={C.blue} title="Key sources" num="08">
-          KLAS Research (Best in KLAS 2025 Data Archiving) · HIMSS Analytics (system usage patterns) · AHRQ Patient Safety Indicators · CMS Hospital Compare (HRRP, HAC, VBP penalty data) · HFMA (denial management benchmarks) · KFF/AHA (cost per bed day) · CRICO Strategies (malpractice analysis) · Bates et al, JAMA (ADE rates) · Westbrook et al, JAMIA 2010 (system switching costs) · CHIME Digital Health Survey (duplicate systems in IDNs).
-        </MCard>
-
-      </div>
+      {(() => {
+        const methTiles = [
+          { color: C.accent, title: "System costing", num: "01", body: <>Each legacy system is classified into three tiers (enterprise, departmental, or standalone) with costs scaled by bed count. Enterprise systems (e.g. legacy EHR) cost $150k to $1.5m+ base plus $650 to $7,500 per bed. Departmental systems run $80k to $350k plus $200 to $900 per bed. Standalone tools are $50k to $200k plus $120 to $620 per bed. Source: KLAS 2025 benchmarks, Becker's Hospital Review.</> },
+          { color: C.amber, title: "Clinical capacity", num: "02", body: <>Not all staff use all systems. We apply two evidence-based filters: 65% of staff are regular system users (Sinsky et al 2016; KLAS Arch Collaborative — 500k+ clinicians analyzed), and each user interacts with ~35% of the legacy estate. A 4% productivity penalty per system touched (Bartek et al JIMI 2023, primary: 2.78M EHR audit-log events, β=0.03; corroborated by Westbrook et al JAMIA 2010) determines time wasted. Hours freed are valued at $95/hr with 30% realization, reflecting that freed time creates capacity, not direct savings.</> },
+          { color: C.blue, title: "CMS reimbursement", num: "03", body: <>Three CMS penalty programs are modeled: Hospital Readmissions Reduction Program (HRRP, up to 3% of base DRG, FY2025 data), Hospital-Acquired Condition Reduction (HAC, 1% for bottom quartile), and Value-Based Purchasing (VBP, 2% withhold pool). Denial recovery uses HFMA's 4.8% net revenue loss benchmark. Better documentation from system consolidation improves coding accuracy, reduces denials, and lowers penalty exposure. Evidence: Pattar et al JAMA 2025, Vest et al JAMIA 2019.</> },
+          { color: C.purple, title: "Patient safety", num: "04", body: <>ADE rates from <a href="https://qualityindicators.ahrq.gov/measures/psi_resources" target="_blank" rel="noopener" style={{color:"#0563C1",textDecoration:"underline"}}>AHRQ Patient Safety Indicators</a> and HHS OIG 2022 (25% of Medicare patients experience adverse events). Preventable ADEs: 1.8 per 100 admissions (Bates et al). Excess bed day cost: $3,132/day (KFF/AHA 2023). Readmission avoidance: Vest et al JAMIA 2019 found 0.8pp absolute reduction in 30-day readmissions from single-vendor EHR consolidation; we apply 30% fragmentation attribution. Communication failures account for 30% of malpractice claims (CRICO 2016). These are cost avoidance figures: harm that doesn't occur, not direct budget reductions.</> },
+          { color: "#8e44ad", title: "Network savings", num: "05", body: <>For IDNs and multi-hospital systems, this captures savings <strong>incremental to decommissioning</strong> (not double-counted). Two components: shared infrastructure consolidation ($250k/facility for data center, network and monitoring tools that aren't tied to specific systems, 60% consolidatable through a single archive) and cross-facility operational efficiency (15% of estate cost addressable through unified governance, vendor management, audit and training). The 30% duplicate-instance rate (CHIME Digital Health Survey) is shown as context but excluded from the sum — retired duplicates are already captured in the decommissioning savings above.</> },
+          { color: "#e67e22", title: "Academic impact", num: "06", body: <>Academic medical centers maintain additional legacy systems for research databases, GME (Graduate Medical Education) tracking, and teaching program administration. These are costed at the same tier-based rates with an additional compliance efficiency factor from consolidated audit trails. Based on AAMC benchmarks for academic system overhead and ACGME reporting requirements.</> },
+          { color: C.accent, title: "Year-by-year ramp", num: "07", body: <>Savings are phased to reflect progressive legacy system retirement. The 3-year view models 40% / 80% / 100% of steady state across Years 1-3. The 5-year view models 20% / 40% / 60% / 80% / 100% to reflect a slower, more conservative implementation cadence typical of larger health systems. The top-of-page timescale toggle switches between these views and re-scales every figure on the report. Galen payback is calculated as migration cost ÷ (annual decom savings minus annual archive cost).</> },
+          { color: C.blue, title: "Key sources", num: "08", body: <>KLAS Research (Best in KLAS 2025 Data Archiving) · HIMSS Analytics (system usage patterns) · AHRQ Patient Safety Indicators · CMS Hospital Compare (HRRP, HAC, VBP penalty data) · HFMA (denial management benchmarks) · KFF/AHA (cost per bed day) · CRICO Strategies (malpractice analysis) · Bates et al, JAMA (ADE rates) · Westbrook et al, JAMIA 2010 (system switching costs) · CHIME Digital Health Survey (duplicate systems in IDNs).</> },
+        ];
+        const selected = methTiles[methSelectedIdx];
+        // Build the list of non-selected tiles, preserving their original indices
+        // so click handlers can promote the right tile to the large slot.
+        const others = methTiles
+          .map((tile, idx) => ({ tile, idx }))
+          .filter(({ idx }) => idx !== methSelectedIdx);
+        const topRightThree = others.slice(0, 3);
+        const bottomFour = others.slice(3, 7);
+        return <>
+          {/* Top section: large tile (3fr) + column of 3 small tiles (1fr). */}
+          <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: 14, marginBottom: 14 }}>
+            <MCardLarge tile={selected} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {topRightThree.map(({ tile, idx }) => (
+                <MCardSmall key={idx} tile={tile} onClick={() => setMethSelectedIdx(idx)} />
+              ))}
+            </div>
+          </div>
+          {/* Bottom section: 2x2 grid of the remaining 4 small tiles. */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            {bottomFour.map(({ tile, idx }) => (
+              <MCardSmall key={idx} tile={tile} onClick={() => setMethSelectedIdx(idx)} />
+            ))}
+          </div>
+        </>;
+      })()}
     </div>
 
     {/* Actions */}
@@ -587,12 +596,48 @@ function Row({ label, value, accent }) {
 function Met({ label, value }) {
   return <div><div style={{ fontSize: F.tiny, color: C.textMuted }}>{label}</div><div style={{ fontSize: F.h2, fontWeight: 800, color: C.accent }}>{value}</div></div>;
 }
-function MCard({ color, title, num, children }) {
-  return <div className="mcard" style={{ flex: "0 0 320px", scrollSnapAlign: "start", padding: "28px 24px", background: C.surface, borderRadius: 20, border: `1px solid ${color}25`, minHeight: 240 }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-      <span style={{ width: 32, height: 32, borderRadius: "50%", background: color + "20", color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: F.tiny, fontWeight: 800 }}>{num}</span>
-      <span style={{ fontSize: F.body, fontWeight: 700, color }}>{title}</span>
+function MCardLarge({ tile }) {
+  return <div style={{
+    padding: "32px 30px",
+    background: C.surface,
+    borderRadius: 20,
+    border: `2px solid ${tile.color}55`,
+    boxShadow: `0 0 0 1px ${tile.color}12, 0 8px 24px -8px ${tile.color}25`,
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    transition: 'all 0.25s ease',
+  }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+      <span style={{ width: 44, height: 44, borderRadius: "50%", background: tile.color + "20", color: tile.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: F.small, fontWeight: 800 }}>{tile.num}</span>
+      <span style={{ fontSize: F.h3, fontWeight: 700, color: tile.color }}>{tile.title}</span>
     </div>
-    <div style={{ fontSize: F.tiny, color: C.textMid, lineHeight: 1.7 }}>{children}</div>
+    <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.7, flex: 1 }}>{tile.body}</div>
+  </div>;
+}
+
+function MCardSmall({ tile, onClick }) {
+  return <div onClick={onClick} style={{
+    padding: "18px 18px",
+    background: C.surface,
+    borderRadius: 14,
+    border: `1px solid ${tile.color}30`,
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    height: '100%',
+    minHeight: 90,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    gap: 8,
+  }}
+    onMouseOver={e => { e.currentTarget.style.borderColor = tile.color; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+    onMouseOut={e => { e.currentTarget.style.borderColor = tile.color + '30'; e.currentTarget.style.transform = 'translateY(0)'; }}
+  >
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <span style={{ width: 28, height: 28, borderRadius: "50%", background: tile.color + "20", color: tile.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{tile.num}</span>
+      <span style={{ fontSize: F.tiny, fontWeight: 700, color: tile.color, lineHeight: 1.2 }}>{tile.title}</span>
+    </div>
+    <div style={{ fontSize: 11, color: C.textMuted, fontWeight: 600, alignSelf: 'flex-end' }}>Tap to expand →</div>
   </div>;
 }
