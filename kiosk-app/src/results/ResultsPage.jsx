@@ -71,6 +71,10 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
   const ts = { mult: TS_MULT[viewTimescale], suffix: TS_SUFFIX[viewTimescale], label: TS_LABEL[viewTimescale] };
   // Helper to scale + format a /yr value to the current timescale.
   const fmtKts = (v) => fmtK(Math.round((v || 0) * ts.mult)) + ts.suffix;
+  // Scaled but suffix-less variant. Used in headline / KPI displays where the
+  // timescale context is already established by the toggle above and repeating
+  // '(3-yr)' / '(5-yr)' on each tile would be noisy.
+  const fmtKs = (v) => fmtK(Math.round((v || 0) * ts.mult));
   // Derived projection window for the time-series chart + Galen ROI box.
   // Switches to 5 when the user picks 5-yr total at the top; otherwise stays
   // on the 3-year ramp visualisation.
@@ -179,12 +183,12 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     {/* KPI grid - each card maps to a segment above, tappable to jump to detail */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
-      <KpiCard label="Legacy decommission" value={fmtKts(seg.decom)} sub={`${r.decom} of ${r.legacy} systems retired`} color={C.accent} iconKey="unlock" onClick={() => scrollTo(decomRef)} />
-      <KpiCard label="Clinical capacity" value={`${fmtFte(fte)} FTE freed${ts.suffix === '/yr' ? '' : ts.suffix}`} sub={`${fmtKts(seg.capacity)} value`} color={C.amber} iconKey="clock" onClick={() => scrollTo(capacityRef)} />
-      {seg.reimb > 0 && <KpiCard label="Reimbursement impact" value={fmtKts(seg.reimb)} sub="CMS penalties + denial recovery" color={C.blue} iconKey="dollar" onClick={() => scrollTo(reimbRef)} />}
-      {seg.safety > 0 && <KpiCard label="Patient safety" value={fmtKts(seg.safety)} sub={`${fmtNum(r.safetyPatientsProtected)} patients protected${r.readmissionsAvoided > 0 ? ", " + r.readmissionsAvoided + " readmissions avoided" : ""}`} color={C.purple} iconKey="shield" onClick={() => scrollTo(safetyRef)} />}
-      {seg.network > 0 && <KpiCard label="Network consolidation" value={fmtKts(seg.network)} sub={`${r.duplicateSystems} duplicate systems across ${r.org_count || ""} facilities`} color="#8e44ad" iconKey="network" onClick={() => scrollTo(networkRef)} />}
-      {seg.academic > 0 && <KpiCard label="Academic program" value={fmtKts(seg.academic)} sub="Research + GME + teaching" color="#e67e22" iconKey="graduation" onClick={() => scrollTo(academicRef)} />}
+      <KpiCard label="Legacy decommission" value={fmtKs(seg.decom)} sub={`${r.decom} of ${r.legacy} systems retired`} color={C.accent} iconKey="unlock" onClick={() => scrollTo(decomRef)} />
+      <KpiCard label="Clinical capacity" value={`${fmtFte(fte)} FTE freed`} sub={`${fmtKs(seg.capacity)} value`} color={C.amber} iconKey="clock" onClick={() => scrollTo(capacityRef)} />
+      {seg.reimb > 0 && <KpiCard label="Reimbursement impact" value={fmtKs(seg.reimb)} sub="CMS penalties + denial recovery" color={C.blue} iconKey="dollar" onClick={() => scrollTo(reimbRef)} />}
+      {seg.safety > 0 && <KpiCard label="Patient safety" value={fmtKs(seg.safety)} sub={`${fmtNum(Math.round(r.safetyPatientsProtected * ts.mult))} patients protected${r.readmissionsAvoided > 0 ? ", " + Math.round(r.readmissionsAvoided * ts.mult) + " readmissions avoided" : ""}`} color={C.purple} iconKey="shield" onClick={() => scrollTo(safetyRef)} />}
+      {seg.network > 0 && <KpiCard label="Network consolidation" value={fmtKs(seg.network)} sub={`${r.duplicateSystems} duplicate systems across ${r.org_count || ""} facilities`} color="#8e44ad" iconKey="network" onClick={() => scrollTo(networkRef)} />}
+      {seg.academic > 0 && <KpiCard label="Academic program" value={fmtKs(seg.academic)} sub="Research + GME + teaching" color="#e67e22" iconKey="graduation" onClick={() => scrollTo(academicRef)} />}
     </div>
 
 
