@@ -1,6 +1,13 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { C } from '../theme';
 import rldatixLogo from '../assets/rldatix-logo.png';
+import klasBadge from '../assets/best-in-klas-2025-data-archiving.png';
+
+// Timings (ms) for the launch animation. Tune here.
+const CONVERGE_MS = 700;       // particles fly toward the button
+const WIPE_DELAY_MS = 500;     // radial wipe starts before convergence finishes (overlap)
+const WIPE_MS = 700;           // radial wipe duration
+const TOTAL_LAUNCH_MS = WIPE_DELAY_MS + WIPE_MS; // 1200ms — when onStart fires
 
 export function SplashScreen({ onStart, onAdminReveal }) {
   // Single tap on the RLDatix logo at the bottom reveals the hidden admin stats overlay.
@@ -10,7 +17,61 @@ export function SplashScreen({ onStart, onAdminReveal }) {
     if (onAdminReveal) onAdminReveal();
   }, [onAdminReveal]);
 
+  // Launch state lives in BOTH a ref (for the canvas animation loop, which is set up once
+  // in useEffect and would otherwise capture stale state) and React state (for the wipe
+  // overlay, which is a conditional element). Ref is source of truth for the animation
+  // loop; React state mirrors it for render purposes.
+  const launchingRef = useRef(false);
+  const launchStartRef = useRef(0);
+  const buttonTargetRef = useRef({ x: 540, y: 900 }); // canvas-internal coords; updated on click
+  const [launching, setLaunching] = useState(false);
+  const [wipeOrigin, setWipeOrigin] = useState({ x: 540, y: 900 }); // CSS pixels for overlay positioning
+
   const canvasRef = useRef(null);
+  const buttonRef = useRef(null);
+  const containerRef = useRef(null);
+
+  const handleStart = useCallback((e) => {
+    if (e) e.stopPropagation();
+    if (launchingRef.current) return; // prevent double-trigger
+
+    // Capture button position in two coordinate systems:
+    // (1) Canvas-internal coords (1080×1920 space) — for particle target
+    // (2) CSS pixel coords relative to the container — for the radial wipe overlay
+    if (buttonRef.current && canvasRef.current && containerRef.current) {
+      const bRect = buttonRef.current.getBoundingClientRect();
+      const cRect = canvasRef.current.getBoundingClientRect();
+      const contRect = containerRef.current.getBoundingClientRect();
+
+      // Button center in CSS pixels
+      const btnCssX = bRect.left + bRect.width / 2;
+      const btnCssY = bRect.top + bRect.height / 2;
+
+      // Convert to canvas-internal coords (canvas is 1080×1920 stretched to its display size)
+      const xRatio = 1080 / cRect.width;
+      const yRatio = 1920 / cRect.height;
+      buttonTargetRef.current = {
+        x: (btnCssX - cRect.left) * xRatio,
+        y: (btnCssY - cRect.top) * yRatio,
+      };
+
+      // For the overlay: position relative to the container in CSS pixels
+      setWipeOrigin({
+        x: btnCssX - contRect.left,
+        y: btnCssY - contRect.top,
+      });
+    }
+
+    // Trigger launch
+    launchStartRef.current = performance.now();
+    launchingRef.current = true;
+    setLaunching(true);
+
+    // After full animation, hand off to parent
+    setTimeout(() => {
+      if (onStart) onStart();
+    }, TOTAL_LAUNCH_MS);
+  }, [onStart]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -25,9 +86,6 @@ export function SplashScreen({ onStart, onAdminReveal }) {
     };
     resize();
 
-    // Portrait 9:16 - distribute particles across full height
-    const isPortrait = h > w;
-
     const particles = [];
     const PARTICLE_COUNT = 140;
 
@@ -36,6 +94,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
         x: Math.random() * (w + 500) - 250,
         y: Math.random() * h,
         r: Math.random() * 3.5 + 0.8,
+        baseR: 0, // captured at launch start
         speed: Math.random() * 0.8 + 0.2,
         opacity: Math.random() * 0.2 + 0.03,
         hue: Math.random() * 30 + 165,
@@ -44,6 +103,10 @@ export function SplashScreen({ onStart, onAdminReveal }) {
         phase: Math.random() * Math.PI * 2,
         waveAmp: Math.random() * 40 + 10,
         waveSpeed: Math.random() * 0.01 + 0.005,
+        // Launch animation fields — captured at launch start
+        startX: 0,
+        startY: 0,
+        captured: false,
       });
     }
 
@@ -52,31 +115,79 @@ export function SplashScreen({ onStart, onAdminReveal }) {
       t++;
       ctx.clearRect(0, 0, w, h);
 
+      const isLaunching = launchingRef.current;
+      const target = buttonTargetRef.current;
+
+      // Compute convergence progress (0 -> 1 over CONVERGE_MS)
+      let convergeProgress = 0;
+      if (isLaunching) {
+        const elapsed = performance.now() - launchStartRef.current;
+        convergeProgress = Math.min(1, elapsed / CONVERGE_MS);
+        // Ease-in cubic: starts slow, accelerates strongly — like a gravitational pull
+        convergeProgress = convergeProgress * convergeProgress * convergeProgress;
+      }
+
       for (const p of particles) {
-        p.x += p.speed;
-        const wave = Math.sin(t * p.waveSpeed + p.phase) * p.waveAmp;
-        const drawY = p.y + wave + p.drift * t * 0.1;
+        if (isLaunching) {
+          // On first launch frame for each particle, capture its current visual position
+          // (including wave offset) so the animation starts from where it visibly is.
+          if (!p.captured) {
+            const currentWave = Math.sin(t * p.waveSpeed + p.phase) * p.waveAmp;
+            p.startX = p.x;
+            p.startY = p.y + currentWave + p.drift * t * 0.1;
+            p.baseR = p.r;
+            p.captured = true;
+          }
 
-        if (p.x > w + 50) {
-          p.x = -50;
-          p.y = Math.random() * h;
-          p.phase = Math.random() * Math.PI * 2;
-        }
+          // Interpolate from start position to button target
+          const drawX = p.startX + (target.x - p.startX) * convergeProgress;
+          const drawY = p.startY + (target.y - p.startY) * convergeProgress;
+          // Shrink slightly as they approach (so they don't pile up)
+          const r = p.baseR * (1 - convergeProgress * 0.5);
+          // Boost opacity as they gather
+          const op = p.opacity + convergeProgress * 0.3;
 
-        if (p.glow) {
-          const grad = ctx.createRadialGradient(p.x, drawY, 0, p.x, drawY, p.r * 8);
-          grad.addColorStop(0, `hsla(${p.hue}, 80%, 75%, ${p.opacity * 0.15})`);
-          grad.addColorStop(1, `hsla(${p.hue}, 80%, 75%, 0)`);
-          ctx.fillStyle = grad;
+          if (p.glow) {
+            const grad = ctx.createRadialGradient(drawX, drawY, 0, drawX, drawY, r * 10);
+            grad.addColorStop(0, `hsla(${p.hue}, 90%, 80%, ${op * 0.3})`);
+            grad.addColorStop(1, `hsla(${p.hue}, 90%, 80%, 0)`);
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, r * 10, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          ctx.fillStyle = `hsla(${p.hue}, 80%, ${p.glow ? 90 : 75}%, ${op})`;
           ctx.beginPath();
-          ctx.arc(p.x, drawY, p.r * 8, 0, Math.PI * 2);
+          ctx.arc(drawX, drawY, Math.max(0.1, r), 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Normal drift behaviour (unchanged from original)
+          p.x += p.speed;
+          const wave = Math.sin(t * p.waveSpeed + p.phase) * p.waveAmp;
+          const drawY = p.y + wave + p.drift * t * 0.1;
+
+          if (p.x > w + 50) {
+            p.x = -50;
+            p.y = Math.random() * h;
+            p.phase = Math.random() * Math.PI * 2;
+          }
+
+          if (p.glow) {
+            const grad = ctx.createRadialGradient(p.x, drawY, 0, p.x, drawY, p.r * 8);
+            grad.addColorStop(0, `hsla(${p.hue}, 80%, 75%, ${p.opacity * 0.15})`);
+            grad.addColorStop(1, `hsla(${p.hue}, 80%, 75%, 0)`);
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(p.x, drawY, p.r * 8, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          ctx.fillStyle = `hsla(${p.hue}, 70%, ${p.glow ? 90 : 65}%, ${p.opacity})`;
+          ctx.beginPath();
+          ctx.arc(p.x, drawY, p.r, 0, Math.PI * 2);
           ctx.fill();
         }
-
-        ctx.fillStyle = `hsla(${p.hue}, 70%, ${p.glow ? 90 : 65}%, ${p.opacity})`;
-        ctx.beginPath();
-        ctx.arc(p.x, drawY, p.r, 0, Math.PI * 2);
-        ctx.fill();
       }
 
       raf = requestAnimationFrame(draw);
@@ -89,12 +200,12 @@ export function SplashScreen({ onStart, onAdminReveal }) {
   }, []);
 
   return (
-    <div style={{
+    <div ref={containerRef} style={{
       position: 'relative', zIndex: 100, width: 1080, minHeight: 1920, height: '100vh',
       background: 'linear-gradient(160deg, #060b14 0%, #0a1020 25%, #0c1825 50%, #091520 75%, #060b14 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start',
-      overflow: 'hidden', cursor: 'pointer',
-    }} onClick={onStart}>
+      overflow: 'hidden', cursor: launching ? 'default' : 'pointer',
+    }} onClick={launching ? undefined : handleStart}>
 
       <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }} />
 
@@ -103,6 +214,9 @@ export function SplashScreen({ onStart, onAdminReveal }) {
       }} />
 
       <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 1000, padding: '75px 80px', marginTop: '14vh',
+        // Subtle fade-out of content while the wipe expands, so the title doesn't bleed through
+        opacity: launching ? 0.3 : 1,
+        transition: 'opacity 600ms ease-out',
       }}>
 
         <div style={{
@@ -126,15 +240,21 @@ export function SplashScreen({ onStart, onAdminReveal }) {
           See exactly how much your health system could save by retiring legacy applications and consolidating clinical data into a single archive.
         </p>
 
-        <button onClick={onStart} style={{
+        <button ref={buttonRef} onClick={handleStart} style={{
           display: 'block', margin: '0 auto',
           padding: '30px 90px', borderRadius: 80, border: '3px solid #00d4aa',
           background: 'rgba(0,212,170,0.18)', color: '#fff',
           fontSize: 30, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
-          letterSpacing: 4, transition: 'all 0.3s',
+          letterSpacing: 4,
           textTransform: 'uppercase',
-          boxShadow: '0 0 80px rgba(0,212,170,0.35), inset 0 0 60px rgba(0,212,170,0.08)',
-          animation: 'splashPulseBig 2s ease-in-out infinite',
+          // During launch, freeze the pulse and brighten/scale to look like the button is
+          // absorbing the converging particles.
+          boxShadow: launching
+            ? '0 0 200px rgba(0,212,170,0.95), inset 0 0 80px rgba(0,212,170,0.4)'
+            : '0 0 80px rgba(0,212,170,0.35), inset 0 0 60px rgba(0,212,170,0.08)',
+          transform: launching ? 'scale(1.08)' : 'scale(1)',
+          transition: 'box-shadow 600ms ease-out, transform 600ms ease-out',
+          animation: launching ? 'none' : 'splashPulseBig 2s ease-in-out infinite',
         }}>
           Tap to Start
         </button>
@@ -144,25 +264,58 @@ export function SplashScreen({ onStart, onAdminReveal }) {
             0%, 100% { box-shadow: 0 0 80px rgba(0,212,170,0.35), inset 0 0 60px rgba(0,212,170,0.08); transform: scale(1); }
             50% { box-shadow: 0 0 120px rgba(0,212,170,0.55), inset 0 0 80px rgba(0,212,170,0.15); transform: scale(1.02); }
           }
+          @keyframes klasBadgeFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+          }
+          @keyframes radialWipe {
+            0%   { width: 0;      height: 0;      opacity: 1; }
+            100% { width: 4400px; height: 4400px; opacity: 1; }
+          }
         `}</style>
 
-        <div style={{
-          marginTop: 60, fontSize: 18, color: 'rgba(255,255,255,0.5)',
-          letterSpacing: 2.5,
-        }}>
-          BEST IN KLAS 2025 &nbsp;·&nbsp; DATA ARCHIVING
-        </div>
+        {/* Best in KLAS 2025 badge - replaces the previous text version.
+            Gentle floating animation to draw the eye without being noisy. */}
+        <img src={klasBadge} alt="Best in KLAS 2025 - Data Archiving" style={{
+          display: 'block', margin: '70px auto 0',
+          width: 240, height: 'auto',
+          filter: 'drop-shadow(0 4px 24px rgba(0,212,170,0.25))',
+          animation: 'klasBadgeFloat 4s ease-in-out infinite',
+        }} />
 
       </div>
 
       <img src={rldatixLogo} alt="RLDatix" onClick={handleLogoTap} style={{
         position: 'absolute', bottom: 50, left: '50%', transform: 'translateX(-50%)',
-        width: 450, opacity: 0.5, zIndex: 3, cursor: 'pointer',
+        width: 450, opacity: launching ? 0.15 : 0.5, zIndex: 3, cursor: 'pointer',
+        transition: 'opacity 600ms ease-out',
       }} />
       <div style={{
         position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)',
         fontSize: 14, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, zIndex: 3, whiteSpace: 'nowrap',
+        transition: 'opacity 600ms ease-out',
+        opacity: launching ? 0.2 : 1,
       }}>v2.1 · Updated May 2026</div>
+
+      {/* Radial wipe overlay — expands from the button position to cover the screen.
+          Becomes visible after WIPE_DELAY_MS (overlapping the tail of particle convergence),
+          so users see particles arriving AND energy releasing in one continuous motion.
+          Final size 4400px covers all corners of 1080×1920 even at maximum offset. */}
+      {launching && (
+        <div style={{
+          position: 'absolute',
+          top: wipeOrigin.y,
+          left: wipeOrigin.x,
+          width: 0,
+          height: 0,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(0,212,170,0.95) 0%, rgba(10,40,50,0.95) 55%, #060b14 100%)',
+          transform: 'translate(-50%, -50%)',
+          animation: `radialWipe ${WIPE_MS}ms cubic-bezier(0.4, 0, 0.2, 1) ${WIPE_DELAY_MS}ms forwards`,
+          zIndex: 50,
+          pointerEvents: 'none',
+        }} />
+      )}
     </div>
   );
 }
