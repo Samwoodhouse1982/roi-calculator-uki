@@ -317,8 +317,18 @@ function TimescaleBar({ viewTimescale, setViewTimescale }) {
     borderBottom: `1px solid ${C.borderLight}`,
     background: C.bg,
     boxShadow: `0 4px 12px -4px rgba(0,0,0,0.5)`,
-    position: 'relative',
-    zIndex: 10,
+    // Sticky relative to the nearest scrolling ancestor. On the kiosk (exact
+    // 1080×1920) there's no body scroll, but the bar is already pinned above
+    // the inner overflow:auto scroll container so this is benign. In dev
+    // browsers where the viewport is shorter than 1920px and the body itself
+    // scrolls, sticky resolves to the body and the bar stays pinned to the
+    // viewport top. Works in both contexts.
+    // No transform-using animated ancestors above this point (BackgroundParticles
+    // is absolutely positioned, StepIndicator wrapper has no transforms), so
+    // sticky resolves correctly — unlike the previous attempt inside ResultsPage.
+    position: 'sticky',
+    top: 0,
+    zIndex: 20,
   }}>
     <div style={{ fontSize: F.tiny, fontWeight: 600, color: C.textMuted, letterSpacing: 2, textTransform: "uppercase", textAlign: "center", marginBottom: 8 }}>View savings as:</div>
     <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
