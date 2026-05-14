@@ -2634,7 +2634,7 @@ function ROICalculator() {
         ["Activity-Based Funding efficiency", fmtK(r.abfEfficiencyGain || 0) + "/yr", "15% of legacy estate admin overhead (modelled)"],
         ...(r.privateRevRecovery > 0 ? [["Private patient uplift", fmtK(r.privateRevRecovery) + "/yr", "30% recovery of leaked private episodes"]] : []),
         ["Medical indemnity reduction", fmtK(r.malpracticeReduction) + "/yr", "3% of A$20,000/bed (VMIA 2025-26)"],
-        ["Excess bed day savings", fmtK(r.excessDayCostAvoided) + "/yr", "QAHCS/AIHW (A$3,100/day x fragmentation attribution)"],
+        ["Excess bed day savings", fmtK(r.excessDayCostAvoided) + "/yr", "QAHCS/AIHW (A$3,100/day x share caused by fragmentation)"],
         ["Duplicate testing reduction", fmtK(r.duplicateReduction) + "/yr", "22% duplicate rate (Banker et al 2024; RCPA)"],
         [{ content: "Total ABF efficiency & quality", styles: { fontStyle: "bold", fillColor: LTBG } },
          { content: fmtK(r.reimbursementImpact + r.qualitySavings) + "/yr", styles: { fontStyle: "bold", textColor: TEAL, fillColor: LTBG } },
@@ -4279,7 +4279,7 @@ function ROICalculator() {
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Excess bed days avoided <span style={{fontWeight:400,fontStyle:"italic",fontSize:11}}>(based on {fmtNum(inputs.bed_count)} beds)</span></div>
           <div style={{fontSize:28,fontWeight:800,color:"#d4507a",margin:"6px 0"}}>{an?fmtK(Math.round(r.excessDayCostAvoided * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
           <div style={{fontSize:11,color:C.textMuted}}>{an?fmtNum(Math.round(r.excessDaysAvoided * ts.mult)):0} days at A$3,100/day (IHACPA, Independent Health and Aged Care Pricing Authority)</div>
-          <div style={{fontSize:10,color:"#d4507a",marginTop:4}}>35% fragmentation attribution (ACSQHC)</div>
+          <div style={{fontSize:10,color:"#d4507a",marginTop:4}}>ACSQHC: 35% of these harms are caused by information fragmentation between systems</div>
         </div>
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:"#fdf5f8",borderRadius:10,border:"1px solid #f0c4d430"}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Medical indemnity reduction</div>
@@ -4299,7 +4299,7 @@ function ROICalculator() {
         {fmtK(Math.round(r.costAvoidance * ts.mult))}{ts.suffix} {viewTimescale === "annual" ? "(included in annual savings as cost avoidance)" : "(included as cost avoidance)"}
       </Callout>
       <EvidenceDropdown title="Evidence & methodology">
-        <strong>Methodology:</strong> Excess bed days: 8.0/bed baseline (QAHCS/AIHW), 35% fragmentation attribution (ACSQHC), A$3,100/day (IHACPA). Indemnity: 3% of A$20,000/bed (VMIA 2025-26). Duplicate testing: 22% duplicate rate (Banker et al 2024, RCPA), A$12,000/bed pathology, 50% addressable.<br/><br/>
+        <strong>Methodology:</strong> Excess bed days: 8.0/bed baseline (QAHCS/AIHW), of which 35% are caused by information fragmentation between systems (ACSQHC), valued at A$3,100/day (IHACPA). Indemnity: 3% of A$20,000/bed (VMIA 2025-26). Duplicate testing: 22% duplicate rate (Banker et al 2024, RCPA), A$12,000/bed pathology, 50% addressable.<br/><br/>
         <strong>AU evidence:</strong> QLD DigiMat (Woods et al 2024): 12.9% decline in medication complications across 1.55M episodes. RCH Melbourne (South et al 2022): 22% decrease in in-hospital mortality post-Epic. QAO 2018: 37% fewer hospital-acquired infections at Princess Alexandra post-ieMR.<br/><br/><strong>Classification:</strong> Cost avoidance. These represent costs not incurred when adverse events are prevented.
       </EvidenceDropdown>
     </Card><LockedConnector/>
@@ -4420,7 +4420,7 @@ function ROICalculator() {
         {fmtK(Math.round(r.auReadmissionCostAvoidance * ts.mult))}{ts.suffix} ({fmtNum(Math.round(r.auReadmissionsAvoided * ts.mult))} readmissions avoided)
       </Callout>
       <EvidenceDropdown title="Evidence & methodology">
-        AIHW 2023-24: 12% unplanned 30-day readmission rate. Vest et al JAMIA 2019: 0.6pp reduction from EMR consolidation. 30% fragmentation attribution. Cost A$11,500/readmission (IHACPA NWAU-derived).
+        AIHW 2023-24: 12% unplanned 30-day readmission rate. Vest et al JAMIA 2019: 0.6pp reduction from EMR consolidation. 30% caused by information fragmentation between systems. Cost A$11,500/readmission (IHACPA NWAU-derived).
       </EvidenceDropdown>
     </Card><LockedConnector/></>}
 
@@ -4934,7 +4934,7 @@ function ROICalculator() {
             color="#d4507a"
             title={r.isAgedCare ? "4. Avoidable harm cost reduction" : "4. Quality / cost avoidance"}
             total={r.qualitySavings}
-            formula={r.isAgedCare ? "places × harm cost per place × fragmentation attribution × scenario.safety" : "Indemnity reduction + Excess bed days + Duplicate testing + e-Discovery + Readmission cost avoidance"}
+            formula={r.isAgedCare ? "places × harm cost per place × share caused by fragmentation × scenario.safety" : "Indemnity reduction + Excess bed days + Duplicate testing + e-Discovery + Readmission cost avoidance"}
             plug={r.isAgedCare 
               ? `${fmtNum(inputs.bed_count)} places × harm cost × fragmentation × ${(sc.safety*100).toFixed(0)}% scenario.safety = ${fmtK(r.qualitySavings)}/yr`
               : `Indemnity: ${fmtK(r.malpracticeReduction)}/yr (${fmtNum(inputs.bed_count)} beds × A$20,000 × 5% reduction × scenario.safety)\nExcess bed days: ${fmtK(r.excessDayCostAvoided)}/yr (${fmtNum(r.excessDaysAvoided)} days × A$3,100/day)\nDuplicate testing: ${fmtK(r.duplicateReduction)}/yr (${fmtNum(inputs.bed_count)} beds × A$12,000 pathology × 22% duplicate × 50% addressable)\ne-Discovery: ${fmtK(r.ediscoverySaving)}/yr (${r.litigationCases} cases × hours saved × hourly rate)\nReadmissions: ${fmtK(r.auReadmissionCostAvoidance)}/yr (${fmtNum(r.auReadmissionsAvoided)} avoided × A$8,500/each)\n= ${fmtK(r.qualitySavings)}/yr total`
