@@ -3913,7 +3913,7 @@ function ROICalculator() {
 
     {!dim && galenMigrationCost > 0 && <ResultSection defaultOpen={true} title="Archiving investment case" svgIcon="unlock" dimmed={dim}>
       <p style={{fontSize:13,color:C.textMid,margin:"0 0 14px",lineHeight:1.5}}>
-        Without a clinical archive, legacy systems cannot be safely switched off. The Galen Clinical Archive is the enabling investment that makes <strong style={{color:C.green}}>{fmtK(r.decomSave)}/yr</strong> in decommission savings possible.
+        Without a clinical archive, legacy systems cannot be safely switched off. The Galen Clinical Archive is the enabling investment that makes <strong style={{color:C.green}}>{fmtK(Math.round(r.decomSave * ts.mult))}{ts.suffix}</strong> in decommission savings possible.
       </p>
       <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",marginBottom:12}}>
         <div style={{flex:"1 1 120px",padding:"12px 14px",background:"#fef0f0",borderRadius:8,textAlign:"center"}}>
@@ -3924,12 +3924,12 @@ function ROICalculator() {
         <div style={{fontSize:20,color:C.textMuted}}>{"→"}</div>
         <div style={{flex:"1 1 120px",padding:"12px 14px",background:C.greenPale,borderRadius:8,textAlign:"center"}}>
           <div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>Unlocks (decom only)</div>
-          <div style={{fontSize:20,fontWeight:800,color:C.green}}>{fmtK(r.decomSave)}/yr</div>
+          <div style={{fontSize:20,fontWeight:800,color:C.green}}>{fmtK(Math.round(r.decomSave * ts.mult))}{ts.suffix}</div>
         </div>
         <div style={{fontSize:20,color:C.textMuted}}>{"="}</div>
         <div style={{flex:"1 1 120px",padding:"12px 14px",background:"#e8faf6",borderRadius:8,textAlign:"center"}}>
           <div style={{fontSize:10,fontWeight:600,color:C.textMuted}}>Return on archive</div>
-          <div style={{fontSize:20,fontWeight:800,color:C.accent}}>{(r.decomSave/Math.max(1,galenMigrationCost)).toFixed(1)}x</div>
+          <div style={{fontSize:20,fontWeight:800,color:C.accent}}>{(r.decomSave * ts.mult / Math.max(1,galenMigrationCost)).toFixed(1)}x</div>
         </div>
       </div>
       <div style={{padding:"8px 12px",background:C.accent+"10",borderRadius:6,fontSize:12,color:C.textMid}}>
