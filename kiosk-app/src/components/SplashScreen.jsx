@@ -265,8 +265,8 @@ export function SplashScreen({ onStart, onAdminReveal }) {
             50% { box-shadow: 0 0 120px rgba(0,212,170,0.55), inset 0 0 80px rgba(0,212,170,0.15); transform: scale(1.02); }
           }
           @keyframes klasBadgeFloat {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-6px); }
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50%      { transform: translateX(-50%) translateY(-6px); }
           }
           @keyframes radialWipe {
             0%   { width: 0;      height: 0;      opacity: 1; }
