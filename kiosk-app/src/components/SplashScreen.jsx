@@ -274,16 +274,20 @@ export function SplashScreen({ onStart, onAdminReveal }) {
           }
         `}</style>
 
-        {/* Best in KLAS 2025 badge - replaces the previous text version.
-            Gentle floating animation to draw the eye without being noisy. */}
-        <img src={klasBadge} alt="Best in KLAS 2025 - Data Archiving" style={{
-          display: 'block', margin: '70px auto 0',
-          width: 240, height: 'auto',
-          filter: 'drop-shadow(0 4px 24px rgba(0,212,170,0.25))',
-          animation: 'klasBadgeFloat 4s ease-in-out infinite',
-        }} />
-
       </div>
+
+      {/* Best in KLAS 2025 badge — positioned in the lower third of the splash,
+          above the RLDatix logo. Now uses the transparent-corner PNG so the
+          circular badge sits cleanly on the dark gradient. Gentle floating
+          animation to draw the eye without being noisy. */}
+      <img src={klasBadge} alt="Best in KLAS 2025 - Data Archiving" style={{
+        position: 'absolute', bottom: 270, left: '50%', transform: 'translateX(-50%)',
+        width: 200, height: 'auto', zIndex: 3,
+        filter: 'drop-shadow(0 4px 24px rgba(0,212,170,0.25))',
+        animation: 'klasBadgeFloat 4s ease-in-out infinite',
+        transition: 'opacity 600ms ease-out',
+        opacity: launching ? 0.2 : 1,
+      }} />
 
       <img src={rldatixLogo} alt="RLDatix" onClick={handleLogoTap} style={{
         position: 'absolute', bottom: 50, left: '50%', transform: 'translateX(-50%)',
