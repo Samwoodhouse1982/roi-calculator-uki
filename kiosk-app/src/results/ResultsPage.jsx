@@ -99,8 +99,14 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     academic: r.academicSavings || 0,
     network:  r.mergeSavings || 0,
   };
+  // FTE freed scales with timescale just like hours freed and dollar figures.
+  // For 3-yr total view, this represents cumulative FTE-equivalent capacity
+  // freed across 3 years (e.g. 5.2 FTE/yr steady state × 2.20 ramp factor =
+  // 11.4 FTE-years cumulative). For Year 1, it's first-year FTE during ramp
+  // (5.2 × 0.40 = 2.08 FTE).
   const fteRaw = r.hrsSaved ? r.hrsSaved * (r.realization || 0.3) / 1824 : 0;
-  const fte = fteRaw >= 1 ? Math.round(fteRaw) : Math.round(fteRaw * 10) / 10;
+  const fteScaled = fteRaw * ts.mult;
+  const fte = fteScaled >= 1 ? Math.round(fteScaled) : Math.round(fteScaled * 10) / 10;
   const fmtFte = v => v < 1 ? v.toFixed(1) : fmtNum(v);
   const hasGalen = galenMigrationCost > 0;
   const payback = hasGalen ? galenMigrationCost / Math.max(1, r.decomSave - galenAnnualCost) : 0;
@@ -174,7 +180,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
     {/* KPI grid - each card maps to a segment above, tappable to jump to detail */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
       <KpiCard label="Legacy decommission" value={fmtKts(seg.decom)} sub={`${r.decom} of ${r.legacy} systems retired`} color={C.accent} iconKey="unlock" onClick={() => scrollTo(decomRef)} />
-      <KpiCard label="Clinical capacity" value={`${fmtFte(fte)} FTE freed`} sub={`${fmtKts(seg.capacity)} value`} color={C.amber} iconKey="clock" onClick={() => scrollTo(capacityRef)} />
+      <KpiCard label="Clinical capacity" value={`${fmtFte(fte)} FTE${viewTimescale === 'annual' || viewTimescale === 'year1' ? ' freed' : '-years freed'}${viewTimescale === 'year1' ? ' (Year 1)' : viewTimescale === 'total3' ? ' (3-yr)' : viewTimescale === 'total5' ? ' (5-yr)' : ''}`} sub={`${fmtKts(seg.capacity)} value`} color={C.amber} iconKey="clock" onClick={() => scrollTo(capacityRef)} />
       {seg.reimb > 0 && <KpiCard label="Reimbursement impact" value={fmtKts(seg.reimb)} sub="CMS penalties + denial recovery" color={C.blue} iconKey="dollar" onClick={() => scrollTo(reimbRef)} />}
       {seg.safety > 0 && <KpiCard label="Patient safety" value={fmtKts(seg.safety)} sub={`${fmtNum(r.safetyPatientsProtected)} patients protected${r.readmissionsAvoided > 0 ? ", " + r.readmissionsAvoided + " readmissions avoided" : ""}`} color={C.purple} iconKey="shield" onClick={() => scrollTo(safetyRef)} />}
       {seg.network > 0 && <KpiCard label="Network consolidation" value={fmtKts(seg.network)} sub={`${r.duplicateSystems} duplicate systems across ${r.org_count || ""} facilities`} color="#8e44ad" iconKey="network" onClick={() => scrollTo(networkRef)} />}
@@ -330,7 +336,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Row label="Systems per user (~35% exposure)" value={r.systemsPerUser} />
         <Row label="Time wasted per person/week" value={`${r.minsWasted} mins`} />
         <Row label={viewTimescale === 'annual' ? "Hours freed per year" : `Hours freed${ts.suffix}`} value={fmtNum(Math.round(r.hrsSaved * ts.mult))} />
-        <Row label="Full-time equivalent (FTE)" value={fmtFte(fte)} accent />
+        <Row label={viewTimescale === 'annual' ? "Full-time equivalent (FTE)" : viewTimescale === 'year1' ? "Full-time equivalent (Year 1)" : `Cumulative FTE-years freed${ts.suffix}`} value={fmtFte(fte)} accent />
         <Row label="Capacity value" value={fmtKts(seg.capacity)} accent />
         <Methodology
           formula={"clinicians \u00d7 (mins/wk - residual) \u00d7 working_weeks / 60 \u00d7 $95 \u00d7 scenario.realization"}

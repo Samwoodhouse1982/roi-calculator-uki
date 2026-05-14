@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { C } from '../theme';
 import rldatixLogo from '../assets/rldatix-logo.png';
-import klasBadge from '../assets/best-in-klas-2025-data-archiving.png';
+import klasBadge from '../assets/best-in-klas-2025-data-archiving.svg';
 
 // Timings (ms) for the launch animation. Tune here.
 const CONVERGE_MS = 700;       // particles fly toward the button
