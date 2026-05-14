@@ -2630,7 +2630,7 @@ function ROICalculator() {
       head: [["Category", "Annual impact", "Source"]],
       body: [
         ["Activity-Based Funding efficiency", fmtK(r.abfEfficiencyGain || 0) + "/yr", "~15% of legacy admin costs removed by consolidation (modelled)"],
-        ...(r.privateRevRecovery > 0 ? [["Private patient uplift", fmtK(r.privateRevRecovery) + "/yr", "30% recovery of leaked private episodes"]] : []),
+        ...(r.privateRevRecovery > 0 ? [["Private patient uplift", fmtK(r.privateRevRecovery) + "/yr", "30% of currently-missed private patient billings captured"]] : []),
         ["Medical indemnity reduction", fmtK(r.malpracticeReduction) + "/yr", "3% of A$20,000/bed (VMIA 2025-26)"],
         ["Excess bed day savings", fmtK(r.excessDayCostAvoided) + "/yr", "QAHCS/AIHW (A$3,100/day x share caused by fragmentation)"],
         ["Duplicate testing reduction", fmtK(r.duplicateReduction) + "/yr", "22% duplicate rate (Banker et al 2024; RCPA)"],
@@ -4213,7 +4213,7 @@ function ROICalculator() {
         {r.privateRevRecovery > 0 && <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Private patient revenue uplift</div>
           <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(Math.round(r.privateRevRecovery * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>30% recovery of leaked private episodes (15% leakage, VAGO 2019)</div>
+          <div style={{fontSize:11,color:C.textMuted}}>Captures 30% of currently-missed private patient billings (about 15% of privately insured episodes in public hospitals go unbilled, VAGO 2019)</div>
         </div>}
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate testing reduction</div>
@@ -4228,8 +4228,8 @@ function ROICalculator() {
       </Callout>
 
       <EvidenceDropdown title="Evidence & methodology">
-        <strong>Methodology:</strong> ABF efficiency modelled at 15% of legacy estate cost addressable through consolidation.{r.privateRevRecovery > 0 ? " Private patient revenue: 30% recovery of leaked episodes (15% leakage rate, VAGO 2019)." : ""}<br/><br/>
-        <strong>Sources:</strong> IHACPA 2025-26 (NWAU pricing). VAGO 2019 (private patient leakage). NSW SDPR programme data. Productivity Commission May 2024: up to A$5.4bn/yr in national savings from better EMR data use. All figures are scenario-adjusted.
+        <strong>Methodology:</strong> ABF efficiency modelled at 15% of legacy estate cost addressable through consolidation.{r.privateRevRecovery > 0 ? " Private patient revenue (sometimes called patient leakage): 30% of currently-missed private billings captured. Around 15% of privately insured episodes in public hospitals go unbilled due to incomplete documentation (VAGO 2019)." : ""}<br/><br/>
+        <strong>Sources:</strong> IHACPA 2025-26 (NWAU pricing). VAGO 2019 (unbilled private patient episodes in public hospitals). NSW SDPR programme data. Productivity Commission May 2024: up to A$5.4bn/yr in national savings from better EMR data use. All figures are scenario-adjusted.
       </EvidenceDropdown>
     </Card><LockedConnector/>
 
@@ -4750,9 +4750,9 @@ function ROICalculator() {
         <S title="8. ABF efficiency and compliance methodology">
           <p style={{margin:"0 0 8px"}}><strong>What this is:</strong> Activity Based Funding (ABF) is how Australian public hospitals get paid for the care they deliver. Each patient episode is converted into a National Weighted Activity Unit (NWAU), a single yardstick for activity weighted by complexity, and multiplied by the National Efficient Price (NEP), set every year by IHACPA (the Independent Health and Aged Care Pricing Authority). For 2025-26 the NEP is A$7,258 per NWAU.<br/><br/>The link to system consolidation is simple: better clinical documentation means more accurate coding, which means correct funding actually received. When clinicians and coders have to chase information across fragmented legacy systems, things get missed. Removing that friction recovers the money that should already have been billed.</p>
           <p style={{margin:"0 0 8px"}}>{r.privateRevRecovery > 0 ? "ABF efficiency gain and revenue cycle impact are modelled from verified programme rates and provider-specific multipliers." : "ABF efficiency gain is modelled from verified programme rates."}</p>
-          <F>ABF efficiency gain (abfEfficiencyGain) = totalEstate {"\u00d7"} 15% {"\u00d7"} decomFactor<br/>{r.privateRevRecovery > 0 && <>Private revenue recovery (privateRevRecovery) = admissions {"\u00d7"} privatePct {"\u00d7"} 15% leakage {"\u00d7"} A$4,200 {"\u00d7"} 30% recoverable<br/></>}Indemnity reduction (indemnityReduction) = beds {"\u00d7"} A$20,000 {"\u00d7"} 3% {"\u00d7"} safetyFactor<br/>Excess bed day savings (excessBedDaySavings) = beds {"\u00d7"} 8.0 days {"\u00d7"} 35% (share caused by information fragmentation) {"\u00d7"} fragmentation index {"\u00d7"} safetyFactor {"\u00d7"} A$3,100</F>
+          <F>ABF efficiency gain (abfEfficiencyGain) = totalEstate {"\u00d7"} 15% {"\u00d7"} decomFactor<br/>{r.privateRevRecovery > 0 && <>Private revenue recovery (privateRevRecovery) = admissions {"\u00d7"} privatePct {"\u00d7"} 15% unbilled rate {"\u00d7"} A$4,200 {"\u00d7"} 30% recoverable<br/></>}Indemnity reduction (indemnityReduction) = beds {"\u00d7"} A$20,000 {"\u00d7"} 3% {"\u00d7"} safetyFactor<br/>Excess bed day savings (excessBedDaySavings) = beds {"\u00d7"} 8.0 days {"\u00d7"} 35% (share caused by information fragmentation) {"\u00d7"} fragmentation index {"\u00d7"} safetyFactor {"\u00d7"} A$3,100</F>
           <p style={{margin:"8px 0 4px"}}><strong>ABF efficiency</strong> {" - "} this is the funding recovered when consolidation removes the administrative friction that fragmented legacy systems create in coding and billing. We model the recoverable amount as roughly 15% of your annual legacy system costs, then multiply by the share of systems you actually retire (so retiring 75% of systems unlocks 75% of the 15%). National Efficient Price for 2025-26 is A$7,258 per NWAU, set by IHACPA (the Independent Health and Aged Care Pricing Authority, formerly IHPA). <Ev s="IHACPA National Efficient Price Determination 2025-26; AIHW hospital expenditure data."/></p>
-          {r.privateRevRecovery > 0 && <p style={{margin:"4px 0"}}><strong>Private patient revenue</strong> {" - "} 15% of privately insured episodes in public hospitals estimated to go unbilled due to incomplete documentation. Average private episode value A$4,200 above ABF rate. <Ev s="VAGO 2019; APRA (Australian Prudential Regulation Authority) Private Health Insurance (PHI) statistics; PHIO annual reports."/></p>}
+          {r.privateRevRecovery > 0 && <p style={{margin:"4px 0"}}><strong>Private patient revenue</strong> {" - "} sometimes called <em>patient leakage</em>. This is the revenue public hospitals miss when privately insured patients are treated but the hospital fails to identify them as private and bill their insurer. The patient is still treated; the funding just defaults to the public ABF rate when it could have included an additional private payment on top. VAGO 2019 estimates 15% of privately insured episodes in public hospitals go unbilled due to incomplete documentation. Average private episode value is A$4,200 above the ABF rate the hospital still receives. <Ev s="VAGO 2019; APRA (Australian Prudential Regulation Authority) Private Health Insurance (PHI) statistics; PHIO annual reports."/></p>}
           <p style={{margin:"4px 0"}}><strong>Medical indemnity</strong> {" - "} A$20,000/bed institutional indemnity (VMIA 2025-26: $380.9M for ~16,000 VIC beds). 3% reduction modelled from ACSQHC communication failure data. <Ev s="VMIA 2025-26 annual report; ACSQHC root cause analyses."/></p>
 
           
@@ -4878,8 +4878,8 @@ function ROICalculator() {
             title="3. ABF & revenue impacts (hospital sector)"
             total={r.reimbursementImpact}
             formula={r.privateRevRecovery > 0 ? "ABF efficiency gain + Private patient revenue recovery" : "ABF efficiency gain"}
-            plug={`ABF efficiency: ${fmtK(r.abfEfficiencyGain)}/yr (${fmtK(r.totalEstate)} total estate × 15% improvement opportunity × scenario.decom)${r.privateRevRecovery > 0 ? `\nPrivate revenue: ${fmtK(r.privateRevRecovery)}/yr (${fmtNum(r.admissionsPerYear)} admissions × private % × leakage rate × episode value × 30% recoverable)` : ""}\n= ${fmtK(r.reimbursementImpact)}/yr total`}
-            source={"NEP (National Efficient Price) for 2025-26 = A$7,258/NWAU per IHACPA Determination (12.3% increase from 2024-25). ABF efficiency: typical 15% optimisation potential through better coding accuracy and discharge timing." + (r.privateRevRecovery > 0 ? " Private leakage: AIHW data on private patient billing in public hospitals." : "")}
+            plug={`ABF efficiency: ${fmtK(r.abfEfficiencyGain)}/yr (${fmtK(r.totalEstate)} total estate × 15% improvement opportunity × scenario.decom)${r.privateRevRecovery > 0 ? `\nPrivate revenue: ${fmtK(r.privateRevRecovery)}/yr (${fmtNum(r.admissionsPerYear)} admissions × private % × unbilled rate × episode value × 30% recoverable)` : ""}\n= ${fmtK(r.reimbursementImpact)}/yr total`}
+            source={"NEP (National Efficient Price) for 2025-26 = A$7,258/NWAU per IHACPA Determination (12.3% increase from 2024-25). ABF efficiency: typical 15% optimisation potential through better coding accuracy and discharge timing." + (r.privateRevRecovery > 0 ? " Private patient billing: AIHW data on unbilled private patient episodes in public hospitals." : "")}
           />}
 
           {r.isAgedCare && (r.reimbursementImpact||0) > 0 && <FormulaSection
