@@ -130,11 +130,14 @@ export function calc(inp, mode, ov = {}, flagships = []) {
   const depCost = ov.depCost != null ? ov.depCost : tierCost("departmental", inp.bed_count, cx);
   const nicCost = ov.nicCost != null ? ov.nicCost : tierCost("niche", inp.bed_count, cx);
   const tieredEstate = ent * entCost + dep * depCost + nic * nicCost;
-  // Flagships
-  const flagshipTotal = flagships.reduce((s,f) => s + (f.cost || 0), 0);
-  const flagshipDecomSave = flagships.filter(f => f.retire).reduce((s,f) => s + (f.cost || 0), 0);
-  const flagshipCount = flagships.length;
-  const flagshipRetireCount = flagships.filter(f => f.retire).length;
+  // Flagships. Each flagship can optionally represent multiple instances of
+  // the same system (e.g. an IDN with 3-4 Epic deployments — one per hospital).
+  // f.instances defaults to 1 if missing, so existing flagship state without
+  // the instances field still calculates correctly.
+  const flagshipTotal = flagships.reduce((s,f) => s + (f.cost || 0) * (f.instances || 1), 0);
+  const flagshipDecomSave = flagships.filter(f => f.retire).reduce((s,f) => s + (f.cost || 0) * (f.instances || 1), 0);
+  const flagshipCount = flagships.reduce((s,f) => s + (f.instances || 1), 0);
+  const flagshipRetireCount = flagships.filter(f => f.retire).reduce((s,f) => s + (f.instances || 1), 0);
   const portfolioSystems = inp._portfolioSystems || 0;
   const legacy = tieredLegacy + flagshipCount + portfolioSystems;
   const estimatedEstate = tieredEstate + flagshipTotal + (inp._portfolioCost || 0);

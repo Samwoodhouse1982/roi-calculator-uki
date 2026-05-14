@@ -224,7 +224,7 @@ export function FacilitiesStep({ inputs, update, facilities, setFacility }) {
 }
 
 // STEP 4: Systems
-export function SystemsStep({ inputs, updateTier, flagships, addFlagship, removeFlagship, updateFlagshipCost, costMode, setCostMode, knownSpend, setKnownSpend }) {
+export function SystemsStep({ inputs, updateTier, flagships, addFlagship, removeFlagship, updateFlagshipCost, updateFlagshipInstances, costMode, setCostMode, knownSpend, setKnownSpend }) {
   const [openTier, setOpenTier] = useState(null);
   const [selected, setSelected] = useState([]);
   const [customTier, setCustomTier] = useState(null); // when set, modal is open for that tier
@@ -234,7 +234,10 @@ export function SystemsStep({ inputs, updateTier, flagships, addFlagship, remove
     { key: "niche", label: "Standalone", color: C.purple, hint: "Including document stores, data warehouses, scanned notes", max: Math.max(100, inputs.tiers.niche + 10) },
   ];
   const sliderTotal = inputs.tiers.enterprise + inputs.tiers.departmental + inputs.tiers.niche;
-  const total = sliderTotal + flagships.length;
+  // Count each flagship by its instances (default 1) so the totals reflect
+  // multi-instance entries like 'Epic × 3' as 3 systems, not 1.
+  const flagshipInstanceCount = flagships.reduce((s, f) => s + (f.instances || 1), 0);
+  const total = sliderTotal + flagshipInstanceCount;
 
   return <div>
     <SectionTitle number="4">Legacy systems</SectionTitle>
@@ -284,13 +287,41 @@ export function SystemsStep({ inputs, updateTier, flagships, addFlagship, remove
             {tierFlagships.map((f, fi) => {
               const fIdx = flagships.indexOf(f);
               const step = f.cost > 500000 ? 50000 : f.cost > 100000 ? 25000 : 10000;
-              return <div key={fi} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: C.bg, borderRadius: 12, marginBottom: 6 }}>
-                <span style={{ fontSize: F.tiny, fontWeight: 600, color: t.color, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
-                <button onClick={() => updateFlagshipCost(fIdx, f.cost - step)} style={{ width: 40, height: 40, borderRadius: 10, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: 20, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit", flexShrink: 0 }}>−</button>
-                <span style={{ fontSize: F.small, fontWeight: 700, color: t.color, minWidth: 70, textAlign: "center" }}>{fmtK(f.cost)}</span>
-                <button onClick={() => updateFlagshipCost(fIdx, f.cost + step)} style={{ width: 40, height: 40, borderRadius: 10, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: 20, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit", flexShrink: 0 }}>+</button>
-                <span style={{ fontSize: F.tiny, color: C.textMuted, flexShrink: 0 }}>/yr</span>
-                <button onClick={() => removeFlagship(fIdx)} style={{ width: 36, height: 36, border: "none", background: "none", color: C.textMuted, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>×</button>
+              const instances = f.instances || 1;
+              const hasMultiple = instances > 1;
+              return <div key={fi} style={{ background: C.bg, borderRadius: 12, marginBottom: 6 }}>
+                {/* Main row: name, cost adjuster, multi-instance checkbox, remove */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px" }}>
+                  <span style={{ fontSize: F.tiny, fontWeight: 600, color: t.color, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
+                  <button onClick={() => updateFlagshipCost(fIdx, f.cost - step)} style={{ width: 40, height: 40, borderRadius: 10, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: 20, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit", flexShrink: 0 }}>−</button>
+                  <span style={{ fontSize: F.small, fontWeight: 700, color: t.color, minWidth: 70, textAlign: "center" }}>{fmtK(f.cost)}</span>
+                  <button onClick={() => updateFlagshipCost(fIdx, f.cost + step)} style={{ width: 40, height: 40, borderRadius: 10, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: 20, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit", flexShrink: 0 }}>+</button>
+                  <span style={{ fontSize: F.tiny, color: C.textMuted, flexShrink: 0 }}>/yr each</span>
+                  {/* Multiple instances toggle. Checking it bumps instances 1→2 as a sensible
+                      default (IDNs typically have 2+ duplicates); unchecking returns to 1. */}
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: F.tiny, color: hasMultiple ? t.color : C.textMuted, cursor: "pointer", padding: "6px 10px", borderRadius: 8, border: `1px solid ${hasMultiple ? t.color : C.borderLight}`, background: hasMultiple ? t.color + "12" : 'transparent', flexShrink: 0, fontWeight: 600 }}>
+                    <input
+                      type="checkbox"
+                      checked={hasMultiple}
+                      onChange={e => updateFlagshipInstances(fIdx, e.target.checked ? 2 : 1)}
+                      style={{ width: 16, height: 16, accentColor: t.color, cursor: "pointer" }}
+                    />
+                    Multiple
+                  </label>
+                  <button onClick={() => removeFlagship(fIdx)} style={{ width: 36, height: 36, border: "none", background: "none", color: C.textMuted, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>×</button>
+                </div>
+                {/* Instance counter row — only shown when 'Multiple' is checked.
+                    Lets the user dial in 2, 3, 4 instances (e.g. an IDN with 4 hospitals
+                    each running their own Epic). Shows the multiplied total alongside. */}
+                {hasMultiple && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 12px 10px 12px", borderTop: `1px dashed ${C.borderLight}`, paddingTop: 10, marginTop: 2 }}>
+                    <span style={{ fontSize: F.tiny, fontWeight: 600, color: C.textMuted, flex: 1 }}>Number of instances across your network:</span>
+                    <button onClick={() => updateFlagshipInstances(fIdx, instances - 1)} style={{ width: 40, height: 40, borderRadius: 10, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: 20, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit", flexShrink: 0 }}>−</button>
+                    <span style={{ fontSize: F.small, fontWeight: 800, color: t.color, minWidth: 36, textAlign: "center" }}>{instances}</span>
+                    <button onClick={() => updateFlagshipInstances(fIdx, instances + 1)} style={{ width: 40, height: 40, borderRadius: 10, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: 20, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit", flexShrink: 0 }}>+</button>
+                    <span style={{ fontSize: F.tiny, color: C.textMid, flexShrink: 0, marginLeft: 8 }}>= <strong style={{ color: t.color }}>{fmtK(f.cost * instances)}/yr</strong> total</span>
+                  </div>
+                )}
               </div>;
             })}
           </div>}
@@ -334,7 +365,7 @@ export function SystemsStep({ inputs, updateTier, flagships, addFlagship, remove
       <span style={{ fontSize: 48, fontWeight: 800, color: C.accent }}>{total}</span>
       <div>
         <div style={{ fontSize: F.h3, fontWeight: 600, color: C.textMid }}>total legacy systems</div>
-        {flagships.length > 0 && <div style={{ fontSize: F.tiny, color: C.textMuted, marginTop: 2 }}>{sliderTotal} by tier + {flagships.length} named system{flagships.length > 1 ? "s" : ""}</div>}
+        {flagships.length > 0 && <div style={{ fontSize: F.tiny, color: C.textMuted, marginTop: 2 }}>{sliderTotal} by tier + {flagshipInstanceCount} named system{flagshipInstanceCount > 1 ? "s" : ""}{flagships.some(f => (f.instances || 1) > 1) ? ` (${flagships.length} entries, with multiple instances)` : ""}</div>}
       </div>
     </div>
     {customTier && (() => {

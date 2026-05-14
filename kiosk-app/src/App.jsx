@@ -370,7 +370,7 @@ export default function App() {
 
   const addFlagship = useCallback((sys, tier) => {
     const cost = sys.baseCost ? systemCost(sys, inputs.bed_count) : (sys.cost || 250000);
-    setFlagships(p => [...p, { name: sys.label || "", cost, retire: true, tier: tier || null }]);
+    setFlagships(p => [...p, { name: sys.label || "", cost, retire: true, tier: tier || null, instances: 1 }]);
   }, [inputs.bed_count]);
 
   const removeFlagship = useCallback((idx) => {
@@ -378,6 +378,11 @@ export default function App() {
   }, []);
   const updateFlagshipCost = useCallback((idx, cost) => {
     setFlagships(p => p.map((f, i) => i === idx ? { ...f, cost: Math.max(0, cost) } : f));
+  }, []);
+  // Clamp instances to [1, 99]. An IDN with 4 hospitals running the same EPR
+  // is a real case; 99 is a generous upper bound.
+  const updateFlagshipInstances = useCallback((idx, instances) => {
+    setFlagships(p => p.map((f, i) => i === idx ? { ...f, instances: Math.max(1, Math.min(99, instances)) } : f));
   }, []);
 
   const calcInputs = useMemo(() => {
@@ -491,7 +496,7 @@ export default function App() {
       case 0: return <ProviderStep providerType={providerType} onSelect={selectProvider} reimbursementModel={reimbursementModel} setReimbursementModel={setReimbursementModel} />;
       case 1: return <JourneyStep journey={inputs.journey} onSelect={v => update("journey", v)} />;
       case 2: return <FacilitiesStep inputs={inputs} update={update} facilities={facilities} setFacility={setFacility} />;
-      case 3: return <SystemsStep inputs={inputs} updateTier={updateTier} flagships={flagships} addFlagship={addFlagship} removeFlagship={removeFlagship} updateFlagshipCost={updateFlagshipCost} costMode={costMode} setCostMode={setCostMode} knownSpend={knownSpend} setKnownSpend={setKnownSpend} />;
+      case 3: return <SystemsStep inputs={inputs} updateTier={updateTier} flagships={flagships} addFlagship={addFlagship} removeFlagship={removeFlagship} updateFlagshipCost={updateFlagshipCost} updateFlagshipInstances={updateFlagshipInstances} costMode={costMode} setCostMode={setCostMode} knownSpend={knownSpend} setKnownSpend={setKnownSpend} />;
       case 4: return <FineTuneStep inputs={inputs} update={update} galenMigrationCost={galenMigrationCost} setGalenMigrationCost={setGalenMigrationCost} galenAnnualCost={galenAnnualCost} setGalenAnnualCost={setGalenAnnualCost} occupancyRate={occupancyRate} setOccupancyRate={setOccupancyRate} />;
       case 5: return <ResultsPage r={r} galenMigrationCost={galenMigrationCost} galenAnnualCost={galenAnnualCost} onAdjust={handleAdjust} onStartOver={handleStartOver} />;
       default: return null;
