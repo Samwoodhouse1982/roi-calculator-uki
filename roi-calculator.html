@@ -2631,7 +2631,7 @@ function ROICalculator() {
       margin: { left: ml, right: mr },
       head: [["Category", "Annual impact", "Source"]],
       body: [
-        ["Activity-Based Funding efficiency", fmtK(r.abfEfficiencyGain || 0) + "/yr", "15% of legacy estate admin overhead (modelled)"],
+        ["Activity-Based Funding efficiency", fmtK(r.abfEfficiencyGain || 0) + "/yr", "~15% of legacy admin costs removed by consolidation (modelled)"],
         ...(r.privateRevRecovery > 0 ? [["Private patient uplift", fmtK(r.privateRevRecovery) + "/yr", "30% recovery of leaked private episodes"]] : []),
         ["Medical indemnity reduction", fmtK(r.malpracticeReduction) + "/yr", "3% of A$20,000/bed (VMIA 2025-26)"],
         ["Excess bed day savings", fmtK(r.excessDayCostAvoided) + "/yr", "QAHCS/AIHW (A$3,100/day x share caused by fragmentation)"],
@@ -4238,7 +4238,7 @@ function ROICalculator() {
         <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>ABF efficiency gain</div>
           <div style={{fontSize:28,fontWeight:800,color:C.green,margin:"6px 0"}}>{an?fmtK(Math.round(r.abfEfficiencyGain * ts.mult)):"\u2013"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix}</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>15% of legacy estate admin overhead addressable through consolidation</div>
+          <div style={{fontSize:11,color:C.textMuted}}>About 15% of legacy admin costs are removed when systems are consolidated</div>
         </div>
         {r.privateRevRecovery > 0 && <div style={{flex:"1 1 200px",padding:"16px 18px",background:C.greenPale,borderRadius:10}}>
           <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Private patient revenue uplift</div>
