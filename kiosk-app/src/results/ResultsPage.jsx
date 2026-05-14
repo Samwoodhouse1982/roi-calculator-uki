@@ -247,9 +247,15 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       </Card>
     </div>
 
+    {/* Four detail sections in a 2×2 grid below the stacked bar chart.
+        When seg.reimb is 0 the Reimbursement card is hidden and the grid
+        falls to 3 cards arranged 2+1. Cards stretch to equal height per row
+        thanks to height: 100% on each Card style. */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 18 }}>
+
     {/* Decommission */}
     <div ref={decomRef}>
-      <Card style={{ marginBottom: 18, borderLeft: `3px solid ${C.accent}` }}>
+      <Card style={{ height: '100%', borderLeft: `3px solid ${C.accent}` }}>
         <CTitle iconKey="unlock" color={C.accent}>Decommission savings</CTitle>
         <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Annual licensing, support, and infrastructure costs eliminated when legacy systems are retired and data archived into Galen.</div>
         <Row label="Legacy systems in scope" value={r.legacy} />
@@ -266,7 +272,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     {/* Capacity */}
     <div ref={capacityRef}>
-      <Card style={{ marginBottom: 18, borderLeft: `3px solid ${C.amber}` }}>
+      <Card style={{ height: '100%', borderLeft: `3px solid ${C.amber}` }}>
         <CTitle iconKey="clock" color={C.amber}>Clinical capacity</CTitle>
         <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Clinician time freed by eliminating context-switching between legacy systems, valued at blended hourly rate with conservative realization.</div>
         <Row label="Total staff" value={fmtNum(r.totalStaff)} />
@@ -286,7 +292,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     {/* Reimbursement */}
     {seg.reimb > 0 && <div ref={reimbRef}>
-      <Card style={{ marginBottom: 18, borderLeft: `3px solid ${C.blue}` }}>
+      <Card style={{ height: '100%', borderLeft: `3px solid ${C.blue}` }}>
         <CTitle iconKey="dollar" color={C.blue}>Reimbursement & compliance</CTitle>
         <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>CMS penalty program recovery and denial reduction from improved documentation through system consolidation.</div>
         {r.hrrpReduction > 0 && <Row label="Hospital Readmissions Reduction Program (HRRP) recovery" value={fmtK(r.hrrpReduction)} />}
@@ -304,7 +310,7 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
 
     {/* Patient safety */}
     <div ref={safetyRef}>
-      <Card style={{ marginBottom: 18, borderLeft: `3px solid ${C.purple}` }}>
+      <Card style={{ height: '100%', borderLeft: `3px solid ${C.purple}` }}>
         <CTitle iconKey="shield" color={C.purple}>Patient safety impact</CTitle>
         <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Cost avoidance from preventing adverse events attributable to fragmented clinical information across legacy systems.</div>
         <Row label="Medication errors avoided" value={fmtNum(r.safetyMedErrorsAvoided)} />
@@ -319,6 +325,8 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
           source={"Excess bed days: HCUP/AHRQ ($3,132/day acute). Medication errors: Bates et al (1.8 preventable ADEs per 100 admits). Communication failures contribute to 30% of malpractice claims (CRICO 2016). Malpractice premium: Mello et al Health Affairs 2010, NPDB 2023, TDC Group 2025. Readmissions: CMS 15.6% baseline, Vest et al JAMIA 2019 (0.8pp reduction from EHR consolidation). Classification: cost avoidance \u2014 these represent harm that doesn't occur, not direct budget reductions."}
         />
       </Card>
+    </div>
+
     </div>
 
     {/* Operational efficiency */}
