@@ -602,6 +602,11 @@ function calc(inp, mode, ov = {}, flagships = []) {
   const isMultiHospital = inp._providerType === "multi_hospital";
   const duplicateSystems = isMultiHospital ? Math.round(legacy * DUPLICATE_SYSTEM_RATE) : 0;
   const duplicateSystemCost = isMultiHospital ? Math.round(duplicateSystems * blendedCost) : 0;
+  // duplicateElimination is shown to the user for context but NOT summed
+  // into mergeSavings - retiring duplicate instances of systems is already
+  // captured by decomSave above. Counting it again would be double-counting.
+  // The card text on the results page now explicitly explains this so the
+  // user can see the duplication scale without the model overstating savings.
   const duplicateElimination = Math.round(duplicateSystemCost * decomPct);
   const duplicateInfraCost = isMultiHospital ? inp.org_count * DUPLICATE_INFRA_COST_PER_FACILITY : 0;
   const infraConsolidation = Math.round(duplicateInfraCost * 0.60 * decomPct); // 60% consolidatable
@@ -609,7 +614,14 @@ function calc(inp, mode, ov = {}, flagships = []) {
 
   // Module totals
   const academicSavings = researchDecomSave + gmeEfficiency + teachingOverhead;
-  const mergeSavings = duplicateElimination + infraConsolidation + standardizationSave;
+  // mergeSavings represents network-level savings ON TOP OF decommissioning:
+  //   - infraConsolidation: shared data center, network, monitoring tools
+  //     (NOT per-system costs)
+  //   - standardizationSave: governance, vendor mgmt, audit, training overhead
+  //     from running one estate vs N estates
+  // duplicateElimination is intentionally excluded - already in decomSave.
+  // Matches the kiosk engine (kiosk-app/src/calc/engine.js line 293).
+  const mergeSavings = infraConsolidation + standardizationSave;
 
   // Total reimbursement impact
   const reimbursementImpact = hrrpReduction + hacReduction + vbpImprovement + denialRecovery;
@@ -1940,7 +1952,7 @@ function ROICalculator() {
       { l: "Reimbursement", v: r.reimbursementImpact, sub: "HRRP/HAC/VBP + denials", c: [0,212,170] },
       { l: "Quality / safety", v: r.qualitySavings, sub: "Indemnity + bed days + tests", c: [212,80,122] },
       { l: "Academic", v: r.academicSavings, sub: "Research + GME + teaching", c: [44,62,107] },
-      { l: "M&A consolidation", v: r.mergeSavings, sub: "Duplicate elimination", c: [108,92,231] },
+      { l: "Network consolidation", v: r.mergeSavings, sub: "Shared infra + operational efficiency", c: [108,92,231] },
     ].filter(card => card.v > 0).slice(0, 4);
     const ncols = allCards.length <= 2 ? allCards.length : 2;
     const cardW = (cw - 4 * (ncols - 1)) / ncols;
@@ -2035,7 +2047,7 @@ function ROICalculator() {
       { l: "Quality & safety", v: r.qualitySavings, sub: "Malpractice + excess bed days + duplicate testing" + (r.usReadmissionCostAvoidance>0?" + readmissions":"") },
     ];
     if (r.academicSavings>0) components.push({ l: "Academic & GME", v: r.academicSavings, sub: "Research + teaching + GME compliance" });
-    if (r.mergeSavings>0) components.push({ l: "M&A consolidation", v: r.mergeSavings, sub: "Duplicate elimination + standardization across facilities" });
+    if (r.mergeSavings>0) components.push({ l: "Network consolidation", v: r.mergeSavings, sub: "Shared infrastructure + operational efficiency across facilities" });
     
     components.forEach(comp => {
       doc.setDrawColor(220,224,228); doc.setLineWidth(0.3);
@@ -2423,22 +2435,24 @@ function ROICalculator() {
       y = doc.lastAutoTable.finalY + 8;
     }
 
-    // M&A module (conditional)
+    // Network consolidation module (conditional, multi-hospital only)
     if (r.isMultiHospital && r.mergeSavings > 0) {
       if (y > 200) { doc.addPage(); addPageHeader(); y = 22; }
       doc.setFontSize(12); doc.setFont("helvetica","bold"); setC(TEAL);
-      doc.text("Multi-Hospital / M&A Consolidation Module", ml, y); y += 2;
+      doc.text("Network Consolidation Savings", ml, y); y += 2;
       doc.autoTable({
         startY: y,
         margin: { left: ml, right: mr },
         head: [["Category", "Annual savings", "Basis"]],
         body: [
-          ["Duplicate system elimination", fmtK(r.duplicateElimination) + "/yr", r.duplicateSystems + " duplicates across " + inputs.org_count + " facilities"],
-          ["Infrastructure consolidation", fmtK(r.infraConsolidation) + "/yr", "$250k/facility for DC, network, help desk"],
-          ["Cross-facility standardization", fmtK(r.standardizationSave) + "/yr", "Formulary, order sets, protocols"],
-          [{ content: "M&A module total", styles: { fontStyle: "bold", fillColor: LTBG } },
+          ["Shared infrastructure savings", fmtK(r.infraConsolidation) + "/yr", "$250k/facility for shared DC, network, monitoring"],
+          ["Operational efficiency savings", fmtK(r.standardizationSave) + "/yr", "Governance, vendor mgmt, audit, training"],
+          [{ content: "Total network consolidation savings", styles: { fontStyle: "bold", fillColor: LTBG } },
            { content: fmtK(r.mergeSavings) + "/yr", styles: { fontStyle: "bold", textColor: TEAL, fillColor: LTBG } },
-           { content: "", styles: { fillColor: LTBG } }],
+           { content: "Added to Decommission - not double-counted", styles: { fillColor: LTBG } }],
+          [{ content: "Duplicate elimination (context only)", styles: { fontStyle: "italic", textColor: MID } },
+           { content: fmtK(r.duplicateElimination) + "/yr", styles: { fontStyle: "italic", textColor: MID } },
+           { content: r.duplicateSystems + " duplicates - already in Decommission above", styles: { textColor: MID, fontSize: 6.5 } }],
         ],
         headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
         styles: { fontSize: 8.5, cellPadding: { top: 2.2, bottom: 2.2, left: 4, right: 4 }, textColor: DARK, lineWidth: 0.2, lineColor: [224,232,228] },
@@ -2485,7 +2499,7 @@ function ROICalculator() {
     if (r.reimbursementImpact > 0) yByRows.push(["Reimbursement", ...r.rampPcts.map(p => fmt(Math.round(r.reimbursementImpact * p))), { content: fmt(Math.round(r.reimbursementImpact * r.rampPcts.reduce((a,b)=>a+b,0))), styles: { fontStyle: "bold" } }]);
     if (r.qualitySavings > 0) yByRows.push(["Quality / safety", ...r.rampPcts.map(p => fmt(Math.round(r.qualitySavings * p))), { content: fmt(Math.round(r.qualitySavings * r.rampPcts.reduce((a,b)=>a+b,0))), styles: { fontStyle: "bold" } }]);
     if (r.academicSavings > 0) yByRows.push(["Academic", ...r.rampPcts.map(p => fmt(Math.round(r.academicSavings * p))), { content: fmt(Math.round(r.academicSavings * r.rampPcts.reduce((a,b)=>a+b,0))), styles: { fontStyle: "bold" } }]);
-    if (r.mergeSavings > 0) yByRows.push(["M&A consolidation", ...r.rampPcts.map(p => fmt(Math.round(r.mergeSavings * p))), { content: fmt(Math.round(r.mergeSavings * r.rampPcts.reduce((a,b)=>a+b,0))), styles: { fontStyle: "bold" } }]);
+    if (r.mergeSavings > 0) yByRows.push(["Network consolidation", ...r.rampPcts.map(p => fmt(Math.round(r.mergeSavings * p))), { content: fmt(Math.round(r.mergeSavings * r.rampPcts.reduce((a,b)=>a+b,0))), styles: { fontStyle: "bold" } }]);
     yByRows.push([
       { content: "Total", styles: { fontStyle: "bold", fillColor: LTBG } },
       ...r.rampPcts.map(p => ({ content: fmt(Math.round(r.annualWithReimbursement * p)), styles: { fontStyle: "bold", fillColor: LTBG } })),
@@ -3784,34 +3798,47 @@ function ROICalculator() {
 
     {/* M&A module - conditional */}
     {r.isMultiHospital && <div id="card-ma" style={{scrollMarginTop:80}}><Card dimmed={dim}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}><SIcon name="building" size={18} color="#2c3e6b"/> Multi-hospital / M&A consolidation module</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Included in annual savings</span></div>
-      <p style={{fontSize:13,color:C.textMuted,margin:"0 0 16px"}}>Savings from eliminating duplicate systems and infrastructure across {inputs.org_count} facilities post-merger.</p>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><h3 style={{fontSize:16,fontWeight:700,margin:0}}><SIcon name="building" size={18} color="#2c3e6b"/> Network consolidation savings</h3><span style={{fontSize:9,fontWeight:600,padding:"2px 8px",borderRadius:20,background:"#e8f5f0",color:"#0F4146",marginLeft:"auto",whiteSpace:"nowrap"}}>Added to annual savings</span></div>
+      <p style={{fontSize:13,color:C.text,margin:"0 0 12px",lineHeight:1.6}}>When a health system runs multiple hospitals, putting them all on one shared archive saves money beyond just retiring duplicate systems. There are two distinct categories of network-level savings:</p>
+      <ul style={{margin:"0 0 16px 18px",padding:0,fontSize:13,color:C.textMid,lineHeight:1.7}}>
+        <li><strong style={{color:C.text}}>Shared infrastructure</strong> &mdash; one data center, one network, one monitoring stack covering all {inputs.org_count} facilities instead of {inputs.org_count} separate stacks.</li>
+        <li><strong style={{color:C.text}}>Operational efficiency</strong> &mdash; one governance team, one vendor contract, one audit cycle, one training program instead of {inputs.org_count} of each.</li>
+      </ul>
+
+      <div style={{padding:"12px 14px",background:"#fff8eb",border:"1px solid #f0d896",borderRadius:8,marginBottom:16,fontSize:12,color:C.textMid,lineHeight:1.6}}>
+        <strong style={{color:"#8a6d1c"}}>How this fits with Decommission savings above:</strong> these network-level savings are <em>added to</em> the decommissioning savings on the previous card and are included in the overall annual total. They are <strong>not the same numbers counted twice</strong>.
+        <div style={{marginTop:6}}>
+          Across your {inputs.org_count} facilities, about 35% of legacy systems are typically duplicates of each other (per Becker's Healthcare: only ~35% of acquired hospitals switch to the acquirer's EHR, meaning the other ~65% keep running their own).
+          The savings from retiring each duplicate are <strong>already counted in Decommission savings above</strong>. We are <strong>not counting them again in this tile.</strong>
+          What's modelled here is purely the shared-infrastructure and operational-efficiency layer that becomes accessible <em>after</em> duplicates have been retired.
+        </div>
+      </div>
 
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:16}}>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate system elimination</div>
-          <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(Math.round(r.duplicateElimination * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix||"/yr"}</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>{r.duplicateSystems} duplicate systems across {inputs.org_count} facilities</div>
-        </div>
-        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Infrastructure consolidation</div>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Shared infrastructure savings</div>
           <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(Math.round(r.infraConsolidation * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix||"/yr"}</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>Data center, network, help desk</div>
+          <div style={{fontSize:11,color:C.textMuted}}>Data center, network, help desk consolidation</div>
         </div>
         <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#e8faf6",borderRadius:10}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Cross-facility standardization</div>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Operational efficiency savings</div>
           <div style={{fontSize:24,fontWeight:800,color:C.accent,margin:"6px 0"}}>{an?fmtK(Math.round(r.standardizationSave * ts.mult)):"-"}<span style={{fontSize:13,fontWeight:500}}>{ts.suffix||"/yr"}</span></div>
-          <div style={{fontSize:11,color:C.textMuted}}>Formulary, order sets, protocols</div>
+          <div style={{fontSize:11,color:C.textMuted}}>Governance, vendor mgmt, formulary, audit</div>
+        </div>
+        <div style={{flex:"1 1 180px",padding:"16px 18px",background:"#fafcfb",borderRadius:10,border:`1px dashed ${C.borderLight}`}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.textMuted}}>Duplicate elimination <span style={{fontSize:10,fontWeight:500,color:"#8a6d1c"}}>(context only)</span></div>
+          <div style={{fontSize:18,fontWeight:700,color:C.textMid,margin:"6px 0"}}>{an?fmtK(Math.round(r.duplicateElimination * ts.mult)):"-"}<span style={{fontSize:11,fontWeight:500,color:C.textMuted}}>{ts.suffix||"/yr"}</span></div>
+          <div style={{fontSize:11,color:C.textMuted}}>{r.duplicateSystems} duplicate systems &mdash; already in Decommission</div>
         </div>
       </div>
 
       <Callout bg="#e8faf6" border="#a8d8c8">
-        <strong style={{color:C.accent}}>M&A module total:</strong> {fmtK(Math.round(r.mergeSavings * ts.mult))}{ts.suffix||"/yr"}
-        <span style={{fontSize:12,color:C.textMuted,marginLeft:8}}>Included in combined annual total</span>
+        <strong style={{color:C.accent}}>Total network consolidation savings:</strong> {fmtK(Math.round((r.infraConsolidation + r.standardizationSave) * ts.mult))}{ts.suffix||"/yr"}
+        <span style={{fontSize:12,color:C.textMuted,marginLeft:8}}>Added to (not double-counted with) Decommission savings</span>
       </Callout>
 
       <EvidenceDropdown title="Evidence & methodology">
-        <strong>Why duplication occurs:</strong> When health systems merge or acquire hospitals, each facility typically retains its own legacy systems. Becker's Healthcare reports that only 35% of acquired hospitals switch to the acquirer's EHR, meaning 65% continue running their own systems indefinitely. This creates duplicate licensing, duplicate interfaces, duplicate training, and duplicate support costs across every facility.<br/><br/><strong>Duplicate system elimination:</strong> For each system that exists at multiple facilities, consolidating to a single archive eliminates the redundant copies. Valued at the departmental tier cost per duplicate instance.<br/><br/><strong>Infrastructure consolidation:</strong> $250,000 per facility covers duplicate data center hosting, network connectivity, service desk support, and staff training that can be eliminated when legacy systems are centralized. Based on industry benchmarks for mid-size hospital IT overhead.<br/><br/><strong>Standardization:</strong> Consolidation enables formulary harmonization, unified order sets, and standardized clinical protocols, reducing variation-driven waste.
+        <strong>Why duplication occurs in the first place:</strong> When health systems merge or acquire hospitals, each facility typically retains its own legacy systems. Becker's Healthcare reports that only 35% of acquired hospitals switch to the acquirer's EHR, meaning 65% continue running their own systems indefinitely. This creates duplicate licensing, duplicate interfaces, duplicate training, and duplicate support costs across every facility.<br/><br/><strong>Why duplicate-elimination dollars sit in the Decommission card (not here):</strong> Each duplicate system that gets retired is a system switched off. Its annual license + hosting + support cost is captured in the Decommission tile above. Counting it again here would be double-counting. The figure shown in the dashed tile is for context only so you can see the scale of the duplication.<br/><br/><strong>Shared infrastructure consolidation:</strong> $250,000 per facility covers duplicate data center hosting, network connectivity, service desk support, and staff training that can be eliminated when legacy systems are centralized to a shared archive. This is the layer of cost that's <em>only</em> reachable once consolidation happens, on top of the per-system license retirements. Based on industry benchmarks for mid-size hospital IT overhead.<br/><br/><strong>Operational efficiency:</strong> Once on a shared platform, one governance team handles all {inputs.org_count} facilities instead of {inputs.org_count} separate teams; one vendor contract replaces {inputs.org_count} contracts; one audit cycle and training program replaces {inputs.org_count} cycles. Modelled as 5% of total estate value, conservative versus published M&A IT integration benchmarks.
       </EvidenceDropdown>
     </Card></div>}
     {r.isMultiHospital && <LockedConnector/>}
@@ -4017,7 +4044,7 @@ function ROICalculator() {
             ...(r.reimbursementImpact>0?[{l:"Reimbursement",v:r.reimbursementImpact}]:[]),
             ...(r.qualitySavings>0?[{l:"Quality & safety",v:r.qualitySavings}]:[]),
             ...(r.academicSavings>0?[{l:"Academic",v:r.academicSavings}]:[]),
-            ...(r.mergeSavings>0?[{l:"M&A consolidation",v:r.mergeSavings}]:[]),
+            ...(r.mergeSavings>0?[{l:"Network consolidation",v:r.mergeSavings}]:[]),
           ].filter(row=>row.v>0).map((row,i)=><tr key={i}>
             <td style={{padding:"10px 12px",borderBottom:`1px solid ${C.borderLight}`}}>{row.l}</td>
             {r.rampPcts.map((p,j)=><td key={j} style={tdR_}>{fmtK(Math.round(row.v*p))}</td>)}
@@ -4448,7 +4475,7 @@ function ROICalculator() {
             title="6. M&A / Multi-hospital consolidation"
             total={r.mergeSavings}
             formula={"Duplicate system elimination + Infrastructure consolidation + Cross-facility standardization"}
-            plug={`Duplicate elimination: ${fmtK(r.duplicateElimination)}/yr (${r.duplicateSystems} duplicate systems × ${fmtK(r.blendedCost)} blended cost)\nInfra consolidation: ${fmtK(r.infraConsolidation)}/yr (${inputs.org_count} facilities × 60% consolidatable)\nStandardization: ${fmtK(r.standardizationSave)}/yr (5% of total estate value)\n= ${fmtK(r.mergeSavings)}/yr total`}
+            plug={`Shared infrastructure: ${fmtK(r.infraConsolidation)}/yr (${inputs.org_count} facilities × $250k × 60% consolidatable)\nOperational efficiency: ${fmtK(r.standardizationSave)}/yr (5% of total estate value)\n= ${fmtK(r.mergeSavings)}/yr network consolidation total\n\nDuplicate elimination: ${fmtK(r.duplicateElimination)}/yr (${r.duplicateSystems} duplicates × ${fmtK(r.blendedCost)}) is shown for context but NOT added here - already in Decommission savings above.`}
             source={"Multi-hospital systems typically run 30% duplicate IT footprint post-acquisition (Deloitte, KLAS M&A Best Practices). Infrastructure consolidation: AHA Hospital IT Survey post-merger benchmarks."}
           />}
 
