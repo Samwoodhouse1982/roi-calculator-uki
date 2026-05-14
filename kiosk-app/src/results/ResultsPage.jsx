@@ -60,7 +60,21 @@ function JumpLink({ label, onClick }) {
 
 export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, onStartOver }) {
   if (!r) return null;
-  const [projYears, setProjYears] = useState(3);
+  // Single top-level timescale that controls every $-figure on the page.
+  // Replaces the previous standalone projYears state (which only drove the
+  // projection chart). Now drives the hero, KPI tiles, all detail cards,
+  // the projection chart, and the Galen ROI section together.
+  const [viewTimescale, setViewTimescale] = useState('annual');
+  const TS_MULT = { year1: 0.40, total3: 2.20, total5: 3.00, annual: 1.00 };
+  const TS_SUFFIX = { year1: " (Year 1)", total3: " (3-yr)", total5: " (5-yr)", annual: "/yr" };
+  const TS_LABEL = { year1: "Year 1", total3: "3-yr total", total5: "5-yr total", annual: "Annual avg" };
+  const ts = { mult: TS_MULT[viewTimescale], suffix: TS_SUFFIX[viewTimescale], label: TS_LABEL[viewTimescale] };
+  // Helper to scale + format a /yr value to the current timescale.
+  const fmtKts = (v) => fmtK(Math.round((v || 0) * ts.mult)) + ts.suffix;
+  // Derived projection window for the time-series chart + Galen ROI box.
+  // Switches to 5 when the user picks 5-yr total at the top; otherwise stays
+  // on the 3-year ramp visualisation.
+  const projYears = viewTimescale === 'total5' ? 5 : 3;
   const [tappedBar, setTappedBar] = useState(null);
   const decomRef = useRef(null);
   const capacityRef = useRef(null);
@@ -94,10 +108,44 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       @keyframes numPulse { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }`}</style>
 
     {/* Hero */}
-    <div style={{ textAlign: "center", marginBottom: 20, padding: "24px 0" }}>
-      <div style={{ fontSize: F.body, fontWeight: 600, color: C.textMuted, letterSpacing: 4, textTransform: "uppercase", marginBottom: 16 }}>Estimated annual savings</div>
-      <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-4px", animation: "glow 3s ease-in-out infinite" }}><AnimK value={totalAnnual} /></div>
-      <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>per year at steady state</div>
+    <div style={{ textAlign: "center", marginBottom: 12, padding: "24px 0 12px" }}>
+      <div style={{ fontSize: F.body, fontWeight: 600, color: C.textMuted, letterSpacing: 4, textTransform: "uppercase", marginBottom: 16 }}>
+        {viewTimescale === 'annual' ? 'Estimated annual savings'
+          : viewTimescale === 'year1' ? 'Estimated Year 1 savings'
+          : viewTimescale === 'total3' ? 'Estimated 3-year cumulative savings'
+          : 'Estimated 5-year cumulative savings'}
+      </div>
+      <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-4px", animation: "glow 3s ease-in-out infinite" }}><AnimK value={Math.round(totalAnnual * ts.mult)} /></div>
+      <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>
+        {viewTimescale === 'annual' ? 'per year at steady state'
+          : viewTimescale === 'year1' ? 'in Year 1 (40% of steady state during ramp)'
+          : viewTimescale === 'total3' ? 'cumulative across the first 3 years'
+          : 'cumulative across the first 5 years'}
+      </div>
+    </div>
+
+    {/* Sticky timescale selector — controls every $-figure on the page.
+        position: sticky inside the App's overflow:auto content container so it
+        follows the user as they scroll through a long report. */}
+    <div style={{ position: "sticky", top: 0, zIndex: 30, padding: "14px 0", marginBottom: 16, background: C.bg + "f0", backdropFilter: "blur(8px)", borderBottom: `1px solid ${C.borderLight}` }}>
+      <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+        {[
+          { k: 'year1',  label: 'Year 1' },
+          { k: 'total3', label: '3-yr total' },
+          { k: 'total5', label: '5-yr total' },
+          { k: 'annual', label: 'Annual avg' },
+        ].map(opt => {
+          const active = viewTimescale === opt.k;
+          return <button key={opt.k} onClick={() => setViewTimescale(opt.k)} style={{
+            padding: "14px 24px", borderRadius: 14, fontSize: F.small, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+            border: active ? `2px solid ${C.accent}` : `1px solid ${C.border}`,
+            background: active ? C.accent : C.surface,
+            color: active ? "#0a0f1a" : C.textMid,
+            transition: "all .15s",
+            minWidth: 130,
+          }}>{opt.label}</button>;
+        })}
+      </div>
     </div>
 
     {/* Composition bar - every segment sums exactly to the topline */}
@@ -111,39 +159,38 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         {seg.network > 0 && <div style={{ flex: seg.network, background: "#8e44ad" }} />}
       </div>
       <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-        <CompositionItem color={C.accent} label="Decommission" value={fmtK(seg.decom)} pct={Math.round(seg.decom / Math.max(1, totalAnnual) * 100)} />
-        <CompositionItem color={C.amber} label="Capacity" value={fmtK(seg.capacity)} pct={Math.round(seg.capacity / Math.max(1, totalAnnual) * 100)} />
-        {seg.reimb > 0 && <CompositionItem color={C.blue} label="Reimbursement" value={fmtK(seg.reimb)} pct={Math.round(seg.reimb / Math.max(1, totalAnnual) * 100)} />}
-        {seg.safety > 0 && <CompositionItem color={C.purple} label="Patient safety" value={fmtK(seg.safety)} pct={Math.round(seg.safety / Math.max(1, totalAnnual) * 100)} />}
-        {seg.academic > 0 && <CompositionItem color="#e67e22" label="Academic" value={fmtK(seg.academic)} pct={Math.round(seg.academic / Math.max(1, totalAnnual) * 100)} />}
-        {seg.network > 0 && <CompositionItem color="#8e44ad" label="Network" value={fmtK(seg.network)} pct={Math.round(seg.network / Math.max(1, totalAnnual) * 100)} />}
+        <CompositionItem color={C.accent} label="Decommission" value={fmtKts(seg.decom)} pct={Math.round(seg.decom / Math.max(1, totalAnnual) * 100)} />
+        <CompositionItem color={C.amber} label="Capacity" value={fmtKts(seg.capacity)} pct={Math.round(seg.capacity / Math.max(1, totalAnnual) * 100)} />
+        {seg.reimb > 0 && <CompositionItem color={C.blue} label="Reimbursement" value={fmtKts(seg.reimb)} pct={Math.round(seg.reimb / Math.max(1, totalAnnual) * 100)} />}
+        {seg.safety > 0 && <CompositionItem color={C.purple} label="Patient safety" value={fmtKts(seg.safety)} pct={Math.round(seg.safety / Math.max(1, totalAnnual) * 100)} />}
+        {seg.academic > 0 && <CompositionItem color="#e67e22" label="Academic" value={fmtKts(seg.academic)} pct={Math.round(seg.academic / Math.max(1, totalAnnual) * 100)} />}
+        {seg.network > 0 && <CompositionItem color="#8e44ad" label="Network" value={fmtKts(seg.network)} pct={Math.round(seg.network / Math.max(1, totalAnnual) * 100)} />}
       </div>
     </div>
 
     {/* KPI grid - each card maps to a segment above, tappable to jump to detail */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
-      <KpiCard label="Legacy decommission" value={fmtK(seg.decom)} sub={`${r.decom} of ${r.legacy} systems retired`} color={C.accent} iconKey="unlock" onClick={() => scrollTo(decomRef)} />
-      <KpiCard label="Clinical capacity" value={`${fmtFte(fte)} FTE freed`} sub={`${fmtK(seg.capacity)}/yr value`} color={C.amber} iconKey="clock" onClick={() => scrollTo(capacityRef)} />
-      {seg.reimb > 0 && <KpiCard label="Reimbursement impact" value={fmtK(seg.reimb)} sub="CMS penalties + denial recovery" color={C.blue} iconKey="dollar" onClick={() => scrollTo(reimbRef)} />}
-      {seg.safety > 0 && <KpiCard label="Patient safety" value={fmtK(seg.safety)} sub={`${fmtNum(r.safetyPatientsProtected)} patients protected${r.readmissionsAvoided > 0 ? ", " + r.readmissionsAvoided + " readmissions avoided" : ""}`} color={C.purple} iconKey="shield" onClick={() => scrollTo(safetyRef)} />}
-      {seg.network > 0 && <KpiCard label="Network consolidation" value={fmtK(seg.network)} sub={`${r.duplicateSystems} duplicate systems across ${r.org_count || ""} facilities`} color="#8e44ad" iconKey="network" onClick={() => scrollTo(networkRef)} />}
-      {seg.academic > 0 && <KpiCard label="Academic program" value={fmtK(seg.academic)} sub="Research + GME + teaching" color="#e67e22" iconKey="graduation" onClick={() => scrollTo(academicRef)} />}
+      <KpiCard label="Legacy decommission" value={fmtKts(seg.decom)} sub={`${r.decom} of ${r.legacy} systems retired`} color={C.accent} iconKey="unlock" onClick={() => scrollTo(decomRef)} />
+      <KpiCard label="Clinical capacity" value={`${fmtFte(fte)} FTE freed`} sub={`${fmtKts(seg.capacity)} value`} color={C.amber} iconKey="clock" onClick={() => scrollTo(capacityRef)} />
+      {seg.reimb > 0 && <KpiCard label="Reimbursement impact" value={fmtKts(seg.reimb)} sub="CMS penalties + denial recovery" color={C.blue} iconKey="dollar" onClick={() => scrollTo(reimbRef)} />}
+      {seg.safety > 0 && <KpiCard label="Patient safety" value={fmtKts(seg.safety)} sub={`${fmtNum(r.safetyPatientsProtected)} patients protected${r.readmissionsAvoided > 0 ? ", " + r.readmissionsAvoided + " readmissions avoided" : ""}`} color={C.purple} iconKey="shield" onClick={() => scrollTo(safetyRef)} />}
+      {seg.network > 0 && <KpiCard label="Network consolidation" value={fmtKts(seg.network)} sub={`${r.duplicateSystems} duplicate systems across ${r.org_count || ""} facilities`} color="#8e44ad" iconKey="network" onClick={() => scrollTo(networkRef)} />}
+      {seg.academic > 0 && <KpiCard label="Academic program" value={fmtKts(seg.academic)} sub="Research + GME + teaching" color="#e67e22" iconKey="graduation" onClick={() => scrollTo(academicRef)} />}
     </div>
 
 
 
     {/* ═══ DETAIL SECTIONS ═══ */}
 
-    {/* Year-by-year projection - first section */}
+    {/* Year-by-year projection - first section.
+        The projection window (3-year vs 5-year ramp) is now controlled by the
+        top-level timescale toggle: total5 -> 5-year ramp, anything else -> 3-year. */}
     <div ref={projRef}>
       <Card style={{ marginBottom: 18 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <CTitle iconKey="calendar">{projYears}-year cumulative projection</CTitle>
-          <div style={{ display: "flex", borderRadius: 10, overflow: "hidden", border: `1px solid ${C.border}` }}>
-            {[3, 5].map(n => <button key={n} onClick={() => { setProjYears(n); setTappedBar(null); }} style={{
-              padding: "8px 20px", border: "none", fontSize: F.tiny, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-              background: projYears === n ? C.accent : C.surface, color: projYears === n ? "#0a0f1a" : C.textMid,
-            }}>{n}-year</button>)}
+          <div style={{ fontSize: F.tiny, color: C.textMuted, fontWeight: 600 }}>
+            {viewTimescale === 'total5' ? '5-year ramp (20/40/60/80/100%)' : '3-year ramp (40/80/100%)'}
           </div>
         </div>
 
@@ -260,8 +307,8 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Annual licensing, support, and infrastructure costs eliminated when legacy systems are retired and data archived into Galen.</div>
         <Row label="Legacy systems in scope" value={r.legacy} />
         <Row label="Systems retired" value={r.decom} />
-        <Row label="Total estate cost" value={fmtK(r.totalEstate) + "/yr"} />
-        <Row label="Annual savings from retirement" value={fmtK(r.decomSave) + "/yr"} accent />
+        <Row label="Total estate cost" value={fmtKts(r.totalEstate)} />
+        <Row label={viewTimescale === 'annual' ? "Annual savings from retirement" : "Savings from retirement"} value={fmtKts(r.decomSave)} accent />
         <Methodology
           formula={"\u03a3 (tier_count \u00d7 tier_cost) \u00d7 decom_rate \u00d7 scenario.decom + retired_flagships \u00d7 scenario.decom"}
           plug={`${r.entDecom} enterprise \u00d7 ${fmtK(r.entCost)} + ${r.depDecom} departmental \u00d7 ${fmtK(r.depCost)} + ${r.nicDecom} standalone \u00d7 ${fmtK(r.nicCost)}\n${r.flagshipRetireCount > 0 ? `+ ${r.flagshipRetireCount} retired flagship${r.flagshipRetireCount === 1 ? "" : "s"} \u00d7 scenario.decom (${Math.round((r.decomFactor||1) * 100)}%)` : ""}\n= ${fmtK(r.decomSave)}/yr (${Math.round(r.decom / Math.max(1, r.legacy) * 100)}% of ${r.legacy} systems retired)`}
@@ -279,9 +326,9 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <Row label="Active system users (65%)" value={fmtNum(r.clinicians)} />
         <Row label="Systems per user (~35% exposure)" value={r.systemsPerUser} />
         <Row label="Time wasted per person/week" value={`${r.minsWasted} mins`} />
-        <Row label="Hours freed per year" value={fmtNum(r.hrsSaved)} />
+        <Row label={viewTimescale === 'annual' ? "Hours freed per year" : `Hours freed${ts.suffix}`} value={fmtNum(Math.round(r.hrsSaved * ts.mult))} />
         <Row label="Full-time equivalent (FTE)" value={fmtFte(fte)} accent />
-        <Row label="Capacity value" value={fmtK(seg.capacity) + "/yr"} accent />
+        <Row label="Capacity value" value={fmtKts(seg.capacity)} accent />
         <Methodology
           formula={"clinicians \u00d7 (mins/wk - residual) \u00d7 working_weeks / 60 \u00d7 $95 \u00d7 scenario.realization"}
           plug={`${fmtNum(r.clinicians)} active clinicians \u00d7 ${Math.max(0, r.minsWasted - (r.isArchiveOnly ? 1 : 2))} reducible mins/wk (${r.minsWasted} - ${r.isArchiveOnly ? 1 : 2} residual) \u00d7 50 working wks / 60\n= ${fmtNum(r.hrsSaved)} hrs \u00d7 $95/hr \u00d7 ${Math.round((r.realization || 0.3) * 100)}% realization\n= ${fmtK(r.timeSave)}/yr`}
@@ -295,11 +342,11 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       <Card style={{ height: '100%', borderLeft: `3px solid ${C.blue}` }}>
         <CTitle iconKey="dollar" color={C.blue}>Reimbursement & compliance</CTitle>
         <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>CMS penalty program recovery and denial reduction from improved documentation through system consolidation.</div>
-        {r.hrrpReduction > 0 && <Row label="Hospital Readmissions Reduction Program (HRRP) recovery" value={fmtK(r.hrrpReduction)} />}
-        {r.hacReduction > 0 && <Row label="Hospital-Acquired Condition (HAC) improvement" value={fmtK(r.hacReduction)} />}
-        {r.vbpImprovement > 0 && <Row label="Value-Based Purchasing (VBP) opportunity" value={fmtK(r.vbpImprovement)} />}
-        {r.denialRecovery > 0 && <Row label="Denial recovery" value={fmtK(r.denialRecovery)} />}
-        <Row label="Total reimbursement impact" value={fmtK(seg.reimb) + "/yr"} accent />
+        {r.hrrpReduction > 0 && <Row label="Hospital Readmissions Reduction Program (HRRP) recovery" value={fmtKts(r.hrrpReduction)} />}
+        {r.hacReduction > 0 && <Row label="Hospital-Acquired Condition (HAC) improvement" value={fmtKts(r.hacReduction)} />}
+        {r.vbpImprovement > 0 && <Row label="Value-Based Purchasing (VBP) opportunity" value={fmtKts(r.vbpImprovement)} />}
+        {r.denialRecovery > 0 && <Row label="Denial recovery" value={fmtKts(r.denialRecovery)} />}
+        <Row label="Total reimbursement impact" value={fmtKts(seg.reimb)} accent />
         <Methodology
           formula={"HRRP penalty reduction + HAC penalty reduction + VBP improvement + Denial recovery"}
           plug={`HRRP: ${fmtK(r.hrrpReduction)}/yr (Medicare DRG ${fmtK(r.medicareDrg)} \u00d7 0.33% avg penalty \u00d7 scenario.safety)\nHAC: ${fmtK(r.hacReduction)}/yr (DRG \u00d7 1% \u00d7 25% bottom-quartile probability)\nVBP: ${fmtK(r.vbpImprovement)}/yr (DRG \u00d7 2% withhold \u00d7 15% improvement potential)\nDenials: ${fmtK(r.denialRecovery)}/yr (revenue \u00d7 4.8% denial rate \u00d7 fragmentation attribution)\n= ${fmtK(seg.reimb)}/yr total`}
@@ -313,12 +360,12 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       <Card style={{ height: '100%', borderLeft: `3px solid ${C.purple}` }}>
         <CTitle iconKey="shield" color={C.purple}>Patient safety impact</CTitle>
         <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Cost avoidance from preventing adverse events attributable to fragmented clinical information across legacy systems.</div>
-        <Row label="Medication errors avoided" value={fmtNum(r.safetyMedErrorsAvoided)} />
-        <Row label="Patients protected from harm" value={fmtNum(r.safetyPatientsProtected)} />
-        <Row label="Excess bed days avoided" value={fmtNum(r.safetyBedDaysAvoided)} />
-        {r.readmissionsAvoided > 0 && <Row label={"Readmissions avoided (" + r.readmissionsAvoided + " patients)"} value={r.readmissionCostAvoidance > 0 ? fmtK(r.readmissionCostAvoidance) + "/yr" : "quality metric"} />}
-        {r.malpracticeReduction > 0 && <Row label="Malpractice reduction" value={fmtK(r.malpracticeReduction) + "/yr"} />}
-        {(r.qualitySavings || 0) > 0 && <Row label="Total cost avoidance" value={fmtK(r.qualitySavings) + "/yr"} accent />}
+        <Row label="Medication errors avoided" value={fmtNum(Math.round(r.safetyMedErrorsAvoided * ts.mult))} />
+        <Row label="Patients protected from harm" value={fmtNum(Math.round(r.safetyPatientsProtected * ts.mult))} />
+        <Row label="Excess bed days avoided" value={fmtNum(Math.round(r.safetyBedDaysAvoided * ts.mult))} />
+        {r.readmissionsAvoided > 0 && <Row label={"Readmissions avoided (" + Math.round(r.readmissionsAvoided * ts.mult) + " patients)"} value={r.readmissionCostAvoidance > 0 ? fmtKts(r.readmissionCostAvoidance) : "quality metric"} />}
+        {r.malpracticeReduction > 0 && <Row label="Malpractice reduction" value={fmtKts(r.malpracticeReduction)} />}
+        {(r.qualitySavings || 0) > 0 && <Row label="Total cost avoidance" value={fmtKts(r.qualitySavings)} accent />}
         <Methodology
           formula={"Excess bed days \u00d7 $3,132/day + Malpractice premium \u00d7 5% \u00d7 scenario.safety + Readmissions avoided \u00d7 $15,200"}
           plug={`Excess bed days: ${fmtNum(r.safetyBedDaysAvoided || 0)} days \u00d7 $3,132 = ${fmtK(r.excessDayCostAvoided || 0)}/yr\n${r.malpracticeReduction > 0 ? `Malpractice: beds \u00d7 $8,500 premium \u00d7 5% reduction \u00d7 scenario.safety = ${fmtK(r.malpracticeReduction)}/yr\n` : ""}${r.readmissionCostAvoidance > 0 ? `Readmissions: ${r.readmissionsAvoided} avoided \u00d7 $15,200 = ${fmtK(r.readmissionCostAvoidance)}/yr\n` : ""}= ${fmtK(r.qualitySavings || 0)}/yr total`}
@@ -346,9 +393,9 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
         <div style={{ padding: "12px 16px", background: C.bg, borderRadius: 12, marginBottom: 14, fontSize: F.tiny, color: C.textMid, lineHeight: 1.6, border: `1px dashed ${C.borderLight}` }}>
           <strong style={{ color: C.textMid }}>About the duplicate systems:</strong> across your {r.org_count} facilities, about 30% of legacy systems are typically duplicates — the same software installed separately at each hospital ({fmtNum(r.duplicateSystems)} instances in your case; CHIME Digital Health Survey). The savings from retiring each duplicate are <strong style={{ color: C.text }}>already counted in the Decommission savings tile above</strong>; we list them here only to show why a multi-hospital network has so much consolidation upside. We are <strong style={{ color: C.text }}>not</strong> counting them again in this tile.
         </div>
-        {r.infraConsolidation > 0 && <Row label="Shared infrastructure savings" value={fmtK(r.infraConsolidation)} />}
-        {r.standardizationSave > 0 && <Row label="Operational efficiency savings" value={fmtK(r.standardizationSave)} />}
-        <Row label="Total network consolidation savings" value={fmtK(seg.network) + "/yr"} accent />
+        {r.infraConsolidation > 0 && <Row label="Shared infrastructure savings" value={fmtKts(r.infraConsolidation)} />}
+        {r.standardizationSave > 0 && <Row label="Operational efficiency savings" value={fmtKts(r.standardizationSave)} />}
+        <Row label="Total network consolidation savings" value={fmtKts(seg.network)} accent />
         <Methodology
           formula={"Shared infrastructure: facilities \u00d7 $250k duplicate hosting cost \u00d7 60% consolidatable + Operational efficiency: total estate \u00d7 15% \u00d7 scenario.decom"}
           plug={`Shared infrastructure: ${r.org_count} facilities \u00d7 $250k duplicate hosting / interfaces / support \u00d7 60% consolidatable = ${fmtK(r.infraConsolidation)}/yr\nOperational efficiency: ${fmtK(r.totalEstate)} estate \u00d7 15% \u00d7 scenario.decom = ${fmtK(r.standardizationSave)}/yr\n= ${fmtK(seg.network)}/yr total\n\nNote: the ${r.duplicateSystems} duplicate systems are NOT summed here. Their per-system licensing and support costs are recovered through Decommission savings above (each retired system's cost is captured there). Counting them again here would inflate the total.`}
@@ -362,10 +409,10 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       <Card style={{ marginBottom: 18, borderLeft: "3px solid #e67e22" }}>
         <CTitle iconKey="graduation" color="#e67e22">Academic program savings</CTitle>
         <div style={{ fontSize: F.tiny, color: C.textMid, marginBottom: 14, lineHeight: 1.5 }}>Additional savings from retiring research databases, GME tracking systems, and teaching program administration tools.</div>
-        {r.researchDecomSave > 0 && <Row label="Research system decommission" value={fmtK(r.researchDecomSave)} />}
-        {r.gmeEfficiency > 0 && <Row label="Graduate Medical Education (GME) compliance" value={fmtK(r.gmeEfficiency)} />}
-        {r.teachingOverhead > 0 && <Row label="Teaching program overhead" value={fmtK(r.teachingOverhead)} />}
-        <Row label="Total academic savings" value={fmtK(seg.academic) + "/yr"} accent />
+        {r.researchDecomSave > 0 && <Row label="Research system decommission" value={fmtKts(r.researchDecomSave)} />}
+        {r.gmeEfficiency > 0 && <Row label="Graduate Medical Education (GME) compliance" value={fmtKts(r.gmeEfficiency)} />}
+        {r.teachingOverhead > 0 && <Row label="Teaching program overhead" value={fmtKts(r.teachingOverhead)} />}
+        <Row label="Total academic savings" value={fmtKts(seg.academic)} accent />
         <Methodology
           formula={"Research decom + GME compliance efficiency + Teaching overhead reduction"}
           plug={`Research decom: ${r.researchSystems} research systems \u00d7 60% retirable \u00d7 scenario.decom = ${fmtK(r.researchDecomSave)}/yr\nGME efficiency: beds compliance \u00d7 25% improvement = ${fmtK(r.gmeEfficiency)}/yr\nTeaching overhead: 12% extra complexity \u00d7 30% addressable = ${fmtK(r.teachingOverhead)}/yr\n= ${fmtK(seg.academic)}/yr total`}
@@ -431,8 +478,8 @@ export function ResultsPage({ r, galenMigrationCost, galenAnnualCost, onAdjust, 
       <div style={{ display: "flex", gap: 14, marginBottom: 16 }}>
         <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
           <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>e-Discovery savings</div>
-          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#e74c3c" }}>{fmtK(r.ediscoverySaving)}/yr</div>
-          <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 6 }}>{r.litigationCases} cases/yr, {Math.round((r.ediscoverySaving / Math.max(1, r.litigationCases)))} saved per case</div>
+          <div style={{ fontSize: F.h2, fontWeight: 800, color: "#e74c3c" }}>{fmtKts(r.ediscoverySaving)}</div>
+          <div style={{ fontSize: F.tiny, color: C.textMid, marginTop: 6 }}>{Math.round(r.litigationCases * ts.mult)} cases{viewTimescale === 'annual' ? '/yr' : ''}, {fmtK(Math.round((r.ediscoverySaving / Math.max(1, r.litigationCases))))} saved per case</div>
         </div>
         <div style={{ flex: 1, padding: "18px 20px", background: C.bg, borderRadius: 16, textAlign: "center" }}>
           <div style={{ fontSize: F.tiny, color: C.textMuted, marginBottom: 4 }}>Cyber risk reduction</div>
