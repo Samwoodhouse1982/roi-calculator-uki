@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { C, F, W, H, KIOSK_STEPS } from './theme';
 import { SplashScreen } from './components/SplashScreen';
+import { BackgroundParticles } from './components/BackgroundParticles';
 import { calc } from './calc/engine';
 import { PRESETS, PROVIDER_PRESET_MAP, PROVIDER_MULTIPLIERS, REIMBURSE_MULTIPLIERS } from './calc/presets';
 import { systemCost } from './calc/vendors';
@@ -541,14 +542,16 @@ export default function App() {
 
   if (calibrating) {
 
-  return <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, height: '100vh', color: C.text, position: "relative" }}>
+  return <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, height: '100vh', color: C.text, position: "relative", zIndex: 0 }}>
+      <BackgroundParticles />
       <CalibratingScreen onDone={handleCalibrationDone} />
       {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
     </div>;
   }
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, color: C.text, lineHeight: 1.55, display: "flex", flexDirection: "column" }}>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, color: C.text, lineHeight: 1.55, display: "flex", flexDirection: "column", position: "relative", zIndex: 0 }}>
+      <BackgroundParticles />
       <div style={{ padding: "48px 56px 0" }}>
         <StepIndicator steps={KIOSK_STEPS} current={kioskStep} onJump={setKioskStep} />
       </div>
